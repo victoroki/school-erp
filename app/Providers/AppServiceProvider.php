@@ -3,22 +3,25 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Doctrine\DBAL\Types\Type;
+use Illuminate\Support\Facades\DB;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
+    public function register()
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
-    {
-        //
+public function boot()
+{
+    // Fix for Doctrine DBAL ENUM type issue
+    $platform = DB::connection()->getDoctrineSchemaManager()->getDatabasePlatform();
+    $platform->registerDoctrineTypeMapping('enum', 'string');
+    
+    // Alternative method as backup
+    if (!Type::hasType('enum')) {
+        Type::addType('enum', 'Doctrine\DBAL\Types\StringType');
     }
+}
 }

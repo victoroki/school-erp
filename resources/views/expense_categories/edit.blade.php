@@ -6,7 +6,7 @@
             <div class="row mb-2">
                 <div class="col-sm-12">
                     <h1>
-                        Edit Expense Category
+                        Edit Expense Categories
                     </h1>
                 </div>
             </div>
@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::model($expenseCategory, ['route' => ['expenseCategories.update', $expenseCategory->id], 'method' => 'patch']) !!}
+            {!! Form::model($expenseCategories, ['route' => ['expenseCategories.update', $expenseCategories->id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">

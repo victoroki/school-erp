@@ -2,30 +2,30 @@
     <div class="table-responsive">
         <table class="table" id="academic-years-table">
             <thead>
-            <tr>
-                <th>Name</th>
-                <th>Start Date</th>
-                <th>End Date</th>
-                <th>Is Current</th>
-                <th colspan="3">Action</th>
-            </tr>
+                <tr>
+                    <th>Name</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Is Current</th>
+                    <th colspan="3">Action</th>
+                </tr>
             </thead>
             <tbody>
-            @foreach($academicYears as $academicYear)
+                @foreach($academicYears as $academicYear)
                 <tr>
                     <td>{{ $academicYear->name }}</td>
                     <td>{{ $academicYear->start_date }}</td>
                     <td>{{ $academicYear->end_date }}</td>
                     <td>{{ $academicYear->is_current }}</td>
-                    <td  style="width: 120px">
-                        {!! Form::open(['route' => ['academicYears.destroy', $academicYear->id], 'method' => 'delete']) !!}
+                    <td style="width: 120px">
+                        {!! Form::open(['route' => ['academic-years.destroy', $academicYear->academic_year_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('academicYears.show', [$academicYear->id]) }}"
-                               class='btn btn-default btn-xs'>
+                            <a href="{{ route('academic-years.show', [$academicYear->academic_year_id]) }}"
+                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('academicYears.edit', [$academicYear->id]) }}"
-                               class='btn btn-default btn-xs'>
+                            <a href="{{ route('academic-years.edit', [$academicYear->academic_year_id]) }}"
+                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>
                             {!! Form::button('<i class="far fa-trash-alt"></i>', ['type' => 'submit', 'class' => 'btn btn-danger btn-xs', 'onclick' => "return confirm('Are you sure?')"]) !!}
@@ -33,7 +33,7 @@
                         {!! Form::close() !!}
                     </td>
                 </tr>
-            @endforeach
+                @endforeach
             </tbody>
         </table>
     </div>

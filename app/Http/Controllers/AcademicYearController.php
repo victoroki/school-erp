@@ -49,7 +49,7 @@ class AcademicYearController extends AppBaseController
 
         Flash::success('Academic Year saved successfully.');
 
-        return redirect(route('academicYears.index'));
+        return redirect(route('academic-years.index'));
     }
 
     /**
@@ -116,13 +116,13 @@ class AcademicYearController extends AppBaseController
         if (empty($academicYear)) {
             Flash::error('Academic Year not found');
 
-            return redirect(route('academicYears.index'));
+            return redirect(route('academic-years.index'));
         }
 
         $this->academicYearRepository->delete($id);
 
         Flash::success('Academic Year deleted successfully.');
 
-        return redirect(route('academicYears.index'));
+        return redirect(route('academic-years.index'));
     }
 }
