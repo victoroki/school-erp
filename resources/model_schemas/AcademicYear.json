@@ -1,0 +1,130 @@
+[
+    {
+        "name": "academic_year_id",
+        "dbType": "integer,true",
+        "htmlType": "number",
+        "validations": "",
+        "searchable": false,
+        "fillable": false,
+        "primary": true,
+        "inForm": false,
+        "inIndex": false,
+        "inView": false
+    },
+    {
+        "name": "name",
+        "dbType": "string",
+        "htmlType": "text",
+        "validations": "required|string|max:50|string|max:50",
+        "searchable": true,
+        "fillable": true,
+        "primary": false,
+        "inForm": true,
+        "inIndex": true,
+        "inView": true
+    },
+    {
+        "name": "start_date",
+        "dbType": "date",
+        "htmlType": "date",
+        "validations": "required",
+        "searchable": true,
+        "fillable": true,
+        "primary": false,
+        "inForm": true,
+        "inIndex": true,
+        "inView": true
+    },
+    {
+        "name": "end_date",
+        "dbType": "date",
+        "htmlType": "date",
+        "validations": "required",
+        "searchable": true,
+        "fillable": true,
+        "primary": false,
+        "inForm": true,
+        "inIndex": true,
+        "inView": true
+    },
+    {
+        "name": "is_current",
+        "dbType": "boolean",
+        "htmlType": "checkbox",
+        "validations": "nullable|boolean|nullable|boolean",
+        "searchable": true,
+        "fillable": true,
+        "primary": false,
+        "inForm": true,
+        "inIndex": true,
+        "inView": true
+    },
+    {
+        "name": "created_at",
+        "dbType": "datetime",
+        "htmlType": "date",
+        "validations": "nullable|nullable",
+        "searchable": false,
+        "fillable": false,
+        "primary": false,
+        "inForm": false,
+        "inIndex": false,
+        "inView": false
+    },
+    {
+        "name": "updated_at",
+        "dbType": "datetime",
+        "htmlType": "date",
+        "validations": "nullable|nullable",
+        "searchable": false,
+        "fillable": false,
+        "primary": false,
+        "inForm": false,
+        "inIndex": false,
+        "inView": false
+    },
+    {
+        "type": "relation",
+        "relation": "1tm,ClassSection,academic_year_id"
+    },
+    {
+        "type": "relation",
+        "relation": "1tm,ClassSubject,academic_year_id"
+    },
+    {
+        "type": "relation",
+        "relation": "mtm,ExamType,exams"
+    },
+    {
+        "type": "relation",
+        "relation": "1tm,FeeStructure,academic_year_id"
+    },
+    {
+        "type": "relation",
+        "relation": "1tm,HostelAllocation,academic_year_id"
+    },
+    {
+        "type": "relation",
+        "relation": "1tm,HostelFee,academic_year_id"
+    },
+    {
+        "type": "relation",
+        "relation": "1tm,StudentClassEnrollment,academic_year_id"
+    },
+    {
+        "type": "relation",
+        "relation": "1tm,StudentFeeDiscount,academic_year_id"
+    },
+    {
+        "type": "relation",
+        "relation": "1tm,TeacherSubject,academic_year_id"
+    },
+    {
+        "type": "relation",
+        "relation": "1tm,Timetable,academic_year_id"
+    },
+    {
+        "type": "relation",
+        "relation": "1tm,TransportRegistration,academic_year_id"
+    }
+]

@@ -1,0 +1,39 @@
+@extends('layouts.app')
+
+@section('content')
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-12">
+                    <h1>
+                        Edit Student Fee Discount
+                    </h1>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="content px-3">
+
+        @include('adminlte-templates::common.errors')
+
+        <div class="card">
+
+            {!! Form::model($studentFeeDiscount, ['route' => ['studentFeeDiscounts.update', $studentFeeDiscount->id], 'method' => 'patch']) !!}
+
+            <div class="card-body">
+                <div class="row">
+                    @include('student_fee_discounts.fields')
+                </div>
+            </div>
+
+            <div class="card-footer">
+                {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
+                <a href="{{ route('studentFeeDiscounts.index') }}" class="btn btn-default"> Cancel </a>
+            </div>
+
+            {!! Form::close() !!}
+
+        </div>
+    </div>
+@endsection
