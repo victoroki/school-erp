@@ -3,10 +3,10 @@
         <table class="table" id="student-class-enrollments-table">
             <thead>
             <tr>
-                <th>Student Id</th>
-                <th>Class Section Id</th>
+                <th>Student </th>
+                <th>Class Section </th>
                 <th>Roll Number</th>
-                <th>Academic Year Id</th>
+                <th>Academic Year </th>
                 <th>Enrollment Date</th>
                 <th>Status</th>
                 <th colspan="3">Action</th>
@@ -22,13 +22,13 @@
                     <td>{{ $studentClassEnrollment->enrollment_date }}</td>
                     <td>{{ $studentClassEnrollment->status }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['studentClassEnrollments.destroy', $studentClassEnrollment->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['student-class-enrollments.destroy', $studentClassEnrollment->enrollment_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('studentClassEnrollments.show', [$studentClassEnrollment->id]) }}"
+                            <a href="{{ route('student-class-enrollments.show', [$studentClassEnrollment->enrollment_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('studentClassEnrollments.edit', [$studentClassEnrollment->id]) }}"
+                            <a href="{{ route('student-class-enrollments.edit', [$studentClassEnrollment->enrollment_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

@@ -449,3 +449,9 @@
         </li>
     </ul>
 </li>
+<li class="nav-item">
+    <a href="{{ route('staff.index') }}" class="nav-link {{ Request::is('staff*') ? 'active' : '' }}">
+        <i class="nav-icon fas fa-home"></i>
+        <p>Staff</p>
+    </a>
+</li>

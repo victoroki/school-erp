@@ -3,10 +3,10 @@
         <table class="table" id="exams-table">
             <thead>
             <tr>
-                <th>Exam Type Id</th>
+                <th>Exam Type</th>
                 <th>Name</th>
                 <th>Description</th>
-                <th>Academic Year Id</th>
+                <th>Academic Year </th>
                 <th>Start Date</th>
                 <th>End Date</th>
                 <th>Publish Result</th>

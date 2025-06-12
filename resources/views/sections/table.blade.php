@@ -12,17 +12,17 @@
             <tbody>
             @foreach($sections as $section)
                 <tr>
-                    <td>{{ $section->class_id }}</td>
+                    <td>{{ $section->Schoolclass->name ?? 'N/A' }}</td>
                     <td>{{ $section->name }}</td>
                     <td>{{ $section->capacity }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['sections.destroy', $section->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['sections.destroy', $section->section_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('sections.show', [$section->id]) }}"
+                            <a href="{{ route('sections.show', [$section->section_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('sections.edit', [$section->id]) }}"
+                            <a href="{{ route('sections.edit', [$section->section_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Section extends Model
 {
     public $table = 'sections';
+    protected $primaryKey = "section_id";
 
     public $fillable = [
         'class_id',
@@ -26,9 +27,9 @@ class Section extends Model
         'updated_at' => 'nullable'
     ];
 
-    public function class(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function Schoolclass(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(\App\Models\Class::class, 'class_id');
+        return $this->belongsTo(\App\Models\SchoolClass::class, 'class_id');
     }
 
     public function classSections(): \Illuminate\Database\Eloquent\Relations\HasMany

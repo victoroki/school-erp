@@ -5,9 +5,18 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateExamResultRequest;
 use App\Http\Requests\UpdateExamResultRequest;
 use App\Http\Controllers\AppBaseController;
+use App\Models\Exam;
+use App\Models\Student;
+use App\Models\ClassSection;
+use App\Models\Subject;
+use App\Models\Grade;
+use App\Models\GradingScale;
+use App\Models\Staff;
+use App\Models\User;
 use App\Repositories\ExamResultRepository;
 use Illuminate\Http\Request;
 use Flash;
+use Auth;
 
 class ExamResultController extends AppBaseController
 {
@@ -17,6 +26,31 @@ class ExamResultController extends AppBaseController
     public function __construct(ExamResultRepository $examResultRepo)
     {
         $this->examResultRepository = $examResultRepo;
+    }
+
+    private function getDropdownData(){
+        return [
+            'exams' => Exam::selectRaw("exam_id, CONCAT(name, ' - ', exam_type_id) as display_name")
+                ->pluck('display_name', 'id')
+                ->toArray(),
+            'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' (', student_id, ')') as full_name")
+                ->pluck('full_name', 'id')
+                ->toArray(),
+            'classSections' => ClassSection::with(['class', 'section', 'academicYear'])
+                ->get()
+                ->pluck('display_name', 'id')
+                ->toArray(),
+            'subjects' => Subject::pluck('name', 'subject_id')
+                ->toArray(),
+            'grades' => GradingScale::orderBy('min_percentage', 'asc')
+                ->selectRaw("grade_id, CONCAT(name, ' (', min_percentage, '-', max_percentage, ')') as grade_display")
+                ->pluck('grade_display', 'id')
+                ->toArray(),
+            'teachers' => Staff::where('staff_type', 'teacher')
+                ->selectRaw("staff_id, CONCAT(first_name, ' ', last_name) as full_name")
+                ->pluck('full_name', 'id')
+                ->toArray()
+        ];
     }
 
     /**
@@ -35,7 +69,9 @@ class ExamResultController extends AppBaseController
      */
     public function create()
     {
-        return view('exam_results.create');
+        $dropdownData = $this->getDropdownData();
+        
+        return view('exam_results.create', $dropdownData);
     }
 
     /**
@@ -44,6 +80,19 @@ class ExamResultController extends AppBaseController
     public function store(CreateExamResultRequest $request)
     {
         $input = $request->all();
+        
+        // Auto-assign the logged-in user as creator
+        $input['created_by'] = Auth::id();
+        
+        // Auto-calculate grade based on marks if not provided
+        if (empty($input['grade_id']) && !empty($input['marks_obtained'])) {
+            $grade = Grade::where('min_marks', '<=', $input['marks_obtained'])
+                         ->where('max_marks', '>=', $input['marks_obtained'])
+                         ->first();
+            if ($grade) {
+                $input['grade_id'] = $grade->id;
+            }
+        }
 
         $examResult = $this->examResultRepository->create($input);
 
@@ -81,7 +130,11 @@ class ExamResultController extends AppBaseController
             return redirect(route('examResults.index'));
         }
 
-        return view('exam_results.edit')->with('examResult', $examResult);
+        $dropdownData = $this->getDropdownData();
+
+        return view('exam_results.edit')
+            ->with('examResult', $examResult)
+            ->with($dropdownData);
     }
 
     /**
@@ -97,7 +150,19 @@ class ExamResultController extends AppBaseController
             return redirect(route('examResults.index'));
         }
 
-        $examResult = $this->examResultRepository->update($request->all(), $id);
+        $input = $request->all();
+        
+        // Auto-calculate grade based on marks if not provided
+        if (empty($input['grade_id']) && !empty($input['marks_obtained'])) {
+            $grade = Grade::where('min_marks', '<=', $input['marks_obtained'])
+                         ->where('max_marks', '>=', $input['marks_obtained'])
+                         ->first();
+            if ($grade) {
+                $input['grade_id'] = $grade->id;
+            }
+        }
+
+        $examResult = $this->examResultRepository->update($input, $id);
 
         Flash::success('Exam Result updated successfully.');
 
@@ -124,5 +189,30 @@ class ExamResultController extends AppBaseController
         Flash::success('Exam Result deleted successfully.');
 
         return redirect(route('examResults.index'));
+    }
+
+    /**
+     * Get subjects by class section (AJAX endpoint)
+     */
+    public function getSubjectsByClassSection($classSectionId)
+    {
+        $subjects = Subject::whereHas('classSections', function($query) use ($classSectionId) {
+            $query->where('class_section_id', $classSectionId);
+        })->where('status', 'active')->get();
+
+        return response()->json($subjects);
+    }
+
+    /**
+     * Get students by class section (AJAX endpoint)
+     */
+    public function getStudentsByClassSection($classSectionId)
+    {
+        $students = Student::whereHas('enrollments', function($query) use ($classSectionId) {
+            $query->where('class_section_id', $classSectionId)
+                  ->where('status', 'active');
+        })->get();
+
+        return response()->json($students);
     }
 }

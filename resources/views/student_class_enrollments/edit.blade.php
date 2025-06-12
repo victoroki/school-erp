@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::model($studentClassEnrollment, ['route' => ['studentClassEnrollments.update', $studentClassEnrollment->id], 'method' => 'patch']) !!}
+            {!! Form::model($studentClassEnrollment, ['route' => ['student-class-enrollments.update', $studentClassEnrollment->enrollment_id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">
@@ -29,7 +29,7 @@
 
             <div class="card-footer">
                 {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('studentClassEnrollments.index') }}" class="btn btn-default"> Cancel </a>
+                <a href="{{ route('student-class-enrollments.index') }}" class="btn btn-default"> Cancel </a>
             </div>
 
             {!! Form::close() !!}

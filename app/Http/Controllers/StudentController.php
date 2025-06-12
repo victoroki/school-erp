@@ -45,6 +45,13 @@ class StudentController extends AppBaseController
     {
         $input = $request->all();
 
+        if ($request->hasFile('photo')) {
+            $photo = $request->file('photo');
+            $photoName = time() . '.' . $photo->getClientOriginalExtension();
+            $photo->move(public_path('students/photos'), $photoName);
+            $input['photo_url'] = 'students/photos/' . $photoName;
+        }
+
         $student = $this->studentRepository->create($input);
 
         Flash::success('Student saved successfully.');
@@ -97,7 +104,22 @@ class StudentController extends AppBaseController
             return redirect(route('students.index'));
         }
 
-        $student = $this->studentRepository->update($request->all(), $id);
+        $input = $request->all();
+
+        if ($request->hasFile('photo')) {
+            // Optional: Delete old photo if it exists
+            if ($student->photo_url && file_exists(public_path($student->photo_url))) {
+                unlink(public_path($student->photo_url));
+            }
+
+            $photo = $request->file('photo');
+            $photoName = time() . '.' . $photo->getClientOriginalExtension();
+            $photo->move(public_path('students/photos'), $photoName);
+            $input['photo_url'] = 'students/photos/' . $photoName;
+        }
+
+
+        $student = $this->studentRepository->update($input, $id);
 
         Flash::success('Student updated successfully.');
 
@@ -117,6 +139,11 @@ class StudentController extends AppBaseController
             Flash::error('Student not found');
 
             return redirect(route('students.index'));
+        }
+        
+        // Optional: Delete photo when student is deleted
+        if ($student->photo_url && file_exists(public_path($student->photo_url))) {
+            unlink(public_path($student->photo_url));
         }
 
         $this->studentRepository->delete($id);

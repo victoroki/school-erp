@@ -5,9 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateStudentParentRelationshipRequest;
 use App\Http\Requests\UpdateStudentParentRelationshipRequest;
 use App\Http\Controllers\AppBaseController;
+use App\Models\Parents;
+use App\Models\Student;
 use App\Repositories\StudentParentRelationshipRepository;
 use Illuminate\Http\Request;
 use Flash;
+
+
 
 class StudentParentRelationshipController extends AppBaseController
 {
@@ -17,6 +21,21 @@ class StudentParentRelationshipController extends AppBaseController
     public function __construct(StudentParentRelationshipRepository $studentParentRelationshipRepo)
     {
         $this->studentParentRelationshipRepository = $studentParentRelationshipRepo;
+    }
+
+    /**
+     * Get dropdown data for forms
+     */
+    private function getDropdownData()
+    {
+        return [
+            'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' (', student_id, ')') as full_name")
+                ->pluck('full_name', 'id')
+                ->toArray(),
+            'parents' => Parents::selectRaw("parent_id, CONCAT(first_name, ' ', last_name, ' (', email, ')') as full_name")
+                ->pluck('full_name', 'id')
+                ->toArray(),
+        ];
     }
 
     /**
@@ -35,7 +54,9 @@ class StudentParentRelationshipController extends AppBaseController
      */
     public function create()
     {
-        return view('student_parent_relationships.create');
+        $dropdownData = $this->getDropdownData();
+        
+        return view('student_parent_relationships.create', $dropdownData);
     }
 
     /**
@@ -81,7 +102,12 @@ class StudentParentRelationshipController extends AppBaseController
             return redirect(route('studentParentRelationships.index'));
         }
 
-        return view('student_parent_relationships.edit')->with('studentParentRelationship', $studentParentRelationship);
+        $dropdownData = $this->getDropdownData();
+        
+        return view('student_parent_relationships.edit', array_merge(
+            ['studentParentRelationship' => $studentParentRelationship],
+            $dropdownData
+        ));
     }
 
     /**

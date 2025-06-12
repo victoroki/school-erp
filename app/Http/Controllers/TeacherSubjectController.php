@@ -2,12 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CreateTeacherSubjectRequest;
-use App\Http\Requests\UpdateTeacherSubjectRequest;
+use App\Requests\CreateTeacherSubjectRequest;
+use App\Requests\UpdateTeacherSubjectRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\TeacherSubjectRepository;
 use Illuminate\Http\Request;
 use Flash;
+
+// Add these model imports for dropdowns
+use App\Models\Staff;
+use App\Models\Subject;
+use App\Models\ClassSection;
+use App\Models\AcademicYear;
 
 class TeacherSubjectController extends AppBaseController
 {
@@ -35,7 +41,10 @@ class TeacherSubjectController extends AppBaseController
      */
     public function create()
     {
-        return view('teacher_subjects.create');
+        // Get dropdown data
+        $dropdownData = $this->getDropdownData();
+        
+        return view('teacher_subjects.create', $dropdownData);
     }
 
     /**
@@ -81,7 +90,11 @@ class TeacherSubjectController extends AppBaseController
             return redirect(route('teacherSubjects.index'));
         }
 
-        return view('teacher_subjects.edit')->with('teacherSubject', $teacherSubject);
+        // Get dropdown data for edit form
+        $dropdownData = $this->getDropdownData();
+        $dropdownData['teacherSubject'] = $teacherSubject;
+
+        return view('teacher_subjects.edit', $dropdownData);
     }
 
     /**
@@ -124,5 +137,34 @@ class TeacherSubjectController extends AppBaseController
         Flash::success('Teacher Subject deleted successfully.');
 
         return redirect(route('teacherSubjects.index'));
+    }
+
+/**
+     * Get dropdown data for forms (Simplified approach)
+     */
+    private function getDropdownData()
+    {
+        // Staff dropdown with concatenated names
+        $staff = Staff::select('staff_id', 'first_name', 'middle_name', 'last_name')->get();
+        $staffList = collect(['Select Staff']);
+        foreach ($staff as $member) {
+            $fullName = trim($member->first_name . ' ' . $member->middle_name . ' ' . $member->last_name);
+            $staffList[$member->staff_id] = $fullName;
+        }
+
+        // Class Section dropdown - you might want to show IDs or create a simple format
+        $classSections = ClassSection::all();
+        $classSectionList = collect(['Select Class Section']);
+        foreach ($classSections as $cs) {
+            // Simple format: "Class ID - Section ID" or just use the ID
+            $classSectionList[$cs->class_section_id] = "Class {$cs->class_id} - Section {$cs->section_id}";
+        }
+
+        return [
+            'staffList' => $staffList,
+            'subjectList' => Subject::pluck('name', 'subject_id')->prepend('Select Subject', ''),
+            'classSectionList' => $classSectionList,
+            'academicYearList' => AcademicYear::pluck('name', 'academic_year_id')->prepend('Select Academic Year', '')
+        ];
     }
 }

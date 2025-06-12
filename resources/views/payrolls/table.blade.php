@@ -3,8 +3,8 @@
         <table class="table" id="payrolls-table">
             <thead>
             <tr>
-                <th>Staff Id</th>
-                <th>Salary Id</th>
+                <th>Staff </th>
+                <th>Salary </th>
                 <th>Month</th>
                 <th>Year</th>
                 <th>Working Days</th>

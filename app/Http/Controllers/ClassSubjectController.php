@@ -5,9 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateClassSubjectRequest;
 use App\Http\Requests\UpdateClassSubjectRequest;
 use App\Http\Controllers\AppBaseController;
+use App\Models\AcademicYear;
 use App\Repositories\ClassSubjectRepository;
 use Illuminate\Http\Request;
 use Flash;
+use App\Models\SchoolClass; 
+use App\Models\Subject;     
+
 
 class ClassSubjectController extends AppBaseController
 {
@@ -17,6 +21,18 @@ class ClassSubjectController extends AppBaseController
     public function __construct(ClassSubjectRepository $classSubjectRepo)
     {
         $this->classSubjectRepository = $classSubjectRepo;
+    }
+
+    /**
+     * Get dropdown data for forms
+     */
+    private function getDropdownData()
+    {
+        return [
+            'classes' => SchoolClass::pluck('name', 'class_id')->toArray(),
+            'subjects' => Subject::pluck('name', 'subject_id')->toArray(),
+            'academicYear' => AcademicYear::pluck('name', 'academic_year_id')
+        ];
     }
 
     /**
@@ -35,7 +51,9 @@ class ClassSubjectController extends AppBaseController
      */
     public function create()
     {
-        return view('class_subjects.create');
+        $dropdownData = $this->getDropdownData();
+        
+        return view('class_subjects.create', $dropdownData);
     }
 
     /**
@@ -81,7 +99,12 @@ class ClassSubjectController extends AppBaseController
             return redirect(route('classSubjects.index'));
         }
 
-        return view('class_subjects.edit')->with('classSubject', $classSubject);
+        $dropdownData = $this->getDropdownData();
+        
+        return view('class_subjects.edit', array_merge(
+            ['classSubject' => $classSubject],
+            $dropdownData
+        ));
     }
 
     /**

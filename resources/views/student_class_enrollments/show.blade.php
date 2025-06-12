@@ -11,7 +11,7 @@ Student Class Enrollment Details
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right"
-                       href="{{ route('studentClassEnrollments.index') }}">
+                       href="{{ route('student-class-enrollments.index') }}">
                                                     Back
                                             </a>
                 </div>

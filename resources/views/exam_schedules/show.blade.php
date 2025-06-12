@@ -11,7 +11,7 @@ Exam Schedule Details
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right"
-                       href="{{ route('examSchedules.index') }}">
+                       href="{{ route('exam-schedules.index') }}">
                                                     Back
                                             </a>
                 </div>

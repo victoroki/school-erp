@@ -49,7 +49,7 @@ class SchoolClassController extends AppBaseController
 
         Flash::success('School Class saved successfully.');
 
-        return redirect(route('schoolClasses.index'));
+        return redirect(route('school-classes.index'));
     }
 
     /**

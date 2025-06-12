@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CreateExamScheduleRequest;
-use App\Http\Requests\UpdateExamScheduleRequest;
+use Flash;
+use App\Models\Exam;
+use App\Models\Subject;
+use App\Models\SchoolClass;
+use App\Models\ExamSchedule;
+use Illuminate\Http\Request;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\ExamScheduleRepository;
-use Illuminate\Http\Request;
-use Flash;
+use App\Http\Requests\CreateExamScheduleRequest;
+use App\Http\Requests\UpdateExamScheduleRequest;
 
 class ExamScheduleController extends AppBaseController
 {
@@ -30,12 +34,20 @@ class ExamScheduleController extends AppBaseController
             ->with('examSchedules', $examSchedules);
     }
 
+    private function getDropdownData(){
+        return[
+            'exams' => Exam::pluck('name', 'exam_id'),
+            'classes' => SchoolClass::pluck('name', 'class_id'),
+            'subjects' => Subject::pluck('name', 'subject_id'),
+        ];
+    }
     /**
      * Show the form for creating a new ExamSchedule.
      */
     public function create()
     {
-        return view('exam_schedules.create');
+        $dropdownData = $this->getDropdownData();
+        return view('exam_schedules.create', $dropdownData);
     }
 
     /**
@@ -74,14 +86,19 @@ class ExamScheduleController extends AppBaseController
     public function edit($id)
     {
         $examSchedule = $this->examScheduleRepository->find($id);
-
+        $dropdownData = $this->getDropdownData();
         if (empty($examSchedule)) {
             Flash::error('Exam Schedule not found');
 
             return redirect(route('examSchedules.index'));
         }
 
-        return view('exam_schedules.edit')->with('examSchedule', $examSchedule);
+        return view('exam_schedules.edit', array_merge(
+            [
+                'examSchedule', $examSchedule,
+                $dropdownData
+            ]
+            ));
     }
 
     /**
