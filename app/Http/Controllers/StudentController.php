@@ -141,7 +141,6 @@ class StudentController extends AppBaseController
             return redirect(route('students.index'));
         }
         
-        // Optional: Delete photo when student is deleted
         if ($student->photo_url && file_exists(public_path($student->photo_url))) {
             unlink(public_path($student->photo_url));
         }
