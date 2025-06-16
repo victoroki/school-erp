@@ -16,15 +16,15 @@
                     <td>{{ $subject->subject_code }}</td>
                     <td>{{ $subject->name }}</td>
                     <td>{{ $subject->description }}</td>
-                    <td>{{ $subject->is_elective }}</td>
+                    <td>{{ $subject->is_elective ? 'Yes':'No'}}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['subjects.destroy', $subject->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['subjects.destroy', $subject->subject_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('subjects.show', [$subject->id]) }}"
+                            <a href="{{ route('subjects.show', [$subject->subject_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('subjects.edit', [$subject->id]) }}"
+                            <a href="{{ route('subjects.edit', [$subject->subject_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

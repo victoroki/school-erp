@@ -1,7 +1,7 @@
 <!-- User Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('user_id', 'User Id:') !!}
-    {!! Form::number('user_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('user_id', 'User :') !!}
+    {!! Form::text('user_id', null, ['class' => 'form-control', 'placeholder' => 'Select Member']) !!}
 </div>
 
 <!-- Member Type Field -->
@@ -13,7 +13,7 @@
 <!-- Reference Id Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('reference_id', 'Reference Id:') !!}
-    {!! Form::number('reference_id', null, ['class' => 'form-control', 'required']) !!}
+    {!! Form::number('reference_id', null, ['class' => 'form-control', 'required','placeholder' => 'Select Reference']) !!}
 </div>
 
 <!-- Membership Date Field -->

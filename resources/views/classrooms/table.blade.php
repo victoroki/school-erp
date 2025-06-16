@@ -19,16 +19,16 @@
                     <td>{{ $classroom->building }}</td>
                     <td>{{ $classroom->floor }}</td>
                     <td>{{ $classroom->capacity }}</td>
-                    <td>{{ $classroom->has_sockets }}</td>
-                    <td>{{ $classroom->has_whiteboard }}</td>
+                    <td>{{ $classroom->has_sockets ? 'Yes' : 'No' }}</td>
+                    <td>{{ $classroom->has_whiteboard ? 'Yes' : 'No' }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['classrooms.destroy', $classroom->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['classrooms.destroy', $classroom->classroom_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('classrooms.show', [$classroom->id]) }}"
+                            <a href="{{ route('classrooms.show', [$classroom->classroom_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('classrooms.edit', [$classroom->id]) }}"
+                            <a href="{{ route('classrooms.edit', [$classroom->classroom_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

@@ -1,6 +1,6 @@
 <!-- Route Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('route_id', 'Route Id:') !!}
+    {!! Form::label('route_id', 'Route :') !!}
     <p>{{ $routeStop->route_id }}</p>
 </div>
 

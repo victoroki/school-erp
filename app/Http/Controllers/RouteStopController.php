@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateRouteStopRequest;
 use App\Http\Requests\UpdateRouteStopRequest;
 use App\Http\Controllers\AppBaseController;
+use App\Models\Route;
 use App\Repositories\RouteStopRepository;
 use Illuminate\Http\Request;
 use Flash;
@@ -17,6 +18,12 @@ class RouteStopController extends AppBaseController
     public function __construct(RouteStopRepository $routeStopRepo)
     {
         $this->routeStopRepository = $routeStopRepo;
+    }
+
+    private function getdropdownData(){
+        return[
+            'route' => Route::pluck('name', 'route_id')
+        ];
     }
 
     /**
@@ -35,7 +42,8 @@ class RouteStopController extends AppBaseController
      */
     public function create()
     {
-        return view('route_stops.create');
+        $dropdownData = $this->getdropdownData();
+        return view('route_stops.create', $dropdownData);
     }
 
     /**
@@ -73,6 +81,7 @@ class RouteStopController extends AppBaseController
      */
     public function edit($id)
     {
+        $dropdownData = $this->getdropdownData();
         $routeStop = $this->routeStopRepository->find($id);
 
         if (empty($routeStop)) {
@@ -81,7 +90,10 @@ class RouteStopController extends AppBaseController
             return redirect(route('routeStops.index'));
         }
 
-        return view('route_stops.edit')->with('routeStop', $routeStop);
+        return view('route_stops.edit', array_merge([
+            'routeStop', $routeStop,
+            $dropdownData
+        ]));
     }
 
     /**

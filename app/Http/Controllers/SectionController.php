@@ -86,7 +86,7 @@ class SectionController extends AppBaseController
         }
 
         // Get classes for dropdown - adjust the model name based on your actual class model
-        $classes = \App\Models\SchoolClass::pluck('name', 'id');
+        $classes = \App\Models\SchoolClass::pluck('name', 'class_id');
 
         return view('sections.edit')
             ->with('section', $section)

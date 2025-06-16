@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::open(['route' => 'incomeCategories.store']) !!}
+            {!! Form::open(['route' => 'income-categories.store']) !!}
 
             <div class="card-body">
 
@@ -31,7 +31,7 @@
 
             <div class="card-footer">
                 {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('incomeCategories.index') }}" class="btn btn-default"> Cancel </a>
+                <a href="{{ route('income-categories.index') }}" class="btn btn-default"> Cancel </a>
             </div>
 
             {!! Form::close() !!}

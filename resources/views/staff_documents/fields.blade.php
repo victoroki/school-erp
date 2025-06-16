@@ -1,7 +1,7 @@
 <!-- Staff Id Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('staff_id', 'Staff Id:') !!}
-    {!! Form::number('staff_id', null, ['class' => 'form-control']) !!}
+    {!! Form::select('staff_id', $staffs, null, ['class' => 'form-control', 'placeholder' => 'Select Staff']) !!}
 </div>
 
 <!-- Document Type Field -->
@@ -18,14 +18,9 @@
 
 <!-- File Path Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('file_path', 'File Path:') !!}
-    {!! Form::text('file_path', null, ['class' => 'form-control', 'required', 'maxlength' => 255, 'maxlength' => 255]) !!}
-</div>
-
-<!-- Uploaded At Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('uploaded_at', 'Uploaded At:') !!}
-    {!! Form::text('uploaded_at', null, ['class' => 'form-control','id'=>'uploaded_at']) !!}
+    {!! Form::label('document_file', 'Upload Document:') !!}
+    {!! Form::file('document_file', ['class' => 'form-control-file', 'accept' => '.pdf,.doc,.docx,.jpg,.jpeg,.png', 'required']) !!}
+    <small class="form-text text-muted">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG (Max: 5MB)</small>
 </div>
 
 @push('page_scripts')

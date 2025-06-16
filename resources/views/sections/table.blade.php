@@ -3,7 +3,7 @@
         <table class="table" id="sections-table">
             <thead>
             <tr>
-                <th>Class Id</th>
+                <th>Class</th>
                 <th>Name</th>
                 <th>Capacity</th>
                 <th colspan="3">Action</th>

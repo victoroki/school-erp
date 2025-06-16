@@ -3,7 +3,7 @@
         <table class="table" id="hostel-rooms-table">
             <thead>
             <tr>
-                <th>Hostel Id</th>
+                <th>Hostel </th>
                 <th>Room Number</th>
                 <th>Room Type</th>
                 <th>Capacity</th>
@@ -24,13 +24,13 @@
                     <td>{{ $hostelRoom->floor }}</td>
                     <td>{{ $hostelRoom->status }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['hostelRooms.destroy', $hostelRoom->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['hostel-rooms.destroy', $hostelRoom->room_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('hostelRooms.show', [$hostelRoom->id]) }}"
+                            <a href="{{ route('hostel-rooms.show', [$hostelRoom->room_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('hostelRooms.edit', [$hostelRoom->id]) }}"
+                            <a href="{{ route('hostel-rooms.edit', [$hostelRoom->room_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

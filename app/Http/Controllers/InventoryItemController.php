@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateInventoryItemRequest;
 use App\Http\Requests\UpdateInventoryItemRequest;
 use App\Http\Controllers\AppBaseController;
+use App\Models\InventoryCategory;
+use App\Models\InventoryItem;
+use App\Models\Supplier;
 use App\Repositories\InventoryItemRepository;
 use Illuminate\Http\Request;
 use Flash;
@@ -17,6 +20,13 @@ class InventoryItemController extends AppBaseController
     public function __construct(InventoryItemRepository $inventoryItemRepo)
     {
         $this->inventoryItemRepository = $inventoryItemRepo;
+    }
+
+    private function getdropdownData(){
+        return[
+            'category'=>InventoryCategory::pluck('name', 'category_id'),
+            'suppliers' => Supplier::pluck('name','supplier_id' )
+        ];
     }
 
     /**
@@ -35,7 +45,8 @@ class InventoryItemController extends AppBaseController
      */
     public function create()
     {
-        return view('inventory_items.create');
+        $dropdownData = $this->getdropdownData();
+        return view('inventory_items.create', $dropdownData);
     }
 
     /**
@@ -74,6 +85,7 @@ class InventoryItemController extends AppBaseController
     public function edit($id)
     {
         $inventoryItem = $this->inventoryItemRepository->find($id);
+        $dropdownData = $this->getdropdownData();
 
         if (empty($inventoryItem)) {
             Flash::error('Inventory Item not found');
@@ -81,7 +93,12 @@ class InventoryItemController extends AppBaseController
             return redirect(route('inventoryItems.index'));
         }
 
-        return view('inventory_items.edit')->with('inventoryItem', $inventoryItem);
+        return view('inventory_items.edit', array_merge(
+            [
+                'inventoryItem', $inventoryItem,
+                $dropdownData
+            ]
+            ));
     }
 
     /**

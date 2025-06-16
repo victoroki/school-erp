@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::model($libraryMember, ['route' => ['libraryMembers.update', $libraryMember->id], 'method' => 'patch']) !!}
+            {!! Form::model($libraryMember, ['route' => ['library-members.update', $libraryMember->member_id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">
@@ -29,7 +29,7 @@
 
             <div class="card-footer">
                 {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('libraryMembers.index') }}" class="btn btn-default"> Cancel </a>
+                <a href="{{ route('library-members.index') }}" class="btn btn-default"> Cancel </a>
             </div>
 
             {!! Form::close() !!}

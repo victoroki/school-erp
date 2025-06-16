@@ -3,8 +3,8 @@
         <table class="table" id="student-parent-relationships-table">
             <thead>
             <tr>
-                <th>Student Id</th>
-                <th>Parent Id</th>
+                <th>Student</th>
+                <th>Parent</th>
                 <th>Is Primary Contact</th>
                 <th colspan="3">Action</th>
             </tr>

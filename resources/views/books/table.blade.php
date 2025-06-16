@@ -5,7 +5,7 @@
             <tr>
                 <th>Title</th>
                 <th>Author</th>
-                <th>Category Id</th>
+                <th>Category</th>
                 <th>Isbn</th>
                 <th>Publisher</th>
                 <th>Publication Year</th>

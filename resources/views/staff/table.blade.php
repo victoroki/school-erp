@@ -3,24 +3,22 @@
         <table class="table" id="staff-table">
             <thead>
             <tr>
-                <th>User Id</th>
-                <th>Employee Id</th>
+                <th>User</th>
+                <th>Employee</th>
                 <th>First Name</th>
-                <th>Middle Name</th>
+                <!-- <th>Middle Name</th> -->
                 <th>Last Name</th>
                 <th>Date Of Birth</th>
                 <th>Gender</th>
                 <th>Joining Date</th>
-                <th>Department Id</th>
+                <th>Department</th>
                 <th>Designation</th>
                 <th>Qualification</th>
                 <th>Experience</th>
                 <th>Email</th>
                 <th>Phone</th>
-                <th>Address</th>
                 <th>City</th>
                 <th>Country</th>
-                <th>Photo Url</th>
                 <th>Staff Type</th>
                 <th>Status</th>
                 <th colspan="3">Action</th>
@@ -32,7 +30,7 @@
                     <td>{{ $staff->user_id }}</td>
                     <td>{{ $staff->employee_id }}</td>
                     <td>{{ $staff->first_name }}</td>
-                    <td>{{ $staff->middle_name }}</td>
+                    <!-- <td>{{ $staff->middle_name }}</td> -->
                     <td>{{ $staff->last_name }}</td>
                     <td>{{ $staff->date_of_birth }}</td>
                     <td>{{ $staff->gender }}</td>
@@ -43,10 +41,8 @@
                     <td>{{ $staff->experience }}</td>
                     <td>{{ $staff->email }}</td>
                     <td>{{ $staff->phone }}</td>
-                    <td>{{ $staff->address }}</td>
                     <td>{{ $staff->city }}</td>
                     <td>{{ $staff->country }}</td>
-                    <td>{{ $staff->photo_url }}</td>
                     <td>{{ $staff->staff_type }}</td>
                     <td>{{ $staff->status }}</td>
                     <td  style="width: 120px">

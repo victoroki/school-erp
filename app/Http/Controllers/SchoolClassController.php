@@ -62,7 +62,7 @@ class SchoolClassController extends AppBaseController
         if (empty($schoolClass)) {
             Flash::error('School Class not found');
 
-            return redirect(route('schoolClasses.index'));
+            return redirect(route('school-classes.index'));
         }
 
         return view('school_classes.show')->with('schoolClass', $schoolClass);
@@ -78,7 +78,7 @@ class SchoolClassController extends AppBaseController
         if (empty($schoolClass)) {
             Flash::error('School Class not found');
 
-            return redirect(route('schoolClasses.index'));
+            return redirect(route('school-classes.index'));
         }
 
         return view('school_classes.edit')->with('schoolClass', $schoolClass);
@@ -94,14 +94,14 @@ class SchoolClassController extends AppBaseController
         if (empty($schoolClass)) {
             Flash::error('School Class not found');
 
-            return redirect(route('schoolClasses.index'));
+            return redirect(route('school-classes.index'));
         }
 
         $schoolClass = $this->schoolClassRepository->update($request->all(), $id);
 
         Flash::success('School Class updated successfully.');
 
-        return redirect(route('schoolClasses.index'));
+        return redirect(route('school-classes.index'));
     }
 
     /**
@@ -116,13 +116,13 @@ class SchoolClassController extends AppBaseController
         if (empty($schoolClass)) {
             Flash::error('School Class not found');
 
-            return redirect(route('schoolClasses.index'));
+            return redirect(route('school-classes.index'));
         }
 
         $this->schoolClassRepository->delete($id);
 
         Flash::success('School Class deleted successfully.');
 
-        return redirect(route('schoolClasses.index'));
+        return redirect(route('school-classes.index'));
     }
 }

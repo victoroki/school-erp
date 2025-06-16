@@ -11,7 +11,7 @@ Route Stop Details
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right"
-                       href="{{ route('routeStops.index') }}">
+                       href="{{ route('route-stops.index') }}">
                                                     Back
                                             </a>
                 </div>

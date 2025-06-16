@@ -225,6 +225,12 @@
             </a>
         </li>
         <li class="nav-item">
+            <a href="{{ route('staff.index') }}" class="nav-link {{ Request::is('staff*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-work"></i>
+                <p>Staff</p>
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="{{ route('staff-documents.index') }}" class="nav-link {{ Request::is('staff-documents*') ? 'active' : '' }}">
                 <i class="far fa-folder nav-icon text-secondary"></i>
                 <p>Staff Documents</p>
@@ -448,10 +454,4 @@
             </a>
         </li>
     </ul>
-</li>
-<li class="nav-item">
-    <a href="{{ route('staff.index') }}" class="nav-link {{ Request::is('staff*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-home"></i>
-        <p>Staff</p>
-    </a>
 </li>

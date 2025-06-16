@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::model($hostelAllocation, ['route' => ['hostelAllocations.update', $hostelAllocation->id], 'method' => 'patch']) !!}
+            {!! Form::model($hostelAllocation, ['route' => ['hostel-allocations.update', $hostelAllocation->allocation_id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">
@@ -29,7 +29,7 @@
 
             <div class="card-footer">
                 {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('hostelAllocations.index') }}" class="btn btn-default"> Cancel </a>
+                <a href="{{ route('hostel-allocations.index') }}" class="btn btn-default"> Cancel </a>
             </div>
 
             {!! Form::close() !!}

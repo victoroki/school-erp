@@ -67,7 +67,7 @@ class ClassSubjectController extends AppBaseController
 
         Flash::success('Class Subject saved successfully.');
 
-        return redirect(route('classSubjects.index'));
+        return redirect(route('class-subjects.index'));
     }
 
     /**
@@ -80,7 +80,7 @@ class ClassSubjectController extends AppBaseController
         if (empty($classSubject)) {
             Flash::error('Class Subject not found');
 
-            return redirect(route('classSubjects.index'));
+            return redirect(route('class-subjects.index'));
         }
 
         return view('class_subjects.show')->with('classSubject', $classSubject);
@@ -96,7 +96,7 @@ class ClassSubjectController extends AppBaseController
         if (empty($classSubject)) {
             Flash::error('Class Subject not found');
 
-            return redirect(route('classSubjects.index'));
+            return redirect(route('class-subjects.index'));
         }
 
         $dropdownData = $this->getDropdownData();
@@ -117,14 +117,14 @@ class ClassSubjectController extends AppBaseController
         if (empty($classSubject)) {
             Flash::error('Class Subject not found');
 
-            return redirect(route('classSubjects.index'));
+            return redirect(route('class-subjects.index'));
         }
 
         $classSubject = $this->classSubjectRepository->update($request->all(), $id);
 
         Flash::success('Class Subject updated successfully.');
 
-        return redirect(route('classSubjects.index'));
+        return redirect(route('class-subjects.index'));
     }
 
     /**
@@ -139,13 +139,13 @@ class ClassSubjectController extends AppBaseController
         if (empty($classSubject)) {
             Flash::error('Class Subject not found');
 
-            return redirect(route('classSubjects.index'));
+            return redirect(route('class-subjects.index'));
         }
 
         $this->classSubjectRepository->delete($id);
 
         Flash::success('Class Subject deleted successfully.');
 
-        return redirect(route('classSubjects.index'));
+        return redirect(route('class-subjects.index'));
     }
 }

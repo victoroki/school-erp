@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ClassSubject extends Model
 {
     public $table = 'class_subjects';
+    protected $primaryKey = 'class_subject_id';
 
     public $fillable = [
         'class_id',

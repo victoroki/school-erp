@@ -4,7 +4,7 @@
             <thead>
             <tr>
                 <th>Name</th>
-                <th>Numeric Value</th>
+                <!-- <th>Numeric Value</th> -->
                 <th>Description</th>
                 <th colspan="3">Action</th>
             </tr>
@@ -13,7 +13,7 @@
             @foreach($schoolClasses as $schoolClass)
                 <tr>
                     <td>{{ $schoolClass->name }}</td>
-                    <td>{{ $schoolClass->numeric_value }}</td>
+                    <!-- <td>{{ $schoolClass->numeric_value }}</td> -->
                     <td>{{ $schoolClass->description }}</td>
                     <td  style="width: 120px">
                         {!! Form::open(['route' => ['school-classes.destroy', $schoolClass->class_id], 'method' => 'delete']) !!}

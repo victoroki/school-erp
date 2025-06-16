@@ -2,21 +2,43 @@
 
 namespace App\Http\Controllers;
 
+use Flash;
+use Illuminate\Http\Request;
+use App\Repositories\UserRepository;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use App\Repositories\StaffRepository;
+use Illuminate\Support\Facades\Storage;
+use App\Repositories\UserRoleRepository;
 use App\Http\Requests\CreateStaffRequest;
 use App\Http\Requests\UpdateStaffRequest;
+use App\Repositories\DepartmentRepository;
 use App\Http\Controllers\AppBaseController;
-use App\Repositories\StaffRepository;
-use Illuminate\Http\Request;
-use Flash;
+use App\Models\Department;
+use App\Models\User;
 
 class StaffController extends AppBaseController
 {
     /** @var StaffRepository $staffRepository*/
     private $staffRepository;
+    
+    /** @var UserRepository $userRepository*/
+    private $userRepository;
+    
+    /** @var DepartmentRepository $departmentRepository*/
+    private $departmentRepository;
 
-    public function __construct(StaffRepository $staffRepo)
-    {
+    public function __construct(
+        StaffRepository $staffRepo,
+        UserRoleRepository $userRepo,
+        DepartmentRepository $departmentRepo
+    ) {
         $this->staffRepository = $staffRepo;
+        $this->userRepository = $userRepo;
+        $this->departmentRepository = $departmentRepo;
+        
+        // Apply middleware for authentication
+        $this->middleware('auth');
     }
 
     /**
@@ -24,6 +46,11 @@ class StaffController extends AppBaseController
      */
     public function index(Request $request)
     {
+        // Authorization check
+        // if (Gate::denies('view-staff')) {
+        //     abort(403, 'Unauthorized to view staff list');
+        // }
+
         $staff = $this->staffRepository->paginate(10);
 
         return view('staff.index')
@@ -35,7 +62,16 @@ class StaffController extends AppBaseController
      */
     public function create()
     {
-        return view('staff.create');
+        // Authorization check
+        // if (Gate::denies('create-staff')) {
+        //     abort(403, 'Unauthorized to create staff');
+        // }
+
+        // Get dropdown data
+        $users = User::pluck('username', 'id')->toArray();
+        $departments = Department::pluck('name', 'department_id')->toArray();
+
+        return view('staff.create', compact('users', 'departments'));
     }
 
     /**
@@ -43,13 +79,33 @@ class StaffController extends AppBaseController
      */
     public function store(CreateStaffRequest $request)
     {
-        $input = $request->all();
+        // Authorization check
+        // if (Gate::denies('create-staff')) {
+        //     abort(403, 'Unauthorized to create staff');
+        // }
 
-        $staff = $this->staffRepository->create($input);
+        try {
+            $input = $request->validated();
+            
+            // Handle photo upload
+            if ($request->hasFile('photo')) {
+                $photoPath = $request->file('photo')->store('staff-photos', 'public');
+                $input['photo_url'] = Storage::url($photoPath);
+            }
+            
+            // Ensure created_by is set
+            $input['created_by'] = Auth::id();
 
-        Flash::success('Staff saved successfully.');
+            $staff = $this->staffRepository->create($input);
 
-        return redirect(route('staff.index'));
+            Flash::success('Staff saved successfully.');
+
+            return redirect(route('staff.index'));
+            
+        } catch (\Exception $e) {
+            Flash::error('Error creating staff: ' . $e->getMessage());
+            return redirect()->back()->withInput();
+        }
     }
 
     /**
@@ -57,11 +113,15 @@ class StaffController extends AppBaseController
      */
     public function show($id)
     {
+        // Authorization check
+        // if (Gate::denies('view-staff')) {
+        //     abort(403, 'Unauthorized to view staff');
+        // }
+
         $staff = $this->staffRepository->find($id);
 
         if (empty($staff)) {
             Flash::error('Staff not found');
-
             return redirect(route('staff.index'));
         }
 
@@ -73,15 +133,23 @@ class StaffController extends AppBaseController
      */
     public function edit($id)
     {
+        // Authorization check
+        // if (Gate::denies('edit-staff')) {
+        //     abort(403, 'Unauthorized to edit staff');
+        // }
+
         $staff = $this->staffRepository->find($id);
 
         if (empty($staff)) {
             Flash::error('Staff not found');
-
             return redirect(route('staff.index'));
         }
 
-        return view('staff.edit')->with('staff', $staff);
+        // Get dropdown data
+        $users = $this->userRepository->pluck('name', 'id')->toArray();
+        $departments = $this->departmentRepository->pluck('name', 'id')->toArray();
+
+        return view('staff.edit', compact('staff', 'users', 'departments'));
     }
 
     /**
@@ -89,40 +157,81 @@ class StaffController extends AppBaseController
      */
     public function update($id, UpdateStaffRequest $request)
     {
+        // Authorization check
+        // if (Gate::denies('edit-staff')) {
+        //     abort(403, 'Unauthorized to update staff');
+        // }
+
         $staff = $this->staffRepository->find($id);
 
         if (empty($staff)) {
             Flash::error('Staff not found');
-
             return redirect(route('staff.index'));
         }
 
-        $staff = $this->staffRepository->update($request->all(), $id);
+        try {
+            $input = $request->validated();
+            
+            // Handle photo upload
+            if ($request->hasFile('photo')) {
+                // Delete old photo if exists
+                if ($staff->photo_url) {
+                    $oldPhotoPath = str_replace('/storage/', '', $staff->photo_url);
+                    Storage::disk('public')->delete($oldPhotoPath);
+                }
+                
+                $photoPath = $request->file('photo')->store('staff-photos', 'public');
+                $input['photo_url'] = Storage::url($photoPath);
+            }
+            
+            // Ensure updated_by is set
+            $input['updated_by'] = Auth::id();
 
-        Flash::success('Staff updated successfully.');
+            $staff = $this->staffRepository->update($input, $id);
 
-        return redirect(route('staff.index'));
+            Flash::success('Staff updated successfully.');
+
+            return redirect(route('staff.index'));
+            
+        } catch (\Exception $e) {
+            Flash::error('Error updating staff: ' . $e->getMessage());
+            return redirect()->back()->withInput();
+        }
     }
 
     /**
      * Remove the specified Staff from storage.
-     *
-     * @throws \Exception
      */
     public function destroy($id)
     {
+        // Authorization check
+        // if (Gate::denies('delete-staff')) {
+        //     abort(403, 'Unauthorized to delete staff');
+        // }
+
         $staff = $this->staffRepository->find($id);
 
         if (empty($staff)) {
             Flash::error('Staff not found');
-
             return redirect(route('staff.index'));
         }
 
-        $this->staffRepository->delete($id);
+        try {
+            // Delete associated photo if exists
+            if ($staff->photo_url) {
+                $photoPath = str_replace('/storage/', '', $staff->photo_url);
+                Storage::disk('public')->delete($photoPath);
+            }
 
-        Flash::success('Staff deleted successfully.');
+            $this->staffRepository->delete($id);
 
-        return redirect(route('staff.index'));
+            Flash::success('Staff deleted successfully.');
+
+            return redirect(route('staff.index'));
+            
+        } catch (\Exception $e) {
+            Flash::error('Error deleting staff: ' . $e->getMessage());
+            return redirect(route('staff.index'));
+        }
     }
 }
