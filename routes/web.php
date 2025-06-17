@@ -72,3 +72,14 @@ Route::resource('library-members', App\Http\Controllers\LibraryMemberController:
 Route::resource('students', App\Http\Controllers\StudentController::class);
 Route::resource('student-class-enrollments', App\Http\Controllers\StudentClassEnrollmentController::class);
 Route::resource('staff', App\Http\Controllers\StaffController::class);
+
+Route::get('/fix-migration', function () {
+    try {
+        \DB::table('migrations')
+            ->where('migration', 'like', '%add_is_teacher_staff%')
+            ->delete();
+        return 'Orphaned migration record deleted!';
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
+});
