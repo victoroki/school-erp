@@ -3,7 +3,7 @@
         <table class="table" id="user-roles-table">
             <thead>
             <tr>
-                <th>Role Id</th>
+                <th>Role </th>
                 <th colspan="3">Action</th>
             </tr>
             </thead>
@@ -12,13 +12,13 @@
                 <tr>
                     <td>{{ $userRole->role_id }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['userRoles.destroy', $userRole->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['user-roles.destroy', $userRole->user_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('userRoles.show', [$userRole->id]) }}"
+                            <a href="{{ route('user-roles.show', [$userRole->user_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('userRoles.edit', [$userRole->id]) }}"
+                            <a href="{{ route('user-roles.edit', [$userRole->user_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

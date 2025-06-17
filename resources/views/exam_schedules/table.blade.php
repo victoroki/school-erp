@@ -3,13 +3,13 @@
         <table class="table" id="exam-schedules-table">
             <thead>
             <tr>
-                <th>Exam Id</th>
-                <th>Class Id</th>
-                <th>Subject Id</th>
+                <th>Exam </th>
+                <th>Class</th>
+                <th>Subject</th>
                 <th>Exam Date</th>
                 <th>Start Time</th>
                 <th>End Time</th>
-                <th>Room Id</th>
+                <!-- <th>Room Id</th> -->
                 <th>Max Marks</th>
                 <th>Passing Marks</th>
                 <th colspan="3">Action</th>
@@ -24,17 +24,17 @@
                     <td>{{ $examSchedule->exam_date }}</td>
                     <td>{{ $examSchedule->start_time }}</td>
                     <td>{{ $examSchedule->end_time }}</td>
-                    <td>{{ $examSchedule->room_id }}</td>
+                    <!-- pp -->
                     <td>{{ $examSchedule->max_marks }}</td>
                     <td>{{ $examSchedule->passing_marks }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['examSchedules.destroy', $examSchedule->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['exam-schedules.destroy', $examSchedule->schedule_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('examSchedules.show', [$examSchedule->id]) }}"
+                            <a href="{{ route('exam-schedules.show', [$examSchedule->schedule_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('examSchedules.edit', [$examSchedule->id]) }}"
+                            <a href="{{ route('exam-schedules.edit', [$examSchedule->schedule_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

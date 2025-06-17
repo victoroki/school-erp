@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CreateFeeStructureRequest;
-use App\Http\Requests\UpdateFeeStructureRequest;
+use Flash;
+use App\Models\SchoolClass;
+use App\Models\AcademicYear;
+use Illuminate\Http\Request;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\FeeStructureRepository;
-use Illuminate\Http\Request;
-use Flash;
+use App\Http\Requests\CreateFeeStructureRequest;
+use App\Http\Requests\UpdateFeeStructureRequest;
+use App\Models\FeeCategory;
 
 class FeeStructureController extends AppBaseController
 {
@@ -30,12 +33,21 @@ class FeeStructureController extends AppBaseController
             ->with('feeStructures', $feeStructures);
     }
 
+    private function getdropdownData(){
+        return[
+            'academicYear' => AcademicYear::pluck('name', 'academic_year_id'),
+            'classes' => SchoolClass::pluck('name', 'class_id'),
+            'category' => FeeCategory::pluck('name', 'category_id')
+        ];
+    }
+
     /**
      * Show the form for creating a new FeeStructure.
      */
     public function create()
     {
-        return view('fee_structures.create');
+        $dropdownData = $this->getdropdownData();
+        return view('fee_structures.create', $dropdownData);
     }
 
     /**
@@ -74,6 +86,7 @@ class FeeStructureController extends AppBaseController
     public function edit($id)
     {
         $feeStructure = $this->feeStructureRepository->find($id);
+        $dropdownData = $this->getdropdownData();
 
         if (empty($feeStructure)) {
             Flash::error('Fee Structure not found');
@@ -81,7 +94,12 @@ class FeeStructureController extends AppBaseController
             return redirect(route('feeStructures.index'));
         }
 
-        return view('fee_structures.edit')->with('feeStructure', $feeStructure);
+        return view('fee_structures.edit', array_merge([
+            'feeStructure', $feeStructure,
+            $dropdownData
+        ]
+
+        ));
     }
 
     /**

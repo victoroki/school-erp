@@ -3,9 +3,9 @@
         <table class="table" id="library-members-table">
             <thead>
             <tr>
-                <th>User Id</th>
+                <th>User</th>
                 <th>Member Type</th>
-                <th>Reference Id</th>
+                <th>Reference</th>
                 <th>Membership Date</th>
                 <th>Max Allowed Books</th>
                 <th>Status</th>
@@ -22,13 +22,13 @@
                     <td>{{ $libraryMember->max_allowed_books }}</td>
                     <td>{{ $libraryMember->status }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['libraryMembers.destroy', $libraryMember->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['library-members.destroy', $libraryMember->member_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('libraryMembers.show', [$libraryMember->id]) }}"
+                            <a href="{{ route('library-members.show', [$libraryMember->member_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('libraryMembers.edit', [$libraryMember->id]) }}"
+                            <a href="{{ route('library-members.edit', [$libraryMember->member_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

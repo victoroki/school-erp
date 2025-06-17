@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::model($routeStop, ['route' => ['routeStops.update', $routeStop->id], 'method' => 'patch']) !!}
+            {!! Form::model($routeStop, ['route' => ['route-stops.update', $routeStop->stop_id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">
@@ -29,7 +29,7 @@
 
             <div class="card-footer">
                 {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('routeStops.index') }}" class="btn btn-default"> Cancel </a>
+                <a href="{{ route('route-stops.index') }}" class="btn btn-default"> Cancel </a>
             </div>
 
             {!! Form::close() !!}

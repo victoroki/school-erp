@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::open(['route' => 'staffDocuments.store']) !!}
+            {!! Form::open(['route' => 'staff-documents.store']) !!}
 
             <div class="card-body">
 
@@ -31,7 +31,7 @@
 
             <div class="card-footer">
                 {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('staffDocuments.index') }}" class="btn btn-default"> Cancel </a>
+                <a href="{{ route('staff-documents.index') }}" class="btn btn-default"> Cancel </a>
             </div>
 
             {!! Form::close() !!}

@@ -4,7 +4,7 @@
             <thead>
             <tr>
                 <th>Title</th>
-                <th>Department Id</th>
+                <th>Department </th>
                 <th>Description</th>
                 <th>Responsibilities</th>
                 <th>Qualifications</th>
@@ -22,13 +22,13 @@
                     <td>{{ $jobPosition->qualifications }}</td>
                     <td>{{ $jobPosition->is_active }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['jobPositions.destroy', $jobPosition->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['job-positions.destroy', $jobPosition->position_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('jobPositions.show', [$jobPosition->id]) }}"
+                            <a href="{{ route('job-positions.show', [$jobPosition->position_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('jobPositions.edit', [$jobPosition->id]) }}"
+                            <a href="{{ route('job-positions.edit', [$jobPosition->position_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

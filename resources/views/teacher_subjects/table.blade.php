@@ -3,10 +3,10 @@
         <table class="table" id="teacher-subjects-table">
             <thead>
             <tr>
-                <th>Staff Id</th>
-                <th>Subject Id</th>
-                <th>Class Section Id</th>
-                <th>Academic Year Id</th>
+                <th>Staff </th>
+                <th>Subject</th>
+                <th>Class Section</th>
+                <th>Academic Year</th>
                 <th colspan="3">Action</th>
             </tr>
             </thead>

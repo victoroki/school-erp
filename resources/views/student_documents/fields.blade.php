@@ -1,13 +1,13 @@
 <!-- Student Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('student_id', 'Student Id:') !!}
-    {!! Form::number('student_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('student_id', 'Student:') !!}
+    {!! Form::select('student_id', $students, null, ['class' => 'form-control', 'placeholder' => 'Select Student', 'required']) !!}
 </div>
 
 <!-- Document Type Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('document_type', 'Document Type:') !!}
-    {!! Form::text('document_type', null, ['class' => 'form-control', 'required', 'maxlength' => 50, 'maxlength' => 50]) !!}
+    {!! Form::select('document_type', $documentTypes, null, ['class' => 'form-control', 'placeholder' => 'Select Document Type', 'required']) !!}
 </div>
 
 <!-- Document Name Field -->
@@ -18,18 +18,13 @@
 
 <!-- File Path Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('file_path', 'File Path:') !!}
-    {!! Form::text('file_path', null, ['class' => 'form-control', 'required', 'maxlength' => 255, 'maxlength' => 255]) !!}
-</div>
-
-<!-- Uploaded At Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('uploaded_at', 'Uploaded At:') !!}
-    {!! Form::text('uploaded_at', null, ['class' => 'form-control','id'=>'uploaded_at']) !!}
+    {!! Form::label('document_file', 'Upload Document:') !!}
+    {!! Form::file('document_file', ['class' => 'form-control-file', 'accept' => '.pdf,.doc,.docx,.jpg,.jpeg,.png', 'required']) !!}
+    <small class="form-text text-muted">Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG (Max: 5MB)</small>
 </div>
 
 @push('page_scripts')
-    <script type="text/javascript">
-        $('#uploaded_at').datepicker()
-    </script>
+<script type="text/javascript">
+    $('#uploaded_at').datepicker()
+</script>
 @endpush

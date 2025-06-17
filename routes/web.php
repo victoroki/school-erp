@@ -71,3 +71,4 @@ Route::resource('expense-categories', App\Http\Controllers\ExpenseCategoriesCont
 Route::resource('library-members', App\Http\Controllers\LibraryMemberController::class);
 Route::resource('students', App\Http\Controllers\StudentController::class);
 Route::resource('student-class-enrollments', App\Http\Controllers\StudentClassEnrollmentController::class);
+Route::resource('staff', App\Http\Controllers\StaffController::class);

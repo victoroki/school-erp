@@ -1,19 +1,19 @@
 <!-- Student Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('student_id', 'Student Id:') !!}
-    {!! Form::number('student_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('student_id', 'Student :') !!}
+    {!! Form::select('student_id', $students, null, ['class' => 'form-control', 'placeholder' => 'Select Student']) !!}
 </div>
 
 <!-- Hostel Id Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('hostel_id', 'Hostel Id:') !!}
-    {!! Form::number('hostel_id', null, ['class' => 'form-control']) !!}
+    {!! Form::select('hostel_id', $hostels, null, ['class' => 'form-control', 'placeholder' => 'Select Hostel']) !!}
 </div>
 
 <!-- Room Id Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('room_id', 'Room Id:') !!}
-    {!! Form::number('room_id', null, ['class' => 'form-control']) !!}
+    {!! Form::select('room_id', $room, null, ['class' => 'form-control', 'placeholder' => 'Select Room']) !!}
 </div>
 
 <!-- Bed Number Field -->
@@ -55,5 +55,5 @@
 <!-- Academic Year Id Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('academic_year_id', 'Academic Year Id:') !!}
-    {!! Form::number('academic_year_id', null, ['class' => 'form-control']) !!}
+    {!! Form::select('academic_year_id', $academicYear, null, ['class' => 'form-control', 'placeholder' => 'Select Academic Year']) !!}
 </div>

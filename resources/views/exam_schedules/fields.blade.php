@@ -1,19 +1,19 @@
 <!-- Exam Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('exam_id', 'Exam Id:') !!}
-    {!! Form::number('exam_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('exam_id', 'Exam:') !!}
+    {!! Form::select('exam_id', $exams, null, ['class' => 'form-control', 'placeholder' => 'Exams']) !!}
 </div>
 
 <!-- Class Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('class_id', 'Class Id:') !!}
-    {!! Form::number('class_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('class_id', 'Class:') !!}
+    {!! Form::select('class_id', $classes, null, ['class' => 'form-control', 'placeholder' => 'Class']) !!}
 </div>
 
 <!-- Subject Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('subject_id', 'Subject Id:') !!}
-    {!! Form::number('subject_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('subject_id', 'Subject:') !!}
+    {!! Form::select('subject_id', $subjects,  null, ['class' => 'form-control', 'placeholder' => 'Subjects']) !!}
 </div>
 
 <!-- Exam Date Field -->
@@ -40,11 +40,11 @@
     {!! Form::text('end_time', null, ['class' => 'form-control', 'required']) !!}
 </div>
 
-<!-- Room Id Field -->
+<!-- Room Id Field
 <div class="form-group col-sm-6">
-    {!! Form::label('room_id', 'Room Id:') !!}
-    {!! Form::number('room_id', null, ['class' => 'form-control']) !!}
-</div>
+    {!! Form::label('room_id', 'Room :') !!}
+    {!! Form::number('room_id',  null, ['class' => 'form-control']) !!}
+</div> -->
 
 <!-- Max Marks Field -->
 <div class="form-group col-sm-6">

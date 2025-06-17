@@ -1,7 +1,7 @@
 <!-- Hostel Id Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('hostel_id', 'Hostel Id:') !!}
-    {!! Form::number('hostel_id', null, ['class' => 'form-control']) !!}
+    {!! Form::select('hostel_id', $hostel, null, ['class' => 'form-control', 'placeholder' => 'Select Hostel']) !!}
 </div>
 
 <!-- Room Number Field -->

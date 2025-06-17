@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateStaffDocumentRequest;
 use App\Http\Requests\UpdateStaffDocumentRequest;
 use App\Http\Controllers\AppBaseController;
+use App\Models\Staff;
 use App\Repositories\StaffDocumentRepository;
 use Illuminate\Http\Request;
 use Flash;
@@ -17,6 +18,15 @@ class StaffDocumentController extends AppBaseController
     public function __construct(StaffDocumentRepository $staffDocumentRepo)
     {
         $this->staffDocumentRepository = $staffDocumentRepo;
+    }
+
+        private function getDropdownData()
+    {
+        return [
+            'staffs' => Staff::selectRaw("staff_id, CONCAT(first_name, ' ', last_name, ' - ', staff_id) as full_name")
+                ->pluck('full_name', 'staff_id')
+                ->toArray(),
+        ];
     }
 
     /**
@@ -35,7 +45,8 @@ class StaffDocumentController extends AppBaseController
      */
     public function create()
     {
-        return view('staff_documents.create');
+        $dropdownData = $this->getDropdownData();
+        return view('staff_documents.create',  $dropdownData);
     }
 
     /**
@@ -81,7 +92,10 @@ class StaffDocumentController extends AppBaseController
             return redirect(route('staffDocuments.index'));
         }
 
-        return view('staff_documents.edit')->with('staffDocument', $staffDocument);
+        return view('staff_documents.edit', array_merge([
+            'staffDocument'=> $staffDocument,
+            $dropdownData
+        ]));
     }
 
     /**

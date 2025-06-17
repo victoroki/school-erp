@@ -6,8 +6,8 @@
 
 <!-- Category Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('category_id', 'Category Id:') !!}
-    {!! Form::number('category_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('category_id', 'Category:') !!}
+    {!! Form::select('category_id', $category, null, ['class' => 'form-control', 'placeholder' => 'Select Category']) !!}
 </div>
 
 <!-- Quantity Field -->
@@ -37,7 +37,7 @@
 <!-- Supplier Id Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('supplier_id', 'Supplier Id:') !!}
-    {!! Form::number('supplier_id', null, ['class' => 'form-control']) !!}
+    {!! Form::select('supplier_id', $suppliers, null, ['class' => 'form-control', 'placeholder' => 'Select Supplier']) !!}
 </div>
 
 <!-- Location Field -->

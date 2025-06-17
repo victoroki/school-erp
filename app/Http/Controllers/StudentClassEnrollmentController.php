@@ -5,9 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateStudentClassEnrollmentRequest;
 use App\Http\Requests\UpdateStudentClassEnrollmentRequest;
 use App\Http\Controllers\AppBaseController;
+use App\Models\ClassSection;
+use App\Models\Student;
+use App\Models\AcademicYear;
 use App\Repositories\StudentClassEnrollmentRepository;
 use Illuminate\Http\Request;
 use Flash;
+use DB;
 
 class StudentClassEnrollmentController extends AppBaseController
 {
@@ -17,6 +21,27 @@ class StudentClassEnrollmentController extends AppBaseController
     public function __construct(StudentClassEnrollmentRepository $studentClassEnrollmentRepo)
     {
         $this->studentClassEnrollmentRepository = $studentClassEnrollmentRepo;
+    }
+
+    private function getDropdownData(){
+        return [
+            'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' (', student_id, ')') as full_name")
+                ->pluck('full_name', 'id')
+                ->toArray(),
+            'classSections' => ClassSection::with(['class', 'section', 'academicYear'])
+                ->get()
+                ->pluck('display_name', 'id')
+                ->toArray(),
+            'academicYears' => AcademicYear::pluck('name', 'academic_year_id')//where('status', 'active')
+                ->toArray(),
+            'statusOptions' => [
+                'active' => 'Active',
+                'inactive' => 'Inactive',
+                'transferred' => 'Transferred',
+                'graduated' => 'Graduated',
+                'dropped' => 'Dropped'
+            ]
+        ];
     }
 
     /**
@@ -35,7 +60,9 @@ class StudentClassEnrollmentController extends AppBaseController
      */
     public function create()
     {
-        return view('student_class_enrollments.create');
+        $dropdownData = $this->getDropdownData();
+        
+        return view('student_class_enrollments.create', $dropdownData);
     }
 
     /**
@@ -49,7 +76,7 @@ class StudentClassEnrollmentController extends AppBaseController
 
         Flash::success('Student Class Enrollment saved successfully.');
 
-        return redirect(route('studentClassEnrollments.index'));
+        return redirect(route('student-class-enrollments.index'));
     }
 
     /**
@@ -62,7 +89,7 @@ class StudentClassEnrollmentController extends AppBaseController
         if (empty($studentClassEnrollment)) {
             Flash::error('Student Class Enrollment not found');
 
-            return redirect(route('studentClassEnrollments.index'));
+            return redirect(route('student-class-enrollments.index'));
         }
 
         return view('student_class_enrollments.show')->with('studentClassEnrollment', $studentClassEnrollment);
@@ -78,10 +105,14 @@ class StudentClassEnrollmentController extends AppBaseController
         if (empty($studentClassEnrollment)) {
             Flash::error('Student Class Enrollment not found');
 
-            return redirect(route('studentClassEnrollments.index'));
+            return redirect(route('student-class-enrollments.index'));
         }
 
-        return view('student_class_enrollments.edit')->with('studentClassEnrollment', $studentClassEnrollment);
+        $dropdownData = $this->getDropdownData();
+
+        return view('student_class_enrollments.edit')
+            ->with('studentClassEnrollment', $studentClassEnrollment)
+            ->with($dropdownData);
     }
 
     /**
@@ -94,14 +125,14 @@ class StudentClassEnrollmentController extends AppBaseController
         if (empty($studentClassEnrollment)) {
             Flash::error('Student Class Enrollment not found');
 
-            return redirect(route('studentClassEnrollments.index'));
+            return redirect(route('student-class-enrollments.index'));
         }
 
         $studentClassEnrollment = $this->studentClassEnrollmentRepository->update($request->all(), $id);
 
         Flash::success('Student Class Enrollment updated successfully.');
 
-        return redirect(route('studentClassEnrollments.index'));
+        return redirect(route('student-class-enrollments.index'));
     }
 
     /**
@@ -116,13 +147,13 @@ class StudentClassEnrollmentController extends AppBaseController
         if (empty($studentClassEnrollment)) {
             Flash::error('Student Class Enrollment not found');
 
-            return redirect(route('studentClassEnrollments.index'));
+            return redirect(route('student-class-enrollments.index'));
         }
 
         $this->studentClassEnrollmentRepository->delete($id);
 
         Flash::success('Student Class Enrollment deleted successfully.');
 
-        return redirect(route('studentClassEnrollments.index'));
+        return redirect(route('student-class-enrollments.index'));
     }
 }

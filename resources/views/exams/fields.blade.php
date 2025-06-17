@@ -1,7 +1,7 @@
 <!-- Exam Type Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('exam_type_id', 'Exam Type Id:') !!}
-    {!! Form::number('exam_type_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('exam_type_id', 'Exam Type :') !!}
+    {!! Form::select('exam_type_id', $examtypes, null, ['class' => 'form-control', 'placeholder'=>'Exam Type']) !!}
 </div>
 
 <!-- Name Field -->
@@ -19,7 +19,7 @@
 <!-- Academic Year Id Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('academic_year_id', 'Academic Year Id:') !!}
-    {!! Form::number('academic_year_id', null, ['class' => 'form-control']) !!}
+    {!! Form::select('academic_year_id', $academicYear, null, ['class' => 'form-control', 'placeholder'=>'Academic Year']) !!}
 </div>
 
 <!-- Start Date Field -->

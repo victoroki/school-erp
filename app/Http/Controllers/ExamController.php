@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use Flash;
+use App\Models\ExamType;
+use Illuminate\Http\Request;
+use App\Repositories\ExamRepository;
 use App\Http\Requests\CreateExamRequest;
 use App\Http\Requests\UpdateExamRequest;
 use App\Http\Controllers\AppBaseController;
-use App\Repositories\ExamRepository;
-use Illuminate\Http\Request;
-use Flash;
+use App\Models\AcademicYear;
 
 class ExamController extends AppBaseController
 {
@@ -19,6 +21,13 @@ class ExamController extends AppBaseController
         $this->examRepository = $examRepo;
     }
 
+    private function getDropdownData()
+    {
+        return [
+            'examtypes' => ExamType::pluck('name', 'exam_type_id'),
+            'academicYear' => AcademicYear::pluck('name', 'academic_year_id')
+        ];
+    }
     /**
      * Display a listing of the Exam.
      */
@@ -35,7 +44,8 @@ class ExamController extends AppBaseController
      */
     public function create()
     {
-        return view('exams.create');
+        $dropdownData = $this->getDropdownData();
+        return view('exams.create', $dropdownData);
     }
 
     /**
@@ -74,6 +84,7 @@ class ExamController extends AppBaseController
     public function edit($id)
     {
         $exam = $this->examRepository->find($id);
+        $dropdownData = $this->getDropdownData();
 
         if (empty($exam)) {
             Flash::error('Exam not found');
@@ -81,7 +92,7 @@ class ExamController extends AppBaseController
             return redirect(route('exams.index'));
         }
 
-        return view('exams.edit')->with('exam', $exam);
+        return view('exams.edit', array_merge(['exam' => $exam], $dropdownData));
     }
 
     /**

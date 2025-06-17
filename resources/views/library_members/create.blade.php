@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::open(['route' => 'libraryMembers.store']) !!}
+            {!! Form::open(['route' => 'library-members.store']) !!}
 
             <div class="card-body">
 
@@ -31,7 +31,7 @@
 
             <div class="card-footer">
                 {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('libraryMembers.index') }}" class="btn btn-default"> Cancel </a>
+                <a href="{{ route('library-members.index') }}" class="btn btn-default"> Cancel </a>
             </div>
 
             {!! Form::close() !!}

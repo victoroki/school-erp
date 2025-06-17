@@ -19,6 +19,6 @@
 <!-- Is Elective Field -->
 <div class="col-sm-12">
     {!! Form::label('is_elective', 'Is Elective:') !!}
-    <p>{{ $subject->is_elective }}</p>
+    <p>{{ $subject->is_elective ? 'Yes':'no' }}</p>
 </div>
 

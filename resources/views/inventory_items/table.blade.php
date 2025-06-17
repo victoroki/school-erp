@@ -4,12 +4,12 @@
             <thead>
             <tr>
                 <th>Name</th>
-                <th>Category Id</th>
+                <th>Category</th>
                 <th>Quantity</th>
                 <th>Unit</th>
                 <th>Minimum Quantity</th>
                 <th>Cost Per Unit</th>
-                <th>Supplier Id</th>
+                <th>Supplier</th>
                 <th>Location</th>
                 <th>Description</th>
                 <th colspan="3">Action</th>
@@ -28,13 +28,13 @@
                     <td>{{ $inventoryItem->location }}</td>
                     <td>{{ $inventoryItem->description }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['inventoryItems.destroy', $inventoryItem->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['inventory-items.destroy', $inventoryItem->item_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('inventoryItems.show', [$inventoryItem->id]) }}"
+                            <a href="{{ route('inventory-items.show', [$inventoryItem->item_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('inventoryItems.edit', [$inventoryItem->id]) }}"
+                            <a href="{{ route('inventory-items.edit', [$inventoryItem->item_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

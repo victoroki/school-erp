@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateJobPositionRequest;
 use App\Http\Requests\UpdateJobPositionRequest;
 use App\Http\Controllers\AppBaseController;
+use App\Models\Department;
 use App\Repositories\JobPositionRepository;
 use Illuminate\Http\Request;
 use Flash;
@@ -30,12 +31,19 @@ class JobPositionController extends AppBaseController
             ->with('jobPositions', $jobPositions);
     }
 
+    private function getdropdownData(){
+        return[
+            'department' => Department::pluck('name', 'department_id')
+        ];
+    }
+
     /**
      * Show the form for creating a new JobPosition.
      */
     public function create()
     {
-        return view('job_positions.create');
+        $dropdownData = $this->getdropdownData();
+        return view('job_positions.create', $dropdownData);
     }
 
     /**
@@ -74,14 +82,19 @@ class JobPositionController extends AppBaseController
     public function edit($id)
     {
         $jobPosition = $this->jobPositionRepository->find($id);
-
+        $dropdownData = $this->getdropdownData();
         if (empty($jobPosition)) {
             Flash::error('Job Position not found');
 
             return redirect(route('jobPositions.index'));
         }
 
-        return view('job_positions.edit')->with('jobPosition', $jobPosition);
+        return view('job_positions.edit', array_merge(
+            [
+                'jobPosition', $jobPosition,
+                $dropdownData
+            ]
+        ));
     }
 
     /**
