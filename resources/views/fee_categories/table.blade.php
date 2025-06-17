@@ -14,13 +14,13 @@
                     <td>{{ $feeCategory->name }}</td>
                     <td>{{ $feeCategory->description }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['feeCategories.destroy', $feeCategory->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['fee-categories.destroy', $feeCategory->category_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('feeCategories.show', [$feeCategory->id]) }}"
+                            <a href="{{ route('fee-categories.show', [$feeCategory->category_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('feeCategories.edit', [$feeCategory->id]) }}"
+                            <a href="{{ route('fee-categories.edit', [$feeCategory->category_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

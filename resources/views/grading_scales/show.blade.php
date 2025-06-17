@@ -11,7 +11,7 @@ Grading Scale Details
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right"
-                       href="{{ route('gradingScales.index') }}">
+                       href="{{ route('grading-scales.index') }}">
                                                     Back
                                             </a>
                 </div>

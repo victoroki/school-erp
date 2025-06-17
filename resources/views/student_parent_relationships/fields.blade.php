@@ -1,13 +1,13 @@
 <!-- Student Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('student_id', 'Student Id:') !!}
-    {!! Form::number('student_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('student_id', 'Student:') !!}
+    {!! Form::select('student_id', $students, null, ['class' => 'form-control', 'placeholder' => 'Select Student']) !!}
 </div>
 
 <!-- Parent Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('parent_id', 'Parent Id:') !!}
-    {!! Form::number('parent_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('parent_id', 'Parent:') !!}
+    {!! Form::select('parent_id', $parents, null, ['class' => 'form-control', 'placeholder' => 'Select Parent']) !!}
 </div>
 
 <!-- Is Primary Contact Field -->

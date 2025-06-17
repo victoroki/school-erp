@@ -3,11 +3,11 @@
         <table class="table" id="class-sections-table">
             <thead>
             <tr>
-                <th>Academic Year Id</th>
-                <th>Class Id</th>
-                <th>Section Id</th>
-                <th>Classroom Id</th>
-                <th>Class Teacher Id</th>
+                <th>Academic Year </th>
+                <th>Class </th>
+                <th>Section </th>
+                <th>Classroom </th>
+                <th>Class Teacher</th>
                 <th colspan="3">Action</th>
             </tr>
             </thead>

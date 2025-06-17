@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateBookRequest;
 use App\Http\Requests\UpdateBookRequest;
 use App\Http\Controllers\AppBaseController;
+use App\Models\BookCategory;
 use App\Repositories\BookRepository;
 use Illuminate\Http\Request;
 use Flash;
@@ -17,6 +18,12 @@ class BookController extends AppBaseController
     public function __construct(BookRepository $bookRepo)
     {
         $this->bookRepository = $bookRepo;
+    }
+
+    private function getDropdownData(){
+        return[
+            'bkCategory' => BookCategory::pluck('name',  'category_id')
+        ];
     }
 
     /**
@@ -35,7 +42,8 @@ class BookController extends AppBaseController
      */
     public function create()
     {
-        return view('books.create');
+        $dropdowndata = $this->getDropdownData();
+        return view('books.create', $dropdowndata);
     }
 
     /**
@@ -74,6 +82,7 @@ class BookController extends AppBaseController
     public function edit($id)
     {
         $book = $this->bookRepository->find($id);
+        $dropdowndata = $this->getDropdownData();
 
         if (empty($book)) {
             Flash::error('Book not found');
@@ -81,7 +90,7 @@ class BookController extends AppBaseController
             return redirect(route('books.index'));
         }
 
-        return view('books.edit')->with('book', $book);
+        return view('books.edit', array_merge('book', $book,$dropdowndata));
     }
 
     /**

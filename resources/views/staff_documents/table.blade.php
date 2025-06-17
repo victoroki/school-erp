@@ -3,7 +3,7 @@
         <table class="table" id="staff-documents-table">
             <thead>
             <tr>
-                <th>Staff Id</th>
+                <th>Staff </th>
                 <th>Document Type</th>
                 <th>Document Name</th>
                 <th>File Path</th>

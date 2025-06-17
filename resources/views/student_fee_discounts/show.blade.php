@@ -11,7 +11,7 @@ Student Fee Discount Details
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right"
-                       href="{{ route('studentFeeDiscounts.index') }}">
+                       href="{{ route('student-fee-discounts.index') }}">
                                                     Back
                                             </a>
                 </div>

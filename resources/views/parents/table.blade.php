@@ -3,7 +3,6 @@
         <table class="table" id="parents-table">
             <thead>
             <tr>
-                <th>User Id</th>
                 <th>First Name</th>
                 <th>Last Name</th>
                 <th>Relationship</th>
@@ -17,7 +16,6 @@
             <tbody>
             @foreach($parents as $parents)
                 <tr>
-                    <td>{{ $parents->user_id }}</td>
                     <td>{{ $parents->first_name }}</td>
                     <td>{{ $parents->last_name }}</td>
                     <td>{{ $parents->relationship }}</td>

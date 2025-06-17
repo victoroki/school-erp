@@ -25,12 +25,12 @@
 <!-- Has Sockets Field -->
 <div class="col-sm-12">
     {!! Form::label('has_sockets', 'Has Sockets:') !!}
-    <p>{{ $classroom->has_sockets }}</p>
+    <p>{{ $classroom->has_sockets ? 'Yes' : 'No' }}</p>
 </div>
 
 <!-- Has Whiteboard Field -->
 <div class="col-sm-12">
     {!! Form::label('has_whiteboard', 'Has Whiteboard:') !!}
-    <p>{{ $classroom->has_whiteboard }}</p>
+    <p>{{ $classroom->has_whiteboard ? 'Yes' : 'No' }}</p>
 </div>
 

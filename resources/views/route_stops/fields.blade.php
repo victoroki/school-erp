@@ -1,7 +1,7 @@
 <!-- Route Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('route_id', 'Route Id:') !!}
-    {!! Form::number('route_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('route_id', 'Route:') !!}
+    {!! Form::select('route_id', $route, null, ['class' => 'form-control', 'placeholder' => 'Select Route']) !!}
 </div>
 
 <!-- Stop Name Field -->

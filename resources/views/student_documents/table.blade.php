@@ -3,11 +3,10 @@
         <table class="table" id="student-documents-table">
             <thead>
             <tr>
-                <th>Student Id</th>
+                <th>Student </th>
                 <th>Document Type</th>
                 <th>Document Name</th>
-                <th>File Path</th>
-                <th>Uploaded At</th>
+                <th>File</th>
                 <th colspan="3">Action</th>
             </tr>
             </thead>
@@ -18,7 +17,6 @@
                     <td>{{ $studentDocument->document_type }}</td>
                     <td>{{ $studentDocument->document_name }}</td>
                     <td>{{ $studentDocument->file_path }}</td>
-                    <td>{{ $studentDocument->uploaded_at }}</td>
                     <td  style="width: 120px">
                         {!! Form::open(['route' => ['studentDocuments.destroy', $studentDocument->id], 'method' => 'delete']) !!}
                         <div class='btn-group'>

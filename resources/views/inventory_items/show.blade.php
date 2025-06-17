@@ -11,7 +11,7 @@ Inventory Item Details
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right"
-                       href="{{ route('inventoryItems.index') }}">
+                       href="{{ route('inventory-items.index') }}">
                                                     Back
                                             </a>
                 </div>

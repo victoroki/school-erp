@@ -1,7 +1,7 @@
 <!-- Class Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('class_id', 'Class Id:') !!}
-    {!! Form::number('class_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('class', 'Class Id:') !!}
+    {!! Form::select('class_id', $classes, null, ['class' => 'form-control', 'placeholder' => 'Select Class']) !!}
 </div>
 
 <!-- Name Field -->

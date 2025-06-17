@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CreateHostelAllocationRequest;
-use App\Http\Requests\UpdateHostelAllocationRequest;
+use Flash;
+use App\Models\Student;
+use Illuminate\Http\Request;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\HostelAllocationRepository;
-use Illuminate\Http\Request;
-use Flash;
+use App\Http\Requests\CreateHostelAllocationRequest;
+use App\Http\Requests\UpdateHostelAllocationRequest;
+use App\Models\AcademicYear;
+use App\Models\Hostel;
+use App\Models\HostelRoom;
 
 class HostelAllocationController extends AppBaseController
 {
@@ -17,6 +21,19 @@ class HostelAllocationController extends AppBaseController
     public function __construct(HostelAllocationRepository $hostelAllocationRepo)
     {
         $this->hostelAllocationRepository = $hostelAllocationRepo;
+    }
+
+        private function getDropdownData()
+    {
+        return [
+            'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' (', student_id, ')') as full_name")
+                ->pluck('full_name', 'id')
+                ->toArray(),
+            'hostels' => Hostel::pluck('name', 'hostel_id'),
+            'room' => HostelRoom::pluck('room_number', 'room_id'),
+            'academicYear' => AcademicYear::pluck('name', 'academic_year_id')
+
+        ];
     }
 
     /**
@@ -35,7 +52,8 @@ class HostelAllocationController extends AppBaseController
      */
     public function create()
     {
-        return view('hostel_allocations.create');
+        $dropdownData = $this->getDropdownData();
+        return view('hostel_allocations.create', $dropdownData);
     }
 
     /**
@@ -73,6 +91,7 @@ class HostelAllocationController extends AppBaseController
      */
     public function edit($id)
     {
+        $dropdownData = $this->getDropdownData();
         $hostelAllocation = $this->hostelAllocationRepository->find($id);
 
         if (empty($hostelAllocation)) {
@@ -81,7 +100,10 @@ class HostelAllocationController extends AppBaseController
             return redirect(route('hostelAllocations.index'));
         }
 
-        return view('hostel_allocations.edit')->with('hostelAllocation', $hostelAllocation);
+        return view('hostel_allocations.edit', array_merge([
+            'hostelAllocation'=> $hostelAllocation,
+            $dropdownData
+        ]));
     }
 
     /**

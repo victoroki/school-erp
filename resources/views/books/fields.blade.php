@@ -12,8 +12,8 @@
 
 <!-- Category Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('category_id', 'Category Id:') !!}
-    {!! Form::number('category_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('category_id', 'Category :') !!}
+    {!! Form::select('category_id', $bkCategory, null, ['class' => 'form-control', 'placeholder' => 'Select Book Category']) !!}
 </div>
 
 <!-- Isbn Field -->

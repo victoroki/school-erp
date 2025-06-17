@@ -1,41 +1,47 @@
-<!-- Student Id Field -->
+<!-- Student Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('student_id', 'Student Id:') !!}
-    {!! Form::number('student_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('student_id', 'Student:') !!}
+    {!! Form::select('student_id', ['' => 'Select Student'] + $students, null, ['class' => 'form-control select2', 'required']) !!}
 </div>
 
-<!-- Class Section Id Field -->
+<!-- Class Section Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('class_section_id', 'Class Section Id:') !!}
-    {!! Form::number('class_section_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('class_section_id', 'Class Section:') !!}
+    {!! Form::select('class_section_id', ['' => 'Select Class Section'] + $classSections, null, ['class' => 'form-control select2', 'required']) !!}
 </div>
 
 <!-- Roll Number Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('roll_number', 'Roll Number:') !!}
-    {!! Form::text('roll_number', null, ['class' => 'form-control', 'maxlength' => 20, 'maxlength' => 20]) !!}
+    {!! Form::text('roll_number', null, ['class' => 'form-control', 'maxlength' => 20, 'placeholder' => 'Enter roll number']) !!}
 </div>
 
-<!-- Academic Year Id Field -->
+<!-- Academic Year Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('academic_year_id', 'Academic Year Id:') !!}
-    {!! Form::number('academic_year_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('academic_year_id', 'Academic Year:') !!}
+    {!! Form::select('academic_year_id', ['' => 'Select Academic Year'] + $academicYears, null, ['class' => 'form-control', 'required']) !!}
 </div>
 
 <!-- Enrollment Date Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('enrollment_date', 'Enrollment Date:') !!}
-    {!! Form::text('enrollment_date', null, ['class' => 'form-control','id'=>'enrollment_date']) !!}
+    {!! Form::date('enrollment_date', null, ['class' => 'form-control', 'required']) !!}
 </div>
-
-@push('page_scripts')
-    <script type="text/javascript">
-        $('#enrollment_date').datepicker()
-    </script>
-@endpush
 
 <!-- Status Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('status', 'Status:') !!}
-    {!! Form::text('status', null, ['class' => 'form-control']) !!}
+    {!! Form::select('status', ['' => 'Select Status'] + $statusOptions, 'active', ['class' => 'form-control', 'required']) !!}
 </div>
+
+@push('page_scripts')
+    <script type="text/javascript">
+        $(document).ready(function() {
+            // Initialize Select2 for better dropdown experience
+            $('.select2').select2({
+                placeholder: "Select an option",
+                allowClear: true
+            });
+        });
+    </script>
+@endpush

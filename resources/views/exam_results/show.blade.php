@@ -11,7 +11,7 @@ Exam Result Details
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right"
-                       href="{{ route('examResults.index') }}">
+                       href="{{ route('exam-results.index') }}">
                                                     Back
                                             </a>
                 </div>

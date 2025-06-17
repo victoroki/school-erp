@@ -20,13 +20,13 @@
                     <td>{{ $gradingScale->grade_point }}</td>
                     <td>{{ $gradingScale->description }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['gradingScales.destroy', $gradingScale->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['grading-scales.destroy', $gradingScale->id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('gradingScales.show', [$gradingScale->id]) }}"
+                            <a href="{{ route('gradingScales.show', [$gradingScale->grade_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('gradingScales.edit', [$gradingScale->id]) }}"
+                            <a href="{{ route('gradingScales.edit', [$grading-scale->grade_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

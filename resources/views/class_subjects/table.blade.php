@@ -3,9 +3,9 @@
         <table class="table" id="class-subjects-table">
             <thead>
             <tr>
-                <th>Class Id</th>
-                <th>Subject Id</th>
-                <th>Academic Year Id</th>
+                <th>Class </th>
+                <th>Subject </th>
+                <th>Academic Year </th>
                 <th colspan="3">Action</th>
             </tr>
             </thead>
@@ -16,13 +16,13 @@
                     <td>{{ $classSubject->subject_id }}</td>
                     <td>{{ $classSubject->academic_year_id }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['classSubjects.destroy', $classSubject->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['class-subjects.destroy', $classSubject->class_subject_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('classSubjects.show', [$classSubject->id]) }}"
+                            <a href="{{ route('class-subjects.show', [$classSubject->class_subject_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('classSubjects.edit', [$classSubject->id]) }}"
+                            <a href="{{ route('class-subjects.edit', [$classSubject->class_subject_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

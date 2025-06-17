@@ -3,7 +3,7 @@
         <table class="table" id="route-stops-table">
             <thead>
             <tr>
-                <th>Route Id</th>
+                <th>Route </th>
                 <th>Stop Name</th>
                 <th>Stop Time</th>
                 <th>Sequence</th>
@@ -18,13 +18,13 @@
                     <td>{{ $routeStop->stop_time }}</td>
                     <td>{{ $routeStop->sequence }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['routeStops.destroy', $routeStop->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['route-stops.destroy', $routeStop->stop_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('routeStops.show', [$routeStop->id]) }}"
+                            <a href="{{ route('route-stops.show', [$routeStop->stop_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('routeStops.edit', [$routeStop->id]) }}"
+                            <a href="{{ route('route-stops.edit', [$routeStop->stop_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

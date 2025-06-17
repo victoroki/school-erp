@@ -4,7 +4,7 @@
             <thead>
             <tr>
                 <th>Name</th>
-                <th>Numeric Value</th>
+                <!-- <th>Numeric Value</th> -->
                 <th>Description</th>
                 <th colspan="3">Action</th>
             </tr>
@@ -13,16 +13,16 @@
             @foreach($schoolClasses as $schoolClass)
                 <tr>
                     <td>{{ $schoolClass->name }}</td>
-                    <td>{{ $schoolClass->numeric_value }}</td>
+                    <!-- <td>{{ $schoolClass->numeric_value }}</td> -->
                     <td>{{ $schoolClass->description }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['schoolClasses.destroy', $schoolClass->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['school-classes.destroy', $schoolClass->class_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('schoolClasses.show', [$schoolClass->id]) }}"
+                            <a href="{{ route('school-classes.show', [$schoolClass->class_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('schoolClasses.edit', [$schoolClass->id]) }}"
+                            <a href="{{ route('school-classes.edit', [$schoolClass->class_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

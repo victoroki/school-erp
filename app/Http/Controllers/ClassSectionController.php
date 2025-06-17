@@ -35,7 +35,23 @@ class ClassSectionController extends AppBaseController
      */
     public function create()
     {
-        return view('class_sections.create');
+        // Get all dropdown data
+        $academicYears = \App\Models\AcademicYear::pluck('name', 'academic_year_id');
+        $classes = \App\Models\SchoolClass::pluck('name', 'class_id');
+        $sections = \App\Models\Section::pluck('name', 'section_id');
+        $classrooms = \App\Models\Classroom::pluck('room_number', 'classroom_id');
+        $teachers = \App\Models\Staff::where('staff_type', 'teacher') // or 'is_teaching', true, etc.
+        ->get()
+        ->mapWithKeys(function ($staff) {
+            return [$staff->staff_id => $staff->first_name . ' ' . $staff->last_name];
+        });
+        
+        return view('class_sections.create')
+            ->with('academicYears', $academicYears)
+            ->with('classes', $classes)
+            ->with('sections', $sections)
+            ->with('classrooms', $classrooms)
+            ->with('teachers', $teachers);
     }
 
     /**
@@ -81,7 +97,24 @@ class ClassSectionController extends AppBaseController
             return redirect(route('classSections.index'));
         }
 
-        return view('class_sections.edit')->with('classSection', $classSection);
+        // Get all dropdown data for edit form
+        $academicYears = \App\Models\AcademicYear::pluck('name', 'academic_year_id');
+        $classes = \App\Models\SchoolClass::pluck('name', 'class_id');
+        $sections = \App\Models\Section::pluck('name', 'section_id');
+        $classrooms = \App\Models\Classroom::pluck('room_number', 'classroom_id');
+        $teachers = \App\Models\Staff::where('staff_type', 'teacher') // or 'is_teaching', true, etc.
+        ->get()
+        ->mapWithKeys(function ($staff) {
+            return [$staff->staff_id => $staff->first_name . ' ' . $staff->last_name];
+        });
+
+        return view('class_sections.edit')
+            ->with('classSection', $classSection)
+            ->with('academicYears', $academicYears)
+            ->with('classes', $classes)
+            ->with('sections', $sections)
+            ->with('classrooms', $classrooms)
+            ->with('teachers', $teachers);
     }
 
     /**

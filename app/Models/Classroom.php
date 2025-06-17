@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Classroom extends Model
 {
     public $table = 'classrooms';
+    protected $primaryKey = 'classroom_id';
 
     public $fillable = [
         'room_number',

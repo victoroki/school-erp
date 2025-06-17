@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateHostelRoomRequest;
 use App\Http\Requests\UpdateHostelRoomRequest;
 use App\Http\Controllers\AppBaseController;
+use App\Models\Hostel;
 use App\Repositories\HostelRoomRepository;
 use Illuminate\Http\Request;
 use Flash;
@@ -17,6 +18,11 @@ class HostelRoomController extends AppBaseController
     public function __construct(HostelRoomRepository $hostelRoomRepo)
     {
         $this->hostelRoomRepository = $hostelRoomRepo;
+    }
+    private function getDropdownData(){
+        return[
+            'hostel' => Hostel::pluck('name', 'hostel_id')
+        ];
     }
 
     /**
@@ -35,7 +41,8 @@ class HostelRoomController extends AppBaseController
      */
     public function create()
     {
-        return view('hostel_rooms.create');
+        $dropdown = $this->getDropdownData();
+        return view('hostel_rooms.create', $dropdown);
     }
 
     /**
@@ -58,6 +65,7 @@ class HostelRoomController extends AppBaseController
     public function show($id)
     {
         $hostelRoom = $this->hostelRoomRepository->find($id);
+        $dropdown = $this->getDropdownData();
 
         if (empty($hostelRoom)) {
             Flash::error('Hostel Room not found');
@@ -65,7 +73,10 @@ class HostelRoomController extends AppBaseController
             return redirect(route('hostelRooms.index'));
         }
 
-        return view('hostel_rooms.show')->with('hostelRoom', $hostelRoom);
+        return view('hostel_rooms.show', array_merge([
+            'hostelRoom', $hostelRoom,
+            $dropdown
+        ]));
     }
 
     /**

@@ -3,7 +3,7 @@
         <table class="table" id="expenses-table">
             <thead>
             <tr>
-                <th>Category Id</th>
+                <th>Category</th>
                 <th>Amount</th>
                 <th>Expense Date</th>
                 <th>Description</th>

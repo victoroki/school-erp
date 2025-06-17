@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ClassSection extends Model
 {
     public $table = 'class_sections';
+    protected $primaryKey = 'class_section_id';
 
     public $fillable = [
         'academic_year_id',

@@ -14,9 +14,9 @@
                 @foreach($academicYears as $academicYear)
                 <tr>
                     <td>{{ $academicYear->name }}</td>
-                    <td>{{ $academicYear->start_date }}</td>
-                    <td>{{ $academicYear->end_date }}</td>
-                    <td>{{ $academicYear->is_current }}</td>
+                    <td>{{ $academicYear->start_date->format('Y-m-d') }}</td>
+                    <td>{{ $academicYear->end_date->format('Y-m-d') }}</td>
+                    <td>{{ $academicYear->is_current ? 'Yes':'No' }}</td>
                     <td style="width: 120px">
                         {!! Form::open(['route' => ['academic-years.destroy', $academicYear->academic_year_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>

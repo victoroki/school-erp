@@ -6,6 +6,8 @@ use App\Http\Requests\CreatePayrollRequest;
 use App\Http\Requests\UpdatePayrollRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\PayrollRepository;
+use App\Models\Staff;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -35,7 +37,69 @@ class PayrollController extends AppBaseController
      */
     public function create()
     {
-        return view('payrolls.create');
+        // Get data for dropdowns
+        $staff = Staff::selectRaw("staff_id, CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name, ' (', employee_id, ')') as full_name")
+                     ->where('status', 'active')
+                     ->pluck('full_name', 'staff_id')
+                     ->prepend('Select Staff Member', '');
+        
+        $salaries = \DB::table('staff_salary')
+                      ->join('staff', 'staff_salary.staff_id', '=', 'staff.staff_id')
+                      ->selectRaw("staff_salary.salary_id, CONCAT(staff.first_name, ' ', staff.last_name, ' - ₹', staff_salary.basic_salary) as salary_info")
+                      ->pluck('salary_info', 'salary_id')
+                      ->prepend('Select Salary Structure', '');
+        
+        // Generate month options
+        $months = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $months[$i] = date('F', mktime(0, 0, 0, $i, 1));
+        }
+        
+        // Generate year options (current year - 5 to current year + 2)
+        $currentYear = date('Y');
+        $years = [];
+        for ($i = $currentYear - 5; $i <= $currentYear + 2; $i++) {
+            $years[$i] = $i;
+        }
+        
+        // Payment method options
+        $paymentMethods = [
+            '' => 'Select Payment Method',
+            'bank_transfer' => 'Bank Transfer',
+            'cash' => 'Cash',
+            'cheque' => 'Cheque',
+            'mobile_money' => 'Mobile Money'
+        ];
+        
+        // Status options
+        $statusOptions = [
+            '' => 'Select Status',
+            'pending' => 'Pending',
+            'paid' => 'Paid',
+            'cancelled' => 'Cancelled',
+            'processing' => 'Processing'
+        ];
+
+        // Get staff with their current salaries for auto-population
+        $staffWithSalaries = Staff::with(['currentSalary' => function($query) {
+                                $query->latest('effective_from');
+                            }])
+                            ->where('status', 'active')
+                            ->get()
+                            ->map(function($staff) {
+                                return [
+                                    'staff_id' => $staff->staff_id,
+                                    'name' => trim($staff->first_name . ' ' . ($staff->middle_name ?? '') . ' ' . $staff->last_name) . ' (' . $staff->employee_id . ')',
+                                    'current_salary' => $staff->currentSalary ? [
+                                        'salary_id' => $staff->currentSalary->salary_id,
+                                        'basic_salary' => $staff->currentSalary->basic_salary,
+                                        'allowances' => $staff->currentSalary->allowances,
+                                        'deductions' => $staff->currentSalary->deductions,
+                                    ] : null
+                                ];
+                            });
+
+        return view('payrolls.create', compact('staff', 'salaries', 'months', 'years', 'paymentMethods', 'statusOptions', 'staffWithSalaries'));
     }
 
     /**
@@ -81,7 +145,65 @@ class PayrollController extends AppBaseController
             return redirect(route('payrolls.index'));
         }
 
-        return view('payrolls.edit')->with('payroll', $payroll);
+        // Get data for dropdowns (same as create method)
+        $staff = Staff::selectRaw("staff_id, CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name, ' (', employee_id, ')') as full_name")
+                     ->where('status', 'active')
+                     ->pluck('full_name', 'staff_id')
+                     ->prepend('Select Staff Member', '');
+        
+        $salaries = \DB::table('staff_salaries')
+                      ->join('staff', 'staff_salaries.staff_id', '=', 'staff.staff_id')
+                      ->selectRaw("staff_salaries.salary_id, CONCAT(staff.first_name, ' ', staff.last_name, ' - ₹', staff_salaries.basic_salary) as salary_info")
+                      ->pluck('salary_info', 'salary_id')
+                      ->prepend('Select Salary Structure', '');
+        
+        $months = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $months[$i] = date('F', mktime(0, 0, 0, $i, 1));
+        }
+        
+        $currentYear = date('Y');
+        $years = [];
+        for ($i = $currentYear - 5; $i <= $currentYear + 2; $i++) {
+            $years[$i] = $i;
+        }
+        
+        $paymentMethods = [
+            '' => 'Select Payment Method',
+            'bank_transfer' => 'Bank Transfer',
+            'cash' => 'Cash',
+            'cheque' => 'Cheque',
+            'mobile_money' => 'Mobile Money'
+        ];
+        
+        $statusOptions = [
+            '' => 'Select Status',
+            'pending' => 'Pending',
+            'paid' => 'Paid',
+            'cancelled' => 'Cancelled',
+            'processing' => 'Processing'
+        ];
+
+        // Get staff with their current salaries for auto-population
+        $staffWithSalaries = Staff::with(['currentSalary' => function($query) {
+                                $query->latest('effective_from');
+                            }])
+                            ->where('status', 'active')
+                            ->get()
+                            ->map(function($staff) {
+                                return [
+                                    'staff_id' => $staff->staff_id,
+                                    'name' => trim($staff->first_name . ' ' . ($staff->middle_name ?? '') . ' ' . $staff->last_name) . ' (' . $staff->employee_id . ')',
+                                    'current_salary' => $staff->currentSalary ? [
+                                        'salary_id' => $staff->currentSalary->salary_id,
+                                        'basic_salary' => $staff->currentSalary->basic_salary,
+                                        'allowances' => $staff->currentSalary->allowances,
+                                        'deductions' => $staff->currentSalary->deductions,
+                                    ] : null
+                                ];
+                            });
+
+        return view('payrolls.edit', compact('payroll', 'staff', 'salaries', 'months', 'years', 'paymentMethods', 'statusOptions', 'staffWithSalaries'));
     }
 
     /**

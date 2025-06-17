@@ -1,8 +1,8 @@
 <!-- User Id Field -->
-<div class="form-group col-sm-6">
+<!-- <div class="form-group col-sm-6">
     {!! Form::label('user_id', 'User Id:') !!}
     {!! Form::number('user_id', null, ['class' => 'form-control']) !!}
-</div>
+</div> -->
 
 <!-- Admission No Field -->
 <div class="form-group col-sm-6">
@@ -84,8 +84,8 @@
 
 <!-- Photo Url Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('photo_url', 'Photo Url:') !!}
-    {!! Form::text('photo_url', null, ['class' => 'form-control', 'maxlength' => 255, 'maxlength' => 255]) !!}
+    {!! Form::label('photo', 'Profile Photo:') !!}
+    {!! Form::file('photo', ['class' => 'form-control']) !!}
 </div>
 
 <!-- Status Field -->

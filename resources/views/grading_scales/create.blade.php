@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::open(['route' => 'gradingScales.store']) !!}
+            {!! Form::open(['route' => 'grading-scales.store']) !!}
 
             <div class="card-body">
 
@@ -31,7 +31,7 @@
 
             <div class="card-footer">
                 {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('gradingScales.index') }}" class="btn btn-default"> Cancel </a>
+                <a href="{{ route('grading-scales.index') }}" class="btn btn-default"> Cancel </a>
             </div>
 
             {!! Form::close() !!}

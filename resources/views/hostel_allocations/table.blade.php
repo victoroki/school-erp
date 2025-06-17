@@ -3,14 +3,14 @@
         <table class="table" id="hostel-allocations-table">
             <thead>
             <tr>
-                <th>Student Id</th>
-                <th>Hostel Id</th>
-                <th>Room Id</th>
+                <th>Student </th>
+                <th>Hostel </th>
+                <th>Room </th>
                 <th>Bed Number</th>
                 <th>Allocation Date</th>
                 <th>Vacating Date</th>
                 <th>Status</th>
-                <th>Academic Year Id</th>
+                <th>Academic Year </th>
                 <th colspan="3">Action</th>
             </tr>
             </thead>
@@ -26,13 +26,13 @@
                     <td>{{ $hostelAllocation->status }}</td>
                     <td>{{ $hostelAllocation->academic_year_id }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['hostelAllocations.destroy', $hostelAllocation->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['hostel-allocations.destroy', $hostelAllocation->allocation_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('hostelAllocations.show', [$hostelAllocation->id]) }}"
+                            <a href="{{ route('hostel-allocations.show', [$hostelAllocation->allocation_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('hostelAllocations.edit', [$hostelAllocation->id]) }}"
+                            <a href="{{ route('hostel-allocations.edit', [$hostelAllocation->allocation_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

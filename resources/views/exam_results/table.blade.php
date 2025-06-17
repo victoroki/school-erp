@@ -3,12 +3,12 @@
         <table class="table" id="exam-results-table">
             <thead>
             <tr>
-                <th>Exam Id</th>
-                <th>Student Id</th>
-                <th>Class Section Id</th>
-                <th>Subject Id</th>
+                <th>Exam </th>
+                <th>Student </th>
+                <th>Class Section </th>
+                <th>Subject </th>
                 <th>Marks Obtained</th>
-                <th>Grade Id</th>
+                <th>Grade </th>
                 <th>Remarks</th>
                 <th>Created By</th>
                 <th colspan="3">Action</th>
@@ -26,13 +26,13 @@
                     <td>{{ $examResult->remarks }}</td>
                     <td>{{ $examResult->created_by }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['examResults.destroy', $examResult->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['exam-results.destroy', $examResult->result_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('examResults.show', [$examResult->id]) }}"
+                            <a href="{{ route('exam-results.show', [$examResult->result_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('examResults.edit', [$examResult->id]) }}"
+                            <a href="{{ route('exam-results.edit', [$examResult->result_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

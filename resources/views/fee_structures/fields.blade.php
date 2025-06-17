@@ -1,19 +1,19 @@
 <!-- Academic Year Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('academic_year_id', 'Academic Year Id:') !!}
-    {!! Form::number('academic_year_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('academic_year_id', 'Academic Year :') !!}
+    {!! Form::select('academic_year_id',$academicYear, null, ['class' => 'form-control', 'placeholder' => 'Select Academic Year']) !!}
 </div>
 
 <!-- Class Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('class_id', 'Class Id:') !!}
-    {!! Form::number('class_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('class_id', 'Class :') !!}
+    {!! Form::select('class_id',$classes, null, ['class' => 'form-control', 'placeholder' => 'Select Class']) !!}
 </div>
 
 <!-- Category Id Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('category_id', 'Category Id:') !!}
-    {!! Form::number('category_id', null, ['class' => 'form-control']) !!}
+    {!! Form::select('category_id', $category, null, ['class' => 'form-control', 'placeholder' => 'Select Fee Category']) !!}
 </div>
 
 <!-- Amount Field -->

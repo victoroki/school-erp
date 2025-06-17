@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::model($gradingScale, ['route' => ['gradingScales.update', $gradingScale->id], 'method' => 'patch']) !!}
+            {!! Form::model($gradingScale, ['route' => ['grading-scales.update', $gradingScale->id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">
@@ -29,7 +29,7 @@
 
             <div class="card-footer">
                 {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('gradingScales.index') }}" class="btn btn-default"> Cancel </a>
+                <a href="{{ route('grading-scales.index') }}" class="btn btn-default"> Cancel </a>
             </div>
 
             {!! Form::close() !!}
