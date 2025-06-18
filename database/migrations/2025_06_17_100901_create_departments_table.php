@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('departments', function (Blueprint $table) {
             $table->integer('department_id', true);
-            $table->string('name', 100)->unique('name');
+            $table->string('name', 100)->unique('departments_name_unique'); // ✅ renamed
             $table->text('description')->nullable();
             $table->integer('hod_id')->nullable();
             $table->dateTime('created_at')->nullable()->useCurrent();
