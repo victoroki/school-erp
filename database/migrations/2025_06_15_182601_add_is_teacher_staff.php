@@ -4,22 +4,21 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+class AddIsTeacherStaff extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+    public function up()
     {
-        //
+        // You can leave this empty or add a dummy column if needed
+        // Schema::table('staff', function (Blueprint $table) {
+        //     $table->boolean('is_teacher')->default(false);
+        // });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
-        //
+        // Reverse the dummy change
+        // Schema::table('staff', function (Blueprint $table) {
+        //     $table->dropColumn('is_teacher');
+        // });
     }
-};
-
+}
