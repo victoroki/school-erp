@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('book_categories', function (Blueprint $table) {
             $table->integer('category_id', true);
-            $table->string('name', 100)->unique('name');
+            $table->string('name', 100)->unique('book_categories_name_unique');
             $table->text('description')->nullable();
             $table->dateTime('created_at')->nullable()->useCurrent();
             $table->dateTime('updated_at')->useCurrentOnUpdate()->nullable()->useCurrent();
