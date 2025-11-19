@@ -10,15 +10,15 @@
             <tbody>
             @foreach($userRoles as $userRole)
                 <tr>
-                    <td>{{ $userRole->role_id }}</td>
+                    <td>{{ $userRole->user->name }} - {{ $userRole->role->role_name }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['user-roles.destroy', $userRole->user_id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['user-roles.destroy', $userRole->id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('user-roles.show', [$userRole->user_id]) }}"
+                            <a href="{{ route('user-roles.show', [$userRole->id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('user-roles.edit', [$userRole->user_id]) }}"
+                            <a href="{{ route('user-roles.edit', [$userRole->id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

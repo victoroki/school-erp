@@ -16,13 +16,13 @@
                     <td>{{ $period->start_time }}</td>
                     <td>{{ $period->end_time }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['periods.destroy', $period->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['periods.destroy', $period->period_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('periods.show', [$period->id]) }}"
+                            <a href="{{ route('periods.show', [$period->period_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('periods.edit', [$period->id]) }}"
+                            <a href="{{ route('periods.edit', [$period->period_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

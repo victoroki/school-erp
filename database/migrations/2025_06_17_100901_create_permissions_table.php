@@ -15,6 +15,7 @@ return new class extends Migration
             $table->integer('permission_id', true);
             $table->string('permission_name', 100)->unique('permission_name');
             $table->text('description')->nullable();
+            $table->timestamps();
         });
     }
 

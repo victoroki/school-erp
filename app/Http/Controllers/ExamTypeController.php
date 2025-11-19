@@ -49,7 +49,7 @@ class ExamTypeController extends AppBaseController
 
         Flash::success('Exam Type saved successfully.');
 
-        return redirect(route('examTypes.index'));
+        return redirect(route('exam-types.index'));
     }
 
     /**
@@ -62,7 +62,7 @@ class ExamTypeController extends AppBaseController
         if (empty($examType)) {
             Flash::error('Exam Type not found');
 
-            return redirect(route('examTypes.index'));
+            return redirect(route('exam-types.index'));
         }
 
         return view('exam_types.show')->with('examType', $examType);
@@ -78,7 +78,7 @@ class ExamTypeController extends AppBaseController
         if (empty($examType)) {
             Flash::error('Exam Type not found');
 
-            return redirect(route('examTypes.index'));
+            return redirect(route('exam-types.index'));
         }
 
         return view('exam_types.edit')->with('examType', $examType);
@@ -94,14 +94,14 @@ class ExamTypeController extends AppBaseController
         if (empty($examType)) {
             Flash::error('Exam Type not found');
 
-            return redirect(route('examTypes.index'));
+            return redirect(route('exam-types.index'));
         }
 
         $examType = $this->examTypeRepository->update($request->all(), $id);
 
         Flash::success('Exam Type updated successfully.');
 
-        return redirect(route('examTypes.index'));
+        return redirect(route('exam-types.index'));
     }
 
     /**
@@ -116,13 +116,13 @@ class ExamTypeController extends AppBaseController
         if (empty($examType)) {
             Flash::error('Exam Type not found');
 
-            return redirect(route('examTypes.index'));
+            return redirect(route('exam-types.index'));
         }
 
         $this->examTypeRepository->delete($id);
 
         Flash::success('Exam Type deleted successfully.');
 
-        return redirect(route('examTypes.index'));
+        return redirect(route('exam-types.index'));
     }
 }

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Parents extends Model
 {
     public $table = 'parents';
+    protected $primaryKey = 'parent_id';
 
     public $fillable = [
         'user_id',

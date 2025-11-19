@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Staff extends Model
 {
     public $table = 'staff';
+    protected $primaryKey = 'staff_id';
 
     public $fillable = [
         'user_id',
@@ -215,7 +216,6 @@ class Staff extends Model
     {
         $names = array_filter([
             $this->first_name,
-            $this->middle_name,
             $this->last_name
         ]);
         

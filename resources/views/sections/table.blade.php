@@ -12,7 +12,7 @@
             <tbody>
             @foreach($sections as $section)
                 <tr>
-                    <td>{{ $section->Schoolclass->name ?? 'N/A' }}</td>
+                    <td>{{ optional($section->schoolClass)->name ?? 'N/A' }}</td>
                     <td>{{ $section->name }}</td>
                     <td>{{ $section->capacity }}</td>
                     <td  style="width: 120px">

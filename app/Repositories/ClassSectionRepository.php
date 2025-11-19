@@ -24,4 +24,9 @@ class ClassSectionRepository extends BaseRepository
     {
         return ClassSection::class;
     }
+
+    public function with(array $relations)
+    {
+        return $this->model->with($relations);
+    }
 }

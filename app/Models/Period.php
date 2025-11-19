@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Period extends Model
 {
     public $table = 'periods';
+    protected $primaryKey = 'period_id';
+
 
     public $fillable = [
         'name',

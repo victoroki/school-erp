@@ -15,6 +15,7 @@ return new class extends Migration
             $table->integer('role_id', true);
             $table->string('role_name', 50)->unique('role_name');
             $table->text('description')->nullable();
+            $table->timestamps();
         });
     }
 

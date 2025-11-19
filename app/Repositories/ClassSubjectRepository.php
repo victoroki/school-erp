@@ -22,4 +22,9 @@ class ClassSubjectRepository extends BaseRepository
     {
         return ClassSubject::class;
     }
+
+    public function with(array $relations)
+    {
+        return $this->model->with($relations);
+    }
 }

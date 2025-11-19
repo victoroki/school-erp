@@ -17,6 +17,10 @@ class TimetableRepository extends BaseRepository
         'academic_year_id'
     ];
 
+    public function with(array $relations) {
+        return $this->model->with($relations);
+    }
+
     public function getFieldsSearchable(): array
     {
         return $this->fieldSearchable;

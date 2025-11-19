@@ -9,6 +9,7 @@ class RolePermission extends Model
     public $table = 'role_permissions';
 
     public $fillable = [
+        'role_id',
         'permission_id'
     ];
 
@@ -17,6 +18,7 @@ class RolePermission extends Model
     ];
 
     public static array $rules = [
+        'role_id' => 'required',
         'permission_id' => 'required'
     ];
 

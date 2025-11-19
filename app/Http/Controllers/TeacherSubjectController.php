@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Requests\CreateTeacherSubjectRequest;
-use App\Requests\UpdateTeacherSubjectRequest;
+use App\Http\Requests\CreateTeacherSubjectRequest;
+use App\Http\Requests\UpdateTeacherSubjectRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\TeacherSubjectRepository;
 use Illuminate\Http\Request;
@@ -58,7 +58,7 @@ class TeacherSubjectController extends AppBaseController
 
         Flash::success('Teacher Subject saved successfully.');
 
-        return redirect(route('teacherSubjects.index'));
+        return redirect(route('teacher-subjects.index'));
     }
 
     /**
@@ -71,7 +71,7 @@ class TeacherSubjectController extends AppBaseController
         if (empty($teacherSubject)) {
             Flash::error('Teacher Subject not found');
 
-            return redirect(route('teacherSubjects.index'));
+            return redirect(route('teacher-subjects.index'));
         }
 
         return view('teacher_subjects.show')->with('teacherSubject', $teacherSubject);
@@ -87,7 +87,7 @@ class TeacherSubjectController extends AppBaseController
         if (empty($teacherSubject)) {
             Flash::error('Teacher Subject not found');
 
-            return redirect(route('teacherSubjects.index'));
+            return redirect(route('teacher-subjects.index'));
         }
 
         // Get dropdown data for edit form
@@ -114,7 +114,7 @@ class TeacherSubjectController extends AppBaseController
 
         Flash::success('Teacher Subject updated successfully.');
 
-        return redirect(route('teacherSubjects.index'));
+        return redirect(route('teacher-subjects.index'));
     }
 
     /**
@@ -136,7 +136,7 @@ class TeacherSubjectController extends AppBaseController
 
         Flash::success('Teacher Subject deleted successfully.');
 
-        return redirect(route('teacherSubjects.index'));
+        return redirect(route('teacher-subjects.index'));
     }
 
 /**

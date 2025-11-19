@@ -12,10 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user_roles', function (Blueprint $table) {
+            $table->bigIncrements('id');
             $table->integer('user_id');
             $table->integer('role_id')->index('role_id');
-
-            $table->primary(['user_id', 'role_id']);
+            $table->unique(['user_id', 'role_id']);
+            $table->timestamps();
         });
     }
 

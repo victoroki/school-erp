@@ -8,6 +8,8 @@ use App\Http\Controllers\AppBaseController;
 use App\Repositories\UserRoleRepository;
 use Illuminate\Http\Request;
 use Flash;
+use App\Models\User;
+use App\Models\Role;
 
 class UserRoleController extends AppBaseController
 {
@@ -35,7 +37,9 @@ class UserRoleController extends AppBaseController
      */
     public function create()
     {
-        return view('user_roles.create');
+        $users = User::orderBy('name')->get();
+        $roles = Role::orderBy('role_name')->get();
+        return view('user_roles.create', compact('users', 'roles'));
     }
 
     /**
@@ -81,7 +85,9 @@ class UserRoleController extends AppBaseController
             return redirect(route('userRoles.index'));
         }
 
-        return view('user_roles.edit')->with('userRole', $userRole);
+        $users = User::orderBy('name')->get();
+        $roles = Role::orderBy('role_name')->get();
+        return view('user_roles.edit', compact('userRole', 'users', 'roles'));
     }
 
     /**

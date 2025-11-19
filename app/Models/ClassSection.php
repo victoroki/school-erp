@@ -8,6 +8,7 @@ class ClassSection extends Model
 {
     public $table = 'class_sections';
     protected $primaryKey = 'class_section_id';
+    public $timestamps = false;
 
     public $fillable = [
         'academic_year_id',
@@ -18,20 +19,20 @@ class ClassSection extends Model
     ];
 
     protected $casts = [
-        
+
     ];
 
     public static array $rules = [
-        'academic_year_id' => 'nullable',
-        'class_id' => 'nullable',
-        'section_id' => 'nullable',
-        'classroom_id' => 'nullable',
-        'class_teacher_id' => 'nullable'
+        'academic_year_id' => 'required|integer|exists:academic_years,academic_year_id',
+        'class_id' => 'required|integer|exists:classes,class_id',
+        'section_id' => 'required|integer|exists:sections,section_id',
+        'classroom_id' => 'required|integer|exists:classrooms,classroom_id',
+        'class_teacher_id' => 'required|integer|exists:staff,staff_id'
     ];
 
     public function class(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(\App\Models\Class::class, 'class_id');
+        return $this->belongsTo(\App\Models\SchoolClass::class, 'class_id');
     }
 
     public function classTeacher(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -83,4 +84,15 @@ class ClassSection extends Model
     {
         return $this->hasMany(\App\Models\Timetable::class, 'class_section_id');
     }
+
+    // public function getClassAndSection (){
+    //     $names = array_filter([
+    //         $this->class_id,
+    //         $this->section_id
+    //     ]);
+
+    //     return implode(' ', $names);
+    //     dd($names);
+    // }
+
 }

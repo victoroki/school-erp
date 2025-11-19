@@ -46,7 +46,7 @@
 <!-- Date Of Birth Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('date_of_birth', 'Date Of Birth:') !!}
-    {!! Form::text('date_of_birth', old('date_of_birth'), ['class' => 'form-control', 'id' => 'date_of_birth', 'readonly']) !!}
+    {!! Form::date('date_of_birth', old('date_of_birth'), ['class' => 'form-control', 'id' => 'date_of_birth',]) !!}
     @error('date_of_birth')
         <span class="text-danger">{{ $message }}</span>
     @enderror
@@ -69,7 +69,7 @@
 <!-- Joining Date Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('joining_date', 'Joining Date:') !!}
-    {!! Form::text('joining_date', old('joining_date'), ['class' => 'form-control', 'id' => 'joining_date', 'readonly']) !!}
+    {!! Form::date('joining_date', old('joining_date'), ['class' => 'form-control', 'id' => 'joining_date',]) !!}
     @error('joining_date')
         <span class="text-danger">{{ $message }}</span>
     @enderror
@@ -187,10 +187,9 @@
     {!! Form::label('staff_type', 'Staff Type:') !!}
     {!! Form::select('staff_type', [
         '' => 'Select Staff Type',
-        'permanent' => 'Permanent',
-        'contract' => 'Contract',
-        'temporary' => 'Temporary',
-        'intern' => 'Intern'
+        'teaching' => 'teaching',
+        'non-teaching' => 'non-teaching',
+        'administration' => 'administration'
     ], old('staff_type'), ['class' => 'form-control', 'required']) !!}
     @error('staff_type')
         <span class="text-danger">{{ $message }}</span>
@@ -210,46 +209,3 @@
     @enderror
 </div>
 
-@push('page_css')
-    <!-- Bootstrap Datepicker CSS -->
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css"> -->
-@endpush
-
-@push('page_scripts')
-    <!-- Bootstrap Datepicker JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>`
-    
-    <script type="text/javascript">
-        $(document).ready(function() {
-            // Initialize datepickers with better configuration
-            $('#date_of_birth').datepicker({
-                format: 'yyyy-mm-dd',
-                autoclose: true,
-                endDate: new Date(),
-                startView: 2, // Start with year view
-                maxViewMode: 2,
-                changeYear: true,
-                yearRange: '-70:+0',
-                todayHighlight: false
-            });
-            
-            $('#joining_date').datepicker({
-                format: 'yyyy-mm-dd',
-                autoclose: true,
-                endDate: new Date(),
-                todayHighlight: true
-            });
-
-            // Optional: Show/hide additional fields based on is_teacher selection
-            $('#is_teacher').change(function() {
-                var isTeacher = $(this).val();
-                if (isTeacher == '1') {
-                    // You can show teacher-specific fields here if needed
-                    console.log('Teacher selected');
-                } else {
-                    console.log('Non-teacher selected');
-                }
-            });
-        });
-    </script>
-@endpush

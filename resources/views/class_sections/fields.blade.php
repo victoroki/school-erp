@@ -24,6 +24,6 @@
 
 <!-- Class Teacher Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('teacher_id', 'Class Teacher:') !!}
-    {!! Form::select('teacher_id', $teachers, null, ['class' => 'form-control', 'placeholder' => 'Select Teacher']) !!}
+    {!! Form::label('class_teacher_id', 'Class Teacher:') !!}
+    {!! Form::select('class_teacher_id', $teachers, null, ['class' => 'form-control', 'placeholder' => 'Select Teacher']) !!}
 </div>

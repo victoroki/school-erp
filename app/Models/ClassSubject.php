@@ -8,6 +8,7 @@ class ClassSubject extends Model
 {
     public $table = 'class_subjects';
     protected $primaryKey = 'class_subject_id';
+    public $timestamps = false; 
 
     public $fillable = [
         'class_id',
@@ -32,7 +33,7 @@ class ClassSubject extends Model
 
     public function class(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(\App\Models\Class::class, 'class_id');
+        return $this->belongsTo(\App\Models\SchoolClass::class, 'class_id');
     }
 
     public function subject(): \Illuminate\Database\Eloquent\Relations\BelongsTo

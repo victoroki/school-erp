@@ -107,6 +107,12 @@
                 <p>Classrooms</p>
             </a>
         </li>
+        <li class="nav-item">
+            <a href="{{ route('timetables.index') }}" class="nav-link {{ Request::is('timetables*') ? 'active' : '' }}">
+                <i class="nav-icon fas fa-home"></i>
+                <p>Timetables</p>
+            </a>
+        </li>
     </ul>
 </li>
 
@@ -455,3 +461,4 @@
         </li>
     </ul>
 </li>
+

@@ -14,13 +14,13 @@
                     <td>{{ $permission->permission_name }}</td>
                     <td>{{ $permission->description }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['permissions.destroy', $permission->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['permissions.destroy', $permission->permission_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('permissions.show', [$permission->id]) }}"
+                            <a href="{{ route('permissions.show', [$permission->permission_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('permissions.edit', [$permission->id]) }}"
+                            <a href="{{ route('permissions.edit', [$permission->permission_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

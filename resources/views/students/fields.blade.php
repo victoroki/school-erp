@@ -6,13 +6,13 @@
 
 <!-- Admission No Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('admission_no', 'Admission No:') !!}
+    {!! Form::label('admission_no', '* Admission No:') !!}
     {!! Form::text('admission_no', null, ['class' => 'form-control', 'required', 'maxlength' => 20, 'maxlength' => 20]) !!}
 </div>
 
 <!-- First Name Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('first_name', 'First Name:') !!}
+    {!! Form::label('first_name', '*First Name:') !!}
     {!! Form::text('first_name', null, ['class' => 'form-control', 'required', 'maxlength' => 50, 'maxlength' => 50]) !!}
 </div>
 
@@ -24,14 +24,14 @@
 
 <!-- Last Name Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('last_name', 'Last Name:') !!}
+    {!! Form::label('last_name', '*Last Name:') !!}
     {!! Form::text('last_name', null, ['class' => 'form-control', 'required', 'maxlength' => 50, 'maxlength' => 50]) !!}
 </div>
 
 <!-- Date Of Birth Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('date_of_birth', 'Date Of Birth:') !!}
-    {!! Form::text('date_of_birth', null, ['class' => 'form-control','id'=>'date_of_birth']) !!}
+    {!! Form::label('date_of_birth', '*Date Of Birth:') !!}
+    {!! Form::date('date_of_birth', null, ['class' => 'form-control','id'=>'date_of_birth']) !!}
 </div>
 
 @push('page_scripts')
@@ -42,19 +42,19 @@
 
 <!-- Gender Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('gender', 'Gender:') !!}
-    {!! Form::text('gender', null, ['class' => 'form-control', 'required']) !!}
+    {!! Form::label('gender', '*Gender:') !!}
+    {!! Form::select('gender', ['male', 'female', 'other'], null, ['class' => 'form-control', 'required']) !!}
 </div>
 
 <!-- City Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('city', 'City:') !!}
+    {!! Form::label('city', '*City:') !!}
     {!! Form::text('city', null, ['class' => 'form-control', 'required', 'maxlength' => 50, 'maxlength' => 50]) !!}
 </div>
 
 <!-- Country Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('country', 'Country:') !!}
+    {!! Form::label('country', '*Country:') !!}
     {!! Form::text('country', null, ['class' => 'form-control', 'required', 'maxlength' => 50, 'maxlength' => 50]) !!}
 </div>
 
@@ -66,14 +66,14 @@
 
 <!-- Emergency Contact Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('emergency_contact', 'Emergency Contact:') !!}
+    {!! Form::label('emergency_contact', '*Emergency Contact:') !!}
     {!! Form::text('emergency_contact', null, ['class' => 'form-control', 'required', 'maxlength' => 20, 'maxlength' => 20]) !!}
 </div>
 
 <!-- Admission Date Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('admission_date', 'Admission Date:') !!}
-    {!! Form::text('admission_date', null, ['class' => 'form-control','id'=>'admission_date']) !!}
+    {!! Form::label('admission_date', '*Admission Date:') !!}
+    {!! Form::date('admission_date', null, ['class' => 'form-control','id'=>'admission_date']) !!}
 </div>
 
 @push('page_scripts')
@@ -91,5 +91,5 @@
 <!-- Status Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('status', 'Status:') !!}
-    {!! Form::text('status', null, ['class' => 'form-control']) !!}
+    {!! Form::select('status', ['active', 'inactive', 'alumni', 'transfered'], null, ['class' => 'form-control']) !!}
 </div>

@@ -38,13 +38,13 @@
                     <!-- <td>{{ $student->photo_url }}</td> -->
                     <td>{{ $student->status }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['students.destroy', $student->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['students.destroy', $student->student_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('students.show', [$student->id]) }}"
+                            <a href="{{ route('students.show', [$student->student_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('students.edit', [$student->id]) }}"
+                            <a href="{{ route('students.edit', [$student->student_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

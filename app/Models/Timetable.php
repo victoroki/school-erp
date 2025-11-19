@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Timetable extends Model
 {
     public $table = 'timetable';
+    protected $primaryKey = 'timetable_id';
 
     public $fillable = [
         'class_section_id',
@@ -23,20 +24,20 @@ class Timetable extends Model
     ];
 
     public static array $rules = [
-        'class_section_id' => 'nullable',
-        'day_of_week' => 'required|string',
-        'period_id' => 'nullable',
-        'subject_id' => 'nullable',
-        'teacher_id' => 'nullable',
-        'classroom_id' => 'nullable',
-        'academic_year_id' => 'nullable',
+        'class_section_id' => 'required|integer|exists:class_sections,class_section_id',
+        'day_of_week' => 'required|string|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+        'period_id' => 'required|integer|exists:periods,period_id',
+        'subject_id' => 'required|integer|exists:subjects,subject_id',
+        'teacher_id' => 'required|integer|exists:staff,staff_id',
+        'classroom_id' => 'required|integer|exists:classrooms,classroom_id',
+        'academic_year_id' => 'required|integer|exists:academic_years,academic_year_id',
         'created_at' => 'nullable',
         'updated_at' => 'nullable'
     ];
 
     public function period(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(\App\Models\Period::class, 'period_id');
+        return $this->belongsTo(\App\Models\Period::class, 'period_id', 'period_id');
     }
 
     public function classroom(): \Illuminate\Database\Eloquent\Relations\BelongsTo

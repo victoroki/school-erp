@@ -30,10 +30,10 @@ class StudentParentRelationshipController extends AppBaseController
     {
         return [
             'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' (', student_id, ')') as full_name")
-                ->pluck('full_name', 'id')
+                ->pluck('full_name', 'student_id')
                 ->toArray(),
             'parents' => Parents::selectRaw("parent_id, CONCAT(first_name, ' ', last_name, ' (', email, ')') as full_name")
-                ->pluck('full_name', 'id')
+                ->pluck('full_name', 'parent_id')
                 ->toArray(),
         ];
     }
@@ -70,7 +70,7 @@ class StudentParentRelationshipController extends AppBaseController
 
         Flash::success('Student Parent Relationship saved successfully.');
 
-        return redirect(route('studentParentRelationships.index'));
+        return redirect(route('student-parent-relationships.index'));
     }
 
     /**
@@ -83,7 +83,7 @@ class StudentParentRelationshipController extends AppBaseController
         if (empty($studentParentRelationship)) {
             Flash::error('Student Parent Relationship not found');
 
-            return redirect(route('studentParentRelationships.index'));
+            return redirect(route('student-parent-relationships.index'));
         }
 
         return view('student_parent_relationships.show')->with('studentParentRelationship', $studentParentRelationship);
@@ -99,7 +99,7 @@ class StudentParentRelationshipController extends AppBaseController
         if (empty($studentParentRelationship)) {
             Flash::error('Student Parent Relationship not found');
 
-            return redirect(route('studentParentRelationships.index'));
+            return redirect(route('student-parent-relationships.index'));
         }
 
         $dropdownData = $this->getDropdownData();
@@ -120,14 +120,14 @@ class StudentParentRelationshipController extends AppBaseController
         if (empty($studentParentRelationship)) {
             Flash::error('Student Parent Relationship not found');
 
-            return redirect(route('studentParentRelationships.index'));
+            return redirect(route('student-parent-relationships.index'));
         }
 
         $studentParentRelationship = $this->studentParentRelationshipRepository->update($request->all(), $id);
 
         Flash::success('Student Parent Relationship updated successfully.');
 
-        return redirect(route('studentParentRelationships.index'));
+        return redirect(route('student-parent-relationships.index'));
     }
 
     /**
@@ -142,13 +142,13 @@ class StudentParentRelationshipController extends AppBaseController
         if (empty($studentParentRelationship)) {
             Flash::error('Student Parent Relationship not found');
 
-            return redirect(route('studentParentRelationships.index'));
+            return redirect(route('student-parent-relationships.index'));
         }
 
         $this->studentParentRelationshipRepository->delete($id);
 
         Flash::success('Student Parent Relationship deleted successfully.');
 
-        return redirect(route('studentParentRelationships.index'));
+        return redirect(route('student-parent-relationships.index'));
     }
 }

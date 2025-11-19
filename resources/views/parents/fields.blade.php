@@ -19,7 +19,7 @@
 <!-- Relationship Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('relationship', 'Relationship:') !!}
-    {!! Form::text('relationship', null, ['class' => 'form-control', 'required']) !!}
+    {!! Form::select('relationship', ['Father', 'Mother', 'Guardian'], null, ['class' => 'form-control', 'placeholder' => 'Select Relationship', 'required']) !!}
 </div>
 
 <!-- Email Field -->

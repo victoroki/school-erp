@@ -26,7 +26,7 @@ class StudentClassEnrollmentController extends AppBaseController
     private function getDropdownData(){
         return [
             'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' (', student_id, ')') as full_name")
-                ->pluck('full_name', 'id')
+                ->pluck('full_name', 'student_id')
                 ->toArray(),
             'classSections' => ClassSection::with(['class', 'section', 'academicYear'])
                 ->get()

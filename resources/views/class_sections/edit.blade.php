@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::model($classSection, ['route' => ['classSections.update', $classSection->id], 'method' => 'patch']) !!}
+            {!! Form::model($classSection, ['route' => ['class-sections.update', $classSection->class_section_id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">
@@ -29,7 +29,7 @@
 
             <div class="card-footer">
                 {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('classSections.index') }}" class="btn btn-default"> Cancel </a>
+                <a href="{{ route('class-sections.index') }}" class="btn btn-default"> Cancel </a>
             </div>
 
             {!! Form::close() !!}

@@ -23,4 +23,17 @@ class TeacherSubjectRepository extends BaseRepository
     {
         return TeacherSubject::class;
     }
+
+    /**
+     * Override paginate to eager load relationships
+     */
+    public function paginate(int $perPage, array $columns = ['*']): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        $query = $this->allQuery();
+        
+        // Eager load relationships to avoid N+1 queries
+        $query->with(['staff', 'subject', 'classSection.section', 'classSection.class', 'academicYear']);
+        
+        return $query->paginate($perPage, $columns);
+    }
 }

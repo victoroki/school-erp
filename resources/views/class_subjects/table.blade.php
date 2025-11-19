@@ -12,9 +12,9 @@
             <tbody>
             @foreach($classSubjects as $classSubject)
                 <tr>
-                    <td>{{ $classSubject->class_id }}</td>
-                    <td>{{ $classSubject->subject_id }}</td>
-                    <td>{{ $classSubject->academic_year_id }}</td>
+                    <td>{{ $classSubject->class->name }}</td>
+                    <td>{{ $classSubject->subject->name }}</td>
+                    <td>{{ $classSubject->academicYear->name }}</td>
                     <td  style="width: 120px">
                         {!! Form::open(['route' => ['class-subjects.destroy', $classSubject->class_subject_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>

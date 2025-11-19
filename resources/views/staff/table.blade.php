@@ -46,13 +46,13 @@
                     <td>{{ $staff->staff_type }}</td>
                     <td>{{ $staff->status }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['staff.destroy', $staff->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['staff.destroy', $staff->staff_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('staff.show', [$staff->id]) }}"
+                            <a href="{{ route('staff.show', [$staff->staff_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('staff.edit', [$staff->id]) }}"
+                            <a href="{{ route('staff.edit', [$staff->staff_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>
@@ -65,10 +65,5 @@
             </tbody>
         </table>
     </div>
-
-    <div class="card-footer clearfix">
-        <div class="float-right">
-            @include('adminlte-templates::common.paginate', ['records' => $staff])
-        </div>
-    </div>
+<!-- -->
 </div>

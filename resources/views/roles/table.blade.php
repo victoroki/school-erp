@@ -14,13 +14,13 @@
                     <td>{{ $role->role_name }}</td>
                     <td>{{ $role->description }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['roles.destroy', $role->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['roles.destroy', $role->role_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('roles.show', [$role->id]) }}"
+                            <a href="{{ route('roles.show', [$role->role_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('roles.edit', [$role->id]) }}"
+                            <a href="{{ route('roles.edit', [$role->role_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

@@ -13,18 +13,18 @@
             <tbody>
             @foreach($teacherSubjects as $teacherSubject)
                 <tr>
-                    <td>{{ $teacherSubject->staff_id }}</td>
-                    <td>{{ $teacherSubject->subject_id }}</td>
-                    <td>{{ $teacherSubject->class_section_id }}</td>
-                    <td>{{ $teacherSubject->academic_year_id }}</td>
+                    <td>{{ $teacherSubject->staff->first_name }} {{ $teacherSubject->staff->last_name }}</td>
+                    <td>{{ $teacherSubject->subject->name }}</td>
+                    <td>{{ $teacherSubject->classSection->class->name }} - {{ $teacherSubject->classSection->section->name }}</td>
+                    <td>{{ $teacherSubject->academicYear->name }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['teacherSubjects.destroy', $teacherSubject->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['teacher-subjects.destroy', $teacherSubject->teacher_subject_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('teacherSubjects.show', [$teacherSubject->id]) }}"
+                            <a href="{{ route('teacher-subjects.show', [$teacherSubject->teacher_subject_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('teacherSubjects.edit', [$teacherSubject->id]) }}"
+                            <a href="{{ route('teacher-subjects.edit', [$teacherSubject->teacher_subject_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

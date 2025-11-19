@@ -40,7 +40,7 @@ class ClassSubjectController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $classSubjects = $this->classSubjectRepository->paginate(10);
+        $classSubjects = $this->classSubjectRepository->with(['class','subject','academicYear'])->paginate(10);
 
         return view('class_subjects.index')
             ->with('classSubjects', $classSubjects);

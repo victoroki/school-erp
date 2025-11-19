@@ -17,7 +17,9 @@
                         <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
                             <img src="logo.png"
                                 class="user-image img-circle elevation-2" alt="User Image">
+                            @auth
                             <span class="d-none d-md-inline">{{ Auth::user()->name }}</span>
+                            @endauth
                         </a>
                         <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                             <!-- User image -->
@@ -25,8 +27,10 @@
                                 <img src="logo.png"
                                     class="img-circle elevation-2" alt="User Image">
                                 <p>
+                                    @auth
                                     {{ Auth::user()->name }}
                                     <small>Member since {{ Auth::user()->created_at->format('M. Y') }}</small>
+                                    @endauth
                                 </p>
                             </li>
                             <!-- Menu Footer-->
@@ -56,7 +60,7 @@
             <!-- Main Footer -->
             <footer class="main-footer">
                 <div class="float-right d-none d-sm-block">
-                    <b>Version</b> 3.1.0
+                    <b>Version</b> 1.0.0
                 </div>
                 <strong>Copyright &copy; 2025-2027 <a href="#">PrimeNova</a>.</strong> All rights
                 reserved.

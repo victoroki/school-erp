@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 # Complete School ERP Scaffolding Script for Laravel InfyOm Generator
@@ -11,9 +12,9 @@ echo ""
 scaffold_table() {
     local model_name=$1
     local table_name=$2
-    
+
     echo "Scaffolding $model_name from table $table_name..."
-    
+
     # Try different command variations based on InfyOm version
     if php artisan infyom:scaffold $model_name --fromTable --table=$table_name 2>/dev/null; then
         echo "✓ Successfully scaffolded $model_name"
@@ -26,7 +27,7 @@ scaffold_table() {
         # Fallback to model generation only
         php artisan infyom:model $model_name --fromTable --table=$table_name 2>/dev/null || echo "✗ Model generation also failed for $model_name"
     fi
-    
+
     echo ""
 }
 

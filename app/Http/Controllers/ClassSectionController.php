@@ -24,7 +24,13 @@ class ClassSectionController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $classSections = $this->classSectionRepository->paginate(10);
+        $classSections = $this->classSectionRepository->with([
+            'academicYear',
+            'class',
+            'section',
+            'classroom',
+            'classTeacher'
+        ])->paginate(10);
 
         return view('class_sections.index')
             ->with('classSections', $classSections);
@@ -40,12 +46,12 @@ class ClassSectionController extends AppBaseController
         $classes = \App\Models\SchoolClass::pluck('name', 'class_id');
         $sections = \App\Models\Section::pluck('name', 'section_id');
         $classrooms = \App\Models\Classroom::pluck('room_number', 'classroom_id');
-        $teachers = \App\Models\Staff::where('staff_type', 'teacher') // or 'is_teaching', true, etc.
+        $teachers = \App\Models\Staff::where('staff_type', 'teaching')
         ->get()
         ->mapWithKeys(function ($staff) {
             return [$staff->staff_id => $staff->first_name . ' ' . $staff->last_name];
         });
-        
+
         return view('class_sections.create')
             ->with('academicYears', $academicYears)
             ->with('classes', $classes)
@@ -65,7 +71,7 @@ class ClassSectionController extends AppBaseController
 
         Flash::success('Class Section saved successfully.');
 
-        return redirect(route('classSections.index'));
+        return redirect(route('class-sections.index'));
     }
 
     /**
@@ -94,7 +100,7 @@ class ClassSectionController extends AppBaseController
         if (empty($classSection)) {
             Flash::error('Class Section not found');
 
-            return redirect(route('classSections.index'));
+            return redirect(route('class-sections.index'));
         }
 
         // Get all dropdown data for edit form
@@ -102,11 +108,11 @@ class ClassSectionController extends AppBaseController
         $classes = \App\Models\SchoolClass::pluck('name', 'class_id');
         $sections = \App\Models\Section::pluck('name', 'section_id');
         $classrooms = \App\Models\Classroom::pluck('room_number', 'classroom_id');
-        $teachers = \App\Models\Staff::where('staff_type', 'teacher') // or 'is_teaching', true, etc.
-        ->get()
-        ->mapWithKeys(function ($staff) {
-            return [$staff->staff_id => $staff->first_name . ' ' . $staff->last_name];
-        });
+        $teachers = \App\Models\Staff::where('staff_type', 'teaching')
+            ->get()
+            ->mapWithKeys(function ($staff) {
+                return [$staff->staff_id => $staff->first_name . ' ' . $staff->last_name];
+            });
 
         return view('class_sections.edit')
             ->with('classSection', $classSection)
@@ -127,14 +133,14 @@ class ClassSectionController extends AppBaseController
         if (empty($classSection)) {
             Flash::error('Class Section not found');
 
-            return redirect(route('classSections.index'));
+            return redirect(route('class-sections.index'));
         }
 
         $classSection = $this->classSectionRepository->update($request->all(), $id);
 
         Flash::success('Class Section updated successfully.');
 
-        return redirect(route('classSections.index'));
+        return redirect(route('class-sections.index'));
     }
 
     /**
@@ -149,13 +155,13 @@ class ClassSectionController extends AppBaseController
         if (empty($classSection)) {
             Flash::error('Class Section not found');
 
-            return redirect(route('classSections.index'));
+            return redirect(route('class-sections.index'));
         }
 
         $this->classSectionRepository->delete($id);
 
         Flash::success('Class Section deleted successfully.');
 
-        return redirect(route('classSections.index'));
+        return redirect(route('class-sections.index'));
     }
 }

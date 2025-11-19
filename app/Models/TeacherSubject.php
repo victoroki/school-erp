@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class TeacherSubject extends Model
 {
     public $table = 'teacher_subjects';
+    protected $primaryKey = 'teacher_subject_id';
+    public $timestamps = false;
 
     public $fillable = [
         'staff_id',
@@ -20,10 +22,10 @@ class TeacherSubject extends Model
     ];
 
     public static array $rules = [
-        'staff_id' => 'nullable',
-        'subject_id' => 'nullable',
-        'class_section_id' => 'nullable',
-        'academic_year_id' => 'nullable'
+        'staff_id' => 'required|integer|exists:staff,staff_id',
+        'subject_id' => 'required|integer|exists:subjects,subject_id',
+        'class_section_id' => 'required|integer|exists:class_sections,class_section_id',
+        'academic_year_id' => 'required|integer|exists:academic_years,academic_year_id'
     ];
 
     public function classSection(): \Illuminate\Database\Eloquent\Relations\BelongsTo

@@ -9,6 +9,7 @@ class UserRole extends Model
     public $table = 'user_roles';
 
     public $fillable = [
+        'user_id',
         'role_id'
     ];
 
@@ -17,6 +18,7 @@ class UserRole extends Model
     ];
 
     public static array $rules = [
+        'user_id' => 'required',
         'role_id' => 'required'
     ];
 

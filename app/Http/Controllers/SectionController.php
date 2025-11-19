@@ -24,7 +24,7 @@ class SectionController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $sections = $this->sectionRepository->paginate(10);
+        $sections = $this->sectionRepository->with(['Schoolclass'])->paginate(10);
 
         return view('sections.index')
             ->with('sections', $sections);

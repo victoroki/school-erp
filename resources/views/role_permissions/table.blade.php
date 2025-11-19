@@ -10,7 +10,7 @@
             <tbody>
             @foreach($rolePermissions as $rolePermission)
                 <tr>
-                    <td>{{ $rolePermission->permission_id }}</td>
+                    <td>{{ $rolePermission->role->role_name }} - {{ $rolePermission->permission->permission_name }}</td>
                     <td  style="width: 120px">
                         {!! Form::open(['route' => ['role-permissions.destroy', $rolePermission->id], 'method' => 'delete']) !!}
                         <div class='btn-group'>

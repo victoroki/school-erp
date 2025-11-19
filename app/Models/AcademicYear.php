@@ -25,9 +25,9 @@ class AcademicYear extends Model
     ];
 
     public static array $rules = [
-        'name' => 'required|string|max:50',
-        'start_date' => 'required',
-        'end_date' => 'required',
+        'name' => 'required|string|max:50|unique:academic_years,name',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after:start_date',
         'is_current' => 'nullable|boolean',
         'created_at' => 'nullable',
         'updated_at' => 'nullable'

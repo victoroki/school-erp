@@ -14,19 +14,19 @@
             <tbody>
             @foreach($classSections as $classSection)
                 <tr>
-                    <td>{{ $classSection->academic_year_id }}</td>
-                    <td>{{ $classSection->class_id }}</td>
-                    <td>{{ $classSection->section_id }}</td>
-                    <td>{{ $classSection->classroom_id }}</td>
-                    <td>{{ $classSection->class_teacher_id }}</td>
+                    <td>{{ $classSection->academicYear->name }}</td>
+                    <td>{{ $classSection->class->name }}</td>
+                    <td>{{ $classSection->section->name }}</td>
+                    <td>{{ optional($classSection->classroom)->room_number }}</td>
+                    <td>{{ $classSection->classTeacher ? ($classSection->classTeacher->first_name . ' ' . $classSection->classTeacher->last_name) : 'N/A' }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['classSections.destroy', $classSection->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['class-sections.destroy', $classSection->class_section_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('classSections.show', [$classSection->id]) }}"
+                            <a href="{{ route('class-sections.show', [$classSection->class_section_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('classSections.edit', [$classSection->id]) }}"
+                            <a href="{{ route('class-sections.edit', [$classSection->class_section_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

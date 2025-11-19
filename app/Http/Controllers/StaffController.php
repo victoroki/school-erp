@@ -21,10 +21,10 @@ class StaffController extends AppBaseController
 {
     /** @var StaffRepository $staffRepository*/
     private $staffRepository;
-    
+
     /** @var UserRepository $userRepository*/
     private $userRepository;
-    
+
     /** @var DepartmentRepository $departmentRepository*/
     private $departmentRepository;
 
@@ -36,7 +36,7 @@ class StaffController extends AppBaseController
         $this->staffRepository = $staffRepo;
         $this->userRepository = $userRepo;
         $this->departmentRepository = $departmentRepo;
-        
+
         // Apply middleware for authentication
         $this->middleware('auth');
     }
@@ -68,7 +68,7 @@ class StaffController extends AppBaseController
         // }
 
         // Get dropdown data
-        $users = User::pluck('username', 'id')->toArray();
+        $users = User::pluck('name', 'id')->toArray();
         $departments = Department::pluck('name', 'department_id')->toArray();
 
         return view('staff.create', compact('users', 'departments'));
@@ -86,13 +86,13 @@ class StaffController extends AppBaseController
 
         try {
             $input = $request->validated();
-            
+
             // Handle photo upload
             if ($request->hasFile('photo')) {
                 $photoPath = $request->file('photo')->store('staff-photos', 'public');
                 $input['photo_url'] = Storage::url($photoPath);
             }
-            
+
             // Ensure created_by is set
             $input['created_by'] = Auth::id();
 
@@ -101,7 +101,7 @@ class StaffController extends AppBaseController
             Flash::success('Staff saved successfully.');
 
             return redirect(route('staff.index'));
-            
+
         } catch (\Exception $e) {
             Flash::error('Error creating staff: ' . $e->getMessage());
             return redirect()->back()->withInput();
@@ -171,7 +171,7 @@ class StaffController extends AppBaseController
 
         try {
             $input = $request->validated();
-            
+
             // Handle photo upload
             if ($request->hasFile('photo')) {
                 // Delete old photo if exists
@@ -179,12 +179,11 @@ class StaffController extends AppBaseController
                     $oldPhotoPath = str_replace('/storage/', '', $staff->photo_url);
                     Storage::disk('public')->delete($oldPhotoPath);
                 }
-                
+
                 $photoPath = $request->file('photo')->store('staff-photos', 'public');
                 $input['photo_url'] = Storage::url($photoPath);
             }
-            
-            // Ensure updated_by is set
+
             $input['updated_by'] = Auth::id();
 
             $staff = $this->staffRepository->update($input, $id);
@@ -192,7 +191,7 @@ class StaffController extends AppBaseController
             Flash::success('Staff updated successfully.');
 
             return redirect(route('staff.index'));
-            
+
         } catch (\Exception $e) {
             Flash::error('Error updating staff: ' . $e->getMessage());
             return redirect()->back()->withInput();
@@ -228,7 +227,7 @@ class StaffController extends AppBaseController
             Flash::success('Staff deleted successfully.');
 
             return redirect(route('staff.index'));
-            
+
         } catch (\Exception $e) {
             Flash::error('Error deleting staff: ' . $e->getMessage());
             return redirect(route('staff.index'));

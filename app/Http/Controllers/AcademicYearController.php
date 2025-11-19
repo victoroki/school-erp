@@ -62,7 +62,7 @@ class AcademicYearController extends AppBaseController
         if (empty($academicYear)) {
             Flash::error('Academic Year not found');
 
-            return redirect(route('academicYears.index'));
+            return redirect(route('academic-years.index'));
         }
 
         return view('academic_years.show')->with('academicYear', $academicYear);
@@ -101,7 +101,7 @@ class AcademicYearController extends AppBaseController
 
         Flash::success('Academic Year updated successfully.');
 
-        return redirect(route('academicYears.index'));
+        return redirect(route('academic-years.index'));
     }
 
     /**

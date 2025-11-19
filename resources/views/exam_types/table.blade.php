@@ -14,13 +14,13 @@
                     <td>{{ $examType->name }}</td>
                     <td>{{ $examType->description }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['examTypes.destroy', $examType->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['exam-types.destroy', $examType->exam_type_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('examTypes.show', [$examType->id]) }}"
+                            <a href="{{ route('exam-types.show', [$examType->exam_type_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('examTypes.edit', [$examType->id]) }}"
+                            <a href="{{ route('exam-types.edit', [$examType->exam_type_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

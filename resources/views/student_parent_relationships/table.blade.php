@@ -16,13 +16,13 @@
                     <td>{{ $studentParentRelationship->parent_id }}</td>
                     <td>{{ $studentParentRelationship->is_primary_contact }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['studentParentRelationships.destroy', $studentParentRelationship->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['student-parent-relationships.destroy', $studentParentRelationship->id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('studentParentRelationships.show', [$studentParentRelationship->id]) }}"
+                            <a href="{{ route('student-parent-relationships.show', [$studentParentRelationship->id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('studentParentRelationships.edit', [$studentParentRelationship->id]) }}"
+                            <a href="{{ route('student-parent-relationships.edit', [$studentParentRelationship->id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

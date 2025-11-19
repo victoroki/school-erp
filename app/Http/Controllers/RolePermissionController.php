@@ -8,6 +8,8 @@ use App\Http\Controllers\AppBaseController;
 use App\Repositories\RolePermissionRepository;
 use Illuminate\Http\Request;
 use Flash;
+use App\Models\Role;
+use App\Models\Permission;
 
 class RolePermissionController extends AppBaseController
 {
@@ -35,7 +37,9 @@ class RolePermissionController extends AppBaseController
      */
     public function create()
     {
-        return view('role_permissions.create');
+        $roles = Role::orderBy('role_name')->get();
+        $permissions = Permission::orderBy('permission_name')->get();
+        return view('role_permissions.create', compact('roles', 'permissions'));
     }
 
     /**
@@ -81,7 +85,9 @@ class RolePermissionController extends AppBaseController
             return redirect(route('rolePermissions.index'));
         }
 
-        return view('role_permissions.edit')->with('rolePermission', $rolePermission);
+        $roles = Role::orderBy('role_name')->get();
+        $permissions = Permission::orderBy('permission_name')->get();
+        return view('role_permissions.edit', compact('rolePermission', 'roles', 'permissions'));
     }
 
     /**

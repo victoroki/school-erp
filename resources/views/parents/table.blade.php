@@ -24,13 +24,13 @@
                     <td>{{ $parents->alternate_phone }}</td>
                     <td>{{ $parents->occupation }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['parents.destroy', $parents->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['parents.destroy', $parents->parent_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('parents.show', [$parents->id]) }}"
+                            <a href="{{ route('parents.show', [$parents->parent_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('parents.edit', [$parents->id]) }}"
+                            <a href="{{ route('parents.edit', [$parents->parent_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>
@@ -45,8 +45,9 @@
     </div>
 
     <div class="card-footer clearfix">
-        <div class="float-right">
-            @include('adminlte-templates::common.paginate', ['records' => $parents])
-        </div>
+
     </div>
 </div>
+<style>
+
+</style>
