@@ -1,0 +1,146 @@
+[
+    {
+        "name": "timetable_id",
+        "dbType": "integer,true",
+        "htmlType": "number",
+        "validations": "",
+        "searchable": false,
+        "fillable": false,
+        "primary": true,
+        "inForm": false,
+        "inIndex": false,
+        "inView": false
+    },
+    {
+        "name": "class_section_id",
+        "dbType": "integer,false",
+        "htmlType": "number",
+        "validations": "nullable|nullable",
+        "searchable": true,
+        "fillable": true,
+        "primary": false,
+        "inForm": true,
+        "inIndex": true,
+        "inView": true
+    },
+    {
+        "name": "day_of_week",
+        "dbType": "string",
+        "htmlType": "text",
+        "validations": "required|string|string",
+        "searchable": true,
+        "fillable": true,
+        "primary": false,
+        "inForm": true,
+        "inIndex": true,
+        "inView": true
+    },
+    {
+        "name": "period_id",
+        "dbType": "integer,false",
+        "htmlType": "number",
+        "validations": "nullable|nullable",
+        "searchable": true,
+        "fillable": true,
+        "primary": false,
+        "inForm": true,
+        "inIndex": true,
+        "inView": true
+    },
+    {
+        "name": "subject_id",
+        "dbType": "integer,false",
+        "htmlType": "number",
+        "validations": "nullable|nullable",
+        "searchable": true,
+        "fillable": true,
+        "primary": false,
+        "inForm": true,
+        "inIndex": true,
+        "inView": true
+    },
+    {
+        "name": "teacher_id",
+        "dbType": "integer,false",
+        "htmlType": "number",
+        "validations": "nullable|nullable",
+        "searchable": true,
+        "fillable": true,
+        "primary": false,
+        "inForm": true,
+        "inIndex": true,
+        "inView": true
+    },
+    {
+        "name": "classroom_id",
+        "dbType": "integer,false",
+        "htmlType": "number",
+        "validations": "nullable|nullable",
+        "searchable": true,
+        "fillable": true,
+        "primary": false,
+        "inForm": true,
+        "inIndex": true,
+        "inView": true
+    },
+    {
+        "name": "academic_year_id",
+        "dbType": "integer,false",
+        "htmlType": "number",
+        "validations": "nullable|nullable",
+        "searchable": true,
+        "fillable": true,
+        "primary": false,
+        "inForm": true,
+        "inIndex": true,
+        "inView": true
+    },
+    {
+        "name": "created_at",
+        "dbType": "datetime",
+        "htmlType": "date",
+        "validations": "nullable|nullable",
+        "searchable": false,
+        "fillable": false,
+        "primary": false,
+        "inForm": false,
+        "inIndex": false,
+        "inView": false
+    },
+    {
+        "name": "updated_at",
+        "dbType": "datetime",
+        "htmlType": "date",
+        "validations": "nullable|nullable",
+        "searchable": false,
+        "fillable": false,
+        "primary": false,
+        "inForm": false,
+        "inIndex": false,
+        "inView": false
+    },
+    {
+        "type": "relation",
+        "relation": "mt1,Period,period_id"
+    },
+    {
+        "type": "relation",
+        "relation": "mt1,Classroom,classroom_id"
+    },
+    {
+        "type": "relation",
+        "relation": "mt1,Subject,subject_id"
+    },
+    {
+        "type": "relation",
+        "relation": "mt1,AcademicYear,academic_year_id"
+    },
+    {
+        "type": "relation",
+        "relation": "mt1,ClassSection,class_section_id"
+    },
+    {
+        "type": "relation",
+        "relation": "mt1,Staff,teacher_id"
+    }
+]
