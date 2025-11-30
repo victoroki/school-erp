@@ -127,7 +127,7 @@
             <nav class="hidden md:flex items-center space-x-8">
                 <a href="#features" class="text-dark hover:text-accent transition">Features</a>
                 @auth
-                    <a href="{{ url('/home') }}" class="btn btn-primary">Dashboard</a>
+                    <a href="{{ route('dashboard') }}" class="btn btn-primary">Dashboard</a>
                 @else
                     <a href="{{ route('login') }}" class="text-dark hover:text-accent transition">Login</a>
                     @if (Route::has('register'))

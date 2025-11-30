@@ -4,7 +4,7 @@
         <div class="login-box">
             <div class="login-logo">
                 <a href="{{ url('/home') }}">
-                    <img src="{{ asset('garikon-black.png') }}" alt="Garikon Logo" style="height: 60px; margin-bottom: 10px;">
+                    <img src="{{ asset('garikon-white-bg.png') }}" alt="Garikon Logo" style="height: 100px; margin-bottom: 10px;">
                     <br><b>{{ config('app.name') }}</b>
                 </a>
             </div>

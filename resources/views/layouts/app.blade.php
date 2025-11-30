@@ -1,4 +1,7 @@
 <x-laravel-ui-adminlte::adminlte-layout>
+    <head>
+        <link rel="stylesheet" href="{{ asset('css/sidebar-enhanced.css') }}">
+    </head>
 
     <body class="hold-transition sidebar-mini layout-fixed">
         <div class="wrapper">
