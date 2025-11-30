@@ -20,13 +20,13 @@
                     <td>{{ $hostel->warden_id }}</td>
                     <td>{{ $hostel->capacity }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['hostels.destroy', $hostel->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['hostels.destroy', $hostel->hostel_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('hostels.show', [$hostel->id]) }}"
+                            <a href="{{ route('hostels.show', [$hostel->hostel_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('hostels.edit', [$hostel->id]) }}"
+                            <a href="{{ route('hostels.edit', [$hostel->hostel_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

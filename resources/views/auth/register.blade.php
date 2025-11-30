@@ -3,7 +3,10 @@
     <body class="hold-transition register-page">
         <div class="register-box">
             <div class="register-logo">
-                <a href="{{ url('/home') }}"><b>{{ config('app.name') }}</b></a>
+                <a href="{{ url('/home') }}">
+                    <img src="{{ asset('garikon-black.png') }}" alt="Garikon Logo" style="height: 60px; margin-bottom: 10px;">
+                    <br><b>{{ config('app.name') }}</b>
+                </a>
             </div>
 
             <div class="card">

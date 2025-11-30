@@ -34,7 +34,9 @@ class InventoryItemController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $inventoryItems = $this->inventoryItemRepository->paginate(10);
+        $inventoryItems = $this->inventoryItemRepository->allQuery()
+            ->with(['category', 'supplier'])
+            ->paginate(10);
 
         return view('inventory_items.index')
             ->with('inventoryItems', $inventoryItems);
@@ -60,7 +62,7 @@ class InventoryItemController extends AppBaseController
 
         Flash::success('Inventory Item saved successfully.');
 
-        return redirect(route('inventoryItems.index'));
+        return redirect(route('inventory-items.index'));
     }
 
     /**
@@ -73,7 +75,7 @@ class InventoryItemController extends AppBaseController
         if (empty($inventoryItem)) {
             Flash::error('Inventory Item not found');
 
-            return redirect(route('inventoryItems.index'));
+            return redirect(route('inventory-items.index'));
         }
 
         return view('inventory_items.show')->with('inventoryItem', $inventoryItem);
@@ -90,15 +92,13 @@ class InventoryItemController extends AppBaseController
         if (empty($inventoryItem)) {
             Flash::error('Inventory Item not found');
 
-            return redirect(route('inventoryItems.index'));
+            return redirect(route('inventory-items.index'));
         }
 
         return view('inventory_items.edit', array_merge(
-            [
-                'inventoryItem', $inventoryItem,
-                $dropdownData
-            ]
-            ));
+            ['inventoryItem' => $inventoryItem],
+            $dropdownData
+        ));
     }
 
     /**
@@ -111,14 +111,14 @@ class InventoryItemController extends AppBaseController
         if (empty($inventoryItem)) {
             Flash::error('Inventory Item not found');
 
-            return redirect(route('inventoryItems.index'));
+            return redirect(route('inventory-items.index'));
         }
 
         $inventoryItem = $this->inventoryItemRepository->update($request->all(), $id);
 
         Flash::success('Inventory Item updated successfully.');
 
-        return redirect(route('inventoryItems.index'));
+        return redirect(route('inventory-items.index'));
     }
 
     /**
@@ -133,13 +133,13 @@ class InventoryItemController extends AppBaseController
         if (empty($inventoryItem)) {
             Flash::error('Inventory Item not found');
 
-            return redirect(route('inventoryItems.index'));
+            return redirect(route('inventory-items.index'));
         }
 
         $this->inventoryItemRepository->delete($id);
 
         Flash::success('Inventory Item deleted successfully.');
 
-        return redirect(route('inventoryItems.index'));
+        return redirect(route('inventory-items.index'));
     }
 }

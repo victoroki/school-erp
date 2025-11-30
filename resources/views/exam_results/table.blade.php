@@ -17,14 +17,14 @@
             <tbody>
             @foreach($examResults as $examResult)
                 <tr>
-                    <td>{{ $examResult->exam_id }}</td>
-                    <td>{{ $examResult->student_id }}</td>
-                    <td>{{ $examResult->class_section_id }}</td>
-                    <td>{{ $examResult->subject_id }}</td>
+                    <td>{{ $examResult->exam->name ?? 'N/A' }}</td>
+                    <td>{{ $examResult->student->first_name ?? 'N/A' }} {{ $examResult->student->last_name ?? '' }}</td>
+                    <td>{{ $examResult->classSection->section_name ?? 'N/A' }}</td>
+                    <td>{{ $examResult->subject->name ?? 'N/A' }}</td>
                     <td>{{ $examResult->marks_obtained }}</td>
-                    <td>{{ $examResult->grade_id }}</td>
+                    <td>{{ $examResult->grade->name ?? 'N/A' }}</td>
                     <td>{{ $examResult->remarks }}</td>
-                    <td>{{ $examResult->created_by }}</td>
+                    <td>{{ $examResult->createdBy->first_name ?? 'N/A' }} {{ $examResult->createdBy->last_name ?? '' }}</td>
                     <td  style="width: 120px">
                         {!! Form::open(['route' => ['exam-results.destroy', $examResult->result_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>

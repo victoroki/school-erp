@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class ExamSchedule extends Model
 {
     public $table = 'exam_schedules';
+    
+    protected $primaryKey = 'schedule_id';
 
     public $fillable = [
         'exam_id',
@@ -52,7 +54,7 @@ class ExamSchedule extends Model
 
     public function class(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(\App\Models\Class::class, 'class_id');
+        return $this->belongsTo(\App\Models\SchoolClass::class, 'class_id');
     }
 
     public function subject(): \Illuminate\Database\Eloquent\Relations\BelongsTo

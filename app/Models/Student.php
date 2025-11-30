@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Student extends Model
 {
     public $table = 'students';
+    protected $primaryKey = 'student_id';
 
     public $fillable = [
         'user_id',
@@ -42,20 +43,20 @@ class Student extends Model
     ];
 
     public static array $rules = [
-        'user_id' => 'nullable',
+        'user_id' => 'nullable|exists:users,id',
         'admission_no' => 'required|string|max:20',
         'first_name' => 'required|string|max:50',
         'middle_name' => 'nullable|string|max:50',
         'last_name' => 'required|string|max:50',
-        'date_of_birth' => 'required',
-        'gender' => 'required|string',
+        'date_of_birth' => 'required|date',
+        'gender' => 'required|in:male,female,other',
         'city' => 'required|string|max:50',
         'country' => 'required|string|max:50',
         'phone' => 'nullable|string|max:20',
         'emergency_contact' => 'required|string|max:20',
-        'admission_date' => 'required',
+        'admission_date' => 'required|date',
         'photo_url' => 'nullable|string|max:255',
-        'status' => 'nullable|string',
+        'status' => 'nullable|in:active,inactive,alumni,transferred',
         'created_at' => 'nullable',
         'updated_at' => 'nullable'
     ];
@@ -105,18 +106,64 @@ class Student extends Model
         return $this->belongsToMany(\App\Models\FeeStructure::class, 'student_fees');
     }
 
-    public function studentFeeDiscounts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function studentFees(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\StudentFee::class, 'student_id');
+    }
+
+    public function payments()
+    {
+        return $this->hasManyThrough(\App\Models\FeePayment::class, \App\Models\StudentFee::class, 'student_id', 'student_fee_id');
+    }
+
+    public function getStudentFeeDiscountsAttribute()
     {
         return $this->hasMany(\App\Models\StudentFeeDiscount::class, 'student_id');
     }
 
     public function parents(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsToMany(\App\Models\Parent::class, 'student_parent_relationship');
+        return $this->belongsToMany(\App\Models\Parents::class, 'student_parent_relationship', 'student_id', 'parent_id');
     }
 
     public function transportRegistrations(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(\App\Models\TransportRegistration::class, 'student_id');
+    }
+
+    // Helper Attributes for Fee Management
+    public function getTotalFeeAttribute()
+    {
+        return $this->studentFees->sum('final_amount');
+    }
+
+    public function getPaidFeeAttribute()
+    {
+        return $this->payments->sum('amount');
+    }
+
+    public function getBalanceFeeAttribute()
+    {
+        return $this->total_fee - $this->paid_fee;
+    }
+
+    public function getPaymentStatusAttribute()
+    {
+        $total = $this->total_fee;
+        $paid = $this->paid_fee;
+
+        if ($total <= 0) {
+            return 'No Fee';
+        }
+
+        if ($paid >= $total) {
+            return 'Paid';
+        }
+
+        if ($paid > 0) {
+            return 'Partial';
+        }
+
+        return 'Unpaid';
     }
 }

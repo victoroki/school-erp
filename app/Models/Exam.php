@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Exam extends Model
 {
     public $table = 'exams';
+    
+    protected $primaryKey = 'exam_id';
 
     public $fillable = [
         'exam_type_id',

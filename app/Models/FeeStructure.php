@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class FeeStructure extends Model
 {
     public $table = 'fee_structures';
+    protected $primaryKey = 'fee_structure_id';
 
     public $fillable = [
         'academic_year_id',
@@ -41,9 +42,9 @@ class FeeStructure extends Model
         return $this->belongsTo(\App\Models\AcademicYear::class, 'academic_year_id');
     }
 
-    public function class(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function schoolClass(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(\App\Models\Class::class, 'class_id');
+        return $this->belongsTo(\App\Models\SchoolClass::class, 'class_id', 'class_id');
     }
 
     public function students(): \Illuminate\Database\Eloquent\Relations\BelongsToMany

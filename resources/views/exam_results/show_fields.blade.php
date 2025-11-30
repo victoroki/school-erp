@@ -1,25 +1,25 @@
-<!-- Exam Id Field -->
+<!-- Exam Field -->
 <div class="col-sm-12">
-    {!! Form::label('exam_id', 'Exam Id:') !!}
-    <p>{{ $examResult->exam_id }}</p>
+    {!! Form::label('exam_id', 'Exam:') !!}
+    <p>{{ $examResult->exam ? $examResult->exam->exam_name : 'N/A' }}</p>
 </div>
 
-<!-- Student Id Field -->
+<!-- Student Field -->
 <div class="col-sm-12">
-    {!! Form::label('student_id', 'Student Id:') !!}
-    <p>{{ $examResult->student_id }}</p>
+    {!! Form::label('student_id', 'Student:') !!}
+    <p>{{ $examResult->student ? $examResult->student->first_name . ' ' . $examResult->student->last_name : 'N/A' }}</p>
 </div>
 
-<!-- Class Section Id Field -->
+<!-- Class Section Field -->
 <div class="col-sm-12">
-    {!! Form::label('class_section_id', 'Class Section Id:') !!}
-    <p>{{ $examResult->class_section_id }}</p>
+    {!! Form::label('class_section_id', 'Class Section:') !!}
+    <p>{{ $examResult->classSection ? $examResult->classSection->section_name : 'N/A' }}</p>
 </div>
 
-<!-- Subject Id Field -->
+<!-- Subject Field -->
 <div class="col-sm-12">
-    {!! Form::label('subject_id', 'Subject Id:') !!}
-    <p>{{ $examResult->subject_id }}</p>
+    {!! Form::label('subject_id', 'Subject:') !!}
+    <p>{{ $examResult->subject ? $examResult->subject->subject_name : 'N/A' }}</p>
 </div>
 
 <!-- Marks Obtained Field -->
@@ -28,10 +28,10 @@
     <p>{{ $examResult->marks_obtained }}</p>
 </div>
 
-<!-- Grade Id Field -->
+<!-- Grade Field -->
 <div class="col-sm-12">
-    {!! Form::label('grade_id', 'Grade Id:') !!}
-    <p>{{ $examResult->grade_id }}</p>
+    {!! Form::label('grade_id', 'Grade:') !!}
+    <p>{{ $examResult->gradingScale ? $examResult->gradingScale->grade_name : 'N/A' }}</p>
 </div>
 
 <!-- Remarks Field -->
@@ -43,6 +43,6 @@
 <!-- Created By Field -->
 <div class="col-sm-12">
     {!! Form::label('created_by', 'Created By:') !!}
-    <p>{{ $examResult->created_by }}</p>
+    <p>{{ $examResult->creator ? $examResult->creator->name : 'System' }}</p>
 </div>
 

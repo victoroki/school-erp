@@ -25,7 +25,7 @@
                 <tr>
                     <td>{{ $book->title }}</td>
                     <td>{{ $book->author }}</td>
-                    <td>{{ $book->category_id }}</td>
+                    <td>{{ $book->category->name ?? 'N/A' }}</td>
                     <td>{{ $book->isbn }}</td>
                     <td>{{ $book->publisher }}</td>
                     <td>{{ $book->publication_year }}</td>
@@ -38,6 +38,7 @@
                     <td>{{ $book->added_date }}</td>
                     <td>{{ $book->description }}</td>
                     <td  style="width: 120px">
+                        @if($book->id)
                         {!! Form::open(['route' => ['books.destroy', $book->id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
                             <a href="{{ route('books.show', [$book->id]) }}"
@@ -51,6 +52,7 @@
                             {!! Form::button('<i class="far fa-trash-alt"></i>', ['type' => 'submit', 'class' => 'btn btn-danger btn-xs', 'onclick' => "return confirm('Are you sure?')"]) !!}
                         </div>
                         {!! Form::close() !!}
+                        @endif
                     </td>
                 </tr>
             @endforeach

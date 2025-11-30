@@ -1,24 +1,24 @@
-<!-- Staff Field -->
+<!-- Staff Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('staff', 'Staff:') !!}
-    <p>{{ $teacherSubject->staff->first_name }} {{ $teacherSubject->staff->last_name }}</p>
+    {!! Form::label('staff_id', 'Staff Id:') !!}
+    <p>{{ $teacherSubject->staff_id }}</p>
 </div>
 
-<!-- Subject Field -->
+<!-- Subject Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('subject', 'Subject:') !!}
-    <p>{{ $teacherSubject->subject->name }}</p>
+    {!! Form::label('subject_id', 'Subject Id:') !!}
+    <p>{{ $teacherSubject->subject_id }}</p>
 </div>
 
-<!-- Class Section Field -->
+<!-- Class Section Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('class_section', 'Class Section:') !!}
-    <p>{{ $teacherSubject->classSection->schoolClass->name }} - {{ $teacherSubject->classSection->section->name }}</p>
+    {!! Form::label('class_section_id', 'Class Section Id:') !!}
+    <p>{{ $teacherSubject->class_section_id }}</p>
 </div>
 
-<!-- Academic Year Field -->
+<!-- Academic Year Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('academic_year', 'Academic Year:') !!}
-    <p>{{ $teacherSubject->academicYear->name }}</p>
+    {!! Form::label('academic_year_id', 'Academic Year Id:') !!}
+    <p>{{ $teacherSubject->academic_year_id }}</p>
 </div>
 

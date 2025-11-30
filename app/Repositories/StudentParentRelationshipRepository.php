@@ -22,4 +22,11 @@ class StudentParentRelationshipRepository extends BaseRepository
     {
         return StudentParentRelationship::class;
     }
+
+    public function paginate(int $perPage, array $columns = ['*']): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        $query = $this->allQuery();
+        $query->with(['student','parent']);
+        return $query->paginate($perPage, $columns);
+    }
 }

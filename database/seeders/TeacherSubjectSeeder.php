@@ -13,34 +13,12 @@ class TeacherSubjectSeeder extends Seeder
 {
     public function run(): void
     {
-        $year = AcademicYear::where('is_current', true)->first() ?? AcademicYear::first();
-        
-        if (!$year) {
-            $this->command->warn('No academic years found. Skipping TeacherSubject seeder.');
-            return;
-        }
-        
+        $year = AcademicYear::where('is_current', true)->first();
         $subjects = Subject::all();
         $teachers = Staff::where('staff_type', 'teaching')->get();
 
-        if ($teachers->isEmpty()) {
-            $this->command->warn('No teaching staff found. Skipping TeacherSubject seeder.');
-            return;
-        }
-
-        if ($subjects->isEmpty()) {
-            $this->command->warn('No subjects found. Skipping TeacherSubject seeder.');
-            return;
-        }
-
-        $classSections = ClassSection::all();
-        if ($classSections->isEmpty()) {
-            $this->command->warn('No class sections found. Skipping TeacherSubject seeder.');
-            return;
-        }
-
-        foreach ($classSections as $classSection) {
-            foreach ($subjects->random(min(2, $subjects->count())) as $subject) {
+        foreach (ClassSection::all() as $classSection) {
+            foreach ($subjects->random(2) as $subject) {
                 $teacher = $teachers->random();
                 TeacherSubject::firstOrCreate(
                     [
@@ -52,7 +30,5 @@ class TeacherSubjectSeeder extends Seeder
                 );
             }
         }
-        
-        $this->command->info('Teacher subjects seeded successfully.');
     }
 }

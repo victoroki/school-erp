@@ -25,4 +25,11 @@ class StudentClassEnrollmentRepository extends BaseRepository
     {
         return StudentClassEnrollment::class;
     }
+
+    public function paginate(int $perPage, array $columns = ['*']): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        $query = $this->allQuery();
+        $query->with(['student','classSection.class','classSection.section','academicYear']);
+        return $query->paginate($perPage, $columns);
+    }
 }

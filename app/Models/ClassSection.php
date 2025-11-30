@@ -35,6 +35,11 @@ class ClassSection extends Model
         return $this->belongsTo(\App\Models\SchoolClass::class, 'class_id');
     }
 
+    public function schoolClass(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\SchoolClass::class, 'class_id', 'class_id');
+    }
+
     public function classTeacher(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(\App\Models\Staff::class, 'class_teacher_id');

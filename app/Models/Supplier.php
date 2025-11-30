@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Supplier extends Model
 {
     public $table = 'suppliers';
+    
+    protected $primaryKey = 'supplier_id';
 
     public $fillable = [
         'name',

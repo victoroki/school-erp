@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class InventoryCategory extends Model
 {
     public $table = 'inventory_categories';
+    
+    protected $primaryKey = 'category_id';
 
     public $fillable = [
         'name',

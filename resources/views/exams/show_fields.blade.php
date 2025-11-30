@@ -1,7 +1,7 @@
-<!-- Exam Type Id Field -->
+<!-- Exam Type Field -->
 <div class="col-sm-12">
-    {!! Form::label('exam_type_id', 'Exam Type Id:') !!}
-    <p>{{ $exam->exam_type_id }}</p>
+    {!! Form::label('exam_type', 'Exam Type:') !!}
+    <p>{{ $exam->examType->name ?? 'N/A' }}</p>
 </div>
 
 <!-- Name Field -->
@@ -16,10 +16,10 @@
     <p>{{ $exam->description }}</p>
 </div>
 
-<!-- Academic Year Id Field -->
+<!-- Academic Year Field -->
 <div class="col-sm-12">
-    {!! Form::label('academic_year_id', 'Academic Year Id:') !!}
-    <p>{{ $exam->academic_year_id }}</p>
+    {!! Form::label('academic_year', 'Academic Year:') !!}
+    <p>{{ $exam->academicYear->year ?? 'N/A' }}</p>
 </div>
 
 <!-- Start Date Field -->
@@ -37,6 +37,6 @@
 <!-- Publish Result Field -->
 <div class="col-sm-12">
     {!! Form::label('publish_result', 'Publish Result:') !!}
-    <p>{{ $exam->publish_result }}</p>
+    <p>{{ $exam->publish_result ? 'Yes' : 'No' }}</p>
 </div>
 

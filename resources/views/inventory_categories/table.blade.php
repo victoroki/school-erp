@@ -14,13 +14,13 @@
                     <td>{{ $inventoryCategory->name }}</td>
                     <td>{{ $inventoryCategory->description }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['inventoryCategories.destroy', $inventoryCategory->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['inventory-categories.destroy', $inventoryCategory->category_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('inventoryCategories.show', [$inventoryCategory->id]) }}"
+                            <a href="{{ route('inventory-categories.show', [$inventoryCategory->category_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('inventoryCategories.edit', [$inventoryCategory->id]) }}"
+                            <a href="{{ route('inventory-categories.edit', [$inventoryCategory->category_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

@@ -20,13 +20,13 @@
                     <td>{{ $supplier->phone }}</td>
                     <td>{{ $supplier->address }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['suppliers.destroy', $supplier->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['suppliers.destroy', $supplier->supplier_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('suppliers.show', [$supplier->id]) }}"
+                            <a href="{{ route('suppliers.show', [$supplier->supplier_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('suppliers.edit', [$supplier->id]) }}"
+                            <a href="{{ route('suppliers.edit', [$supplier->supplier_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

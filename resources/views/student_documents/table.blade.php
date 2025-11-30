@@ -1,6 +1,6 @@
 <div class="card-body p-0">
     <div class="table-responsive">
-        <table class="table" id="student-documents-table">
+        <table class="table table-striped table-hover table-sm" id="student-documents-table">
             <thead>
             <tr>
                 <th>Student </th>
@@ -13,18 +13,24 @@
             <tbody>
             @foreach($studentDocuments as $studentDocument)
                 <tr>
-                    <td>{{ $studentDocument->student_id }}</td>
+                    <td>{{ optional($studentDocument->student)->first_name }} {{ optional($studentDocument->student)->last_name }}</td>
                     <td>{{ $studentDocument->document_type }}</td>
                     <td>{{ $studentDocument->document_name }}</td>
-                    <td>{{ $studentDocument->file_path }}</td>
+                    <td>
+                        @if($studentDocument->file_path)
+                            <a href="{{ route('student-documents.download', [$studentDocument->document_id]) }}" class="btn btn-outline-primary btn-xs">Download</a>
+                        @else
+                            N/A
+                        @endif
+                    </td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['studentDocuments.destroy', $studentDocument->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['student-documents.destroy', $studentDocument->document_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('studentDocuments.show', [$studentDocument->id]) }}"
+                            <a href="{{ route('student-documents.show', [$studentDocument->document_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('studentDocuments.edit', [$studentDocument->id]) }}"
+                            <a href="{{ route('student-documents.edit', [$studentDocument->document_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

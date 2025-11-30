@@ -1,6 +1,6 @@
 <div class="card-body p-0">
     <div class="table-responsive">
-        <table class="table" id="student-parent-relationships-table">
+        <table class="table table-striped table-hover table-sm" id="student-parent-relationships-table">
             <thead>
             <tr>
                 <th>Student</th>
@@ -12,9 +12,12 @@
             <tbody>
             @foreach($studentParentRelationships as $studentParentRelationship)
                 <tr>
-                    <td>{{ $studentParentRelationship->student_id }}</td>
-                    <td>{{ $studentParentRelationship->parent_id }}</td>
-                    <td>{{ $studentParentRelationship->is_primary_contact }}</td>
+                    <td>{{ optional($studentParentRelationship->student)->first_name }} {{ optional($studentParentRelationship->student)->last_name }}</td>
+                    <td>{{ optional($studentParentRelationship->parent)->first_name }} {{ optional($studentParentRelationship->parent)->last_name }}</td>
+                    <td>
+                        @php $cls = $studentParentRelationship->is_primary_contact ? 'success' : 'secondary'; @endphp
+                        <span class="badge badge-{{ $cls }}">{{ $studentParentRelationship->is_primary_contact ? 'Primary' : 'Secondary' }}</span>
+                    </td>
                     <td  style="width: 120px">
                         {!! Form::open(['route' => ['student-parent-relationships.destroy', $studentParentRelationship->id], 'method' => 'delete']) !!}
                         <div class='btn-group'>

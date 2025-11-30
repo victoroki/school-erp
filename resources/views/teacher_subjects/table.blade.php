@@ -13,10 +13,10 @@
             <tbody>
             @foreach($teacherSubjects as $teacherSubject)
                 <tr>
-                    <td>{{ $teacherSubject->staff->first_name }} {{ $teacherSubject->staff->last_name }}</td>
-                    <td>{{ $teacherSubject->subject->name }}</td>
-                    <td>{{ $teacherSubject->classSection->class->name }} - {{ $teacherSubject->classSection->section->name }}</td>
-                    <td>{{ $teacherSubject->academicYear->name }}</td>
+                    <td>{{ optional($teacherSubject->staff)->full_name }}</td>
+                    <td>{{ optional($teacherSubject->subject)->name }}</td>
+                    <td>{{ optional(optional($teacherSubject->classSection)->class)->name }} - {{ optional(optional($teacherSubject->classSection)->section)->name }}</td>
+                    <td>{{ optional($teacherSubject->academicYear)->name }}</td>
                     <td  style="width: 120px">
                         {!! Form::open(['route' => ['teacher-subjects.destroy', $teacherSubject->teacher_subject_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>

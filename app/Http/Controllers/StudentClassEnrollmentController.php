@@ -30,15 +30,19 @@ class StudentClassEnrollmentController extends AppBaseController
                 ->toArray(),
             'classSections' => ClassSection::with(['class', 'section', 'academicYear'])
                 ->get()
-                ->pluck('display_name', 'id')
+                ->mapWithKeys(function ($cs) {
+                    $name = ($cs->class && $cs->class->name ? $cs->class->name : 'Class')
+                        . ' - ' . ($cs->section && $cs->section->name ? $cs->section->name : 'Section')
+                        . ' (' . ($cs->academicYear && $cs->academicYear->name ? $cs->academicYear->name : 'Year') . ')';
+                    return [$cs->class_section_id => $name];
+                })
                 ->toArray(),
             'academicYears' => AcademicYear::pluck('name', 'academic_year_id')//where('status', 'active')
                 ->toArray(),
             'statusOptions' => [
                 'active' => 'Active',
-                'inactive' => 'Inactive',
                 'transferred' => 'Transferred',
-                'graduated' => 'Graduated',
+                'completed' => 'Completed',
                 'dropped' => 'Dropped'
             ]
         ];

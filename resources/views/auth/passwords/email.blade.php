@@ -3,7 +3,10 @@
     <body class="hold-transition login-page">
         <div class="login-box">
             <div class="login-logo">
-                <a href="{{ url('/home') }}"><b>{{ config('app.name') }}</b></a>
+                <a href="{{ url('/home') }}">
+                    <img src="{{ asset('garikon-black.png') }}" alt="Garikon Logo" style="height: 60px; margin-bottom: 10px;">
+                    <br><b>{{ config('app.name') }}</b>
+                </a>
             </div>
 
             <!-- /.login-logo -->

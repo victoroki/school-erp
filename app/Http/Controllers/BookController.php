@@ -31,7 +31,7 @@ class BookController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $books = $this->bookRepository->paginate(10);
+        $books = $this->bookRepository->allQuery()->with('category')->paginate(10);
 
         return view('books.index')
             ->with('books', $books);
@@ -90,7 +90,7 @@ class BookController extends AppBaseController
             return redirect(route('books.index'));
         }
 
-        return view('books.edit', array_merge('book', $book,$dropdowndata));
+        return view('books.edit', array_merge(['book' => $book], $dropdowndata));
     }
 
     /**

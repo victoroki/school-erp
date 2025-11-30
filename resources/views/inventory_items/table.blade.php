@@ -19,12 +19,20 @@
             @foreach($inventoryItems as $inventoryItem)
                 <tr>
                     <td>{{ $inventoryItem->name }}</td>
-                    <td>{{ $inventoryItem->category_id }}</td>
-                    <td>{{ $inventoryItem->quantity }}</td>
+                    <td>{{ $inventoryItem->category->name ?? 'N/A' }}</td>
+                    <td>
+                        @if($inventoryItem->isLowStock())
+                            <span class="badge badge-danger">{{ $inventoryItem->quantity }}</span>
+                        @elseif($inventoryItem->quantity <= ($inventoryItem->minimum_quantity * 1.5))
+                            <span class="badge badge-warning">{{ $inventoryItem->quantity }}</span>
+                        @else
+                            {{ $inventoryItem->quantity }}
+                        @endif
+                    </td>
                     <td>{{ $inventoryItem->unit }}</td>
                     <td>{{ $inventoryItem->minimum_quantity }}</td>
                     <td>{{ $inventoryItem->cost_per_unit }}</td>
-                    <td>{{ $inventoryItem->supplier_id }}</td>
+                    <td>{{ $inventoryItem->supplier->name ?? 'N/A' }}</td>
                     <td>{{ $inventoryItem->location }}</td>
                     <td>{{ $inventoryItem->description }}</td>
                     <td  style="width: 120px">

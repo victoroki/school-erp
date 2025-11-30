@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Student;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateStudentRequest extends FormRequest
 {
@@ -25,7 +26,10 @@ class UpdateStudentRequest extends FormRequest
     public function rules()
     {
         $rules = Student::$rules;
-        
+
+        $studentId = $this->route('student');
+        $rules['admission_no'] .= '|' . Rule::unique('students', 'admission_no')->ignore($studentId, 'student_id');
+        $rules['user_id'] .= '|' . Rule::unique('students', 'user_id')->ignore($studentId, 'student_id');
         return $rules;
     }
 }

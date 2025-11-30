@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Route extends Model
 {
     public $table = 'routes';
+    
+    protected $primaryKey = 'route_id';
 
     public $fillable = [
         'name',

@@ -50,6 +50,6 @@ class Parents extends Model
 
     public function students(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsToMany(\App\Models\Student::class, 'student_parent_relationship');
+        return $this->belongsToMany(\App\Models\Student::class, 'student_parent_relationship', 'parent_id', 'student_id');
     }
 }

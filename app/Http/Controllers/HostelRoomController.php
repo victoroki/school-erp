@@ -30,7 +30,9 @@ class HostelRoomController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $hostelRooms = $this->hostelRoomRepository->paginate(10);
+        $hostelRooms = $this->hostelRoomRepository->allQuery()
+            ->with('hostel')
+            ->paginate(10);
 
         return view('hostel_rooms.index')
             ->with('hostelRooms', $hostelRooms);
@@ -56,7 +58,7 @@ class HostelRoomController extends AppBaseController
 
         Flash::success('Hostel Room saved successfully.');
 
-        return redirect(route('hostelRooms.index'));
+        return redirect(route('hostel-rooms.index'));
     }
 
     /**
@@ -70,13 +72,13 @@ class HostelRoomController extends AppBaseController
         if (empty($hostelRoom)) {
             Flash::error('Hostel Room not found');
 
-            return redirect(route('hostelRooms.index'));
+            return redirect(route('hostel-rooms.index'));
         }
 
-        return view('hostel_rooms.show', array_merge([
-            'hostelRoom', $hostelRoom,
+        return view('hostel_rooms.show', array_merge(
+            ['hostelRoom' => $hostelRoom],
             $dropdown
-        ]));
+        ));
     }
 
     /**
@@ -89,7 +91,7 @@ class HostelRoomController extends AppBaseController
         if (empty($hostelRoom)) {
             Flash::error('Hostel Room not found');
 
-            return redirect(route('hostelRooms.index'));
+            return redirect(route('hostel-rooms.index'));
         }
 
         return view('hostel_rooms.edit')->with('hostelRoom', $hostelRoom);
@@ -105,14 +107,14 @@ class HostelRoomController extends AppBaseController
         if (empty($hostelRoom)) {
             Flash::error('Hostel Room not found');
 
-            return redirect(route('hostelRooms.index'));
+            return redirect(route('hostel-rooms.index'));
         }
 
         $hostelRoom = $this->hostelRoomRepository->update($request->all(), $id);
 
         Flash::success('Hostel Room updated successfully.');
 
-        return redirect(route('hostelRooms.index'));
+        return redirect(route('hostel-rooms.index'));
     }
 
     /**
@@ -127,13 +129,13 @@ class HostelRoomController extends AppBaseController
         if (empty($hostelRoom)) {
             Flash::error('Hostel Room not found');
 
-            return redirect(route('hostelRooms.index'));
+            return redirect(route('hostel-rooms.index'));
         }
 
         $this->hostelRoomRepository->delete($id);
 
         Flash::success('Hostel Room deleted successfully.');
 
-        return redirect(route('hostelRooms.index'));
+        return redirect(route('hostel-rooms.index'));
     }
 }

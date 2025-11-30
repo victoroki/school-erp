@@ -18,9 +18,9 @@
             <tbody>
             @foreach($examSchedules as $examSchedule)
                 <tr>
-                    <td>{{ $examSchedule->exam_id }}</td>
-                    <td>{{ $examSchedule->class_id }}</td>
-                    <td>{{ $examSchedule->subject_id }}</td>
+                    <td>{{ $examSchedule->exam->name ?? 'N/A' }}</td>
+                    <td>{{ $examSchedule->class->class_name ?? 'N/A' }}</td>
+                    <td>{{ $examSchedule->subject->name ?? 'N/A' }}</td>
                     <td>{{ $examSchedule->exam_date }}</td>
                     <td>{{ $examSchedule->start_time }}</td>
                     <td>{{ $examSchedule->end_time }}</td>

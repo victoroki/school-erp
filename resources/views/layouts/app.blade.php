@@ -15,8 +15,8 @@
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item dropdown user-menu">
                         <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
-                            <img src="logo.png"
-                                class="user-image img-circle elevation-2" alt="User Image">
+                            <img src="{{ asset('garikon-black.png') }}"
+                                class="user-image img-circle elevation-2" alt="Garikon User">
                             @auth
                             <span class="d-none d-md-inline">{{ Auth::user()->name }}</span>
                             @endauth
@@ -24,8 +24,8 @@
                         <ul class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                             <!-- User image -->
                             <li class="user-header bg-primary">
-                                <img src="logo.png"
-                                    class="img-circle elevation-2" alt="User Image">
+                                <img src="{{ asset('garikon-white.png') }}"
+                                    class="img-circle elevation-2" alt="Garikon User">
                                 <p>
                                     @auth
                                     {{ Auth::user()->name }}
@@ -62,7 +62,7 @@
                 <div class="float-right d-none d-sm-block">
                     <b>Version</b> 1.0.0
                 </div>
-                <strong>Copyright &copy; 2025-2027 <a href="#">PrimeNova</a>.</strong> All rights
+                <strong>Copyright &copy; 2025-2027 <a href="#">{{ config('app.name') }}</a>.</strong> All rights
                 reserved.
             </footer>
         </div>

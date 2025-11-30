@@ -1,19 +1,19 @@
-<!-- Academic Year Id Field -->
+<!-- Academic Year Field -->
 <div class="col-sm-12">
-    {!! Form::label('academic_year_id', 'Academic Year Id:') !!}
-    <p>{{ $feeStructure->academic_year_id }}</p>
+    {!! Form::label('academic_year_id', 'Academic Year:') !!}
+    <p>{{ $feeStructure->academicYear->name ?? 'N/A' }}</p>
 </div>
 
-<!-- Class Id Field -->
+<!-- Class Field -->
 <div class="col-sm-12">
-    {!! Form::label('class_id', 'Class Id:') !!}
-    <p>{{ $feeStructure->class_id }}</p>
+    {!! Form::label('class_id', 'Class:') !!}
+    <p>{{ $feeStructure->schoolClass->name ?? 'N/A' }}</p>
 </div>
 
-<!-- Category Id Field -->
+<!-- Category Field -->
 <div class="col-sm-12">
-    {!! Form::label('category_id', 'Category Id:') !!}
-    <p>{{ $feeStructure->category_id }}</p>
+    {!! Form::label('category_id', 'Category:') !!}
+    <p>{{ $feeStructure->category->name ?? 'N/A' }}</p>
 </div>
 
 <!-- Amount Field -->

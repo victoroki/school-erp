@@ -20,13 +20,13 @@
                     <td>{{ $route->end_point }}</td>
                     <td>{{ $route->distance }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['routes.destroy', $route->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['routes.destroy', $route->route_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('routes.show', [$route->id]) }}"
+                            <a href="{{ route('routes.show', [$route->route_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('routes.edit', [$route->id]) }}"
+                            <a href="{{ route('routes.edit', [$route->route_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

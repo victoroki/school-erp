@@ -24,6 +24,9 @@ class CreateStudentRequest extends FormRequest
      */
     public function rules()
     {
-        return Student::$rules;
+        $rules = Student::$rules;
+        $rules['admission_no'] .= '|unique:students,admission_no';
+        $rules['user_id'] .= '|unique:students,user_id';
+        return $rules;
     }
 }

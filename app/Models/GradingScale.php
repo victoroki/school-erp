@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class GradingScale extends Model
 {
     public $table = 'grading_scales';
+    
+    protected $primaryKey = 'grade_id';
 
     public $fillable = [
         'name',

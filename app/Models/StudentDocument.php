@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class StudentDocument extends Model
 {
     public $table = 'student_documents';
+    protected $primaryKey = 'document_id';
+    public $timestamps = false;
 
     public $fillable = [
         'student_id',
@@ -24,7 +26,7 @@ class StudentDocument extends Model
     ];
 
     public static array $rules = [
-        'student_id' => 'nullable',
+        'student_id' => 'required|exists:students,student_id',
         'document_type' => 'required|string|max:50',
         'document_name' => 'required|string|max:100',
         'file_path' => 'required|string|max:255',

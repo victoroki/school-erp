@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ config('app.name', 'Garikon School ERP') }}</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -122,7 +122,7 @@
     <header class="header">
         <div class="container flex justify-between items-center">
             <a href="/" class="text-2xl font-serif font-medium text-primary">
-                {{ config('app.name', 'Academie') }}
+                {{ config('app.name', 'Garikon School ERP') }}
             </a>
             <nav class="hidden md:flex items-center space-x-8">
                 <a href="#features" class="text-dark hover:text-accent transition">Features</a>
@@ -180,7 +180,7 @@
 
     <footer class="footer">
         <div class="container text-center">
-            <p>&copy; {{ date('Y') }} {{ config('app.name', 'Academie') }}. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} {{ config('app.name', 'Garikon School ERP') }}. All rights reserved.</p>
         </div>
     </footer>
 </body>

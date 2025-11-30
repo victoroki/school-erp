@@ -16,21 +16,21 @@
             <tbody>
             @foreach($exams as $exam)
                 <tr>
-                    <td>{{ $exam->exam_type_id }}</td>
+                    <td>{{ $exam->examType->name ?? 'N/A' }}</td>
                     <td>{{ $exam->name }}</td>
                     <td>{{ $exam->description }}</td>
-                    <td>{{ $exam->academic_year_id }}</td>
+                    <td>{{ $exam->academicYear->year ?? 'N/A' }}</td>
                     <td>{{ $exam->start_date }}</td>
                     <td>{{ $exam->end_date }}</td>
                     <td>{{ $exam->publish_result }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['exams.destroy', $exam->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['exams.destroy', $exam->exam_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('exams.show', [$exam->id]) }}"
+                            <a href="{{ route('exams.show', [$exam->exam_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('exams.edit', [$exam->id]) }}"
+                            <a href="{{ route('exams.edit', [$exam->exam_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

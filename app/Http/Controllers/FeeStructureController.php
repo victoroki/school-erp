@@ -27,7 +27,9 @@ class FeeStructureController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $feeStructures = $this->feeStructureRepository->paginate(10);
+        $feeStructures = $this->feeStructureRepository->allQuery()
+            ->with(['academicYear', 'schoolClass', 'category'])
+            ->paginate(10);
 
         return view('fee_structures.index')
             ->with('feeStructures', $feeStructures);
@@ -61,7 +63,7 @@ class FeeStructureController extends AppBaseController
 
         Flash::success('Fee Structure saved successfully.');
 
-        return redirect(route('feeStructures.index'));
+        return redirect(route('fee-structures.index'));
     }
 
     /**
@@ -74,7 +76,7 @@ class FeeStructureController extends AppBaseController
         if (empty($feeStructure)) {
             Flash::error('Fee Structure not found');
 
-            return redirect(route('feeStructures.index'));
+            return redirect(route('fee-structures.index'));
         }
 
         return view('fee_structures.show')->with('feeStructure', $feeStructure);
@@ -91,14 +93,12 @@ class FeeStructureController extends AppBaseController
         if (empty($feeStructure)) {
             Flash::error('Fee Structure not found');
 
-            return redirect(route('feeStructures.index'));
+            return redirect(route('fee-structures.index'));
         }
 
-        return view('fee_structures.edit', array_merge([
-            'feeStructure', $feeStructure,
+        return view('fee_structures.edit', array_merge(
+            ['feeStructure' => $feeStructure],
             $dropdownData
-        ]
-
         ));
     }
 
@@ -112,14 +112,14 @@ class FeeStructureController extends AppBaseController
         if (empty($feeStructure)) {
             Flash::error('Fee Structure not found');
 
-            return redirect(route('feeStructures.index'));
+            return redirect(route('fee-structures.index'));
         }
 
         $feeStructure = $this->feeStructureRepository->update($request->all(), $id);
 
         Flash::success('Fee Structure updated successfully.');
 
-        return redirect(route('feeStructures.index'));
+        return redirect(route('fee-structures.index'));
     }
 
     /**
@@ -134,13 +134,13 @@ class FeeStructureController extends AppBaseController
         if (empty($feeStructure)) {
             Flash::error('Fee Structure not found');
 
-            return redirect(route('feeStructures.index'));
+            return redirect(route('fee-structures.index'));
         }
 
         $this->feeStructureRepository->delete($id);
 
         Flash::success('Fee Structure deleted successfully.');
 
-        return redirect(route('feeStructures.index'));
+        return redirect(route('fee-structures.index'));
     }
 }

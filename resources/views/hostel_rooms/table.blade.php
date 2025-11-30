@@ -16,13 +16,34 @@
             <tbody>
             @foreach($hostelRooms as $hostelRoom)
                 <tr>
-                    <td>{{ $hostelRoom->hostel_id }}</td>
+                    <td>{{ $hostelRoom->hostel->name ?? 'N/A' }}</td>
                     <td>{{ $hostelRoom->room_number }}</td>
                     <td>{{ $hostelRoom->room_type }}</td>
                     <td>{{ $hostelRoom->capacity }}</td>
-                    <td>{{ $hostelRoom->occupied }}</td>
+                    <td>
+                        <div>
+                            {{ $hostelRoom->occupied ?? 0 }} / {{ $hostelRoom->capacity }}
+                            <div class="progress" style="height: 5px; margin-top: 3px;">
+                                @php
+                                    $percentage = $hostelRoom->getOccupancyPercentage();
+                                    $progressClass = $percentage >= 100 ? 'bg-danger' : ($percentage >= 75 ? 'bg-warning' : 'bg-success');
+                                @endphp
+                                <div class="progress-bar {{ $progressClass }}" style="width: {{ min($percentage, 100) }}%"></div>
+                            </div>
+                        </div>
+                    </td>
                     <td>{{ $hostelRoom->floor }}</td>
-                    <td>{{ $hostelRoom->status }}</td>
+                    <td>
+                        @if($hostelRoom->status === 'available')
+                            <span class="badge badge-success">Available</span>
+                        @elseif($hostelRoom->status === 'full')
+                            <span class="badge badge-danger">Full</span>
+                        @elseif($hostelRoom->status === 'under_maintenance')
+                            <span class="badge badge-warning">Maintenance</span>
+                        @else
+                            <span class="badge badge-secondary">{{ ucfirst($hostelRoom->status) }}</span>
+                        @endif
+                    </td>
                     <td  style="width: 120px">
                         {!! Form::open(['route' => ['hostel-rooms.destroy', $hostelRoom->room_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>

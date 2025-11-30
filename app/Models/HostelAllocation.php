@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class HostelAllocation extends Model
 {
     public $table = 'hostel_allocations';
+    protected $primaryKey = 'allocation_id';
 
     public $fillable = [
         'student_id',
@@ -26,14 +27,14 @@ class HostelAllocation extends Model
     ];
 
     public static array $rules = [
-        'student_id' => 'nullable',
-        'hostel_id' => 'nullable',
-        'room_id' => 'nullable',
-        'bed_number' => 'nullable',
-        'allocation_date' => 'required',
-        'vacating_date' => 'nullable',
-        'status' => 'nullable|string',
-        'academic_year_id' => 'nullable',
+        'student_id' => 'required|exists:students,id',
+        'hostel_id' => 'required|exists:hostels,hostel_id',
+        'room_id' => 'required|exists:hostel_rooms,room_id',
+        'bed_number' => 'nullable|integer|min:1',
+        'allocation_date' => 'required|date',
+        'vacating_date' => 'nullable|date|after:allocation_date',
+        'status' => 'nullable|in:active,vacated,pending',
+        'academic_year_id' => 'nullable|exists:academic_years,id',
         'created_at' => 'nullable',
         'updated_at' => 'nullable'
     ];
@@ -61,5 +62,11 @@ class HostelAllocation extends Model
     public function hostelFees(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(\App\Models\HostelFee::class, 'allocation_id');
+    }
+
+    // Helper method to check if allocation is active
+    public function isActive(): bool
+    {
+        return $this->status === 'active' && (is_null($this->vacating_date) || $this->vacating_date->isFuture());
     }
 }

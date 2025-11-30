@@ -19,9 +19,9 @@ class StudentFeeDiscount extends Model
     ];
 
     public static array $rules = [
-        'student_id' => 'nullable',
-        'discount_id' => 'nullable',
-        'academic_year_id' => 'nullable'
+        'student_id' => 'required|exists:students,student_id',
+        'discount_id' => 'required|exists:fee_discounts,discount_id',
+        'academic_year_id' => 'required|exists:academic_years,academic_year_id'
     ];
 
     public function discount(): \Illuminate\Database\Eloquent\Relations\BelongsTo

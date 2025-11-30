@@ -14,9 +14,9 @@
             <tbody>
             @foreach($feeStructures as $feeStructure)
                 <tr>
-                    <td>{{ $feeStructure->academic_year_id }}</td>
-                    <td>{{ $feeStructure->class_id }}</td>
-                    <td>{{ $feeStructure->category_id }}</td>
+                    <td>{{ $feeStructure->academicYear->name ?? 'N/A' }}</td>
+                    <td>{{ $feeStructure->schoolClass->name ?? 'N/A' }}</td>
+                    <td>{{ $feeStructure->category->name ?? 'N/A' }}</td>
                     <td>{{ $feeStructure->amount }}</td>
                     <td>{{ $feeStructure->due_date }}</td>
                     <td  style="width: 120px">

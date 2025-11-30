@@ -49,7 +49,7 @@ class StudentFeeDiscountController extends AppBaseController
 
         Flash::success('Student Fee Discount saved successfully.');
 
-        return redirect(route('studentFeeDiscounts.index'));
+        return redirect(route('student-fee-discounts.index'));
     }
 
     /**
@@ -62,7 +62,7 @@ class StudentFeeDiscountController extends AppBaseController
         if (empty($studentFeeDiscount)) {
             Flash::error('Student Fee Discount not found');
 
-            return redirect(route('studentFeeDiscounts.index'));
+            return redirect(route('student-fee-discounts.index'));
         }
 
         return view('student_fee_discounts.show')->with('studentFeeDiscount', $studentFeeDiscount);
@@ -78,7 +78,7 @@ class StudentFeeDiscountController extends AppBaseController
         if (empty($studentFeeDiscount)) {
             Flash::error('Student Fee Discount not found');
 
-            return redirect(route('studentFeeDiscounts.index'));
+            return redirect(route('student-fee-discounts.index'));
         }
 
         return view('student_fee_discounts.edit')->with('studentFeeDiscount', $studentFeeDiscount);
@@ -101,7 +101,7 @@ class StudentFeeDiscountController extends AppBaseController
 
         Flash::success('Student Fee Discount updated successfully.');
 
-        return redirect(route('studentFeeDiscounts.index'));
+        return redirect(route('student-fee-discounts.index'));
     }
 
     /**
@@ -116,13 +116,13 @@ class StudentFeeDiscountController extends AppBaseController
         if (empty($studentFeeDiscount)) {
             Flash::error('Student Fee Discount not found');
 
-            return redirect(route('studentFeeDiscounts.index'));
+            return redirect(route('student-fee-discounts.index'));
         }
 
         $this->studentFeeDiscountRepository->delete($id);
 
         Flash::success('Student Fee Discount deleted successfully.');
 
-        return redirect(route('studentFeeDiscounts.index'));
+        return redirect(route('student-fee-discounts.index'));
     }
 }

@@ -1,19 +1,19 @@
-<!-- Exam Id Field -->
+<!-- Exam Field -->
 <div class="col-sm-12">
-    {!! Form::label('exam_id', 'Exam Id:') !!}
-    <p>{{ $examSchedule->exam_id }}</p>
+    {!! Form::label('exam', 'Exam:') !!}
+    <p>{{ $examSchedule->exam->name ?? 'N/A' }}</p>
 </div>
 
-<!-- Class Id Field -->
+<!-- Class Field -->
 <div class="col-sm-12">
-    {!! Form::label('class_id', 'Class Id:') !!}
-    <p>{{ $examSchedule->class_id }}</p>
+    {!! Form::label('class', 'Class:') !!}
+    <p>{{ $examSchedule->class->class_name ?? 'N/A' }}</p>
 </div>
 
-<!-- Subject Id Field -->
+<!-- Subject Field -->
 <div class="col-sm-12">
-    {!! Form::label('subject_id', 'Subject Id:') !!}
-    <p>{{ $examSchedule->subject_id }}</p>
+    {!! Form::label('subject', 'Subject:') !!}
+    <p>{{ $examSchedule->subject->name ?? 'N/A' }}</p>
 </div>
 
 <!-- Exam Date Field -->

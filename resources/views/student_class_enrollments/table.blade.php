@@ -1,6 +1,6 @@
 <div class="card-body p-0">
     <div class="table-responsive">
-        <table class="table" id="student-class-enrollments-table">
+        <table class="table table-striped table-hover table-sm" id="student-class-enrollments-table">
             <thead>
             <tr>
                 <th>Student </th>
@@ -15,12 +15,23 @@
             <tbody>
             @foreach($studentClassEnrollments as $studentClassEnrollment)
                 <tr>
-                    <td>{{ $studentClassEnrollment->student_id }}</td>
-                    <td>{{ $studentClassEnrollment->class_section_id }}</td>
+                    <td>{{ optional($studentClassEnrollment->student)->first_name }} {{ optional($studentClassEnrollment->student)->last_name }}</td>
+                    <td>{{ optional(optional($studentClassEnrollment->classSection)->class)->name }} - {{ optional(optional($studentClassEnrollment->classSection)->section)->name }}</td>
                     <td>{{ $studentClassEnrollment->roll_number }}</td>
-                    <td>{{ $studentClassEnrollment->academic_year_id }}</td>
+                    <td>{{ optional($studentClassEnrollment->academicYear)->name }}</td>
                     <td>{{ $studentClassEnrollment->enrollment_date }}</td>
-                    <td>{{ $studentClassEnrollment->status }}</td>
+                    <td>
+                        @php
+                            $map = [
+                                'active' => 'success',
+                                'transferred' => 'warning',
+                                'completed' => 'primary',
+                                'dropped' => 'danger'
+                            ];
+                            $cls = $map[$studentClassEnrollment->status] ?? 'light';
+                        @endphp
+                        <span class="badge badge-{{ $cls }}">{{ ucfirst($studentClassEnrollment->status) }}</span>
+                    </td>
                     <td  style="width: 120px">
                         {!! Form::open(['route' => ['student-class-enrollments.destroy', $studentClassEnrollment->enrollment_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>

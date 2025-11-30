@@ -19,6 +19,11 @@ class RouteController extends AppBaseController
         $this->routeRepository = $routeRepo;
     }
 
+    private function getDropdownData()
+    {
+        return [];
+    }
+
     /**
      * Display a listing of the Route.
      */
@@ -35,7 +40,8 @@ class RouteController extends AppBaseController
      */
     public function create()
     {
-        return view('routes.create');
+        $dropdownData = $this->getDropdownData();
+        return view('routes.create', $dropdownData);
     }
 
     /**
@@ -81,7 +87,8 @@ class RouteController extends AppBaseController
             return redirect(route('routes.index'));
         }
 
-        return view('routes.edit')->with('route', $route);
+        $dropdownData = $this->getDropdownData();
+        return view('routes.edit', array_merge(['route' => $route], $dropdownData));
     }
 
     /**

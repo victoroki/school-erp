@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Book extends Model
 {
     public $table = 'books';
+    protected $primaryKey = 'book_id';
 
     public $fillable = [
         'title',

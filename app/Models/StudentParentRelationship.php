@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class StudentParentRelationship extends Model
 {
     public $table = 'student_parent_relationship';
+    public $timestamps = false;
 
     public $fillable = [
         'student_id',
@@ -19,14 +20,14 @@ class StudentParentRelationship extends Model
     ];
 
     public static array $rules = [
-        'student_id' => 'nullable',
-        'parent_id' => 'nullable',
+        'student_id' => 'required|exists:students,student_id',
+        'parent_id' => 'required|exists:parents,parent_id',
         'is_primary_contact' => 'nullable|boolean'
     ];
 
     public function parent(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(\App\Models\Parent::class, 'parent_id');
+        return $this->belongsTo(\App\Models\Parents::class, 'parent_id');
     }
 
     public function student(): \Illuminate\Database\Eloquent\Relations\BelongsTo

@@ -24,4 +24,11 @@ class StudentDocumentRepository extends BaseRepository
     {
         return StudentDocument::class;
     }
+
+    public function paginate(int $perPage, array $columns = ['*']): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        $query = $this->allQuery();
+        $query->with(['student']);
+        return $query->paginate($perPage, $columns);
+    }
 }

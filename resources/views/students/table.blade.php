@@ -1,6 +1,6 @@
 <div class="card-body p-0">
     <div class="table-responsive">
-        <table class="table" id="students-table">
+        <table class="table table-striped table-hover table-sm" id="students-table">
             <thead>
             <tr>
                 <!-- <th>User Id</th> -->
@@ -36,19 +36,28 @@
                     <td>{{ $student->emergency_contact }}</td>
                     <!-- <td>{{ $student->admission_date }}</td> -->
                     <!-- <td>{{ $student->photo_url }}</td> -->
-                    <td>{{ $student->status }}</td>
+                    <td>
+                        @php
+                            $map = [
+                                'active' => 'success',
+                                'inactive' => 'secondary',
+                                'alumni' => 'primary',
+                                'transferred' => 'warning'
+                            ];
+                            $cls = $map[$student->status] ?? 'light';
+                        @endphp
+                        <span class="badge badge-{{ $cls }}">{{ ucfirst($student->status) }}</span>
+                    </td>
                     <td  style="width: 120px">
                         {!! Form::open(['route' => ['students.destroy', $student->student_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('students.show', [$student->student_id]) }}"
-                               class='btn btn-default btn-xs'>
+                            <a href="{{ route('students.show', [$student->student_id]) }}" class='btn btn-outline-primary btn-xs' title="View">
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('students.edit', [$student->student_id]) }}"
-                               class='btn btn-default btn-xs'>
+                            <a href="{{ route('students.edit', [$student->student_id]) }}" class='btn btn-outline-secondary btn-xs' title="Edit">
                                 <i class="far fa-edit"></i>
                             </a>
-                            {!! Form::button('<i class="far fa-trash-alt"></i>', ['type' => 'submit', 'class' => 'btn btn-danger btn-xs', 'onclick' => "return confirm('Are you sure?')"]) !!}
+                            {!! Form::button('<i class="far fa-trash-alt"></i>', ['type' => 'submit', 'class' => 'btn btn-outline-danger btn-xs', 'onclick' => "return confirm('Are you sure?')", 'title' => 'Delete']) !!}
                         </div>
                         {!! Form::close() !!}
                     </td>
