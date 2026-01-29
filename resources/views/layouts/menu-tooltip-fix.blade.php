@@ -7,8 +7,8 @@
 </li>
 
 <!-- User Management -->
-<li class="nav-item has-treeview {{ Request::is('roles*') || Request::is('permissions*') || Request::is('user-roles*') || Request::is('role-permissions*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('roles*') || Request::is('permissions*') || Request::is('user-roles*') || Request::is('role-permissions*') ? 'active' : '' }}" data-tooltip="User Management">
+<li class="nav-item has-treeview {{ Request::is('users*') || Request::is('roles*') || Request::is('permissions*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('users*') || Request::is('roles*') || Request::is('permissions*') ? 'active' : '' }}">
         <i class="nav-icon fas fa-users-cog text-success"></i>
         <p>
             User Management
@@ -16,30 +16,30 @@
         </p>
     </a>
     <ul class="nav nav-treeview">
+        @can('users.index')
+        <li class="nav-item">
+            <a href="{{ route('users.index') }}" class="nav-link {{ Request::is('users*') ? 'active' : '' }}" data-tooltip="Users">
+                <i class="far fa-user nav-icon text-success"></i>
+                <p>Users</p>
+            </a>
+        </li>
+        @endcan
+        @can('roles.index')
         <li class="nav-item">
             <a href="{{ route('roles.index') }}" class="nav-link {{ Request::is('roles*') ? 'active' : '' }}" data-tooltip="Roles">
                 <i class="far fa-circle nav-icon text-success"></i>
                 <p>Roles</p>
             </a>
         </li>
+        @endcan
+        @can('permissions.index')
         <li class="nav-item">
             <a href="{{ route('permissions.index') }}" class="nav-link {{ Request::is('permissions*') ? 'active' : '' }}" data-tooltip="Permissions">
                 <i class="far fa-circle nav-icon text-success"></i>
                 <p>Permissions</p>
             </a>
         </li>
-        <li class="nav-item">
-            <a href="{{ route('user-roles.index') }}" class="nav-link {{ Request::is('user-roles*') ? 'active' : '' }}" data-tooltip="User Roles">
-                <i class="far fa-circle nav-icon text-success"></i>
-                <p>User Roles</p>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('role-permissions.index') }}" class="nav-link {{ Request::is('role-permissions*') ? 'active' : '' }}" data-tooltip="Role Permissions">
-                <i class="far fa-circle nav-icon text-success"></i>
-                <p>Role Permissions</p>
-            </a>
-        </li>
+        @endcan
     </ul>
 </li>
 
@@ -161,43 +161,210 @@
 
 <!-- Examination Management -->
 <li class="nav-item has-treeview {{ Request::is('exam-types*') || Request::is('grading-scales*') || Request::is('exams*') || Request::is('exam-schedules*') || Request::is('exam-results*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('exam-types*') || Request::is('grading-scales*') || Request::is('exams*') || Request::is('exam-schedules*') || Request::is('exam-results*') ? 'active' : '' }}" data-tooltip="Examination">
-        <i class="nav-icon fas fa-clipboard-list text-danger"></i>
+    <a href="#" class="nav-link {{ Request::is('exam-types*') || Request::is('grading-scales*') || Request::is('exams*') || Request::is('exam-schedules*') || Request::is('exam-results*') ? 'active' : '' }}" data-tooltip="Examinations">
+        <i class="nav-icon fas fa-file-invoice text-danger"></i>
         <p>
-            Examination
+            Examinations
+            <i class="right fas fa-angle-left"></i>
+        </p>
+    </a>
+    <ul class="nav nav-treeview">
+        @can('exam-types.index')
+        <li class="nav-item">
+            <a href="{{ route('exam-types.index') }}" class="nav-link {{ Request::is('exam-types*') ? 'active' : '' }}" data-tooltip="Configuration">
+                <i class="far fa-circle nav-icon text-danger"></i>
+                <p>Exam Categories</p>
+            </a>
+        </li>
+        @endcan
+        @can('grading-scales.index')
+        <li class="nav-item">
+            <a href="{{ route('grading-scales.index') }}" class="nav-link {{ Request::is('grading-scales*') ? 'active' : '' }}" data-tooltip="Grading Systems">
+                <i class="far fa-circle nav-icon text-danger"></i>
+                <p>Grading Systems</p>
+            </a>
+        </li>
+        @endcan
+        @can('exams.index')
+        <li class="nav-item">
+            <a href="{{ route('exams.index') }}" class="nav-link {{ Request::is('exams*') ? 'active' : '' }}" data-tooltip="Exam Sessions">
+                <i class="far fa-circle nav-icon text-danger"></i>
+                <p>Exam Sessions</p>
+            </a>
+        </li>
+        @endcan
+        @can('exam-schedules.index')
+        <li class="nav-item">
+            <a href="{{ route('exam-schedules.index') }}" class="nav-link {{ Request::is('exam-schedules*') ? 'active' : '' }}" data-tooltip="Timetables">
+                <i class="far fa-circle nav-icon text-danger"></i>
+                <p>Timetables</p>
+            </a>
+        </li>
+        @endcan
+        @can('exam-results.index')
+        <li class="nav-item">
+            <a href="{{ route('exam-results.index') }}" class="nav-link {{ Request::is('exam-results*') ? 'active' : '' }}" data-tooltip="Marks Entry">
+                <i class="far fa-circle nav-icon text-danger"></i>
+                <p>Enter Marks</p>
+            </a>
+        </li>
+        @endcan
+    </ul>
+</li>
+
+<!-- Inventory Management -->
+<li class="nav-item has-treeview {{ Request::is('inventory*') || Request::is('inventory-categories*') || Request::is('inventory-items*') || Request::is('suppliers*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('inventory*') || Request::is('inventory-categories*') || Request::is('inventory-items*') || Request::is('suppliers*') ? 'active' : '' }}" data-tooltip="Inventory Management">
+        <i class="nav-icon fas fa-boxes text-success"></i>
+        <p>
+            Inventory Management
             <i class="right fas fa-angle-left"></i>
         </p>
     </a>
     <ul class="nav nav-treeview">
         <li class="nav-item">
-            <a href="{{ route('exam-types.index') }}" class="nav-link {{ Request::is('exam-types*') ? 'active' : '' }}" data-tooltip="Exam Types">
-                <i class="far fa-list nav-icon text-danger"></i>
-                <p>Exam Types</p>
+            <a href="{{ route('inventory.dashboard') }}" class="nav-link {{ Request::is('inventory') ? 'active' : '' }}" data-tooltip="Inventory Dashboard">
+                <i class="fas fa-chart-line nav-icon text-success"></i>
+                <p>Dashboard</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('grading-scales.index') }}" class="nav-link {{ Request::is('grading-scales*') ? 'active' : '' }}" data-tooltip="Grading Scales">
-                <i class="far fa-chart-bar nav-icon text-danger"></i>
-                <p>Grading Scales</p>
+            <a href="{{ route('inventory-items.index') }}" class="nav-link {{ Request::is('inventory-items*') ? 'active' : '' }}" data-tooltip="All Items / Catalog">
+                <i class="fas fa-list nav-icon text-success"></i>
+                <p>Items Catalog</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('exams.index') }}" class="nav-link {{ Request::is('exams*') ? 'active' : '' }}" data-tooltip="Exams">
-                <i class="far fa-file-alt nav-icon text-danger"></i>
-                <p>Exams</p>
+            <a href="{{ route('inventory-categories.index') }}" class="nav-link {{ Request::is('inventory-categories*') ? 'active' : '' }}" data-tooltip="Categories">
+                <i class="fas fa-tags nav-icon text-success"></i>
+                <p>Categories</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('exam-schedules.index') }}" class="nav-link {{ Request::is('exam-schedules*') ? 'active' : '' }}" data-tooltip="Exam Schedules">
-                <i class="far fa-calendar-alt nav-icon text-danger"></i>
-                <p>Exam Schedules</p>
+            <a href="{{ route('suppliers.index') }}" class="nav-link {{ Request::is('suppliers*') ? 'active' : '' }}" data-tooltip="Suppliers">
+                <i class="fas fa-truck nav-icon text-success"></i>
+                <p>Suppliers</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase">Operations</li>
+        <li class="nav-item">
+            <a href="{{ route('inventory.requisitions.index') }}" class="nav-link {{ Request::is('inventory/requisitions*') ? 'active' : '' }}" data-tooltip="Request Items">
+                <i class="fas fa-file-signature nav-icon text-info"></i>
+                <p>Requisitions</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('exam-results.index') }}" class="nav-link {{ Request::is('exam-results*') ? 'active' : '' }}" data-tooltip="Exam Results">
-                <i class="far fa-trophy nav-icon text-danger"></i>
-                <p>Exam Results</p>
+            <a href="{{ route('inventory.purchase-orders.index') }}" class="nav-link {{ Request::is('inventory/purchase-orders*') ? 'active' : '' }}" data-tooltip="Purchase Orders">
+                <i class="fas fa-shopping-cart nav-icon text-warning"></i>
+                <p>Purchase Orders</p>
             </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('inventory.stock-movement-history') }}" class="nav-link {{ Request::is('inventory/stock-movement-history') ? 'active' : '' }}" data-tooltip="Movement History">
+                <i class="fas fa-history nav-icon text-secondary"></i>
+                <p>Stock History</p>
+            </a>
+        </li>
+    </ul>
+</li>
+<li class="nav-item has-treeview {{ Request::is('library*') || Request::is('book-categories*') || Request::is('books*') || Request::is('library-members*') || Request::is('book-issues*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('library*') || Request::is('book-categories*') || Request::is('books*') || Request::is('library-members*') || Request::is('book-issues*') ? 'active' : '' }}" data-tooltip="Library Management">
+        <i class="nav-icon fas fa-book text-primary"></i>
+        <p>
+            Library Management
+            <i class="right fas fa-angle-left"></i>
+        </p>
+    </a>
+    <ul class="nav nav-treeview">
+        <li class="nav-item">
+            <a href="{{ route('library.dashboard') }}" class="nav-link {{ Request::is('library/dashboard') ? 'active' : '' }}" data-tooltip="Library Dashboard">
+                <i class="fas fa-tachometer-alt nav-icon text-primary"></i>
+                <p>Dashboard</p>
+            </a>
+        </li>
+
+        <!-- Books Management -->
+        <li class="nav-item has-treeview {{ Request::is('books*') || Request::is('book-categories*') ? 'menu-open' : '' }}">
+            <a href="#" class="nav-link {{ Request::is('books*') || Request::is('book-categories*') ? 'active' : '' }}" data-tooltip="Books Catalog">
+                <i class="fas fa-swatchbook nav-icon text-primary"></i>
+                <p>
+                    Books Catalog
+                    <i class="right fas fa-angle-left"></i>
+                </p>
+            </a>
+            <ul class="nav nav-treeview pl-3">
+                <li class="nav-item">
+                    <a href="{{ route('books.index') }}" class="nav-link {{ Request::is('books') ? 'active' : '' }}" data-tooltip="All Books">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>All Books</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('book-categories.index') }}" class="nav-link {{ Request::is('book-categories*') ? 'active' : '' }}" data-tooltip="Book Categories">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Categories</p>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- Circulation -->
+        <li class="nav-item has-treeview {{ Request::is('book-issues*') ? 'menu-open' : '' }}">
+            <a href="#" class="nav-link {{ Request::is('book-issues*') ? 'active' : '' }}" data-tooltip="Circulation / Issues">
+                <i class="fas fa-sync-alt nav-icon text-primary"></i>
+                <p>
+                    Circulation
+                    <i class="right fas fa-angle-left"></i>
+                </p>
+            </a>
+            <ul class="nav nav-treeview pl-3">
+                <li class="nav-item">
+                    <a href="{{ route('book-issues.create') }}" class="nav-link {{ Request::is('book-issues/create') ? 'active' : '' }}" data-tooltip="Issue New Book">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Issue Book</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('book-issues.index') }}" class="nav-link {{ Request::is('book-issues') ? 'active' : '' }}" data-tooltip="Active Issues">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Active Issues</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-tooltip="Reservations">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Reservations</p>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- Library Members -->
+        <li class="nav-item">
+            <a href="{{ route('libraryMembers.index') }}" class="nav-link {{ Request::is('library-members*') ? 'active' : '' }}" data-tooltip="Library Members">
+                <i class="fas fa-users-cog nav-icon text-primary"></i>
+                <p>Library Members</p>
+            </a>
+        </li>
+
+        <!-- Reports -->
+        <li class="nav-item has-treeview {{ Request::is('library/reports*') ? 'menu-open' : '' }}">
+            <a href="#" class="nav-link {{ Request::is('library/reports*') ? 'active' : '' }}" data-tooltip="Library Reports">
+                <i class="fas fa-chart-pie nav-icon text-primary"></i>
+                <p>
+                    Reports
+                    <i class="right fas fa-angle-left"></i>
+                </p>
+            </a>
+            <ul class="nav nav-treeview pl-3">
+                <li class="nav-item">
+                    <a href="#" class="nav-link" data-tooltip="Circulation Report">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Circulation Report</p>
+                    </a>
+                </li>
+            </ul>
         </li>
     </ul>
 </li>
@@ -319,36 +486,6 @@
     </ul>
 </li>
 
-<!-- Library Management -->
-<li class="nav-item has-treeview {{ Request::is('book-categories*') || Request::is('books*') || Request::is('library-members*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('book-categories*') || Request::is('books*') || Request::is('library-members*') ? 'active' : '' }}" data-tooltip="Library Management">
-        <i class="nav-icon fas fa-book text-primary"></i>
-        <p>
-            Library Management
-            <i class="right fas fa-angle-left"></i>
-        </p>
-    </a>
-    <ul class="nav nav-treeview">
-        <li class="nav-item">
-            <a href="{{ route('book-categories.index') }}" class="nav-link {{ Request::is('book-categories*') ? 'active' : '' }}" data-tooltip="Book Categories">
-                <i class="far fa-bookmark nav-icon text-primary"></i>
-                <p>Book Categories</p>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('books.index') }}" class="nav-link {{ Request::is('books*') ? 'active' : '' }}" data-tooltip="Books">
-                <i class="far fa-book nav-icon text-primary"></i>
-                <p>Books</p>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('library-members.index') }}" class="nav-link {{ Request::is('library-members*') ? 'active' : '' }}" data-tooltip="Library Members">
-                <i class="far fa-id-card nav-icon text-primary"></i>
-                <p>Library Members</p>
-            </a>
-        </li>
-    </ul>
-</li>
 
 <!-- Inventory Management -->
 <li class="nav-item has-treeview {{ Request::is('inventory-categories*') || Request::is('inventory-items*') || Request::is('suppliers*') ? 'menu-open' : '' }}">

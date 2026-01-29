@@ -41,6 +41,15 @@ class StudentDocumentController extends AppBaseController
                 'conduct_certificate' => 'Conduct Certificate',
                 'student_photo' => 'Student Photo',
                 'other' => 'Other'
+            ],
+            'categories' => [
+                'academic' => 'Academic',
+                'medical' => 'Medical',
+                'identification' => 'Identification',
+                'financial' => 'Financial',
+                'legal' => 'Legal',
+                'certificates' => 'Certificates',
+                'other' => 'Other'
             ]
         ];
     }

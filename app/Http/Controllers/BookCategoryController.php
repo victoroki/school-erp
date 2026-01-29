@@ -24,7 +24,7 @@ class BookCategoryController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $bookCategories = $this->bookCategoryRepository->paginate(10);
+        $bookCategories = $this->bookCategoryRepository->allQuery()->withCount('books')->paginate(10);
 
         return view('book_categories.index')
             ->with('bookCategories', $bookCategories);

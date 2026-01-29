@@ -6,6 +6,7 @@ use App\Http\Requests\CreateRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\RoleRepository;
+use App\Models\Permission;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -17,6 +18,10 @@ class RoleController extends AppBaseController
     public function __construct(RoleRepository $roleRepo)
     {
         $this->roleRepository = $roleRepo;
+        $this->middleware('can:roles.index')->only('index');
+        $this->middleware('can:roles.create')->only(['create', 'store']);
+        $this->middleware('can:roles.edit')->only(['edit', 'update']);
+        $this->middleware('can:roles.delete')->only('destroy');
     }
 
     /**
@@ -35,7 +40,8 @@ class RoleController extends AppBaseController
      */
     public function create()
     {
-        return view('roles.create');
+        $permissions = Permission::all();
+        return view('roles.create')->with('permissions', $permissions);
     }
 
     /**
@@ -46,6 +52,10 @@ class RoleController extends AppBaseController
         $input = $request->all();
 
         $role = $this->roleRepository->create($input);
+
+        if ($request->has('permissions')) {
+            $role->permissions()->sync($request->input('permissions'));
+        }
 
         Flash::success('Role saved successfully.');
 
@@ -81,7 +91,9 @@ class RoleController extends AppBaseController
             return redirect(route('roles.index'));
         }
 
-        return view('roles.edit')->with('role', $role);
+        $permissions = Permission::all();
+
+        return view('roles.edit')->with('role', $role)->with('permissions', $permissions);
     }
 
     /**
@@ -98,6 +110,12 @@ class RoleController extends AppBaseController
         }
 
         $role = $this->roleRepository->update($request->all(), $id);
+
+        if ($request->has('permissions')) {
+            $role->permissions()->sync($request->input('permissions'));
+        } else {
+            $role->permissions()->sync([]); // remove all if none selected
+        }
 
         Flash::success('Role updated successfully.');
 

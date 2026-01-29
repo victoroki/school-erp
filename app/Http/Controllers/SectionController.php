@@ -17,6 +17,12 @@ class SectionController extends AppBaseController
     public function __construct(SectionRepository $sectionRepo)
     {
         $this->sectionRepository = $sectionRepo;
+
+        $this->middleware('auth');
+        $this->middleware('can:sections.index')->only(['index', 'show']);
+        $this->middleware('can:sections.create')->only(['create', 'store']);
+        $this->middleware('can:sections.edit')->only(['edit', 'update']);
+        $this->middleware('can:sections.delete')->only('destroy');
     }
 
     /**

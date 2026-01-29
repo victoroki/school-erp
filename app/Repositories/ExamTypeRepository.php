@@ -9,6 +9,7 @@ class ExamTypeRepository extends BaseRepository
 {
     protected $fieldSearchable = [
         'name',
+        'short_name',
         'description'
     ];
 

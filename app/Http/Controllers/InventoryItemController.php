@@ -23,9 +23,9 @@ class InventoryItemController extends AppBaseController
     }
 
     private function getdropdownData(){
-        return[
-            'category'=>InventoryCategory::pluck('name', 'category_id'),
-            'suppliers' => Supplier::pluck('name','supplier_id' )
+        return [
+            'categories' => InventoryCategory::pluck('name', 'category_id'),
+            'suppliers' => Supplier::pluck('name', 'supplier_id')
         ];
     }
 
@@ -34,12 +34,52 @@ class InventoryItemController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $inventoryItems = $this->inventoryItemRepository->allQuery()
-            ->with(['category', 'supplier'])
-            ->paginate(10);
+        $query = InventoryItem::with(['category', 'supplier']);
+
+        // Advanced Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%$search%")
+                  ->orWhere('item_code', 'like', "%$search%")
+                  ->orWhere('asset_tag', 'like', "%$search%");
+            });
+        }
+
+        // Filtering
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('type')) {
+            $query->whereHas('category', function($q) use ($request) {
+                $q->where('category_type', $request->type);
+            });
+        }
+
+        if ($request->has('status')) {
+            if ($request->status == 'low_stock') {
+                $query->whereColumn('quantity', '<=', 'minimum_quantity')->where('quantity', '>', 0);
+            } elseif ($request->status == 'out_of_stock') {
+                $query->where('quantity', '<=', 0);
+            }
+        }
+
+        // Summary Stats (for cards)
+        $stats = [
+            'total_value' => InventoryItem::all()->sum(fn($i) => $i->quantity * $i->cost_per_unit),
+            'items_count' => InventoryItem::sum('quantity'),
+            'low_stock'   => InventoryItem::whereColumn('quantity', '<=', 'minimum_quantity')->where('quantity', '>', 0)->count(),
+            'out_of_stock' => InventoryItem::where('quantity', '<=', 0)->count(),
+        ];
+
+        $inventoryItems = $query->paginate(15);
+        $dropdownData = $this->getdropdownData();
 
         return view('inventory_items.index')
-            ->with('inventoryItems', $inventoryItems);
+            ->with('inventoryItems', $inventoryItems)
+            ->with('categories', $dropdownData['categories'])
+            ->with('stats', $stats);
     }
 
     /**
@@ -48,7 +88,8 @@ class InventoryItemController extends AppBaseController
     public function create()
     {
         $dropdownData = $this->getdropdownData();
-        return view('inventory_items.create', $dropdownData);
+        $categories_objects = InventoryCategory::all(); // To handle dynamic fields via JS if needed
+        return view('inventory_items.create', array_merge($dropdownData, ['categories_objects' => $categories_objects]));
     }
 
     /**
@@ -57,6 +98,26 @@ class InventoryItemController extends AppBaseController
     public function store(CreateInventoryItemRequest $request)
     {
         $input = $request->all();
+
+        // Auto-generate item code if missing
+        if (empty($input['item_code'])) {
+            $typePrefix = 'ITEM';
+            if (!empty($input['category_id'])) {
+                $cat = InventoryCategory::find($input['category_id']);
+                if ($cat && $cat->code) {
+                    $typePrefix = strtoupper($cat->code);
+                }
+            }
+            $input['item_code'] = $typePrefix . '-' . date('Y') . '-' . strtoupper(substr(uniqid(), -4));
+        }
+
+        // Auto-generate asset tag if it's an asset and missing
+        if (!empty($input['category_id'])) {
+            $cat = InventoryCategory::find($input['category_id']);
+            if ($cat && $cat->category_type == 'asset' && empty($input['asset_tag'])) {
+                $input['asset_tag'] = 'TAG-' . $input['item_code'];
+            }
+        }
 
         $inventoryItem = $this->inventoryItemRepository->create($input);
 
@@ -70,7 +131,7 @@ class InventoryItemController extends AppBaseController
      */
     public function show($id)
     {
-        $inventoryItem = $this->inventoryItemRepository->find($id);
+        $inventoryItem = InventoryItem::with(['category', 'supplier', 'transactions.user'])->find($id);
 
         if (empty($inventoryItem)) {
             Flash::error('Inventory Item not found');
@@ -95,8 +156,10 @@ class InventoryItemController extends AppBaseController
             return redirect(route('inventory-items.index'));
         }
 
+        $categories_objects = InventoryCategory::all();
+
         return view('inventory_items.edit', array_merge(
-            ['inventoryItem' => $inventoryItem],
+            ['inventoryItem' => $inventoryItem, 'categories_objects' => $categories_objects],
             $dropdownData
         ));
     }

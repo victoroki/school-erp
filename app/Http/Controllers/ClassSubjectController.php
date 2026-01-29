@@ -21,6 +21,12 @@ class ClassSubjectController extends AppBaseController
     public function __construct(ClassSubjectRepository $classSubjectRepo)
     {
         $this->classSubjectRepository = $classSubjectRepo;
+
+        $this->middleware('auth');
+        $this->middleware('can:class-subjects.index')->only(['index', 'show']);
+        $this->middleware('can:class-subjects.create')->only(['create', 'store']);
+        $this->middleware('can:class-subjects.edit')->only(['edit', 'update']);
+        $this->middleware('can:class-subjects.delete')->only('destroy');
     }
 
     /**

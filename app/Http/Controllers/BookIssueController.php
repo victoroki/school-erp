@@ -12,12 +12,34 @@ use Illuminate\Support\Facades\Auth;
 
 class BookIssueController extends Controller
 {
+    protected $libraryService;
+
+    public function __construct(\App\Services\LibraryService $libraryService)
+    {
+        $this->libraryService = $libraryService;
+    }
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $bookIssues = BookIssue::with(['book', 'member', 'issuer'])->orderBy('created_at', 'desc')->paginate(10);
+        $query = BookIssue::with(['book', 'member.user', 'issuer']);
+        
+        if ($request->has('status') && $request->status != '') {
+             $query->where('status', $request->status);
+        }
+
+        if ($request->has('search') && $request->search != '') {
+             $search = $request->search;
+             $query->whereHas('member.user', function($q) use ($search) {
+                 $q->where('name', 'like', "%$search%");
+             })->orWhereHas('book', function($q) use ($search) {
+                 $q->where('title', 'like', "%$search%");
+             });
+        }
+
+        $bookIssues = $query->orderBy('created_at', 'desc')->paginate(10);
         return view('book_issues.index', compact('bookIssues'));
     }
 
@@ -26,10 +48,13 @@ class BookIssueController extends Controller
      */
     public function create()
     {
-        $books = Book::where('available_quantity', '>', 0)->pluck('title', 'book_id');
-        // We might want to show member name + reference ID
-        $members = LibraryMember::with('user')->get()->mapWithKeys(function ($member) {
-            return [$member->id => $member->user ? $member->user->name . ' (' . $member->reference_id . ')' : $member->reference_id];
+        // Fetch only books with quantity > 0
+        $books = Book::where('available_quantity', '>', 0)->get()->mapWithKeys(function ($book) {
+            return [$book->book_id => $book->title . ' (ISBN: ' . $book->isbn . ')'];
+        });
+        
+        $members = LibraryMember::with('user')->where('status', 'active')->get()->mapWithKeys(function ($member) {
+            return [$member->member_id => ($member->user->name ?? 'Unknown') . ' (' . $member->reference_id . ')'];
         });
         
         return view('book_issues.create', compact('books', 'members'));
@@ -40,105 +65,53 @@ class BookIssueController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate(BookIssue::$rules);
+        $request->validate([
+            'book_id' => 'required|exists:books,book_id',
+            'member_id' => 'required|exists:library_members,member_id', // Ensure PK is used
+            'due_date' => 'required|date'
+        ]);
 
-        $book = Book::find($request->book_id);
-        if ($book->available_quantity <= 0) {
-            Flash::error('Book is not available for issue.');
+        try {
+            $this->libraryService->issueBook($request->all());
+            Flash::success('Book issued successfully.');
+        } catch (\Exception $e) {
+            Flash::error('Error issuing book: ' . $e->getMessage());
             return redirect()->back()->withInput();
         }
 
-        $input = $request->all();
-        $input['issued_by'] = Auth::id();
-        $input['status'] = 'issued';
-
-        $bookIssue = BookIssue::create($input);
-
-        // Decrease available quantity
-        $book->decrement('available_quantity');
-
-        Flash::success('Book issued successfully.');
-
         return redirect(route('book-issues.index'));
     }
 
     /**
-     * Display the specified resource.
+     * Show Return Book Form
      */
-    public function show($id)
+    public function returnModal($id)
     {
-        $bookIssue = BookIssue::with(['book', 'member', 'issuer', 'receiver'])->find($id);
-
-        if (empty($bookIssue)) {
-            Flash::error('Book Issue not found');
-            return redirect(route('book-issues.index'));
+        $issue = BookIssue::with(['book', 'member.user'])->findOrFail($id);
+        
+        // Calculate provisional fine
+        $fine = 0;
+        $diff = 0;
+        if(Carbon::now()->gt($issue->due_date)) {
+             $diff = Carbon::now()->diffInDays($issue->due_date);
+             $fine = $diff * 50; // 50 per day
         }
 
-        return view('book_issues.show', compact('bookIssue'));
+        return view('book_issues.return_modal', compact('issue', 'fine', 'diff'));
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Process Book Return
      */
-    public function edit($id)
+    public function returnBook(Request $request, $id)
     {
-        $bookIssue = BookIssue::find($id);
-
-        if (empty($bookIssue)) {
-            Flash::error('Book Issue not found');
-            return redirect(route('book-issues.index'));
+        try {
+            $this->libraryService->returnBook($id, $request->all());
+            Flash::success('Book returned successfully.');
+        } catch (\Exception $e) {
+             Flash::error('Error returning book: ' . $e->getMessage());
         }
-
-        $books = Book::pluck('title', 'book_id');
-        $members = LibraryMember::with('user')->get()->mapWithKeys(function ($member) {
-            return [$member->id => $member->user ? $member->user->name . ' (' . $member->reference_id . ')' : $member->reference_id];
-        });
-
-        return view('book_issues.edit', compact('bookIssue', 'books', 'members'));
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, $id)
-    {
-        $bookIssue = BookIssue::find($id);
-
-        if (empty($bookIssue)) {
-            Flash::error('Book Issue not found');
-            return redirect(route('book-issues.index'));
-        }
-
-        $request->validate([
-            'status' => 'required|in:issued,returned,overdue,lost',
-            'return_date' => 'nullable|date',
-            'remarks' => 'nullable|string'
-        ]);
-
-        $input = $request->all();
-        
-        // Handle Return
-        if ($input['status'] == 'returned' && $bookIssue->status != 'returned') {
-            $input['return_date'] = $input['return_date'] ?? Carbon::now();
-            $input['received_by'] = Auth::id();
-            
-            // Increase available quantity
-            $bookIssue->book->increment('available_quantity');
-        }
-        
-        // Handle undo return (if status changed back from returned to issued/overdue)
-        if ($bookIssue->status == 'returned' && $input['status'] != 'returned') {
-             // Decrease available quantity again
-             if ($bookIssue->book->available_quantity > 0) {
-                 $bookIssue->book->decrement('available_quantity');
-             }
-        }
-
-        $bookIssue->update($input);
-
-        Flash::success('Book Issue updated successfully.');
-
-        return redirect(route('book-issues.index'));
+        return redirect()->back();
     }
 
     /**

@@ -17,6 +17,12 @@ class ClassSectionController extends AppBaseController
     public function __construct(ClassSectionRepository $classSectionRepo)
     {
         $this->classSectionRepository = $classSectionRepo;
+
+        $this->middleware('auth');
+        $this->middleware('can:class-sections.index')->only(['index', 'show']);
+        $this->middleware('can:class-sections.create')->only(['create', 'store']);
+        $this->middleware('can:class-sections.edit')->only(['edit', 'update']);
+        $this->middleware('can:class-sections.delete')->only('destroy');
     }
 
     /**
@@ -84,7 +90,7 @@ class ClassSectionController extends AppBaseController
         if (empty($classSection)) {
             Flash::error('Class Section not found');
 
-            return redirect(route('classSections.index'));
+            return redirect(route('class-sections.index'));
         }
 
         return view('class_sections.show')->with('classSection', $classSection);

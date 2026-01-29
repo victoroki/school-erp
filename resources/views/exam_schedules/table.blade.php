@@ -1,44 +1,46 @@
 <div class="card-body p-0">
     <div class="table-responsive">
-        <table class="table" id="exam-schedules-table">
+        <table class="table table-hover" id="exam-schedules-table">
             <thead>
             <tr>
-                <th>Exam </th>
-                <th>Class</th>
-                <th>Subject</th>
-                <th>Exam Date</th>
-                <th>Start Time</th>
-                <th>End Time</th>
-                <!-- <th>Room Id</th> -->
-                <th>Max Marks</th>
-                <th>Passing Marks</th>
-                <th colspan="3">Action</th>
+                <th>Exam Session</th>
+                <th>Class & Subject</th>
+                <th>Date & Time</th>
+                <th>Venue</th>
+                <th class="text-center">Marks</th>
+                <th class="text-center">Action</th>
             </tr>
             </thead>
             <tbody>
             @foreach($examSchedules as $examSchedule)
                 <tr>
                     <td>{{ $examSchedule->exam->name ?? 'N/A' }}</td>
-                    <td>{{ $examSchedule->class->class_name ?? 'N/A' }}</td>
-                    <td>{{ $examSchedule->subject->name ?? 'N/A' }}</td>
-                    <td>{{ $examSchedule->exam_date }}</td>
-                    <td>{{ $examSchedule->start_time }}</td>
-                    <td>{{ $examSchedule->end_time }}</td>
-                    <!-- pp -->
-                    <td>{{ $examSchedule->max_marks }}</td>
-                    <td>{{ $examSchedule->passing_marks }}</td>
-                    <td  style="width: 120px">
+                    <td>
+                        <span class="text-bold">{{ $examSchedule->class->name ?? 'N/A' }}</span><br>
+                        <span class="text-muted">{{ $examSchedule->subject->name ?? 'N/A' }}</span>
+                    </td>
+                    <td>
+                        <small>
+                            <span class="text-bold">{{ $examSchedule->exam_date->format('d M, Y') }}</span><br>
+                            <span class="text-info">{{ \Carbon\Carbon::parse($examSchedule->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($examSchedule->end_time)->format('h:i A') }}</span>
+                        </small>
+                    </td>
+                    <td>
+                        <span class="badge badge-light border">{{ $examSchedule->room->name ?? 'Not Assigned' }}</span>
+                    </td>
+                    <td class="text-center">
+                        <small>
+                            Pass: <span class="text-success">{{ number_format($examSchedule->passing_marks, 0) }}</span> / <span class="text-dark text-bold">{{ number_format($examSchedule->max_marks, 0) }}</span>
+                        </small>
+                    </td>
+                    <td style="width: 120px" class="text-center">
                         {!! Form::open(['route' => ['exam-schedules.destroy', $examSchedule->schedule_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('exam-schedules.show', [$examSchedule->schedule_id]) }}"
-                               class='btn btn-default btn-xs'>
-                                <i class="far fa-eye"></i>
-                            </a>
                             <a href="{{ route('exam-schedules.edit', [$examSchedule->schedule_id]) }}"
-                               class='btn btn-default btn-xs'>
-                                <i class="far fa-edit"></i>
+                               class='btn btn-light btn-sm' title="Edit">
+                                <i class="far fa-edit text-primary"></i>
                             </a>
-                            {!! Form::button('<i class="far fa-trash-alt"></i>', ['type' => 'submit', 'class' => 'btn btn-danger btn-xs', 'onclick' => "return confirm('Are you sure?')"]) !!}
+                            {!! Form::button('<i class="far fa-trash-alt text-danger"></i>', ['type' => 'submit', 'class' => 'btn btn-light btn-sm', 'title' => 'Delete', 'onclick' => "return confirm('Are you sure?')"]) !!}
                         </div>
                         {!! Form::close() !!}
                     </td>

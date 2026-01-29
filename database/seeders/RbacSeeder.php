@@ -13,26 +13,29 @@ class RbacSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = Role::firstOrCreate(['role_id' => null, 'role_name' => 'Admin'], ['description' => 'System administrator']);
+        $admin = Role::firstOrCreate(['role_name' => 'Super Admin'], ['description' => 'Super Administrator with full access']);
         $roles = [
+            ['role_name' => 'Admin', 'description' => 'Administrator'],
             ['role_name' => 'Teacher', 'description' => 'Teacher role'],
             ['role_name' => 'Accountant', 'description' => 'Accountant role'],
+            ['role_name' => 'Parent', 'description' => 'Parent role'],
+            ['role_name' => 'Student', 'description' => 'Student role'],
         ];
 
         foreach ($roles as $r) {
             Role::firstOrCreate(['role_name' => $r['role_name']], ['description' => $r['description']]);
         }
 
-        $admin = Role::where('role_name', 'Admin')->first();
+        $superAdmin = Role::where('role_name', 'Super Admin')->first();
 
         $permissions = Permission::pluck('permission_id')->all();
         foreach ($permissions as $pid) {
-            RolePermission::firstOrCreate(['role_id' => $admin->role_id, 'permission_id' => $pid]);
+            RolePermission::firstOrCreate(['role_id' => $superAdmin->role_id, 'permission_id' => $pid]);
         }
 
         $user = User::first();
         if ($user) {
-            UserRole::firstOrCreate(['user_id' => $user->id, 'role_id' => $admin->role_id]);
+            UserRole::firstOrCreate(['user_id' => $user->id, 'role_id' => $superAdmin->role_id]);
         }
     }
 }

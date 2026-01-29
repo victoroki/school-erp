@@ -16,97 +16,125 @@ class FeeSeeder extends Seeder
 {
     public function run()
     {
-        // Ensure we have some base data
-        $academicYear = AcademicYear::first() ?? AcademicYear::create(['year' => '2025-2026', 'title' => '2025-2026', 'start_date' => '2025-01-01', 'end_date' => '2025-12-31']);
-        
-        // Create Fee Categories if not exist
-        $categories = ['Tuition Fee', 'Transport Fee', 'Library Fee', 'Exam Fee'];
-        foreach ($categories as $catName) {
-            FeeCategory::firstOrCreate(['name' => $catName], ['description' => $catName . ' for the year']);
+        // Clear existing data to ensure clean demo state
+        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        FeePayment::truncate();
+        StudentFee::truncate();
+        FeeStructure::truncate();
+        FeeCategory::truncate();
+        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+        // Ensure we have an active academic year
+        $academicYear = AcademicYear::where('is_current', true)->first() 
+            ?? AcademicYear::first() 
+            ?? AcademicYear::create([
+                'name' => '2025/2026 Academic Year',
+                'start_date' => '2025-01-01',
+                'end_date' => '2025-12-31',
+                'is_current' => true,
+                'status' => 'active'
+            ]);
+
+        // 1. Create realistic Fee Categories
+        $categories = [
+            ['name' => 'Tuition Fee', 'desc' => 'General tuition for academic activities'],
+            ['name' => 'Transport Fee', 'desc' => 'School bus transportation services'],
+            ['name' => 'Library Fee', 'desc' => 'Access to library resources and books'],
+            ['name' => 'Lab Fee', 'desc' => 'Science and computer lab equipment usage'],
+            ['name' => 'Extracurricular Fee', 'desc' => 'Sports, arts, and club activities'],
+            ['name' => 'Exam Fee', 'desc' => 'Examination processing and materials'],
+        ];
+
+        foreach ($categories as $cat) {
+            FeeCategory::create([
+                'name' => $cat['name'],
+                'description' => $cat['desc']
+            ]);
         }
 
-        // Create Fee Structures for each class
+        $allCategories = FeeCategory::all();
         $classes = SchoolClass::all();
+
         if ($classes->isEmpty()) {
-            // Create a dummy class if none exists
-            $classes = collect([SchoolClass::create(['name' => 'Class 1', 'numeric_value' => 1])]);
+            return;
         }
 
-        $feeStructures = [];
+        // 2. Create Fee Structures for each class
+        // Different classes might have different tuition amounts
         foreach ($classes as $class) {
-            foreach (FeeCategory::all() as $category) {
-                $amount = rand(1000, 5000);
-                $feeStructures[] = FeeStructure::create([
+            foreach ($allCategories as $category) {
+                // Tuition increases with higher classes
+                $baseAmount = $category->name === 'Tuition Fee' ? (2000 + ($class->class_id * 500)) : rand(200, 1000);
+                
+                FeeStructure::create([
                     'academic_year_id' => $academicYear->academic_year_id,
                     'class_id' => $class->class_id,
                     'category_id' => $category->category_id,
-                    'amount' => $amount,
-                    'due_date' => Carbon::now()->addMonths(rand(1, 5)),
+                    'amount' => $baseAmount,
+                    'due_date' => Carbon::now()->addMonths(rand(0, 3))->startOfMonth()->addDays(14), // Middle of the month
                 ]);
             }
         }
 
-        // Assign Fees to Students
-        $students = Student::all();
+        // 3. Assign Fees to Students based on their actual Class Enrollment
+        $students = Student::with(['studentClassEnrollments.classSection.schoolClass'])->get();
+        
         foreach ($students as $student) {
-            // Assign random fee structures to student
-            // Assuming student belongs to a class, but for simplicity assigning random structures
-            // In a real app, we would check student's class.
-            
-            // Let's pick 2-3 fee structures for this student
-            $assignedStructures = collect($feeStructures)->random(rand(2, 4));
+            $enrollment = $student->studentClassEnrollments->first();
+            if (!$enrollment) continue;
 
-            foreach ($assignedStructures as $structure) {
-                $amount = $structure->amount;
+            $classId = $enrollment->classSection->schoolClass->class_id;
+            $structures = FeeStructure::where('class_id', $classId)->get();
+
+            foreach ($structures as $structure) {
                 $discount = 0;
-                
-                // 20% chance of discount
-                if (rand(1, 100) <= 20) {
-                    $discount = $amount * 0.1; // 10% discount
+                // Randomly assign scholarships/discounts
+                if (rand(1, 10) > 8) {
+                    $discount = $structure->amount * (rand(5, 20) / 100);
                 }
 
-                $finalAmount = $amount - $discount;
+                $finalAmount = $structure->amount - $discount;
 
                 $studentFee = StudentFee::create([
                     'student_id' => $student->student_id,
                     'fee_structure_id' => $structure->fee_structure_id,
-                    'amount' => $amount,
+                    'amount' => $structure->amount,
                     'discount_amount' => $discount,
                     'final_amount' => $finalAmount,
                     'due_date' => $structure->due_date,
                     'status' => 'unpaid',
                 ]);
 
-                // Create Payments
-                // 30% chance of full payment
-                // 30% chance of partial payment
-                // 40% chance of no payment
-
-                $rand = rand(1, 100);
-                if ($rand <= 30) {
-                    // Full Payment
+                // 4. Create realistic Payments
+                $paymentStatusChance = rand(1, 10);
+                
+                if ($paymentStatusChance <= 4) {
+                    // Paid (40% chance)
                     FeePayment::create([
                         'student_fee_id' => $studentFee->student_fee_id,
                         'amount' => $finalAmount,
-                        'payment_date' => Carbon::now()->subDays(rand(1, 30)),
-                        'payment_method' => 'cash',
-                        'receipt_number' => 'REC-' . uniqid(),
-                        'remarks' => 'Full payment',
+                        'payment_date' => Carbon::parse($studentFee->due_date)->subDays(rand(1, 15)),
+                        'payment_method' => collect(['cash', 'bank_transfer', 'online'])->random(),
+                        'receipt_number' => 'RCP-' . strtoupper(uniqid()),
+                        'remarks' => 'Full payment received.',
+                        'collected_by' => 1, // SuperAdmin
                     ]);
                     $studentFee->update(['status' => 'paid']);
-                } elseif ($rand <= 60) {
-                    // Partial Payment
-                    $paidAmount = $finalAmount / 2;
+                } elseif ($paymentStatusChance <= 7) {
+                    // Partial (30% chance)
+                    $partialAmount = round($finalAmount * (rand(30, 70) / 100), 2);
                     FeePayment::create([
                         'student_fee_id' => $studentFee->student_fee_id,
-                        'amount' => $paidAmount,
-                        'payment_date' => Carbon::now()->subDays(rand(1, 30)),
-                        'payment_method' => 'online',
-                        'receipt_number' => 'REC-' . uniqid(),
-                        'remarks' => 'Partial payment',
+                        'amount' => $partialAmount,
+                        'payment_date' => Carbon::now()->subDays(rand(1, 5)),
+                        'payment_method' => collect(['cash', 'bank_transfer'])->random(),
+                        'receipt_number' => 'RCP-' . strtoupper(uniqid()),
+                        'remarks' => 'Partial payment.',
+                        'collected_by' => 1,
                     ]);
                     $studentFee->update(['status' => 'partially_paid']);
                 }
+                // Else: Unpaid (30% chance)
             }
         }
     }

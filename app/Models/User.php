@@ -43,8 +43,29 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    public function userRoles(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function roles(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->hasMany(\App\Models\UserRole::class, 'user_id');
+        return $this->belongsToMany(\App\Models\Role::class, 'user_roles', 'user_id', 'role_id');
+    }
+
+    public function hasRole($role)
+    {
+        if (is_string($role)) {
+            return $this->roles->contains('role_name', $role);
+        }
+        return $role->intersect($this->roles)->count() > 0;
+    }
+
+    public function assignRole($role)
+    {
+        if (is_string($role)) {
+            $role = \App\Models\Role::where('role_name', $role)->firstOrFail();
+        }
+        $this->roles()->syncWithoutDetaching($role);
+    }
+
+    public function hasPermission($permission)
+    {
+        return $this->roles->flatMap->permissions->pluck('permission_name')->contains($permission);
     }
 }

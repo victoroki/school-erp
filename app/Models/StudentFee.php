@@ -12,6 +12,10 @@ class StudentFee extends Model
     protected $table = 'student_fees';
     protected $primaryKey = 'student_fee_id';
 
+    const STATUS_UNPAID = 'unpaid';
+    const STATUS_PARTIAL = 'partially_paid';
+    const STATUS_PAID = 'paid';
+
     protected $fillable = [
         'student_id',
         'fee_structure_id',
@@ -51,6 +55,6 @@ class StudentFee extends Model
 
     public function getBalanceAttribute()
     {
-        return $this->final_amount - $this->paid_amount;
+        return (float)($this->final_amount ?? 0) - (float)$this->paid_amount;
     }
 }

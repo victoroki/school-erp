@@ -32,8 +32,8 @@ class BookIssue extends Model
     ];
 
     public static array $rules = [
-        'book_id' => 'required|exists:books,id',
-        'member_id' => 'required|exists:library_members,id',
+        'book_id' => 'required|exists:books,book_id',
+        'member_id' => 'required|exists:library_members,member_id',
         'issue_date' => 'required|date',
         'due_date' => 'required|date|after_or_equal:issue_date',
         'return_date' => 'nullable|date',

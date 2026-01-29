@@ -25,7 +25,7 @@ class ExamController extends AppBaseController
     {
         return [
             'examtypes' => ExamType::pluck('name', 'exam_type_id'),
-            'academicYear' => AcademicYear::pluck('name', 'academic_year_id')
+            'academicYears' => AcademicYear::where('status', 1)->pluck('name', 'academic_year_id')
         ];
     }
     /**

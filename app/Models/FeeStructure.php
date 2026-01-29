@@ -49,6 +49,6 @@ class FeeStructure extends Model
 
     public function students(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsToMany(\App\Models\Student::class, 'student_fees');
+        return $this->belongsToMany(\App\Models\Student::class, 'student_fees', 'fee_structure_id', 'student_id');
     }
 }

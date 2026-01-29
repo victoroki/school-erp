@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateSupplierRequest;
 use App\Http\Requests\UpdateSupplierRequest;
 use App\Http\Controllers\AppBaseController;
+use App\Models\Supplier;
 use App\Repositories\SupplierRepository;
 use Illuminate\Http\Request;
 use Flash;
@@ -24,7 +25,18 @@ class SupplierController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $suppliers = $this->supplierRepository->paginate(10);
+        $query = Supplier::query();
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('code', 'like', '%' . $request->search . '%');
+        }
+
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status == 'active' ? 1 : 0);
+        }
+
+        $suppliers = $query->paginate(12);
 
         return view('suppliers.index')
             ->with('suppliers', $suppliers);
@@ -45,6 +57,10 @@ class SupplierController extends AppBaseController
     {
         $input = $request->all();
 
+        if (empty($input['code'])) {
+            $input['code'] = 'SUP-' . date('Y') . '-' . rand(100, 999);
+        }
+
         $supplier = $this->supplierRepository->create($input);
 
         Flash::success('Supplier saved successfully.');
@@ -57,7 +73,7 @@ class SupplierController extends AppBaseController
      */
     public function show($id)
     {
-        $supplier = $this->supplierRepository->find($id);
+        $supplier = Supplier::with(['inventoryItems', 'purchaseOrders'])->find($id);
 
         if (empty($supplier)) {
             Flash::error('Supplier not found');

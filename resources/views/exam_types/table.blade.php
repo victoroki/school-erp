@@ -1,30 +1,34 @@
 <div class="card-body p-0">
     <div class="table-responsive">
-        <table class="table" id="exam-types-table">
+        <table class="table table-hover" id="exam-types-table">
             <thead>
             <tr>
-                <th>Name</th>
+                <th>Exam Category</th>
+                <th>Abbreviation</th>
                 <th>Description</th>
-                <th colspan="3">Action</th>
+                <th class="text-center">Action</th>
             </tr>
             </thead>
             <tbody>
             @foreach($examTypes as $examType)
                 <tr>
-                    <td>{{ $examType->name }}</td>
-                    <td>{{ $examType->description }}</td>
-                    <td  style="width: 120px">
+                    <td>
+                        <strong>{{ $examType->name }}</strong>
+                    </td>
+                    <td>
+                        <span class="badge badge-info">{{ $examType->short_name ?? 'N/A' }}</span>
+                    </td>
+                    <td class="text-muted small">
+                        {{ \Illuminate\Support\Str::limit($examType->description, 100) }}
+                    </td>
+                    <td style="width: 120px" class="text-center">
                         {!! Form::open(['route' => ['exam-types.destroy', $examType->exam_type_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('exam-types.show', [$examType->exam_type_id]) }}"
-                               class='btn btn-default btn-xs'>
-                                <i class="far fa-eye"></i>
-                            </a>
                             <a href="{{ route('exam-types.edit', [$examType->exam_type_id]) }}"
-                               class='btn btn-default btn-xs'>
-                                <i class="far fa-edit"></i>
+                               class='btn btn-light btn-sm' title="Edit">
+                                <i class="far fa-edit text-primary"></i>
                             </a>
-                            {!! Form::button('<i class="far fa-trash-alt"></i>', ['type' => 'submit', 'class' => 'btn btn-danger btn-xs', 'onclick' => "return confirm('Are you sure?')"]) !!}
+                            {!! Form::button('<i class="far fa-trash-alt text-danger"></i>', ['type' => 'submit', 'class' => 'btn btn-light btn-sm', 'title' => 'Delete', 'onclick' => "return confirm('Are you sure?')"]) !!}
                         </div>
                         {!! Form::close() !!}
                     </td>

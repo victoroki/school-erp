@@ -21,6 +21,20 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Support\Facades\Gate::before(function ($user, $ability) {
+            return $user->hasRole('Super Admin') ? true : null;
+        });
+
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('permissions')) {
+                foreach (\App\Models\Permission::pluck('permission_name') as $permission) {
+                    \Illuminate\Support\Facades\Gate::define($permission, function ($user) use ($permission) {
+                        return $user->hasPermission($permission);
+                    });
+                }
+            }
+        } catch (\Exception $e) {
+            //
+        }
     }
 }

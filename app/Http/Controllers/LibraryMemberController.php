@@ -24,7 +24,20 @@ class LibraryMemberController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $libraryMembers = $this->libraryMemberRepository->paginate(10);
+        $query = $this->libraryMemberRepository->allQuery()->with('user');
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('member_type', 'like', "%$search%")
+                  ->orWhere('membership_number', 'like', "%$search%") // Assuming this field exists or similar
+                  ->orWhereHas('user', function($u) use ($search) {
+                       $u->where('name', 'like', "%$search%"); // User relation search
+                  });
+            });
+        }
+
+        $libraryMembers = $query->paginate(10);
 
         return view('library_members.index')
             ->with('libraryMembers', $libraryMembers);
@@ -35,7 +48,10 @@ class LibraryMemberController extends AppBaseController
      */
     public function create()
     {
-        return view('library_members.create');
+        // We need to fetch students/staff who are NOT yet library members
+        // simplified for now: just get all users as potential members
+        $users = \App\Models\User::pluck('name', 'id');
+        return view('library_members.create', compact('users'));
     }
 
     /**
@@ -44,6 +60,10 @@ class LibraryMemberController extends AppBaseController
     public function store(CreateLibraryMemberRequest $request)
     {
         $input = $request->all();
+        // Auto-generate a membership ID if not provided
+        if (!isset($input['reference_id'])) {
+             $input['reference_id'] = 'LIB-' . date('Y') . '-' . rand(1000, 9999);
+        }
 
         $libraryMember = $this->libraryMemberRepository->create($input);
 

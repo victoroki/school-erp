@@ -17,6 +17,12 @@ class ClassroomController extends AppBaseController
     public function __construct(ClassroomRepository $classroomRepo)
     {
         $this->classroomRepository = $classroomRepo;
+
+        $this->middleware('auth');
+        $this->middleware('can:classrooms.index')->only(['index', 'show']);
+        $this->middleware('can:classrooms.create')->only(['create', 'store']);
+        $this->middleware('can:classrooms.edit')->only(['edit', 'update']);
+        $this->middleware('can:classrooms.delete')->only('destroy');
     }
 
     /**

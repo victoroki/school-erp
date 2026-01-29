@@ -24,8 +24,8 @@ class Permission extends Model
         'description' => 'nullable|string|max:65535'
     ];
 
-    public function rolePermissions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function roles(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->hasMany(\App\Models\RolePermission::class, 'permission_id');
+        return $this->belongsToMany(\App\Models\Role::class, 'role_permissions', 'permission_id', 'role_id');
     }
 }

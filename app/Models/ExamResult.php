@@ -59,6 +59,24 @@ class ExamResult extends Model
         return $this->belongsTo(\App\Models\ClassSection::class, 'class_section_id');
     }
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($examResult) {
+            if ($examResult->marks_obtained !== null) {
+                // Find matching grade
+                $grade = \App\Models\GradingScale::where('min_percentage', '<=', $examResult->marks_obtained)
+                    ->where('max_percentage', '>=', $examResult->marks_obtained)
+                    ->first();
+                
+                if ($grade) {
+                    $examResult->grade_id = $grade->grade_id;
+                }
+            }
+        });
+    }
+
     public function createdBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(\App\Models\Staff::class, 'created_by');

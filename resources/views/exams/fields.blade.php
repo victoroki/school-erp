@@ -1,56 +1,47 @@
-<!-- Exam Type Id Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('exam_type_id', 'Exam Type :') !!}
-    {!! Form::select('exam_type_id', $examtypes, null, ['class' => 'form-control', 'placeholder'=>'Exam Type']) !!}
-</div>
+<div class="row">
+    <!-- Name Field -->
+    <div class="form-group col-sm-6">
+        {!! Form::label('name', 'Examination Name') !!}
+        {!! Form::text('name', null, ['class' => 'form-control', 'required', 'maxlength' => 100, 'placeholder' => 'e.g. Second Term Final 2025']) !!}
+    </div>
 
-<!-- Name Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('name', 'Name:') !!}
-    {!! Form::text('name', null, ['class' => 'form-control', 'required', 'maxlength' => 100, 'maxlength' => 100]) !!}
-</div>
+    <!-- Exam Type Id Field -->
+    <div class="form-group col-sm-3">
+        {!! Form::label('exam_type_id', 'Category') !!}
+        {!! Form::select('exam_type_id', $examtypes, null, ['class' => 'form-control', 'required', 'placeholder' => 'Select Type']) !!}
+    </div>
 
-<!-- Description Field -->
-<div class="form-group col-sm-12 col-lg-12">
-    {!! Form::label('description', 'Description:') !!}
-    {!! Form::textarea('description', null, ['class' => 'form-control', 'maxlength' => 65535, 'maxlength' => 65535]) !!}
-</div>
+    <!-- Academic Year Id Field -->
+    <div class="form-group col-sm-3">
+        {!! Form::label('academic_year_id', 'Academic Session') !!}
+        {!! Form::select('academic_year_id', $academicYears, null, ['class' => 'form-control', 'required', 'placeholder' => 'Select Year']) !!}
+    </div>
 
-<!-- Academic Year Id Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('academic_year_id', 'Academic Year Id:') !!}
-    {!! Form::select('academic_year_id', $academicYear, null, ['class' => 'form-control', 'placeholder'=>'Academic Year']) !!}
-</div>
+    <!-- Start Date Field -->
+    <div class="form-group col-sm-6">
+        {!! Form::label('start_date', 'Commencement Date') !!}
+        {!! Form::date('start_date', $exam->start_date ?? null, ['class' => 'form-control', 'required', 'id' => 'start_date']) !!}
+    </div>
 
-<!-- Start Date Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('start_date', 'Start Date:') !!}
-    {!! Form::text('start_date', null, ['class' => 'form-control','id'=>'start_date']) !!}
-</div>
+    <!-- End Date Field -->
+    <div class="form-group col-sm-6">
+        {!! Form::label('end_date', 'Completion Date') !!}
+        {!! Form::date('end_date', $exam->end_date ?? null, ['class' => 'form-control', 'required', 'id' => 'end_date']) !!}
+    </div>
 
-@push('page_scripts')
-    <script type="text/javascript">
-        $('#start_date').datepicker()
-    </script>
-@endpush
+    <!-- Description Field -->
+    <div class="form-group col-sm-12">
+        {!! Form::label('description', 'Exam Session Notes') !!}
+        {!! Form::textarea('description', null, ['class' => 'form-control', 'rows' => 2, 'placeholder' => 'Any special instructions or details...']) !!}
+    </div>
 
-<!-- End Date Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('end_date', 'End Date:') !!}
-    {!! Form::text('end_date', null, ['class' => 'form-control','id'=>'end_date']) !!}
-</div>
-
-@push('page_scripts')
-    <script type="text/javascript">
-        $('#end_date').datepicker()
-    </script>
-@endpush
-
-<!-- Publish Result Field -->
-<div class="form-group col-sm-6">
-    <div class="form-check">
-        {!! Form::hidden('publish_result', 0, ['class' => 'form-check-input']) !!}
-        {!! Form::checkbox('publish_result', '1', null, ['class' => 'form-check-input']) !!}
-        {!! Form::label('publish_result', 'Publish Result', ['class' => 'form-check-label']) !!}
+    <!-- Publish Result Field -->
+    <div class="form-group col-sm-12">
+        <hr>
+        <div class="custom-control custom-switch">
+            {!! Form::hidden('publish_result', 0) !!}
+            {!! Form::checkbox('publish_result', '1', null, ['class' => 'custom-control-input', 'id' => 'publish_result']) !!}
+            {!! Form::label('publish_result', 'Make Results Visible to Parents/Students immediately after entry', ['class' => 'custom-control-label']) !!}
+        </div>
     </div>
 </div>

@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::model($examType, ['route' => ['examTypes.update', $examType->id], 'method' => 'patch']) !!}
+            {!! Form::model($examType, ['route' => ['exam-types.update', $examType->id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">
@@ -29,7 +29,7 @@
 
             <div class="card-footer">
                 {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('examTypes.index') }}" class="btn btn-default"> Cancel </a>
+                <a href="{{ route('exam-types.index') }}" class="btn btn-default"> Cancel </a>
             </div>
 
             {!! Form::close() !!}

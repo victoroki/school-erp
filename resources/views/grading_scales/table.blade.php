@@ -1,36 +1,42 @@
 <div class="card-body p-0">
     <div class="table-responsive">
-        <table class="table" id="grading-scales-table">
+        <table class="table table-hover" id="grading-scales-table">
             <thead>
             <tr>
-                <th>Name</th>
-                <th>Min Percentage</th>
-                <th>Max Percentage</th>
-                <th>Grade Point</th>
-                <th>Description</th>
-                <th colspan="3">Action</th>
+                <th>Grade</th>
+                <th class="text-center">Range (%)</th>
+                <th class="text-center">GPA</th>
+                <th>Performance Remark</th>
+                <th class="text-center">Action</th>
             </tr>
             </thead>
             <tbody>
             @foreach($gradingScales as $gradingScale)
                 <tr>
-                    <td>{{ $gradingScale->name }}</td>
-                    <td>{{ $gradingScale->min_percentage }}</td>
-                    <td>{{ $gradingScale->max_percentage }}</td>
-                    <td>{{ $gradingScale->grade_point }}</td>
-                    <td>{{ $gradingScale->description }}</td>
-                    <td  style="width: 120px">
-                        {!! Form::open(['route' => ['grading-scales.destroy', $gradingScale->id], 'method' => 'delete']) !!}
+                    <td>
+                        <span class="badge badge-primary px-3 py-2" style="font-size: 1rem;">
+                            {{ $gradingScale->name }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <span class="text-bold">{{ number_format($gradingScale->min_percentage, 1) }}%</span> 
+                        <i class="fas fa-arrows-alt-h mx-2 text-muted"></i>
+                        <span class="text-bold">{{ number_format($gradingScale->max_percentage, 1) }}%</span>
+                    </td>
+                    <td class="text-center">
+                        <code class="text-dark" style="font-size: 1rem;">{{ number_format($gradingScale->grade_point, 2) }}</code>
+                    </td>
+                    <td>
+                        <span class="text-muted">{{ $gradingScale->description ?? '--' }}</span>
+                    </td>
+                    <td style="width: 120px" class="text-center">
+                        {!! Form::open(['route' => ['grading-scales.destroy', $gradingScale->grade_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('gradingScales.show', [$gradingScale->grade_id]) }}"
-                               class='btn btn-default btn-xs'>
-                                <i class="far fa-eye"></i>
+                            <a href="{{ route('grading-scales.edit', [$gradingScale->grade_id]) }}"
+                               class='btn btn-light btn-sm' title="Edit">
+                                <i class="far fa-edit text-primary"></i>
                             </a>
-                            <a href="{{ route('gradingScales.edit', [$grading-scale->grade_id]) }}"
-                               class='btn btn-default btn-xs'>
-                                <i class="far fa-edit"></i>
-                            </a>
-                            {!! Form::button('<i class="far fa-trash-alt"></i>', ['type' => 'submit', 'class' => 'btn btn-danger btn-xs', 'onclick' => "return confirm('Are you sure?')"]) !!}
+                            {!! Form::button('<i class="far fa-trash-alt text-danger"></i>', ['type' => 'submit', 'class' => 'btn btn-light btn-sm', 'title' => 'Delete', 'onclick' => "return confirm('Are you sure?')"]) !!}
                         </div>
                         {!! Form::close() !!}
                     </td>

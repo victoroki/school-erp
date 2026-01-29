@@ -9,10 +9,7 @@ use App\Models\Exam;
 use App\Models\Student;
 use App\Models\ClassSection;
 use App\Models\Subject;
-use App\Models\Grade;
 use App\Models\GradingScale;
-use App\Models\Staff;
-use App\Models\User;
 use App\Repositories\ExamResultRepository;
 use Illuminate\Http\Request;
 use Flash;
@@ -28,28 +25,24 @@ class ExamResultController extends AppBaseController
         $this->examResultRepository = $examResultRepo;
     }
 
-    private function getDropdownData(){
+    private function getDropdownData()
+    {
+        // Get students with full name and ID
+        $students = Student::all()->mapWithKeys(function ($student) {
+            return [$student->student_id => $student->first_name . ' ' . $student->last_name . ' (' . $student->admission_no . ')'];
+        });
+
+        // Get class sections with class name and section name
+        $classSections = ClassSection::with(['class', 'section'])->get()->mapWithKeys(function ($cs) {
+            $name = ($cs->class->name ?? 'N/A') . ' - ' . ($cs->section->name ?? 'N/A');
+            return [$cs->class_section_id => $name];
+        });
+
         return [
-            'exams' => Exam::selectRaw("exam_id, CONCAT(name, ' - ', exam_type_id) as display_name")
-                ->pluck('display_name', 'id')
-                ->toArray(),
-            'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' (', student_id, ')') as full_name")
-                ->pluck('full_name', 'id')
-                ->toArray(),
-            'classSections' => ClassSection::with(['class', 'section', 'academicYear'])
-                ->get()
-                ->pluck('display_name', 'id')
-                ->toArray(),
-            'subjects' => Subject::pluck('name', 'subject_id')
-                ->toArray(),
-            'grades' => GradingScale::orderBy('min_percentage', 'asc')
-                ->selectRaw("grade_id, CONCAT(name, ' (', min_percentage, '-', max_percentage, ')') as grade_display")
-                ->pluck('grade_display', 'id')
-                ->toArray(),
-            'teachers' => Staff::where('staff_type', 'teacher')
-                ->selectRaw("staff_id, CONCAT(first_name, ' ', last_name) as full_name")
-                ->pluck('full_name', 'id')
-                ->toArray()
+            'exams' => Exam::pluck('name', 'exam_id'),
+            'students' => $students,
+            'classSections' => $classSections,
+            'subjects' => Subject::pluck('name', 'subject_id'),
         ];
     }
 
@@ -80,25 +73,13 @@ class ExamResultController extends AppBaseController
     public function store(CreateExamResultRequest $request)
     {
         $input = $request->all();
-        
-        // Auto-assign the logged-in user as creator
         $input['created_by'] = Auth::id();
-        
-        // Auto-calculate grade based on marks if not provided
-        if (empty($input['grade_id']) && !empty($input['marks_obtained'])) {
-            $grade = Grade::where('min_marks', '<=', $input['marks_obtained'])
-                         ->where('max_marks', '>=', $input['marks_obtained'])
-                         ->first();
-            if ($grade) {
-                $input['grade_id'] = $grade->id;
-            }
-        }
 
-        $examResult = $this->examResultRepository->create($input);
+        $this->examResultRepository->create($input);
 
         Flash::success('Exam Result saved successfully.');
 
-        return redirect(route('examResults.index'));
+        return redirect(route('exam-results.index'));
     }
 
     /**
@@ -110,8 +91,7 @@ class ExamResultController extends AppBaseController
 
         if (empty($examResult)) {
             Flash::error('Exam Result not found');
-
-            return redirect(route('examResults.index'));
+            return redirect(route('exam-results.index'));
         }
 
         return view('exam_results.show')->with('examResult', $examResult);
@@ -126,15 +106,12 @@ class ExamResultController extends AppBaseController
 
         if (empty($examResult)) {
             Flash::error('Exam Result not found');
-
-            return redirect(route('examResults.index'));
+            return redirect(route('exam-results.index'));
         }
 
         $dropdownData = $this->getDropdownData();
 
-        return view('exam_results.edit')
-            ->with('examResult', $examResult)
-            ->with($dropdownData);
+        return view('exam_results.edit', array_merge(['examResult' => $examResult], $dropdownData));
     }
 
     /**
@@ -146,27 +123,14 @@ class ExamResultController extends AppBaseController
 
         if (empty($examResult)) {
             Flash::error('Exam Result not found');
-
-            return redirect(route('examResults.index'));
+            return redirect(route('exam-results.index'));
         }
 
-        $input = $request->all();
-        
-        // Auto-calculate grade based on marks if not provided
-        if (empty($input['grade_id']) && !empty($input['marks_obtained'])) {
-            $grade = Grade::where('min_marks', '<=', $input['marks_obtained'])
-                         ->where('max_marks', '>=', $input['marks_obtained'])
-                         ->first();
-            if ($grade) {
-                $input['grade_id'] = $grade->id;
-            }
-        }
-
-        $examResult = $this->examResultRepository->update($input, $id);
+        $this->examResultRepository->update($request->all(), $id);
 
         Flash::success('Exam Result updated successfully.');
 
-        return redirect(route('examResults.index'));
+        return redirect(route('exam-results.index'));
     }
 
     /**
@@ -180,39 +144,13 @@ class ExamResultController extends AppBaseController
 
         if (empty($examResult)) {
             Flash::error('Exam Result not found');
-
-            return redirect(route('examResults.index'));
+            return redirect(route('exam-results.index'));
         }
 
         $this->examResultRepository->delete($id);
 
         Flash::success('Exam Result deleted successfully.');
 
-        return redirect(route('examResults.index'));
-    }
-
-    /**
-     * Get subjects by class section (AJAX endpoint)
-     */
-    public function getSubjectsByClassSection($classSectionId)
-    {
-        $subjects = Subject::whereHas('classSections', function($query) use ($classSectionId) {
-            $query->where('class_section_id', $classSectionId);
-        })->where('status', 'active')->get();
-
-        return response()->json($subjects);
-    }
-
-    /**
-     * Get students by class section (AJAX endpoint)
-     */
-    public function getStudentsByClassSection($classSectionId)
-    {
-        $students = Student::whereHas('enrollments', function($query) use ($classSectionId) {
-            $query->where('class_section_id', $classSectionId)
-                  ->where('status', 'active');
-        })->get();
-
-        return response()->json($students);
+        return redirect(route('exam-results.index'));
     }
 }

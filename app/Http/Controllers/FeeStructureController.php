@@ -11,15 +11,17 @@ use App\Repositories\FeeStructureRepository;
 use App\Http\Requests\CreateFeeStructureRequest;
 use App\Http\Requests\UpdateFeeStructureRequest;
 use App\Models\FeeCategory;
+use Illuminate\Support\Facades\DB;
 
 class FeeStructureController extends AppBaseController
 {
     /** @var FeeStructureRepository $feeStructureRepository*/
-    private $feeStructureRepository;
+    protected $financeService;
 
-    public function __construct(FeeStructureRepository $feeStructureRepo)
+    public function __construct(FeeStructureRepository $feeStructureRepo, \App\Services\FinanceService $financeService)
     {
         $this->feeStructureRepository = $feeStructureRepo;
+        $this->financeService = $financeService;
     }
 
     /**
@@ -27,12 +29,26 @@ class FeeStructureController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $feeStructures = $this->feeStructureRepository->allQuery()
+        $query = $this->feeStructureRepository->allQuery()
             ->with(['academicYear', 'schoolClass', 'category'])
-            ->paginate(10);
+            ->withCount('students');
+
+        if ($request->has('class_id') && $request->class_id != '') {
+            $query->where('class_id', $request->class_id);
+        }
+
+        if ($request->has('academic_year_id') && $request->academic_year_id != '') {
+            $query->where('academic_year_id', $request->academic_year_id);
+        }
+
+        $feeStructures = $query->paginate(10);
+        $classes = SchoolClass::pluck('name', 'class_id');
+        $academicYears = AcademicYear::pluck('name', 'academic_year_id');
 
         return view('fee_structures.index')
-            ->with('feeStructures', $feeStructures);
+            ->with('feeStructures', $feeStructures)
+            ->with('classes', $classes)
+            ->with('academicYears', $academicYears);
     }
 
     private function getdropdownData(){
@@ -59,9 +75,23 @@ class FeeStructureController extends AppBaseController
     {
         $input = $request->all();
 
-        $feeStructure = $this->feeStructureRepository->create($input);
+        DB::beginTransaction();
+        try {
+            $feeStructure = $this->feeStructureRepository->create($input);
 
-        Flash::success('Fee Structure saved successfully.');
+            if ($request->has('auto_assign') && $request->auto_assign == 1) {
+                $count = $this->financeService->batchAssignFee($feeStructure->fee_structure_id, $feeStructure->class_id);
+                Flash::success("Fee Structure saved and assigned to $count students successfully.");
+            } else {
+                Flash::success('Fee Structure saved successfully.');
+            }
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Flash::error('Error saving fee structure: ' . $e->getMessage());
+            return redirect()->back()->withInput();
+        }
 
         return redirect(route('fee-structures.index'));
     }

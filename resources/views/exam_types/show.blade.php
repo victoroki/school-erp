@@ -11,7 +11,7 @@ Exam Type Details
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right"
-                       href="{{ route('examTypes.index') }}">
+                       href="{{ route('exam-types.index') }}"
                                                     Back
                                             </a>
                 </div>

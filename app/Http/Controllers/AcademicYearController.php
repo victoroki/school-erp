@@ -17,6 +17,12 @@ class AcademicYearController extends AppBaseController
     public function __construct(AcademicYearRepository $academicYearRepo)
     {
         $this->academicYearRepository = $academicYearRepo;
+
+        $this->middleware('auth');
+        $this->middleware('can:academic-years.index')->only(['index', 'show']);
+        $this->middleware('can:academic-years.create')->only(['create', 'store']);
+        $this->middleware('can:academic-years.edit')->only(['edit', 'update']);
+        $this->middleware('can:academic-years.delete')->only('destroy');
     }
 
     /**
@@ -78,7 +84,7 @@ class AcademicYearController extends AppBaseController
         if (empty($academicYear)) {
             Flash::error('Academic Year not found');
 
-            return redirect(route('academicYears.index'));
+            return redirect(route('academic-years.index'));
         }
 
         return view('academic_years.edit')->with('academicYear', $academicYear);
@@ -94,7 +100,7 @@ class AcademicYearController extends AppBaseController
         if (empty($academicYear)) {
             Flash::error('Academic Year not found');
 
-            return redirect(route('academicYears.index'));
+            return redirect(route('academic-years.index'));
         }
 
         $academicYear = $this->academicYearRepository->update($request->all(), $id);

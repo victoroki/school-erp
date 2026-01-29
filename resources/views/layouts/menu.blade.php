@@ -44,6 +44,18 @@
 </li>
 
 <!-- Academic Management -->
+@canany([
+    'academic-years.index',
+    'school-classes.index',
+    'sections.index',
+    'class-sections.index',
+    'subjects.index',
+    'class-subjects.index',
+    'teacher-subjects.index',
+    'periods.index',
+    'classrooms.index',
+    'timetables.index'
+])
 <li class="nav-item has-treeview {{ Request::is('academic-years*') || Request::is('school-classes*') || Request::is('sections*') || Request::is('class-sections*') || Request::is('subjects*') || Request::is('class-subjects*') || Request::is('teacher-subjects*') || Request::is('periods*') || Request::is('classrooms*') ? 'menu-open' : '' }}">
     <a href="#" class="nav-link {{ Request::is('academic-years*') || Request::is('school-classes*') || Request::is('sections*') || Request::is('class-sections*') || Request::is('subjects*') || Request::is('class-subjects*') || Request::is('teacher-subjects*') || Request::is('periods*') || Request::is('classrooms*') ? 'active' : '' }}">
         <i class="nav-icon fas fa-graduation-cap text-info"></i>
@@ -53,68 +65,98 @@
         </p>
     </a>
     <ul class="nav nav-treeview">
+        @can('academic-years.index')
         <li class="nav-item">
             <a href="{{ route('academic-years.index') }}" class="nav-link {{ Request::is('academic-years*') ? 'active' : '' }}">
                 <i class="far fa-calendar nav-icon text-info"></i>
                 <p>Academic Years</p>
             </a>
         </li>
+        @endcan
+
+        @can('school-classes.index')
         <li class="nav-item">
             <a href="{{ route('school-classes.index') }}" class="nav-link {{ Request::is('school-classes*') ? 'active' : '' }}">
                 <i class="far fa-chalkboard nav-icon text-info"></i>
                 <p>School Classes</p>
             </a>
         </li>
+        @endcan
+
+        @can('sections.index')
         <li class="nav-item">
             <a href="{{ route('sections.index') }}" class="nav-link {{ Request::is('sections*') ? 'active' : '' }}">
                 <i class="far fa-layer-group nav-icon text-info"></i>
                 <p>Sections</p>
             </a>
         </li>
+        @endcan
+
+        @can('class-sections.index')
         <li class="nav-item">
             <a href="{{ route('class-sections.index') }}" class="nav-link {{ Request::is('class-sections*') ? 'active' : '' }}">
                 <i class="far fa-sitemap nav-icon text-info"></i>
                 <p>Class Sections</p>
             </a>
         </li>
+        @endcan
+
+        @can('subjects.index')
         <li class="nav-item">
             <a href="{{ route('subjects.index') }}" class="nav-link {{ Request::is('subjects*') ? 'active' : '' }}">
                 <i class="far fa-book-open nav-icon text-info"></i>
                 <p>Subjects</p>
             </a>
         </li>
+        @endcan
+
+        @can('class-subjects.index')
         <li class="nav-item">
             <a href="{{ route('class-subjects.index') }}" class="nav-link {{ Request::is('class-subjects*') ? 'active' : '' }}">
                 <i class="far fa-link nav-icon text-info"></i>
                 <p>Class Subjects</p>
             </a>
         </li>
+        @endcan
+
+        @can('teacher-subjects.index')
         <li class="nav-item">
             <a href="{{ route('teacher-subjects.index') }}" class="nav-link {{ Request::is('teacher-subjects*') ? 'active' : '' }}">
                 <i class="far fa-user-tie nav-icon text-info"></i>
                 <p>Teacher Subjects</p>
             </a>
         </li>
+        @endcan
+
+        @can('periods.index')
         <li class="nav-item">
             <a href="{{ route('periods.index') }}" class="nav-link {{ Request::is('periods*') ? 'active' : '' }}">
                 <i class="far fa-clock nav-icon text-info"></i>
                 <p>Periods</p>
             </a>
         </li>
+        @endcan
+
+        @can('classrooms.index')
         <li class="nav-item">
             <a href="{{ route('classrooms.index') }}" class="nav-link {{ Request::is('classrooms*') ? 'active' : '' }}">
                 <i class="far fa-door-open nav-icon text-info"></i>
                 <p>Classrooms</p>
             </a>
         </li>
+        @endcan
+
+        @can('timetables.index')
         <li class="nav-item">
             <a href="{{ route('timetables.index') }}" class="nav-link {{ Request::is('timetables*') ? 'active' : '' }}">
                 <i class="nav-icon fas fa-home"></i>
                 <p>Timetables</p>
             </a>
         </li>
+        @endcan
     </ul>
 </li>
+@endcanany
 
 <!-- Student Management -->
 <li class="nav-item has-treeview {{ Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') ? 'menu-open' : '' }}">
@@ -251,77 +293,58 @@
     </ul>
 </li>
 
-<!-- Financial Management -->
-<li class="nav-item has-treeview {{ Request::is('expense-categories*') || Request::is('income-categories*') || Request::is('bank-accounts*') || Request::is('expenses*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('expense-categories*') || Request::is('income-categories*') || Request::is('bank-accounts*') || Request::is('expenses*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-chart-line text-dark"></i>
+<!-- Finance & Accounting -->
+<li class="nav-item has-treeview {{ Request::is('fee*') || Request::is('expense*') || Request::is('income*') || Request::is('bank*') || Request::is('student-fee-discounts*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('fee*') || Request::is('expense*') || Request::is('income*') || Request::is('bank*') || Request::is('student-fee-discounts*') ? 'active' : '' }}">
+        <i class="nav-icon fas fa-chart-line text-success"></i>
         <p>
-            Financial Management
+            Finance & Fees
             <i class="right fas fa-angle-left"></i>
         </p>
     </a>
     <ul class="nav nav-treeview">
         <li class="nav-item">
-            <a href="{{ route('expense-categories.index') }}" class="nav-link {{ Request::is('expense-categories*') ? 'active' : '' }}">
-                <i class="far fa-minus-circle nav-icon text-dark"></i>
-                <p>Expense Categories</p>
+            <a href="{{ route('fee-management.index') }}" class="nav-link {{ Request::is('fee-management*') ? 'active' : '' }}">
+                <i class="fas fa-cash-register nav-icon text-success"></i>
+                <p>Payment Collection</p>
             </a>
         </li>
         <li class="nav-item">
+            <a href="{{ route('fee-structures.index') }}" class="nav-link {{ Request::is('fee-structures*') ? 'active' : '' }}">
+                <i class="fas fa-file-invoice nav-icon text-success"></i>
+                <p>Fee Structures</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('fee-categories.index') }}" class="nav-link {{ Request::is('fee-categories*') ? 'active' : '' }}">
+                <i class="fas fa-tags nav-icon text-success"></i>
+                <p>Fee Categories</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('student-fee-discounts.index') }}" class="nav-link {{ Request::is('student-fee-discounts*') ? 'active' : '' }}">
+                <i class="fas fa-percent nav-icon text-success"></i>
+                <p>Fee Discounts</p>
+            </a>
+        </li>
+        <li class="nav-item border-top mt-2 pt-2">
             <a href="{{ route('expenses.index') }}" class="nav-link {{ Request::is('expenses*') ? 'active' : '' }}">
-                <i class="far fa-credit-card nav-icon text-dark"></i>
+                <i class="fas fa-minus-circle nav-icon text-danger"></i>
                 <p>Expenses</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('income-categories.index') }}" class="nav-link {{ Request::is('income-categories*') ? 'active' : '' }}">
-                <i class="far fa-plus-circle nav-icon text-dark"></i>
-                <p>Income Categories</p>
-            </a>
-        </li>
-        <li class="nav-item">
             <a href="{{ route('bank-accounts.index') }}" class="nav-link {{ Request::is('bank-accounts*') ? 'active' : '' }}">
-                <i class="far fa-university nav-icon text-dark"></i>
+                <i class="fas fa-university nav-icon text-primary"></i>
                 <p>Bank Accounts</p>
             </a>
         </li>
     </ul>
 </li>
 
-<!-- Fee Management -->
-<li class="nav-item has-treeview {{ Request::is('fee-categories*') || Request::is('fee-structures*') || Request::is('student-fee-discounts*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('fee-categories*') || Request::is('fee-structures*') || Request::is('student-fee-discounts*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-money-bill-wave text-success"></i>
-        <p>
-            Fee Management
-            <i class="right fas fa-angle-left"></i>
-        </p>
-    </a>
-    <ul class="nav nav-treeview">
-        <li class="nav-item">
-            <a href="{{ route('fee-categories.index') }}" class="nav-link {{ Request::is('fee-categories*') ? 'active' : '' }}">
-                <i class="far fa-tags nav-icon text-success"></i>
-                <p>Fee Categories</p>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('fee-structures.index') }}" class="nav-link {{ Request::is('fee-structures*') ? 'active' : '' }}">
-                <i class="far fa-table nav-icon text-success"></i>
-                <p>Fee Structures</p>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('student-fee-discounts.index') }}" class="nav-link {{ Request::is('student-fee-discounts*') ? 'active' : '' }}">
-                <i class="far fa-percent nav-icon text-success"></i>
-                <p>Student Fee Discounts</p>
-            </a>
-        </li>
-    </ul>
-</li>
-
 <!-- Library Management -->
-<li class="nav-item has-treeview {{ Request::is('book-categories*') || Request::is('books*') || Request::is('library-members*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('book-categories*') || Request::is('books*') || Request::is('library-members*') ? 'active' : '' }}">
+<li class="nav-item has-treeview {{ Request::is('library*') || Request::is('book-categories*') || Request::is('books*') || Request::is('library-members*') || Request::is('book-issues*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('library*') || Request::is('book-categories*') || Request::is('books*') || Request::is('library-members*') || Request::is('book-issues*') ? 'active' : '' }}">
         <i class="nav-icon fas fa-book text-primary"></i>
         <p>
             Library Management
@@ -330,30 +353,101 @@
     </a>
     <ul class="nav nav-treeview">
         <li class="nav-item">
-            <a href="{{ route('book-categories.index') }}" class="nav-link {{ Request::is('book-categories*') ? 'active' : '' }}">
-                <i class="far fa-bookmark nav-icon text-primary"></i>
-                <p>Book Categories</p>
+            <a href="{{ route('library.dashboard') }}" class="nav-link {{ Request::is('library/dashboard') ? 'active' : '' }}">
+                <i class="fas fa-tachometer-alt nav-icon text-primary"></i>
+                <p>Dashboard</p>
             </a>
         </li>
-        <li class="nav-item">
-            <a href="{{ route('books.index') }}" class="nav-link {{ Request::is('books*') ? 'active' : '' }}">
-                <i class="far fa-book nav-icon text-primary"></i>
-                <p>Books</p>
+
+        <!-- Books Management Sub-menu -->
+        <li class="nav-item has-treeview {{ Request::is('books*') || Request::is('book-categories*') ? 'menu-open' : '' }}">
+            <a href="#" class="nav-link {{ Request::is('books*') || Request::is('book-categories*') ? 'active' : '' }}">
+                <i class="fas fa-swatchbook nav-icon text-primary"></i>
+                <p>
+                    Books Catalog
+                    <i class="right fas fa-angle-left"></i>
+                </p>
             </a>
+            <ul class="nav nav-treeview pl-3">
+                <li class="nav-item">
+                    <a href="{{ route('books.index') }}" class="nav-link {{ Request::is('books') ? 'active' : '' }}">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>All Books</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('book-categories.index') }}" class="nav-link {{ Request::is('book-categories*') ? 'active' : '' }}">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Categories</p>
+                    </a>
+                </li>
+            </ul>
         </li>
+
+        <!-- Circulation Management Sub-menu -->
+        <li class="nav-item has-treeview {{ Request::is('book-issues*') ? 'menu-open' : '' }}">
+            <a href="#" class="nav-link {{ Request::is('book-issues*') ? 'active' : '' }}">
+                <i class="fas fa-sync-alt nav-icon text-primary"></i>
+                <p>
+                    Circulation
+                    <i class="right fas fa-angle-left"></i>
+                </p>
+            </a>
+            <ul class="nav nav-treeview pl-3">
+                <li class="nav-item">
+                    <a href="{{ route('book-issues.create') }}" class="nav-link {{ Request::is('book-issues/create') ? 'active' : '' }}">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Issue Book</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('book-issues.index') }}" class="nav-link {{ Request::is('book-issues') ? 'active' : '' }}">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Active Issues</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Reservations</p>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- Library Members -->
         <li class="nav-item">
-            <a href="{{ route('library-members.index') }}" class="nav-link {{ Request::is('library-members*') ? 'active' : '' }}">
-                <i class="far fa-id-card nav-icon text-primary"></i>
+            <a href="{{ route('libraryMembers.index') }}" class="nav-link {{ Request::is('library-members*') ? 'active' : '' }}">
+                <i class="fas fa-users-cog nav-icon text-primary"></i>
                 <p>Library Members</p>
             </a>
+        </li>
+
+        <!-- Reports Sub-menu -->
+        <li class="nav-item has-treeview {{ Request::is('library/reports*') ? 'menu-open' : '' }}">
+            <a href="#" class="nav-link {{ Request::is('library/reports*') ? 'active' : '' }}">
+                <i class="fas fa-chart-pie nav-icon text-primary"></i>
+                <p>
+                    Library Reports
+                    <i class="right fas fa-angle-left"></i>
+                </p>
+            </a>
+            <ul class="nav nav-treeview pl-3">
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Circulation Report</p>
+                    </a>
+                </li>
+            </ul>
         </li>
     </ul>
 </li>
 
 <!-- Inventory Management -->
-<li class="nav-item has-treeview {{ Request::is('inventory-categories*') || Request::is('inventory-items*') || Request::is('suppliers*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('inventory-categories*') || Request::is('inventory-items*') || Request::is('suppliers*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-boxes text-info"></i>
+<li class="nav-item has-treeview {{ Request::is('inventory*') || Request::is('inventory-categories*') || Request::is('inventory-items*') || Request::is('suppliers*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('inventory*') || Request::is('inventory-categories*') || Request::is('inventory-items*') || Request::is('suppliers*') ? 'active' : '' }}">
+        <i class="nav-icon fas fa-boxes text-success"></i>
         <p>
             Inventory Management
             <i class="right fas fa-angle-left"></i>
@@ -361,21 +455,67 @@
     </a>
     <ul class="nav nav-treeview">
         <li class="nav-item">
-            <a href="{{ route('inventory-categories.index') }}" class="nav-link {{ Request::is('inventory-categories*') ? 'active' : '' }}">
-                <i class="far fa-list-alt nav-icon text-info"></i>
-                <p>Inventory Categories</p>
+            <a href="{{ route('inventory.dashboard') }}" class="nav-link {{ Request::is('inventory') ? 'active' : '' }}">
+                <i class="fas fa-chart-line nav-icon text-success"></i>
+                <p>Dashboard</p>
             </a>
         </li>
         <li class="nav-item">
             <a href="{{ route('inventory-items.index') }}" class="nav-link {{ Request::is('inventory-items*') ? 'active' : '' }}">
-                <i class="far fa-cube nav-icon text-info"></i>
-                <p>Inventory Items</p>
+                <i class="fas fa-list nav-icon text-success"></i>
+                <p>Items Catalog</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('inventory-categories.index') }}" class="nav-link {{ Request::is('inventory-categories*') ? 'active' : '' }}">
+                <i class="fas fa-tags nav-icon text-success"></i>
+                <p>Categories</p>
             </a>
         </li>
         <li class="nav-item">
             <a href="{{ route('suppliers.index') }}" class="nav-link {{ Request::is('suppliers*') ? 'active' : '' }}">
-                <i class="far fa-truck nav-icon text-info"></i>
+                <i class="fas fa-truck nav-icon text-success"></i>
                 <p>Suppliers</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase">Stock Operations</li>
+        <li class="nav-item">
+            <a href="{{ route('inventory.add-stock.form') }}" class="nav-link {{ Request::is('inventory/add-stock*') ? 'active' : '' }}">
+                <i class="fas fa-plus-square nav-icon text-success"></i>
+                <p>Add Stock</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('inventory.issue-stock.form') }}" class="nav-link {{ Request::is('inventory/issue-stock*') ? 'active' : '' }}">
+                <i class="fas fa-minus-square nav-icon text-danger"></i>
+                <p>Issue Stock</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('inventory.adjust-stock.form') }}" class="nav-link {{ Request::is('inventory/adjust-stock*') ? 'active' : '' }}">
+                <i class="fas fa-sliders-h nav-icon text-warning"></i>
+                <p>Adjust Stock</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase">Procurement</li>
+        <li class="nav-item">
+            <a href="{{ route('inventory.requisitions.index') }}" class="nav-link {{ Request::is('inventory/requisitions*') ? 'active' : '' }}">
+                <i class="fas fa-file-signature nav-icon text-info"></i>
+                <p>Requisitions</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('inventory.purchase-orders.index') }}" class="nav-link {{ Request::is('inventory/purchase-orders*') ? 'active' : '' }}">
+                <i class="fas fa-shopping-cart nav-icon text-warning"></i>
+                <p>Purchase Orders</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('inventory.stock-movement-history') }}" class="nav-link {{ Request::is('inventory/stock-movement-history') ? 'active' : '' }}">
+                <i class="fas fa-history nav-icon text-secondary"></i>
+                <p>Stock History</p>
             </a>
         </li>
     </ul>
@@ -461,4 +601,3 @@
         </li>
     </ul>
 </li>
-

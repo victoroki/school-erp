@@ -6,6 +6,7 @@ use App\Http\Requests\CreateSchoolClassRequest;
 use App\Http\Requests\UpdateSchoolClassRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\SchoolClassRepository;
+use App\Models\SchoolClass;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -17,6 +18,12 @@ class SchoolClassController extends AppBaseController
     public function __construct(SchoolClassRepository $schoolClassRepo)
     {
         $this->schoolClassRepository = $schoolClassRepo;
+
+        $this->middleware('auth');
+        $this->middleware('can:school-classes.index')->only(['index', 'show']);
+        $this->middleware('can:school-classes.create')->only(['create', 'store']);
+        $this->middleware('can:school-classes.edit')->only(['edit', 'update']);
+        $this->middleware('can:school-classes.delete')->only('destroy');
     }
 
     /**
@@ -24,7 +31,9 @@ class SchoolClassController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $schoolClasses = $this->schoolClassRepository->paginate(10);
+        $schoolClasses = SchoolClass::withCount(['sections', 'classSubjects'])
+            ->orderBy('numeric_value')
+            ->paginate(12);
 
         return view('school_classes.index')
             ->with('schoolClasses', $schoolClasses);

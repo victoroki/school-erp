@@ -59,9 +59,6 @@ class StudentController extends AppBaseController
         return redirect(route('students.index'));
     }
 
-    /**
-     * Display the specified Student.
-     */
     public function show($id)
     {
         $student = $this->studentRepository->find($id);
@@ -71,6 +68,21 @@ class StudentController extends AppBaseController
 
             return redirect(route('students.index'));
         }
+
+        // Eager load all necessary relationships
+        $student->load([
+            'studentDocuments',
+            'studentClassEnrollments.classSection.schoolClass',
+            'studentClassEnrollments.classSection.section',
+            'studentClassEnrollments.academicYear',
+            'parents',
+            'siblings',
+            'studentFees',
+            'payments.collectedBy',
+            'studentAttendances',
+            'transportRegistrations',
+            'hostelAllocations'
+        ]);
 
         return view('students.show')->with('student', $student);
     }

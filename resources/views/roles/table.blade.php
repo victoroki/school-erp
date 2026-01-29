@@ -1,10 +1,11 @@
 <div class="card-body p-0">
     <div class="table-responsive">
-        <table class="table" id="roles-table">
+        <table class="table table-hover" id="roles-table">
             <thead>
             <tr>
                 <th>Role Name</th>
                 <th>Description</th>
+                <th>Permissions</th>
                 <th colspan="3">Action</th>
             </tr>
             </thead>
@@ -13,7 +14,10 @@
                 <tr>
                     <td>{{ $role->role_name }}</td>
                     <td>{{ $role->description }}</td>
-                    <td  style="width: 120px">
+                    <td>
+                        <span class="badge badge-info">{{ $role->permissions->count() }} Perms</span>
+                    </td>
+                    <td style="width: 120px">
                         {!! Form::open(['route' => ['roles.destroy', $role->role_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
                             <a href="{{ route('roles.show', [$role->role_id]) }}"

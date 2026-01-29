@@ -7,12 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class LibraryMember extends Model
 {
     public $table = 'library_members';
+    protected $primaryKey = 'member_id';
 
     public $fillable = [
         'user_id',
         'member_type',
         'reference_id',
         'membership_date',
+        'membership_expiry_date',
         'max_allowed_books',
         'status'
     ];

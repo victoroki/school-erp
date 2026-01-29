@@ -23,6 +23,12 @@ class TimetableController extends AppBaseController
     public function __construct(TimetableRepository $timetableRepo)
     {
         $this->timetableRepository = $timetableRepo;
+
+        $this->middleware('auth');
+        $this->middleware('can:timetables.index')->only(['index', 'show']);
+        $this->middleware('can:timetables.create')->only(['create', 'store']);
+        $this->middleware('can:timetables.edit')->only(['edit', 'update']);
+        $this->middleware('can:timetables.delete')->only('destroy');
     }
 
     /**
@@ -30,18 +36,89 @@ class TimetableController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $timetables = $this->timetableRepository->with([
-            'classSection.class',
-            'classSection.section',
-            'period',
-            'subject',
-            'teacher',
-            'classroom',
-            'academicYear'
-        ])->paginate(10);
+        $academicYears = AcademicYear::orderBy('start_date', 'desc')->get();
 
-        return view('timetables.index')
-            ->with('timetables', $timetables);
+        $selectedAcademicYearId = $request->get('academic_year_id');
+        if (!$selectedAcademicYearId && $academicYears->count() > 0) {
+            $current = $academicYears->firstWhere('is_current', true);
+            $selectedAcademicYearId = $current ? $current->academic_year_id : $academicYears->first()->academic_year_id;
+        }
+
+        $classSections = collect();
+        $selectedClassSectionId = $request->get('class_section_id');
+        $timetables = collect();
+        $periods = collect();
+
+        $daysOfWeek = [
+            'monday' => 'Monday',
+            'tuesday' => 'Tuesday',
+            'wednesday' => 'Wednesday',
+            'thursday' => 'Thursday',
+            'friday' => 'Friday',
+            'saturday' => 'Saturday',
+            'sunday' => 'Sunday',
+        ];
+
+        if ($selectedAcademicYearId) {
+            $classSections = ClassSection::with(['class', 'section'])
+                ->where('academic_year_id', $selectedAcademicYearId)
+                ->orderBy('class_id')
+                ->orderBy('section_id')
+                ->get();
+
+            if (!$selectedClassSectionId && $classSections->count() > 0) {
+                $selectedClassSectionId = $classSections->first()->class_section_id;
+            }
+
+            if ($selectedClassSectionId) {
+                $timetables = $this->timetableRepository
+                    ->with([
+                        'classSection.class',
+                        'classSection.section',
+                        'period',
+                        'subject',
+                        'teacher',
+                        'classroom',
+                        'academicYear',
+                    ])
+                    ->where('academic_year_id', $selectedAcademicYearId)
+                    ->where('class_section_id', $selectedClassSectionId)
+                    ->get();
+
+                $periods = Period::orderBy('start_time')->get();
+            }
+        }
+
+        $academicYearOptions = $academicYears->pluck('name', 'academic_year_id');
+
+        $classSectionOptions = $classSections->mapWithKeys(function ($item) {
+            $className = $item->class->name ?? '';
+            $sectionName = $item->section->name ?? '';
+            $parts = array_filter([$className, $sectionName]);
+            $label = count($parts) ? implode(' - ', $parts) : 'Section ' . $item->class_section_id;
+            return [$item->class_section_id => $label];
+        });
+
+        $schedule = [];
+        foreach ($timetables as $entry) {
+            $day = $entry->day_of_week;
+            $periodId = $entry->period_id;
+            if (!isset($schedule[$day])) {
+                $schedule[$day] = [];
+            }
+            $schedule[$day][$periodId] = $entry;
+        }
+
+        return view('timetables.index', [
+            'timetables' => $timetables,
+            'academicYearOptions' => $academicYearOptions,
+            'classSectionOptions' => $classSectionOptions,
+            'selectedAcademicYearId' => $selectedAcademicYearId,
+            'selectedClassSectionId' => $selectedClassSectionId,
+            'periods' => $periods,
+            'daysOfWeek' => $daysOfWeek,
+            'schedule' => $schedule,
+        ]);
     }
 
     /**

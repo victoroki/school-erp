@@ -24,13 +24,13 @@ class Role extends Model
         'description' => 'nullable|string|max:65535'
     ];
 
-    public function rolePermission(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function permissions(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->hasOne(\App\Models\RolePermission::class);
+        return $this->belongsToMany(\App\Models\Permission::class, 'role_permissions', 'role_id', 'permission_id');
     }
 
-    public function userRoles(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function users(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->hasMany(\App\Models\UserRole::class, 'role_id');
+        return $this->belongsToMany(\App\Models\User::class, 'user_roles', 'role_id', 'user_id');
     }
 }

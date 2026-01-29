@@ -34,11 +34,13 @@ class ExamScheduleController extends AppBaseController
             ->with('examSchedules', $examSchedules);
     }
 
-    private function getDropdownData(){
-        return[
-            'exams' => Exam::pluck('name', 'exam_id'),
-            'classes' => SchoolClass::pluck('name', 'class_id'),
-            'subjects' => Subject::pluck('name', 'subject_id'),
+    private function getDropdownData()
+    {
+        return [
+            'exams' => \App\Models\Exam::pluck('name', 'exam_id'),
+            'classes' => \App\Models\SchoolClass::pluck('name', 'class_id'),
+            'subjects' => \App\Models\Subject::pluck('name', 'subject_id'),
+            'rooms' => \App\Models\Classroom::pluck('name', 'classroom_id'),
         ];
     }
     /**
@@ -61,7 +63,7 @@ class ExamScheduleController extends AppBaseController
 
         Flash::success('Exam Schedule saved successfully.');
 
-        return redirect(route('examSchedules.index'));
+        return redirect(route('exam-schedules.index'));
     }
 
     /**
@@ -74,7 +76,7 @@ class ExamScheduleController extends AppBaseController
         if (empty($examSchedule)) {
             Flash::error('Exam Schedule not found');
 
-            return redirect(route('examSchedules.index'));
+            return redirect(route('exam-schedules.index'));
         }
 
         return view('exam_schedules.show')->with('examSchedule', $examSchedule);
@@ -87,18 +89,14 @@ class ExamScheduleController extends AppBaseController
     {
         $examSchedule = $this->examScheduleRepository->find($id);
         $dropdownData = $this->getDropdownData();
+
         if (empty($examSchedule)) {
             Flash::error('Exam Schedule not found');
 
-            return redirect(route('examSchedules.index'));
+            return redirect(route('exam-schedules.index'));
         }
 
-        return view('exam_schedules.edit', array_merge(
-            [
-                'examSchedule', $examSchedule,
-                $dropdownData
-            ]
-            ));
+        return view('exam_schedules.edit', array_merge(['examSchedule' => $examSchedule], $dropdownData));
     }
 
     /**
@@ -111,14 +109,14 @@ class ExamScheduleController extends AppBaseController
         if (empty($examSchedule)) {
             Flash::error('Exam Schedule not found');
 
-            return redirect(route('examSchedules.index'));
+            return redirect(route('exam-schedules.index'));
         }
 
         $examSchedule = $this->examScheduleRepository->update($request->all(), $id);
 
         Flash::success('Exam Schedule updated successfully.');
 
-        return redirect(route('examSchedules.index'));
+        return redirect(route('exam-schedules.index'));
     }
 
     /**
@@ -133,13 +131,13 @@ class ExamScheduleController extends AppBaseController
         if (empty($examSchedule)) {
             Flash::error('Exam Schedule not found');
 
-            return redirect(route('examSchedules.index'));
+            return redirect(route('exam-schedules.index'));
         }
 
         $this->examScheduleRepository->delete($id);
 
         Flash::success('Exam Schedule deleted successfully.');
 
-        return redirect(route('examSchedules.index'));
+        return redirect(route('exam-schedules.index'));
     }
 }

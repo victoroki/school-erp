@@ -23,7 +23,10 @@ class Book extends Model
         'available_quantity',
         'shelf_location',
         'added_date',
-        'description'
+        'description',
+        'condition',
+        'cover_url',
+        'barcode'
     ];
 
     protected $casts = [

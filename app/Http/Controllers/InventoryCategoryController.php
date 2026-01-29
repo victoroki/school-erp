@@ -24,7 +24,17 @@ class InventoryCategoryController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $inventoryCategories = $this->inventoryCategoryRepository->paginate(10);
+        $query = \App\Models\InventoryCategory::query();
+
+        if ($request->has('type')) {
+            $query->where('category_type', $request->type);
+        }
+
+        $inventoryCategories = $query->withCount('inventoryItems')
+            ->with(['inventoryItems' => function($q) {
+                $q->select('item_id', 'category_id', 'quantity', 'cost_per_unit');
+            }])
+            ->paginate(12);
 
         return view('inventory_categories.index')
             ->with('inventoryCategories', $inventoryCategories);
@@ -49,7 +59,7 @@ class InventoryCategoryController extends AppBaseController
 
         Flash::success('Inventory Category saved successfully.');
 
-        return redirect(route('inventoryCategories.index'));
+        return redirect(route('inventory-categories.index'));
     }
 
     /**
@@ -57,12 +67,14 @@ class InventoryCategoryController extends AppBaseController
      */
     public function show($id)
     {
-        $inventoryCategory = $this->inventoryCategoryRepository->find($id);
+        $inventoryCategory = \App\Models\InventoryCategory::with(['inventoryItems' => function($q) {
+            $q->with('supplier');
+        }])->find($id);
 
         if (empty($inventoryCategory)) {
             Flash::error('Inventory Category not found');
 
-            return redirect(route('inventoryCategories.index'));
+            return redirect(route('inventory-categories.index'));
         }
 
         return view('inventory_categories.show')->with('inventoryCategory', $inventoryCategory);
@@ -78,7 +90,7 @@ class InventoryCategoryController extends AppBaseController
         if (empty($inventoryCategory)) {
             Flash::error('Inventory Category not found');
 
-            return redirect(route('inventoryCategories.index'));
+            return redirect(route('inventory-categories.index'));
         }
 
         return view('inventory_categories.edit')->with('inventoryCategory', $inventoryCategory);
@@ -94,14 +106,14 @@ class InventoryCategoryController extends AppBaseController
         if (empty($inventoryCategory)) {
             Flash::error('Inventory Category not found');
 
-            return redirect(route('inventoryCategories.index'));
+            return redirect(route('inventory-categories.index'));
         }
 
         $inventoryCategory = $this->inventoryCategoryRepository->update($request->all(), $id);
 
         Flash::success('Inventory Category updated successfully.');
 
-        return redirect(route('inventoryCategories.index'));
+        return redirect(route('inventory-categories.index'));
     }
 
     /**
@@ -116,13 +128,13 @@ class InventoryCategoryController extends AppBaseController
         if (empty($inventoryCategory)) {
             Flash::error('Inventory Category not found');
 
-            return redirect(route('inventoryCategories.index'));
+            return redirect(route('inventory-categories.index'));
         }
 
         $this->inventoryCategoryRepository->delete($id);
 
         Flash::success('Inventory Category deleted successfully.');
 
-        return redirect(route('inventoryCategories.index'));
+        return redirect(route('inventory-categories.index'));
     }
 }

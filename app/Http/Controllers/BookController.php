@@ -29,12 +29,41 @@ class BookController extends AppBaseController
     /**
      * Display a listing of the Book.
      */
+    /**
+     * Display a listing of the Book.
+     */
     public function index(Request $request)
     {
-        $books = $this->bookRepository->allQuery()->with('category')->paginate(10);
+        $query = $this->bookRepository->allQuery()->with('category');
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('title', 'like', "%$search%")
+                  ->orWhere('author', 'like', "%$search%")
+                  ->orWhere('isbn', 'like', "%$search%");
+            });
+        }
+
+        if ($request->has('category_id') && $request->category_id != '') {
+            $query->where('category_id', $request->category_id);
+        }
+        
+        if ($request->has('availability') && $request->availability != '') {
+            if ($request->availability == 'available') {
+                $query->where('available_quantity', '>', 0);
+            } elseif ($request->availability == 'out_of_stock') {
+                $query->where('available_quantity', '<=', 0);
+            }
+        }
+
+        $books = $query->paginate(12);
+        
+        $categories = BookCategory::pluck('name', 'category_id')->prepend('All Categories', '');
 
         return view('books.index')
-            ->with('books', $books);
+            ->with('books', $books)
+            ->with('categories', $categories);
     }
 
     /**
