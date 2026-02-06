@@ -24,10 +24,22 @@ class ParentsController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $parents = $this->parentsRepository->paginate(10);
+        $query = \App\Models\Parents::query();
 
-        return view('parents.index')
-            ->with('parents', $parents);
+        if ($request->filled('q')) {
+            $q = $request->get('q');
+            $query->where(function($sub) use ($q) {
+                $sub->where('first_name', 'like', "%$q%")
+                    ->orWhere('last_name', 'like', "%$q%")
+                    ->orWhere('email', 'like', "%$q%")
+                    ->orWhere('phone', 'like', "%$q%")
+                    ->orWhere('occupation', 'like', "%$q%");
+            });
+        }
+
+        $parents = $query->paginate(15)->appends($request->all());
+
+        return view('parents.index')->with('parents', $parents);
     }
 
     /**

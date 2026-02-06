@@ -26,17 +26,35 @@
         </div>
         <div class="card-body">
             <div class="row">
-                <div class="form-group col-sm-4">
+                <div class="form-group col-sm-3">
                     {!! Form::label('admission_no', 'Admission No:') !!} <span class="required-star">*</span>
                     {!! Form::text('admission_no', null, ['class' => 'form-control', 'required', 'maxlength' => 20, 'placeholder' => 'ADM-XXXX']) !!}
                 </div>
-                <div class="form-group col-sm-4">
+                <div class="form-group col-sm-3">
+                    {!! Form::label('nemis_number', 'NEMIS Number:') !!}
+                    {!! Form::text('nemis_number', null, ['class' => 'form-control', 'placeholder' => 'NEMIS ID']) !!}
+                </div>
+                <div class="form-group col-sm-3">
+                    {!! Form::label('upi_number', 'UPI Number:') !!}
+                    {!! Form::text('upi_number', null, ['class' => 'form-control', 'placeholder' => 'UPI ID']) !!}
+                </div>
+                <div class="form-group col-sm-3">
                     {!! Form::label('roll_number', 'Roll Number:') !!}
                     {!! Form::text('roll_number', null, ['class' => 'form-control', 'maxlength' => 20]) !!}
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group col-sm-4">
+                    {!! Form::label('education_system', 'Education System:') !!}
+                    {!! Form::select('education_system', ['CBC' => 'CBC (Competency Based)', '8-4-4' => '8-4-4 System'], null, ['class' => 'form-control select2']) !!}
                 </div>
                 <div class="form-group col-sm-4">
                     {!! Form::label('status', 'Account Status:') !!}
                     {!! Form::select('status', ['active' => 'Active', 'inactive' => 'Inactive', 'alumni' => 'Alumni', 'transferred' => 'Transferred'], null, ['class' => 'form-control select2']) !!}
+                </div>
+                <div class="form-group col-sm-4">
+                    {!! Form::label('student_category', 'Student Category:') !!}
+                    {!! Form::text('student_category', null, ['class' => 'form-control', 'placeholder' => 'e.g., General, Orphan, etc']) !!}
                 </div>
             </div>
             <div class="row">
@@ -97,17 +115,21 @@
                 </div>
             </div>
             <div class="row">
-                <div class="form-group col-sm-4">
-                    {!! Form::label('city', 'City:') !!} <span class="required-star">*</span>
+                <div class="form-group col-sm-3">
+                    {!! Form::label('city', 'City/Town:') !!} <span class="required-star">*</span>
                     {!! Form::text('city', null, ['class' => 'form-control', 'required', 'maxlength' => 50]) !!}
                 </div>
-                <div class="form-group col-sm-4">
+                <div class="form-group col-sm-3">
+                    {!! Form::label('county', 'County:') !!}
+                    {!! Form::text('county', null, ['class' => 'form-control', 'maxlength' => 50, 'placeholder' => 'e.g. Nairobi']) !!}
+                </div>
+                <div class="form-group col-sm-3">
+                    {!! Form::label('sub_county', 'Sub-County:') !!}
+                    {!! Form::text('sub_county', null, ['class' => 'form-control', 'maxlength' => 50]) !!}
+                </div>
+                <div class="form-group col-sm-3">
                     {!! Form::label('country', 'Country:') !!} <span class="required-star">*</span>
                     {!! Form::text('country', 'Kenya', ['class' => 'form-control', 'required', 'maxlength' => 50]) !!}
-                </div>
-                <div class="form-group col-sm-4">
-                    {!! Form::label('phone', 'Phone Number:') !!}
-                    {!! Form::text('phone', null, ['class' => 'form-control', 'maxlength' => 20]) !!}
                 </div>
             </div>
         </div>

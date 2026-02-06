@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateEmailTemplateRequest;
 use App\Http\Requests\UpdateEmailTemplateRequest;
 use App\Http\Controllers\AppBaseController;
+use App\Models\EmailTemplate;
+use App\Models\TemplateCategory;
 use App\Repositories\EmailTemplateRepository;
 use Illuminate\Http\Request;
 use Flash;
@@ -19,15 +21,32 @@ class EmailTemplateController extends AppBaseController
         $this->emailTemplateRepository = $emailTemplateRepo;
     }
 
+    private function getDropdownData()
+    {
+        return [
+            'categories' => TemplateCategory::where('type', 'Email')->orWhere('type', 'Both')->pluck('name', 'name')->toArray()
+        ];
+    }
+
     /**
      * Display a listing of the EmailTemplate.
      */
     public function index(Request $request)
     {
-        $emailTemplates = $this->emailTemplateRepository->paginate(10);
+        $query = EmailTemplate::query();
 
-        return view('email_templates.index')
-            ->with('emailTemplates', $emailTemplates);
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $emailTemplates = $query->paginate(10);
+        $dropdownData = $this->getDropdownData();
+
+        return view('email_templates.index', compact('emailTemplates', 'dropdownData'));
     }
 
     /**
@@ -35,7 +54,8 @@ class EmailTemplateController extends AppBaseController
      */
     public function create()
     {
-        return view('email_templates.create');
+        $dropdownData = $this->getDropdownData();
+        return view('email_templates.create', $dropdownData);
     }
 
     /**
@@ -44,6 +64,7 @@ class EmailTemplateController extends AppBaseController
     public function store(CreateEmailTemplateRequest $request)
     {
         $input = $request->all();
+        $input['created_by'] = auth()->id();
 
         $emailTemplate = $this->emailTemplateRepository->create($input);
 
@@ -81,7 +102,8 @@ class EmailTemplateController extends AppBaseController
             return redirect(route('emailTemplates.index'));
         }
 
-        return view('email_templates.edit')->with('emailTemplate', $emailTemplate);
+        $dropdownData = $this->getDropdownData();
+        return view('email_templates.edit', array_merge(['emailTemplate' => $emailTemplate], $dropdownData));
     }
 
     /**

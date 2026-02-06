@@ -1,7 +1,7 @@
 <x-laravel-ui-adminlte::adminlte-layout>
-    <head>
-        <link rel="stylesheet" href="{{ asset('css/sidebar-enhanced.css') }}">
-    </head>
+@push('page_css')
+    <link rel="stylesheet" href="{{ asset('css/sidebar-fixed-final.css') }}">
+@endpush
 
     <body class="hold-transition sidebar-mini layout-fixed">
         <div class="wrapper">
@@ -10,8 +10,9 @@
                 <!-- Left navbar links -->
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i
-                                class="fas fa-bars"></i></a>
+                        <a class="nav-link" data-widget="pushmenu" href="#" role="button">
+                            <i class="fas fa-bars"></i>
+                        </a>
                     </li>
                 </ul>
 
@@ -69,5 +70,10 @@
                 reserved.
             </footer>
         </div>
+
+        <!-- Sidebar Treeview JavaScript - MUST be loaded after jQuery and AdminLTE -->
+        @push('page_scripts')
+        <script src="{{ asset('js/sidebar-treeview.js') }}"></script>
+        @endpush
     </body>
 </x-laravel-ui-adminlte::adminlte-layout>

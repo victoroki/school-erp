@@ -6,6 +6,7 @@ use App\Http\Requests\CreateRouteStopRequest;
 use App\Http\Requests\UpdateRouteStopRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Models\Route;
+use App\Models\RouteStop;
 use App\Repositories\RouteStopRepository;
 use Illuminate\Http\Request;
 use Flash;
@@ -21,7 +22,7 @@ class RouteStopController extends AppBaseController
     }
 
     private function getdropdownData(){
-        return[
+        return [
             'route' => Route::pluck('name', 'route_id')
         ];
     }
@@ -31,10 +32,16 @@ class RouteStopController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $routeStops = $this->routeStopRepository->paginate(10);
+        $query = RouteStop::with(['route']);
 
-        return view('route_stops.index')
-            ->with('routeStops', $routeStops);
+        if ($request->filled('route_id')) {
+            $query->where('route_id', $request->route_id);
+        }
+
+        $routeStops = $query->paginate(10);
+        $routes = Route::pluck('name', 'route_id');
+
+        return view('route_stops.index', compact('routeStops', 'routes'));
     }
 
     /**
@@ -65,7 +72,7 @@ class RouteStopController extends AppBaseController
      */
     public function show($id)
     {
-        $routeStop = $this->routeStopRepository->find($id);
+        $routeStop = RouteStop::with(['route', 'studentAssignments.student'])->find($id);
 
         if (empty($routeStop)) {
             Flash::error('Route Stop not found');
@@ -91,9 +98,8 @@ class RouteStopController extends AppBaseController
         }
 
         return view('route_stops.edit', array_merge([
-            'routeStop', $routeStop,
-            $dropdownData
-        ]));
+            'routeStop' => $routeStop
+        ], $dropdownData));
     }
 
     /**
@@ -129,6 +135,12 @@ class RouteStopController extends AppBaseController
             Flash::error('Route Stop not found');
 
             return redirect(route('routeStops.index'));
+        }
+
+        // Check dependencies
+        if ($routeStop->getStudentCount() > 0) {
+            Flash::error('Cannot delete stop that has active student assignments.');
+            return redirect()->back();
         }
 
         $this->routeStopRepository->delete($id);

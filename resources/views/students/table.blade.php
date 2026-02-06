@@ -1,75 +1,121 @@
-<div class="card-body p-0">
-    <div class="table-responsive">
-        <table class="table table-striped table-hover table-sm" id="students-table">
-            <thead>
+<div class="card-body p-0 table-responsive">
+    <table class="table table-hover mb-0 align-middle" id="students-table">
+        <thead class="bg-light">
             <tr>
-                <!-- <th>User Id</th> -->
-                <th>Admission No</th>
-                <th>First Name</th>
-                <!-- <th>Middle Name</th> -->
-                <th>Last Name</th>
-                <th>Date Of Birth</th>
+                <th style="width: 40px;" class="text-center">
+                    <input type="checkbox" id="checkAll">
+                </th>
+                <th style="width: 120px;">Admission No</th>
+                <th>Student</th>
+                <th>Class & Section</th>
                 <th>Gender</th>
-                <th>City</th>
-                <!-- <th>Country</th> -->
-                <th>Phone</th>
-                <th>Emergency Contact</th>
-                <!-- <th>Admission Date</th> -->
-                <!-- <th>Photo Url</th> -->
-                <th>Status</th>
-                <th colspan="3">Action</th>
+                <th>Guardian Info</th>
+                <th class="text-center">Fees</th>
+                <th class="text-center">Status</th>
+                <th class="text-right pr-4" style="width: 150px">Actions</th>
             </tr>
-            </thead>
-            <tbody>
+        </thead>
+        <tbody>
             @foreach($students as $student)
+                @php 
+                    $enrollment = $student->studentClassEnrollments->where('is_current', true)->first();
+                @endphp
                 <tr>
-                    <!-- <td>{{ $student->user_id }}</td> -->
-                    <td>{{ $student->admission_no }}</td>
-                    <td>{{ $student->first_name }}</td>
-                    <!-- <td>{{ $student->middle_name }}</td> -->
-                    <td>{{ $student->last_name }}</td>
-                    <td>{{ $student->date_of_birth }}</td>
-                    <td>{{ $student->gender }}</td>
-                    <td>{{ $student->city }}</td>
-                    <!-- <td>{{ $student->country }}</td> -->
-                    <td>{{ $student->phone }}</td>
-                    <td>{{ $student->emergency_contact }}</td>
-                    <!-- <td>{{ $student->admission_date }}</td> -->
-                    <!-- <td>{{ $student->photo_url }}</td> -->
-                    <td>
-                        @php
-                            $map = [
-                                'active' => 'success',
-                                'inactive' => 'secondary',
-                                'alumni' => 'primary',
-                                'transferred' => 'warning'
-                            ];
-                            $cls = $map[$student->status] ?? 'light';
-                        @endphp
-                        <span class="badge badge-{{ $cls }}">{{ ucfirst($student->status) }}</span>
+                    <td class="text-center align-middle">
+                        <input type="checkbox" name="student_ids[]" value="{{ $student->student_id }}" class="student-checkbox">
                     </td>
-                    <td  style="width: 120px">
-                        {!! Form::open(['route' => ['students.destroy', $student->student_id], 'method' => 'delete']) !!}
-                        <div class='btn-group'>
-                            <a href="{{ route('students.show', [$student->student_id]) }}" class='btn btn-outline-primary btn-xs' title="View">
-                                <i class="far fa-eye"></i>
-                            </a>
-                            <a href="{{ route('students.edit', [$student->student_id]) }}" class='btn btn-outline-secondary btn-xs' title="Edit">
-                                <i class="far fa-edit"></i>
-                            </a>
-                            {!! Form::button('<i class="far fa-trash-alt"></i>', ['type' => 'submit', 'class' => 'btn btn-outline-danger btn-xs', 'onclick' => "return confirm('Are you sure?')", 'title' => 'Delete']) !!}
+                    <td class="align-middle">
+                        <span class="badge badge-light border font-weight-bold px-2 py-1">{{ $student->admission_no }}</span>
+                    </td>
+                    <td class="align-middle">
+                        <div class="d-flex align-items-center">
+                            <img src="{{ $student->avatar_url }}" class="img-circle img-sm mr-2 border shadow-sm" style="width: 38px; height: 38px; object-fit: cover;">
+                            <div>
+                                <div class="font-weight-bold">{{ $student->full_name }}</div>
+                                <div class="x-small text-muted">{{ $student->roll_number ? 'Roll: '.$student->roll_number : '' }}</div>
+                            </div>
                         </div>
-                        {!! Form::close() !!}
+                    </td>
+                    <td class="align-middle">
+                        @if($enrollment && $enrollment->classSection)
+                            <div class="font-weight-600">{{ $enrollment->classSection->schoolClass->name ?? 'N/A' }}</div>
+                            <div class="x-small text-muted">{{ $enrollment->classSection->section->name ?? 'Default' }} Section</div>
+                        @else
+                            <span class="text-muted small">Not Assigned</span>
+                        @endif
+                    </td>
+                    <td class="align-middle">
+                        <span class="text-capitalize small">
+                            <i class="fas fa-{{ $student->gender == 'male' ? 'mars text-info' : ($student->gender == 'female' ? 'venus text-pink' : 'user text-muted') }} mr-1"></i>
+                            {{ $student->gender }}
+                        </span>
+                    </td>
+                    <td class="align-middle">
+                        <div class="small font-weight-600">{{ $student->emergency_contact_name ?? 'No Primary' }}</div>
+                        <div class="x-small text-muted"><i class="fas fa-phone mr-1"></i> {{ $student->formatted_phone == 'N/A' ? $student->formatted_emergency_phone : $student->formatted_phone }}</div>
+                    </td>
+                    <td class="align-middle text-center">
+                        <div class="small font-weight-bold mb-1">{{ $student->formatted_fee_balance }}</div>
+                        {!! $student->payment_status_badge !!}
+                    </td>
+                    <td class="align-middle text-center">
+                        {!! $student->status_badge !!}
+                    </td>
+                    <td class="align-middle text-right pr-4">
+                        <div class='btn-group shadow-sm'>
+                            <a href="{{ route('students.show', [$student->student_id]) }}" class='btn btn-light btn-sm border' title="View Profile">
+                                <i class="far fa-eye text-primary"></i>
+                            </a>
+                            <a href="{{ route('students.edit', [$student->student_id]) }}" class='btn btn-light btn-sm border' title="Edit">
+                                <i class="far fa-edit text-secondary"></i>
+                            </a>
+                            <a href="{{ route('students.id-card', [$student->student_id]) }}" target="_blank" class='btn btn-light btn-sm border' title="Generate ID Card">
+                                <i class="fas fa-id-card text-warning"></i>
+                            </a>
+                            <button type="button" class="btn btn-light btn-sm border text-danger" onclick="confirmDelete('{{ $student->student_id }}')" title="Delete">
+                                <i class="far fa-trash-alt"></i>
+                            </button>
+                        </div>
+                        <form id="delete-form-{{ $student->student_id }}" action="{{ route('students.destroy', [$student->student_id]) }}" method="POST" style="display: none;">
+                            @csrf
+                            @method('DELETE')
+                        </form>
                     </td>
                 </tr>
             @endforeach
-            </tbody>
-        </table>
-    </div>
+        </tbody>
+    </table>
+</div>
 
-    <div class="card-footer clearfix">
-        <div class="float-right">
-            @include('adminlte-templates::common.paginate', ['records' => $students])
-        </div>
+<div class="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center">
+    <div class="small text-muted">
+        Showing {{ $students->firstItem() }} to {{ $students->lastItem() }} of {{ $students->total() }} students
+    </div>
+    <div>
+        {{ $students->links() }}
     </div>
 </div>
+
+<style>
+    .font-weight-600 { font-weight: 600; }
+    .x-small { font-size: 0.75rem; }
+    .text-pink { color: #e83e8c; }
+    .table thead th { border-top: 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .table td { vertical-align: middle !important; border-top: 1px solid #f8f9fa; }
+    .btn-group .btn { padding: 0.25rem 0.6rem; }
+    .pagination { margin-bottom: 0; }
+</style>
+
+<script>
+    $(function() {
+        $('#checkAll').change(function() {
+            $('.student-checkbox').prop('checked', $(this).is(':checked'));
+        });
+    });
+
+    function confirmDelete(id) {
+        if(confirm('Are you sure you want to delete this student record?')) {
+            document.getElementById('delete-form-' + id).submit();
+        }
+    }
+</script>

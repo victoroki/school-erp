@@ -33,10 +33,29 @@ class ExamController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $exams = $this->examRepository->paginate(10);
+        $query = \App\Models\Exam::query();
 
-        return view('exams.index')
-            ->with('exams', $exams);
+        if ($request->filled('q')) {
+            $query->where('name', 'like', '%' . $request->q . '%');
+        }
+
+        if ($request->filled('exam_type_id')) {
+            $query->where('exam_type_id', $request->exam_type_id);
+        }
+
+        if ($request->filled('academic_year_id')) {
+            $query->where('academic_year_id', $request->academic_year_id);
+        }
+
+        $exams = $query->with(['examType', 'academicYear'])
+            ->orderBy('start_date', 'desc')
+            ->paginate(15)
+            ->appends($request->all());
+
+        $examTypes = ExamType::pluck('name', 'exam_type_id');
+        $academicYears = AcademicYear::pluck('name', 'academic_year_id');
+
+        return view('exams.index', compact('exams', 'examTypes', 'academicYears'));
     }
 
     /**
@@ -67,15 +86,27 @@ class ExamController extends AppBaseController
      */
     public function show($id)
     {
-        $exam = $this->examRepository->find($id);
+        $exam = \App\Models\Exam::with([
+            'examType', 
+            'academicYear', 
+            'examSchedules.subject', 
+            'examSchedules.classSection.schoolClass'
+        ])->find($id);
 
         if (empty($exam)) {
             Flash::error('Exam not found');
-
             return redirect(route('exams.index'));
         }
 
-        return view('exams.show')->with('exam', $exam);
+        // Basic Stats
+        $totalResults = $exam->examResults()->count();
+        $averageScore = $exam->examResults()->avg('marks_obtained') ?: 0;
+        
+        // Pass rate (Assuming 40% as pass mark if not defined)
+        $passCount = $exam->examResults()->where('marks_obtained', '>=', 40)->count();
+        $passPercentage = $totalResults > 0 ? round(($passCount / $totalResults) * 100, 1) : 0;
+
+        return view('exams.show', compact('exam', 'totalResults', 'averageScore', 'passPercentage'));
     }
 
     /**

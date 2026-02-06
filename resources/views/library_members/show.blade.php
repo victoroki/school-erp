@@ -11,7 +11,7 @@ Library Member Details
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right"
-                       href="{{ route('libraryMembers.index') }}">
+                       href="{{ route('library-members.index') }}">
                                                     Back
                                             </a>
                 </div>

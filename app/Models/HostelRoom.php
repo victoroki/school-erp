@@ -16,14 +16,16 @@ class HostelRoom extends Model
         'capacity',
         'occupied',
         'floor',
-        'status'
+        'status',
+        'maintenance_notes'
     ];
 
     protected $casts = [
         'room_number' => 'string',
         'room_type' => 'string',
         'floor' => 'string',
-        'status' => 'string'
+        'status' => 'string',
+        'maintenance_notes' => 'string'
     ];
 
     public static array $rules = [
@@ -33,7 +35,8 @@ class HostelRoom extends Model
         'capacity' => 'required|integer|min:1',
         'occupied' => 'nullable|integer|min:0',
         'floor' => 'nullable|string|max:20',
-        'status' => 'nullable|in:available,full,under_maintenance',
+        'status' => 'nullable|in:available,full,under_maintenance,partial',
+        'maintenance_notes' => 'nullable|string',
         'created_at' => 'nullable',
         'updated_at' => 'nullable'
     ];

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateRouteRequest;
 use App\Http\Requests\UpdateRouteRequest;
 use App\Http\Controllers\AppBaseController;
+use App\Models\Route;
 use App\Repositories\RouteRepository;
 use Illuminate\Http\Request;
 use Flash;
@@ -19,17 +20,18 @@ class RouteController extends AppBaseController
         $this->routeRepository = $routeRepo;
     }
 
-    private function getDropdownData()
-    {
-        return [];
-    }
-
     /**
      * Display a listing of the Route.
      */
     public function index(Request $request)
     {
-        $routes = $this->routeRepository->paginate(10);
+        $query = Route::query();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $routes = $query->paginate(10);
 
         return view('routes.index')
             ->with('routes', $routes);
@@ -40,8 +42,7 @@ class RouteController extends AppBaseController
      */
     public function create()
     {
-        $dropdownData = $this->getDropdownData();
-        return view('routes.create', $dropdownData);
+        return view('routes.create');
     }
 
     /**
@@ -63,7 +64,7 @@ class RouteController extends AppBaseController
      */
     public function show($id)
     {
-        $route = $this->routeRepository->find($id);
+        $route = Route::with(['routeStops', 'studentAssignments.student', 'studentAssignments.pickupStop'])->find($id);
 
         if (empty($route)) {
             Flash::error('Route not found');
@@ -87,8 +88,7 @@ class RouteController extends AppBaseController
             return redirect(route('routes.index'));
         }
 
-        $dropdownData = $this->getDropdownData();
-        return view('routes.edit', array_merge(['route' => $route], $dropdownData));
+        return view('routes.edit')->with('route', $route);
     }
 
     /**
@@ -124,6 +124,12 @@ class RouteController extends AppBaseController
             Flash::error('Route not found');
 
             return redirect(route('routes.index'));
+        }
+
+        // Check dependencies
+        if ($route->studentAssignments()->where('status', 'active')->count() > 0) {
+            Flash::error('Cannot delete route with active student assignments.');
+            return redirect()->back();
         }
 
         $this->routeRepository->delete($id);

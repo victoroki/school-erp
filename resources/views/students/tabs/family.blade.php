@@ -78,7 +78,7 @@
                                             </a>
                                         </td>
                                         <td class="text-capitalize">{{ str_replace('_', ' ', $sibling->pivot->relationship_type) }}</td>
-                                        <td>{{ $sibling->current_enrollment->classSection->schoolClass->class_name ?? 'N/A' }}</td>
+                                        <td>{{ $sibling->current_enrollment->classSection->schoolClass->name ?? 'N/A' }}</td>
                                         <td>{{ $sibling->admission_no }}</td>
                                         <td>{!! $sibling->status_badge !!}</td>
                                     </tr>

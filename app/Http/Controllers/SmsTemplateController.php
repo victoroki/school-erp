@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateSmsTemplateRequest;
 use App\Http\Requests\UpdateSmsTemplateRequest;
 use App\Http\Controllers\AppBaseController;
+use App\Models\SmsTemplate;
+use App\Models\TemplateCategory;
 use App\Repositories\SmsTemplateRepository;
 use Illuminate\Http\Request;
 use Flash;
@@ -19,15 +21,32 @@ class SmsTemplateController extends AppBaseController
         $this->smsTemplateRepository = $smsTemplateRepo;
     }
 
+    private function getDropdownData()
+    {
+        return [
+            'categories' => TemplateCategory::where('type', 'SMS')->orWhere('type', 'Both')->pluck('name', 'name')->toArray()
+        ];
+    }
+
     /**
      * Display a listing of the SmsTemplate.
      */
     public function index(Request $request)
     {
-        $smsTemplates = $this->smsTemplateRepository->paginate(10);
+        $query = SmsTemplate::query();
 
-        return view('sms_templates.index')
-            ->with('smsTemplates', $smsTemplates);
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $smsTemplates = $query->paginate(10);
+        $dropdownData = $this->getDropdownData();
+
+        return view('sms_templates.index', compact('smsTemplates', 'dropdownData'));
     }
 
     /**
@@ -35,7 +54,8 @@ class SmsTemplateController extends AppBaseController
      */
     public function create()
     {
-        return view('sms_templates.create');
+        $dropdownData = $this->getDropdownData();
+        return view('sms_templates.create', $dropdownData);
     }
 
     /**
@@ -44,6 +64,7 @@ class SmsTemplateController extends AppBaseController
     public function store(CreateSmsTemplateRequest $request)
     {
         $input = $request->all();
+        $input['created_by'] = auth()->id();
 
         $smsTemplate = $this->smsTemplateRepository->create($input);
 
@@ -81,7 +102,8 @@ class SmsTemplateController extends AppBaseController
             return redirect(route('smsTemplates.index'));
         }
 
-        return view('sms_templates.edit')->with('smsTemplate', $smsTemplate);
+        $dropdownData = $this->getDropdownData();
+        return view('sms_templates.edit', array_merge(['smsTemplate' => $smsTemplate], $dropdownData));
     }
 
     /**

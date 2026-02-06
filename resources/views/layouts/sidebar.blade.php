@@ -1,28 +1,42 @@
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <a href="{{ route('home') }}" class="brand-link">
-        <img src="{{ asset('garikon-white.png') }}"
-             alt="Garikon Logo"
-             class="brand-image img-circle elevation-3">
-        <span class="brand-text font-weight-light">{{ config('app.name') }}</span>
-    </a>
+    <div class="brand-container">
+        <div class="brand-logo-hex" style="background: white; padding: 4px;">
+            <img src="{{ asset('garikon-white-bg.png') }}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
+        <div class="brand-info">
+            <span class="brand-title">Garikon School</span>
+            <span class="brand-subtitle">Academic Portal</span>
+        </div>
+    </div>
+
+    <div class="sidebar-search-container">
+        <div class="search-wrapper" data-widget="sidebar-search">
+            <i class="fas fa-search"></i>
+            <input class="search-input" type="search" placeholder="Quick find..." aria-label="Search">
+        </div>
+    </div>
 
     <div class="sidebar">
-        <!-- SidebarSearch Form -->
-        <div class="form-inline sidebar-search-wrapper">
-            <div class="input-group" data-widget="sidebar-search">
-                <input class="form-control form-control-sidebar" type="search" placeholder="Search" aria-label="Search">
-                <div class="input-group-append">
-                    <button class="btn btn-sidebar-search">
-                        <i class="fas fa-search fa-fw"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-        
         <nav class="mt-2">
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                 @include('layouts.menu-tooltip-fix')
             </ul>
         </nav>
+    </div>
+
+    <div class="sidebar-user-panel">
+        <div class="user-avatar-container">
+            <img src="{{ asset('garikon-black.png') }}" alt="User Avatar">
+            <span class="user-online-status"></span>
+        </div>
+        <div class="user-text-info">
+            @auth
+            <span class="user-display-name">{{ Auth::user()->name }}</span>
+            <span class="user-display-role">{{ Auth::user()->roles->first()->name ?? 'Administrator' }}</span>
+            @endauth
+        </div>
+        <a href="#" class="logout-action" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
     </div>
 </aside>

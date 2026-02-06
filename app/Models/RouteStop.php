@@ -7,25 +7,34 @@ use Illuminate\Database\Eloquent\Model;
 class RouteStop extends Model
 {
     public $table = 'route_stops';
+    
+    protected $primaryKey = 'stop_id';
 
     public $fillable = [
         'route_id',
         'stop_name',
+        'landmark',
         'stop_time',
-        'sequence'
+        'sequence',
+        'stop_fee',
+        'status'
     ];
 
     protected $casts = [
-        'stop_name' => 'string'
+        'stop_name' => 'string',
+        'landmark' => 'string',
+        'stop_fee' => 'decimal:2',
+        'status' => 'string'
     ];
 
     public static array $rules = [
-        'route_id' => 'nullable',
+        'route_id' => 'required|integer',
         'stop_name' => 'required|string|max:100',
+        'landmark' => 'nullable|string|max:255',
         'stop_time' => 'nullable',
-        'sequence' => 'required',
-        'created_at' => 'nullable',
-        'updated_at' => 'nullable'
+        'sequence' => 'required|integer',
+        'stop_fee' => 'nullable|numeric',
+        'status' => 'nullable|in:active,inactive'
     ];
 
     public function route(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -33,8 +42,16 @@ class RouteStop extends Model
         return $this->belongsTo(\App\Models\Route::class, 'route_id');
     }
 
-    public function transportRegistrations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function studentAssignments(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\TransportRegistration::class, 'stop_id');
+        return $this->hasMany(\App\Models\StudentTransportAssignment::class, 'pickup_stop_id');
+    }
+
+    public function getStudentCount()
+    {
+        return \App\Models\StudentTransportAssignment::where('pickup_stop_id', $this->stop_id)
+            ->orWhere('drop_stop_id', $this->stop_id)
+            ->where('status', 'active')
+            ->count();
     }
 }

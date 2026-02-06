@@ -217,6 +217,114 @@ class TimetableController extends AppBaseController
     }
 
     /**
+     * Display the teacher's personal timetable.
+     */
+    public function teacherTimetable(Request $request)
+    {
+        $user = auth()->user();
+        $staff = Staff::where('user_id', $user->id)->first();
+        
+        // Allow admin/principal to select a teacher to view
+        $selectedStaffId = $request->get('staff_id');
+        $allTeachers = collect();
+
+        // Check permissions
+        $isAdmin = $user->user_type === 'admin' || $user->hasRole('admin'); // Fallback for role-based systems
+
+        if ($isAdmin) {
+            $allTeachers = Staff::where('staff_type', 'teaching')
+                ->where('status', 'active')
+                ->orderBy('first_name')
+                ->get();
+            
+            if (!$selectedStaffId && $allTeachers->isNotEmpty()) {
+                $selectedStaffId = $staff ? $staff->staff_id : $allTeachers->first()->staff_id;
+            }
+        } else {
+            if (!$staff) {
+                Flash::error('You are not registered as a staff member.');
+                return redirect(route('home'));
+            }
+            $selectedStaffId = $staff->staff_id;
+        }
+
+        $viewingStaff = Staff::with('department')->find($selectedStaffId);
+
+        if (!$viewingStaff) {
+            Flash::error('Teacher records not found.');
+            return redirect(route('home'));
+        }
+
+        $academicYears = AcademicYear::orderBy('start_date', 'desc')->get();
+        $selectedAcademicYearId = $request->get('academic_year_id');
+        
+        if (!$selectedAcademicYearId && $academicYears->count() > 0) {
+            $current = $academicYears->firstWhere('is_current', true);
+            $selectedAcademicYearId = $current ? $current->academic_year_id : $academicYears->first()->academic_year_id;
+        }
+
+        $timetables = $this->timetableRepository->with([
+            'classSection.class',
+            'classSection.section',
+            'period',
+            'subject',
+            'classroom',
+            'academicYear',
+        ])
+        ->where('teacher_id', $selectedStaffId)
+        ->where('academic_year_id', $selectedAcademicYearId)
+        ->get();
+
+        $periods = Period::orderBy('start_time')->get();
+        $daysOfWeek = [
+            'monday' => 'Monday',
+            'tuesday' => 'Tuesday',
+            'wednesday' => 'Wednesday',
+            'thursday' => 'Thursday',
+            'friday' => 'Friday',
+            'saturday' => 'Saturday',
+            'sunday' => 'Sunday',
+        ];
+
+        $schedule = [];
+        foreach ($timetables as $entry) {
+            $day = $entry->day_of_week;
+            $periodId = $entry->period_id;
+            if (!isset($schedule[$day])) {
+                $schedule[$day] = [];
+            }
+            $schedule[$day][$periodId] = $entry;
+        }
+
+        // Today's classes
+        $today = strtolower(now()->format('l'));
+        $todayClasses = $timetables->where('day_of_week', $today)->sortBy(function($t) {
+            return $t->period->start_time;
+        });
+
+        // Subject Assignment Summary
+        $assignments = \App\Models\TeacherSubject::with(['subject', 'classSection.class', 'classSection.section'])
+            ->where('staff_id', $selectedStaffId)
+            ->where('academic_year_id', $selectedAcademicYearId)
+            ->get();
+
+        return view('timetables.teacher_timetable', [
+            'staff' => $staff,
+            'viewingStaff' => $viewingStaff,
+            'allTeachers' => $allTeachers,
+            'timetables' => $timetables,
+            'periods' => $periods,
+            'daysOfWeek' => $daysOfWeek,
+            'schedule' => $schedule,
+            'academicYearOptions' => $academicYears->pluck('name', 'academic_year_id'),
+            'selectedAcademicYearId' => $selectedAcademicYearId,
+            'todayClasses' => $todayClasses,
+            'assignments' => $assignments,
+            'isAdmin' => $isAdmin
+        ]);
+    }
+
+    /**
      * Get data needed for create/edit forms
      */
     private function getFormData(): array

@@ -9,6 +9,10 @@ use App\Repositories\StudentRepository;
 use Illuminate\Http\Request;
 use Flash;
 
+use App\Models\Student;
+use App\Models\ClassSection;
+use App\Models\AcademicYear;
+
 class StudentController extends AppBaseController
 {
     /** @var StudentRepository $studentRepository*/
@@ -24,10 +28,63 @@ class StudentController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $students = $this->studentRepository->paginate(10);
+        $query = Student::query();
 
-        return view('students.index')
-            ->with('students', $students);
+        // Advanced Search & Filters
+        if ($request->filled('q')) {
+            $q = $request->get('q');
+            $query->where(function($sub) use ($q) {
+                $sub->where('first_name', 'like', "%$q%")
+                    ->orWhere('middle_name', 'like', "%$q%")
+                    ->orWhere('last_name', 'like', "%$q%")
+                    ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%$q%"])
+                    ->orWhereRaw("CONCAT(first_name, ' ', middle_name, ' ', last_name) LIKE ?", ["%$q%"])
+                    ->orWhere('admission_no', 'like', "%$q%")
+                    ->orWhere('nemis_number', 'like', "%$q%")
+                    ->orWhere('upi_number', 'like', "%$q%")
+                    ->orWhere('roll_number', 'like', "%$q%");
+            });
+        }
+
+        if ($request->filled('class_section_id')) {
+            $classSectionId = $request->get('class_section_id');
+            $query->whereHas('studentClassEnrollments', function($q) use ($classSectionId) {
+                $q->where('class_section_id', $classSectionId)->where('is_current', true);
+            });
+        }
+
+        if ($request->filled('academic_year_id')) {
+            $academicYearId = $request->get('academic_year_id');
+            $query->whereHas('studentClassEnrollments', function($q) use ($academicYearId) {
+                $q->where('academic_year_id', $academicYearId);
+            });
+        }
+
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->get('gender'));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->get('status'));
+        }
+        
+        if ($request->filled('enrollment_status')) {
+            $query->where('enrollment_status', $request->get('enrollment_status'));
+        }
+
+        $students = $query->with([
+            'studentClassEnrollments.classSection.schoolClass', 
+            'studentClassEnrollments.classSection.section',
+            'studentClassEnrollments.academicYear'
+        ])
+        ->orderBy('admission_no', 'desc')
+        ->paginate(20)
+        ->appends($request->all());
+
+        $classSections = ClassSection::with(['schoolClass', 'section'])->get();
+        $academicYears = AcademicYear::orderBy('start_date', 'desc')->get();
+
+        return view('students.index', compact('students', 'classSections', 'academicYears'));
     }
 
     /**
@@ -81,7 +138,9 @@ class StudentController extends AppBaseController
             'payments.collectedBy',
             'studentAttendances',
             'transportRegistrations',
-            'hostelAllocations'
+            'hostelAllocations',
+            'disciplinaryRecords.reporter',
+            'medicalIncidents.marker'
         ]);
 
         return view('students.show')->with('student', $student);

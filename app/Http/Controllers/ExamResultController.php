@@ -14,9 +14,73 @@ use App\Repositories\ExamResultRepository;
 use Illuminate\Http\Request;
 use Flash;
 use Auth;
+use DB;
 
 class ExamResultController extends AppBaseController
 {
+    public function bulk(Request $request)
+    {
+        $exams = Exam::pluck('name', 'exam_id');
+        $classSections = ClassSection::with(['schoolClass', 'section'])->get()->mapWithKeys(function ($cs) {
+            return [$cs->class_section_id => ($cs->schoolClass->name ?? '') . ' - ' . ($cs->section->name ?? '')];
+        });
+        $subjects = Subject::pluck('name', 'subject_id');
+
+        $students = [];
+        $existingResults = [];
+
+        if ($request->filled(['exam_id', 'class_section_id', 'subject_id'])) {
+            $students = Student::whereHas('studentClassEnrollments', function ($q) use ($request) {
+                $q->where('class_section_id', $request->class_section_id)
+                  ->where('status', 'active');
+            })->orderBy('last_name')->get();
+
+            $existingResults = ExamResult::where('exam_id', $request->exam_id)
+                ->where('class_section_id', $request->class_section_id)
+                ->where('subject_id', $request->subject_id)
+                ->pluck('marks_obtained', 'student_id')
+                ->toArray();
+        }
+
+        return view('exam_results.bulk', compact('exams', 'classSections', 'subjects', 'students', 'existingResults'));
+    }
+
+    public function postBulk(Request $request)
+    {
+        $request->validate([
+            'exam_id' => 'required',
+            'class_section_id' => 'required',
+            'subject_id' => 'required',
+            'marks' => 'required|array'
+        ]);
+
+        $exam_id = $request->exam_id;
+        $class_section_id = $request->class_section_id;
+        $subject_id = $request->subject_id;
+        $marks = $request->marks; // array student_id => marks
+
+        DB::transaction(function () use ($exam_id, $class_section_id, $subject_id, $marks) {
+            foreach ($marks as $student_id => $mark) {
+                if ($mark !== null && $mark !== '') {
+                    ExamResult::updateOrCreate(
+                        [
+                            'exam_id' => $exam_id,
+                            'student_id' => $student_id,
+                            'class_section_id' => $class_section_id,
+                            'subject_id' => $subject_id
+                        ],
+                        [
+                            'marks_obtained' => $mark,
+                            'created_by' => Auth::id()
+                        ]
+                    );
+                }
+            }
+        });
+
+        Flash::success('Marks updated successfully.');
+        return redirect()->back()->withInput();
+    }
     /** @var ExamResultRepository $examResultRepository*/
     private $examResultRepository;
 

@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('report_card_templates', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->enum('education_system', ['8-4-4', 'CBC'])->default('8-4-4');
+            $table->boolean('is_default')->default(false);
+            $table->json('layout_config')->nullable(); // Store positions, fonts, colors etc
+            $table->boolean('status')->default(true);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('report_card_templates');
+    }
+};

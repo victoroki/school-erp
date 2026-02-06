@@ -142,7 +142,7 @@
                                     </a>
                                 </div>
                                 <div class="col-6 mb-3">
-                                    <a href="{{ route('libraryMembers.create') }}" class="btn btn-light btn-block shadow-sm">
+                                    <a href="{{ route('library-members.create') }}" class="btn btn-light btn-block shadow-sm">
                                         <i class="fas fa-user-plus text-info mb-1 d-block fa-lg"></i> Add Member
                                     </a>
                                 </div>

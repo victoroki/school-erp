@@ -10,24 +10,20 @@
                     <div class="row">
                         <div class="col-md-3">
                             <p class="text-muted mb-1">Class</p>
-                            <h5 class="font-weight-bold">{{ $student->current_enrollment->classSection->schoolClass->class_name ?? 'N/A' }}</h5>
+                            <h5 class="font-weight-bold">{{ $student->current_enrollment->classSection->schoolClass->name ?? 'N/A' }}</h5>
                         </div>
                         <div class="col-md-3">
                             <p class="text-muted mb-1">Section</p>
-                            <h5 class="font-weight-bold">{{ $student->current_enrollment->classSection->section->section_name ?? 'N/A' }}</h5>
+                            <h5 class="font-weight-bold">{{ $student->current_enrollment->classSection->section->name ?? 'N/A' }}</h5>
                         </div>
                         <div class="col-md-3">
                             <p class="text-muted mb-1">Academic Year</p>
-                            <h5 class="font-weight-bold">{{ $student->current_enrollment->academicYear->year_name ?? 'N/A' }}</h5>
+                            <h5 class="font-weight-bold">{{ $student->current_enrollment->academicYear->name ?? 'N/A' }}</h5>
                         </div>
                         <div class="col-md-3">
                             <p class="text-muted mb-1">Enrollment Date</p>
                             <h5 class="font-weight-bold">
-                                @if($student->current_enrollment->enrollment_date)
-                                    {{ $student->current_enrollment->enrollment_date->format('d M, Y') }}
-                                @else
-                                    N/A
-                                @endif
+                                {{ $student->current_enrollment->enrollment_date ? $student->current_enrollment->enrollment_date->format('d/m/Y') : 'N/A' }}
                             </h5>
                         </div>
                     </div>
@@ -49,18 +45,14 @@
                     @foreach($student->academic_journey as $enrollment)
                         <div class="timeline-item">
                             <h6 class="font-weight-bold">
-                                {{ $enrollment->classSection->schoolClass->class_name ?? 'Unknown Class' }} - {{ $enrollment->classSection->section->section_name ?? 'Unknown Section' }}
+                                {{ $enrollment->classSection->schoolClass->name ?? 'Unknown Class' }} - {{ $enrollment->classSection->section->name ?? 'Unknown Section' }}
                             </h6>
                             <p class="text-muted mb-1">
-                                <i class="fas fa-calendar mr-2"></i> {{ $enrollment->academicYear->year_name ?? 'Unknown Year' }}
+                                <i class="fas fa-calendar mr-2"></i> {{ $enrollment->academicYear->name ?? 'Unknown Year' }}
                             </p>
                             <p class="small text-muted mb-0">
                                 Enrolled on 
-                                @if($enrollment->enrollment_date)
-                                    {{ $enrollment->enrollment_date->format('d M, Y') }}
-                                @else
-                                    N/A
-                                @endif
+                                {{ $enrollment->enrollment_date ? $enrollment->enrollment_date->format('d/m/Y') : 'N/A' }}
 
                                 @if($enrollment->status != 'active')
                                     <span class="badge badge-secondary ml-2 text-capitalize">{{ $enrollment->status }}</span>

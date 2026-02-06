@@ -12,6 +12,8 @@ class Student extends Model
     public $fillable = [
         'user_id',
         'admission_no',
+        'nemis_number',
+        'upi_number',
         'roll_number',
         'first_name',
         'middle_name',
@@ -24,6 +26,8 @@ class Student extends Model
         'blood_group',
         'address',
         'city',
+        'county',
+        'sub_county',
         'country',
         'postal_code',
         'phone',
@@ -43,6 +47,7 @@ class Student extends Model
         'graduation_date',
         'leaving_reason',
         'student_category',
+        'education_system',
         'is_scholarship_holder',
         'scholarship_details',
         'medical_conditions',
@@ -76,28 +81,20 @@ class Student extends Model
 
     public static array $rules = [
         'user_id' => 'nullable|exists:users,id',
-        'admission_no' => 'required|string|max:20|unique:students,admission_no',
+        'admission_no' => 'required|string|max:20',
+        'nemis_number' => 'nullable|string|max:50',
+        'upi_number' => 'nullable|string|max:50',
         'roll_number' => 'nullable|string|max:20',
         'first_name' => 'required|string|max:50',
         'middle_name' => 'nullable|string|max:50',
         'last_name' => 'required|string|max:50',
         'date_of_birth' => 'required|date',
         'gender' => 'required|in:male,female,other',
-        'nationality' => 'nullable|string|max:50',
-        'religion' => 'nullable|string|max:50',
-        'blood_group' => 'nullable|string|max:10',
-        'address' => 'nullable|string',
         'city' => 'required|string|max:50',
+        'county' => 'nullable|string|max:50',
         'country' => 'required|string|max:50',
-        'postal_code' => 'nullable|string|max:20',
-        'phone' => 'nullable|string|max:20',
-        'emergency_contact' => 'required|string|max:20',
-        'emergency_contact_name' => 'nullable|string|max:100',
         'admission_date' => 'required|date',
-        'photo_url' => 'nullable|string|max:255',
-        'status' => 'nullable|in:active,inactive,alumni,transferred',
-        'enrollment_status' => 'nullable|in:enrolled,graduated,transferred,expelled,dropped_out,on_leave',
-        'student_category' => 'nullable|string|max:50',
+        'education_system' => 'nullable|in:CBC,8-4-4',
         'is_scholarship_holder' => 'boolean',
         'uses_transport' => 'boolean',
         'is_hosteller' => 'boolean',
@@ -172,6 +169,21 @@ class Student extends Model
     public function transportRegistrations(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(\App\Models\TransportRegistration::class, 'student_id');
+    }
+
+    public function emergencyContacts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\EmergencyContact::class, 'student_id');
+    }
+
+    public function disciplinaryRecords(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\DisciplinaryRecord::class, 'student_id');
+    }
+
+    public function medicalIncidents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\MedicalIncident::class, 'student_id');
     }
 
     // Helper Attributes for Fee Management
@@ -316,5 +328,60 @@ class Student extends Model
         
         $presentDays = $this->studentAttendances()->where('status', 'present')->count();
         return round(($presentDays / $totalDays) * 100, 2);
+    }
+
+    /**
+     * Kenyan Phone Formatting
+     */
+    public function formatKenyanPhone($phone)
+    {
+        if (!$phone) return null;
+        
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        
+        if (str_starts_with($phone, '0')) {
+            $phone = '254' . substr($phone, 1);
+        } elseif (str_starts_with($phone, '7') || str_starts_with($phone, '1')) {
+            $phone = '254' . $phone;
+        }
+        
+        if (strlen($phone) == 12) {
+            return '+' . substr($phone, 0, 3) . ' ' . substr($phone, 3, 3) . ' ' . substr($phone, 6, 3) . ' ' . substr($phone, 9);
+        }
+        
+        return '+' . $phone;
+    }
+
+    public function getFormattedPhoneAttribute()
+    {
+        return $this->formatKenyanPhone($this->phone) ?? 'N/A';
+    }
+
+    public function getFormattedEmergencyPhoneAttribute()
+    {
+        return $this->formatKenyanPhone($this->emergency_contact) ?? 'N/A';
+    }
+
+    public function getFormattedEmergencyPhone2Attribute()
+    {
+        return $this->formatKenyanPhone($this->emergency_contact_phone_2) ?? 'N/A';
+    }
+
+    /**
+     * Standardized Kenyan Date Formatting (DD/MM/YYYY)
+     */
+    public function getKenyanDobAttribute()
+    {
+        return $this->date_of_birth ? $this->date_of_birth->format('d/m/Y') : 'N/A';
+    }
+
+    public function getKenyanAdmissionDateAttribute()
+    {
+        return $this->admission_date ? $this->admission_date->format('d/m/Y') : 'N/A';
+    }
+
+    public function getFormattedFeeBalanceAttribute()
+    {
+        return 'KES ' . number_format($this->balance_fee, 2);
     }
 }

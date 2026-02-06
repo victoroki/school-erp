@@ -63,7 +63,7 @@ class SubjectController extends AppBaseController
      */
     public function show($id)
     {
-        $subject = $this->subjectRepository->find($id);
+        $subject = $this->subjectRepository->with(['classSubjects.class', 'teacherSubjects.staff'])->find($id);
 
         if (empty($subject)) {
             Flash::error('Subject not found');

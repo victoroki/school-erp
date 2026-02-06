@@ -57,7 +57,7 @@ class DepartmentController extends AppBaseController
      */
     public function show($id)
     {
-        $department = $this->departmentRepository->find($id);
+        $department = $this->departmentRepository->with(['subjects', 'hod', 'staff'])->find($id);
 
         if (empty($department)) {
             Flash::error('Department not found');

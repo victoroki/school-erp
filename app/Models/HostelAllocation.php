@@ -17,13 +17,15 @@ class HostelAllocation extends Model
         'allocation_date',
         'vacating_date',
         'status',
-        'academic_year_id'
+        'academic_year_id',
+        'checkout_notes'
     ];
 
     protected $casts = [
         'allocation_date' => 'date',
         'vacating_date' => 'date',
-        'status' => 'string'
+        'status' => 'string',
+        'checkout_notes' => 'string'
     ];
 
     public static array $rules = [
@@ -35,6 +37,7 @@ class HostelAllocation extends Model
         'vacating_date' => 'nullable|date|after:allocation_date',
         'status' => 'nullable|in:active,vacated,pending',
         'academic_year_id' => 'nullable|exists:academic_years,id',
+        'checkout_notes' => 'nullable|string',
         'created_at' => 'nullable',
         'updated_at' => 'nullable'
     ];

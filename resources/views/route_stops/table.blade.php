@@ -1,30 +1,43 @@
 <div class="card-body p-0">
     <div class="table-responsive">
-        <table class="table" id="route-stops-table">
+        <table class="table table-striped" id="route-stops-table">
             <thead>
             <tr>
-                <th>Route </th>
-                <th>Stop Name</th>
-                <th>Stop Time</th>
+                <th>Stop Info</th>
+                <th>Route</th>
                 <th>Sequence</th>
+                <th>Est. Time</th>
+                <th>Fee</th>
+                <th>Students</th>
+                <th>Status</th>
                 <th colspan="3">Action</th>
             </tr>
             </thead>
             <tbody>
             @foreach($routeStops as $routeStop)
                 <tr>
-                    <td>{{ $routeStop->route_id }}</td>
-                    <td>{{ $routeStop->stop_name }}</td>
+                    <td>
+                        <strong>{{ $routeStop->stop_name }}</strong><br>
+                        <small class="text-muted"><i class="fas fa-map-marker-alt"></i> {{ $routeStop->landmark }}</small>
+                    </td>
+                    <td><span class="badge badge-info">{{ $routeStop->route->name ?? 'N/A' }}</span></td>
+                    <td><span class="badge badge-secondary">{{ $routeStop->sequence }}</span></td>
                     <td>{{ $routeStop->stop_time }}</td>
-                    <td>{{ $routeStop->sequence }}</td>
-                    <td  style="width: 120px">
-                        {!! Form::open(['route' => ['route-stops.destroy', $routeStop->stop_id], 'method' => 'delete']) !!}
+                    <td>{{ number_format($routeStop->stop_fee, 2) }}</td>
+                    <td><span class="badge badge-primary">{{ $routeStop->getStudentCount() }}</span></td>
+                    <td>
+                        <span class="badge badge-{{ $routeStop->status == 'active' ? 'success' : 'secondary' }}">
+                            {{ ucfirst($routeStop->status) }}
+                        </span>
+                    </td>
+                    <td style="width: 120px">
+                        {!! Form::open(['route' => ['routeStops.destroy', $routeStop->stop_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('route-stops.show', [$routeStop->stop_id]) }}"
+                            <a href="{{ route('routeStops.show', [$routeStop->stop_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('route-stops.edit', [$routeStop->stop_id]) }}"
+                            <a href="{{ route('routeStops.edit', [$routeStop->stop_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

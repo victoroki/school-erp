@@ -19,6 +19,15 @@ class HostelController extends AppBaseController
         $this->hostelRepository = $hostelRepo;
     }
 
+    private function getDropdownData()
+    {
+        return [
+            'staff' => \App\Models\Staff::selectRaw("id, CONCAT(first_name, ' ', last_name) as name")
+                ->pluck('name', 'id')
+                ->toArray()
+        ];
+    }
+
     /**
      * Display a listing of the Hostel.
      */
@@ -35,7 +44,8 @@ class HostelController extends AppBaseController
      */
     public function create()
     {
-        return view('hostels.create');
+        $data = $this->getDropdownData();
+        return view('hostels.create')->with($data);
     }
 
     /**
@@ -57,11 +67,10 @@ class HostelController extends AppBaseController
      */
     public function show($id)
     {
-        $hostel = $this->hostelRepository->find($id);
+        $hostel = \App\Models\Hostel::with(['warden', 'hostelRooms', 'hostelAllocations.student'])->find($id);
 
         if (empty($hostel)) {
             Flash::error('Hostel not found');
-
             return redirect(route('hostels.index'));
         }
 
@@ -74,14 +83,14 @@ class HostelController extends AppBaseController
     public function edit($id)
     {
         $hostel = $this->hostelRepository->find($id);
+        $data = $this->getDropdownData();
 
         if (empty($hostel)) {
             Flash::error('Hostel not found');
-
             return redirect(route('hostels.index'));
         }
 
-        return view('hostels.edit')->with('hostel', $hostel);
+        return view('hostels.edit', compact('hostel'))->with($data);
     }
 
     /**
@@ -93,7 +102,6 @@ class HostelController extends AppBaseController
 
         if (empty($hostel)) {
             Flash::error('Hostel not found');
-
             return redirect(route('hostels.index'));
         }
 
@@ -106,8 +114,6 @@ class HostelController extends AppBaseController
 
     /**
      * Remove the specified Hostel from storage.
-     *
-     * @throws \Exception
      */
     public function destroy($id)
     {
@@ -115,8 +121,13 @@ class HostelController extends AppBaseController
 
         if (empty($hostel)) {
             Flash::error('Hostel not found');
-
             return redirect(route('hostels.index'));
+        }
+
+        // Check for dependencies
+        if ($hostel->hostelRooms()->count() > 0) {
+            Flash::error('Cannot delete hostel because it has rooms. Please delete or reassing rooms first.');
+            return redirect()->back();
         }
 
         $this->hostelRepository->delete($id);

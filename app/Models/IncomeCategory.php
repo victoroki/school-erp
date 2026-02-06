@@ -7,15 +7,20 @@ use Illuminate\Database\Eloquent\Model;
 class IncomeCategory extends Model
 {
     public $table = 'income_categories';
+    protected $primaryKey = 'category_id';
 
     public $fillable = [
         'name',
-        'description'
+        'status',
+        'description',
+        'color_code'
     ];
 
     protected $casts = [
         'name' => 'string',
-        'description' => 'string'
+        'status' => 'string',
+        'description' => 'string',
+        'color_code' => 'string'
     ];
 
     public static array $rules = [

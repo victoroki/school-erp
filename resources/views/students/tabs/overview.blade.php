@@ -13,7 +13,7 @@
                     </tr>
                     <tr>
                         <td class="text-muted"><i class="fas fa-birthday-cake mr-2"></i> Date of Birth:</td>
-                        <td class="font-weight-bold">{{ optional($student->date_of_birth)->format('d M, Y') ?? 'N/A' }} ({{ $student->age }} years)</td>
+                        <td class="font-weight-bold">{{ $student->kenyan_dob }} ({{ $student->age }} years)</td>
                     </tr>
                     <tr>
                         <td class="text-muted"><i class="fas fa-venus-mars mr-2"></i> Gender:</td>
@@ -66,6 +66,18 @@
                         <td class="text-muted"><i class="fas fa-city mr-2"></i> City:</td>
                         <td class="font-weight-bold">{{ $student->city }}</td>
                     </tr>
+                    @if($student->county)
+                    <tr>
+                        <td class="text-muted"><i class="fas fa-map mr-2"></i> County:</td>
+                        <td class="font-weight-bold">{{ $student->county }}</td>
+                    </tr>
+                    @endif
+                    @if($student->sub_county)
+                    <tr>
+                        <td class="text-muted"><i class="fas fa-map-marked mr-2"></i> Sub-County:</td>
+                        <td class="font-weight-bold">{{ $student->sub_county }}</td>
+                    </tr>
+                    @endif
                     <tr>
                         <td class="text-muted"><i class="fas fa-globe mr-2"></i> Country:</td>
                         <td class="font-weight-bold">{{ $student->country }}</td>
@@ -79,7 +91,7 @@
                     @if($student->phone)
                     <tr>
                         <td class="text-muted"><i class="fas fa-phone mr-2"></i> Phone:</td>
-                        <td class="font-weight-bold">{{ $student->phone }}</td>
+                        <td class="font-weight-bold">{{ $student->formatted_phone }}</td>
                     </tr>
                     @endif
                 </table>
@@ -109,12 +121,12 @@
                     @endif
                     <tr>
                         <td class="text-muted"><i class="fas fa-phone-alt mr-2"></i> Primary Phone:</td>
-                        <td class="font-weight-bold text-danger">{{ $student->emergency_contact }}</td>
+                        <td class="font-weight-bold text-danger">{{ $student->formatted_emergency_phone }}</td>
                     </tr>
                     @if($student->emergency_contact_phone_2)
                     <tr>
                         <td class="text-muted"><i class="fas fa-phone mr-2"></i> Secondary Phone:</td>
-                        <td class="font-weight-bold">{{ $student->emergency_contact_phone_2 }}</td>
+                        <td class="font-weight-bold">{{ $student->formatted_emergency_phone_2 }}</td>
                     </tr>
                     @endif
                 </table>
@@ -131,17 +143,31 @@
             <div class="card-body">
                 <table class="table table-sm table-borderless mb-0">
                     <tr>
-                        <td class="text-muted" width="40%"><i class="fas fa-calendar-plus mr-2"></i> Admission Date:</td>
-                        <td class="font-weight-bold">{{ optional($student->admission_date)->format('d M, Y') ?? 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-id-badge mr-2"></i> Admission No:</td>
+                        <td class="text-muted" width="40%"><i class="fas fa-id-badge mr-2"></i> Admission No:</td>
                         <td class="font-weight-bold">{{ $student->admission_no }}</td>
                     </tr>
-                    @if($student->roll_number)
+                    @if($student->nemis_number)
                     <tr>
-                        <td class="text-muted"><i class="fas fa-hashtag mr-2"></i> Roll Number:</td>
-                        <td class="font-weight-bold">{{ $student->roll_number }}</td>
+                        <td class="text-muted"><i class="fas fa-fingerprint mr-2"></i> NEMIS ID:</td>
+                        <td class="font-weight-bold">{{ $student->nemis_number }}</td>
+                    </tr>
+                    @endif
+                    @if($student->upi_number)
+                    <tr>
+                        <td class="text-muted"><i class="fas fa-id-card-alt mr-2"></i> UPI Number:</td>
+                        <td class="font-weight-bold">{{ $student->upi_number }}</td>
+                    </tr>
+                    @endif
+                    @if($student->birth_certificate_no)
+                    <tr>
+                        <td class="text-muted"><i class="fas fa-file-contract mr-2"></i> Birth Cert No:</td>
+                        <td class="font-weight-bold">{{ $student->birth_certificate_no }}</td>
+                    </tr>
+                    @endif
+                    @if($student->education_system)
+                    <tr>
+                        <td class="text-muted"><i class="fas fa-school mr-2"></i> System:</td>
+                        <td><span class="badge badge-primary">{{ $student->education_system }}</span></td>
                     </tr>
                     @endif
                     <tr>
@@ -208,7 +234,7 @@
                     @if($student->transfer_date)
                     <div class="col-md-3">
                         <p class="text-muted mb-1"><i class="fas fa-calendar mr-2"></i> Transfer Date:</p>
-                        <p class="font-weight-bold">{{ optional($student->transfer_date)->format('d M, Y') ?? 'N/A' }}</p>
+                        <p class="font-weight-bold">{{ $student->transfer_date->format('d/m/Y') }}</p>
                     </div>
                     @endif
                     @if($student->transfer_reason)

@@ -6,15 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class StudentClassEnrollment extends Model
 {
-    public $table = 'student_class_enrollment';
+    public $table = 'student_class_enrollments';
     protected $primaryKey = 'enrollment_id';
-    public $timestamps = false;
+    public $timestamps = true;
 
     public $fillable = [
         'student_id',
         'class_section_id',
         'roll_number',
         'academic_year_id',
+        'is_current',
         'enrollment_date',
         'status'
     ];

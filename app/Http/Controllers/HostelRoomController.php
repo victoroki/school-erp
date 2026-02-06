@@ -21,7 +21,7 @@ class HostelRoomController extends AppBaseController
     }
     private function getDropdownData(){
         return[
-            'hostel' => Hostel::pluck('name', 'hostel_id')
+            'hostels' => Hostel::pluck('name', 'hostel_id')
         ];
     }
 
@@ -30,12 +30,19 @@ class HostelRoomController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $hostelRooms = $this->hostelRoomRepository->allQuery()
-            ->with('hostel')
-            ->paginate(10);
+        $query = $this->hostelRoomRepository->allQuery()->with('hostel');
 
-        return view('hostel_rooms.index')
-            ->with('hostelRooms', $hostelRooms);
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('hostel_id')) {
+            $query->where('hostel_id', $request->hostel_id);
+        }
+
+        $hostelRooms = $query->paginate(10);
+        $hostels = Hostel::pluck('name', 'hostel_id');
+
+        return view('hostel_rooms.index', compact('hostelRooms', 'hostels'));
     }
 
     /**
@@ -43,8 +50,8 @@ class HostelRoomController extends AppBaseController
      */
     public function create()
     {
-        $dropdown = $this->getDropdownData();
-        return view('hostel_rooms.create', $dropdown);
+        $data = $this->getDropdownData();
+        return view('hostel_rooms.create')->with($data);
     }
 
     /**
@@ -53,6 +60,15 @@ class HostelRoomController extends AppBaseController
     public function store(CreateHostelRoomRequest $request)
     {
         $input = $request->all();
+        
+        // Initial status based on occupancy
+        if ($input['status'] !== 'under_maintenance') {
+            $occupied = $input['occupied'] ?? 0;
+            $capacity = $input['capacity'];
+            if ($occupied >= $capacity) $input['status'] = 'full';
+            else if ($occupied > 0) $input['status'] = 'partial';
+            else $input['status'] = 'available';
+        }
 
         $hostelRoom = $this->hostelRoomRepository->create($input);
 
@@ -66,19 +82,14 @@ class HostelRoomController extends AppBaseController
      */
     public function show($id)
     {
-        $hostelRoom = $this->hostelRoomRepository->find($id);
-        $dropdown = $this->getDropdownData();
+        $hostelRoom = \App\Models\HostelRoom::with(['hostel', 'hostelAllocations.student'])->find($id);
 
         if (empty($hostelRoom)) {
             Flash::error('Hostel Room not found');
-
             return redirect(route('hostel-rooms.index'));
         }
 
-        return view('hostel_rooms.show', array_merge(
-            ['hostelRoom' => $hostelRoom],
-            $dropdown
-        ));
+        return view('hostel_rooms.show', compact('hostelRoom'));
     }
 
     /**
@@ -87,14 +98,14 @@ class HostelRoomController extends AppBaseController
     public function edit($id)
     {
         $hostelRoom = $this->hostelRoomRepository->find($id);
+        $data = $this->getDropdownData();
 
         if (empty($hostelRoom)) {
             Flash::error('Hostel Room not found');
-
             return redirect(route('hostel-rooms.index'));
         }
 
-        return view('hostel_rooms.edit')->with('hostelRoom', $hostelRoom);
+        return view('hostel_rooms.edit', compact('hostelRoom'))->with($data);
     }
 
     /**
@@ -106,11 +117,21 @@ class HostelRoomController extends AppBaseController
 
         if (empty($hostelRoom)) {
             Flash::error('Hostel Room not found');
-
             return redirect(route('hostel-rooms.index'));
         }
 
-        $hostelRoom = $this->hostelRoomRepository->update($request->all(), $id);
+        $input = $request->all();
+        
+        // Auto-update status based on occupancy change, unless maintenance is forced
+        if ($input['status'] !== 'under_maintenance') {
+            $occupied = $input['occupied'] ?? $hostelRoom->occupied;
+            $capacity = $input['capacity'] ?? $hostelRoom->capacity;
+            if ($occupied >= $capacity) $input['status'] = 'full';
+            else if ($occupied > 0) $input['status'] = 'partial';
+            else $input['status'] = 'available';
+        }
+
+        $hostelRoom = $this->hostelRoomRepository->update($input, $id);
 
         Flash::success('Hostel Room updated successfully.');
 
@@ -119,8 +140,6 @@ class HostelRoomController extends AppBaseController
 
     /**
      * Remove the specified HostelRoom from storage.
-     *
-     * @throws \Exception
      */
     public function destroy($id)
     {
@@ -128,8 +147,13 @@ class HostelRoomController extends AppBaseController
 
         if (empty($hostelRoom)) {
             Flash::error('Hostel Room not found');
-
             return redirect(route('hostel-rooms.index'));
+        }
+
+        // Check if room has active allocations
+        if ($hostelRoom->hostelAllocations()->where('status', 'active')->count() > 0) {
+            Flash::error('Cannot delete room with active student allocations. Please vacate or transfer students first.');
+            return redirect()->back();
         }
 
         $this->hostelRoomRepository->delete($id);

@@ -196,6 +196,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" data-toggle="tab" href="#disciplinary" role="tab">
+                        <i class="fas fa-gavel mr-2"></i> Disciplinary
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" data-toggle="tab" href="#documents" role="tab">
                         <i class="fas fa-folder-open mr-2"></i> Documents
                     </a>
@@ -226,6 +231,11 @@
                 <!-- Medical Tab -->
                 <div class="tab-pane fade" id="medical" role="tabpanel">
                     @include('students.tabs.medical')
+                </div>
+
+                <!-- Disciplinary Tab -->
+                <div class="tab-pane fade" id="disciplinary" role="tabpanel">
+                    @include('students.tabs.disciplinary')
                 </div>
 
                 <!-- Documents Tab -->

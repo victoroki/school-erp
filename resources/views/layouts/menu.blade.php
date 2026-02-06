@@ -202,43 +202,151 @@
 </li>
 
 <!-- Examination Management -->
-<li class="nav-item has-treeview {{ Request::is('exam-types*') || Request::is('grading-scales*') || Request::is('exams*') || Request::is('exam-schedules*') || Request::is('exam-results*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('exam-types*') || Request::is('grading-scales*') || Request::is('exams*') || Request::is('exam-schedules*') || Request::is('exam-results*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-clipboard-list text-danger"></i>
+<li class="nav-item has-treeview {{ Request::is('exam*') || Request::is('grading-scales*') || Request::is('assessment-types*') || Request::is('exam-rooms*') || Request::is('grade-book*') || Request::is('mark-sheets*') || Request::is('marks-approval*') || Request::is('report-card-templates*') || Request::is('learning-areas*') || Request::is('strands*') || Request::is('competency-assessment*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('exam*') || Request::is('grading-scales*') || Request::is('assessment-types*') || Request::is('exam-rooms*') || Request::is('grade-book*') || Request::is('mark-sheets*') || Request::is('marks-approval*') || Request::is('report-card-templates*') || Request::is('learning-areas*') || Request::is('strands*') || Request::is('competency-assessment*') ? 'active' : '' }}">
+        <i class="nav-icon fas fa-file-invoice text-danger"></i>
         <p>
-            Examination
+            Examinations
             <i class="right fas fa-angle-left"></i>
         </p>
     </a>
     <ul class="nav nav-treeview">
         <li class="nav-item">
+            <a href="{{ route('exam-dashboard.index') }}" class="nav-link {{ Request::is('exam-dashboard') ? 'active' : '' }}">
+                <i class="fas fa-chart-line nav-icon text-danger"></i>
+                <p>Dashboard</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-danger">Configuration</li>
+        <li class="nav-item">
             <a href="{{ route('exam-types.index') }}" class="nav-link {{ Request::is('exam-types*') ? 'active' : '' }}">
-                <i class="far fa-list nav-icon text-danger"></i>
-                <p>Exam Types</p>
+                <i class="fas fa-tags nav-icon text-danger"></i>
+                <p>Exam Categories</p>
             </a>
         </li>
         <li class="nav-item">
             <a href="{{ route('grading-scales.index') }}" class="nav-link {{ Request::is('grading-scales*') ? 'active' : '' }}">
-                <i class="far fa-chart-bar nav-icon text-danger"></i>
-                <p>Grading Scales</p>
+                <i class="fas fa-star-half-alt nav-icon text-danger"></i>
+                <p>Grading Systems</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('exams.index') }}" class="nav-link {{ Request::is('exams*') ? 'active' : '' }}">
-                <i class="far fa-file-alt nav-icon text-danger"></i>
-                <p>Exams</p>
+            <a href="{{ route('assessment-types.index') }}" class="nav-link {{ Request::is('assessment-types*') ? 'active' : '' }}">
+                <i class="fas fa-clipboard-check nav-icon text-danger"></i>
+                <p>Assessment Types</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-danger">Exam Management</li>
+        <li class="nav-item">
+            <a href="{{ route('exams.index') }}" class="nav-link {{ Request::is('exams*') && !Request::is('exams-dashboard*') ? 'active' : '' }}">
+                <i class="fas fa-calendar-alt nav-icon text-danger"></i>
+                <p>Exam Sessions</p>
             </a>
         </li>
         <li class="nav-item">
             <a href="{{ route('exam-schedules.index') }}" class="nav-link {{ Request::is('exam-schedules*') ? 'active' : '' }}">
-                <i class="far fa-calendar-alt nav-icon text-danger"></i>
-                <p>Exam Schedules</p>
+                <i class="fas fa-clock nav-icon text-danger"></i>
+                <p>Exam Timetables</p>
             </a>
         </li>
         <li class="nav-item">
+            <a href="{{ route('exam-rooms.index') }}" class="nav-link {{ Request::is('exam-rooms*') ? 'active' : '' }}">
+                <i class="fas fa-door-open nav-icon text-danger"></i>
+                <p>Exam Rooms</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-danger">Marks & Results</li>
+        <li class="nav-item">
             <a href="{{ route('exam-results.index') }}" class="nav-link {{ Request::is('exam-results*') ? 'active' : '' }}">
-                <i class="far fa-trophy nav-icon text-danger"></i>
-                <p>Exam Results</p>
+                <i class="fas fa-edit nav-icon text-danger"></i>
+                <p>Enter Marks</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('grade-book.index') }}" class="nav-link {{ Request::is('grade-book*') ? 'active' : '' }}">
+                <i class="fas fa-book nav-icon text-danger"></i>
+                <p>Grade Book</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('mark-sheets.index') }}" class="nav-link {{ Request::is('mark-sheets*') ? 'active' : '' }}">
+                <i class="fas fa-table nav-icon text-danger"></i>
+                <p>Mark Sheets</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('marks-approval.index') }}" class="nav-link {{ Request::is('marks-approval*') ? 'active' : '' }}">
+                <i class="fas fa-check-circle nav-icon text-danger"></i>
+                <p>Marks Approval</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-danger">Report Cards</li>
+        <li class="nav-item">
+            <a href="{{ route('exam-reports.generate') }}" class="nav-link {{ Request::is('exam-reports/generate*') ? 'active' : '' }}">
+                <i class="fas fa-file-pdf nav-icon text-danger"></i>
+                <p>Generate Reports</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('report-card-templates.index') }}" class="nav-link {{ Request::is('report-card-templates*') ? 'active' : '' }}">
+                <i class="fas fa-file-invoice nav-icon text-danger"></i>
+                <p>Templates</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('exam-reports.bulk') }}" class="nav-link {{ Request::is('bulk-report-cards*') ? 'active' : '' }}">
+                <i class="fas fa-print nav-icon text-danger"></i>
+                <p>Bulk Report Cards</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-danger">Analysis & Reports</li>
+        <li class="nav-item">
+            <a href="{{ route('exam-analysis.performance') }}" class="nav-link {{ Request::is('exam-analysis/performance*') ? 'active' : '' }}">
+                <i class="fas fa-chart-bar nav-icon text-danger"></i>
+                <p>Performance Analysis</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('exam-analysis.subject') }}" class="nav-link {{ Request::is('exam-analysis/subject*') ? 'active' : '' }}">
+                <i class="fas fa-chart-pie nav-icon text-danger"></i>
+                <p>Subject Analysis</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('exam-analysis.rankings') }}" class="nav-link {{ Request::is('exam-analysis/rankings*') ? 'active' : '' }}">
+                <i class="fas fa-trophy nav-icon text-danger"></i>
+                <p>Class Rankings</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-danger">CBC Specific</li>
+        <li class="nav-item">
+            <a href="{{ route('learning-areas.index') }}" class="nav-link {{ Request::is('learning-areas*') ? 'active' : '' }}">
+                <i class="fas fa-brain nav-icon text-danger"></i>
+                <p>Learning Areas</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('strands.index') }}" class="nav-link {{ Request::is('strands*') ? 'active' : '' }}">
+                <i class="fas fa-stream nav-icon text-danger"></i>
+                <p>CBC Strands</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('sub-strands.index') }}" class="nav-link {{ Request::is('sub-strands*') ? 'active' : '' }}">
+                <i class="fas fa-project-diagram nav-icon text-danger"></i>
+                <p>CBC Sub-Strands</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('competency-assessment.index') }}" class="nav-link {{ Request::is('competency-assessment*') ? 'active' : '' }}">
+                <i class="fas fa-tasks nav-icon text-danger"></i>
+                <p>Competency Assessment</p>
             </a>
         </li>
     </ul>
@@ -293,50 +401,140 @@
     </ul>
 </li>
 
-<!-- Finance & Accounting -->
-<li class="nav-item has-treeview {{ Request::is('fee*') || Request::is('expense*') || Request::is('income*') || Request::is('bank*') || Request::is('student-fee-discounts*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('fee*') || Request::is('expense*') || Request::is('income*') || Request::is('bank*') || Request::is('student-fee-discounts*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-chart-line text-success"></i>
+<!-- Financial Management -->
+<li class="nav-item has-treeview {{ Request::is('finance*') || Request::is('expenses*') || Request::is('income*') || Request::is('bank*') || Request::is('student-fee-discounts*') || Request::is('budgets*') || Request::is('financial-reports*') || Request::is('financial-years*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('finance*') || Request::is('expenses*') || Request::is('income*') || Request::is('bank*') || Request::is('student-fee-discounts*') || Request::is('budgets*') || Request::is('financial-reports*') || Request::is('financial-years*') ? 'active' : '' }}">
+        <i class="nav-icon fas fa-chart-line text-dark"></i>
         <p>
-            Finance & Fees
+            Financial Management
             <i class="right fas fa-angle-left"></i>
         </p>
     </a>
     <ul class="nav nav-treeview">
         <li class="nav-item">
+            <a href="{{ route('finance.dashboard') }}" class="nav-link {{ Request::is('finance/dashboard') ? 'active' : '' }}">
+                <i class="fas fa-tachometer-alt nav-icon text-dark"></i>
+                <p>Dashboard</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-success">Income</li>
+        <li class="nav-item">
+            <a href="{{ route('incomeCategories.index') }}" class="nav-link {{ Request::is('income-categories*') ? 'active' : '' }}">
+                <i class="fas fa-plus-circle nav-icon text-success"></i>
+                <p>Income Categories</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('income.create') }}" class="nav-link {{ Request::is('income/create') ? 'active' : '' }}">
+                <i class="fas fa-arrow-down nav-icon text-success"></i>
+                <p>Record Income</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('income.index') }}" class="nav-link {{ Request::is('income') ? 'active' : '' }}">
+                <i class="fas fa-list nav-icon text-success"></i>
+                <p>Income Transactions</p>
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="{{ route('fee-management.index') }}" class="nav-link {{ Request::is('fee-management*') ? 'active' : '' }}">
                 <i class="fas fa-cash-register nav-icon text-success"></i>
-                <p>Payment Collection</p>
+                <p>Fee Collection</p>
             </a>
         </li>
+
+        <li class="nav-header small text-uppercase text-danger">Expenses</li>
         <li class="nav-item">
-            <a href="{{ route('fee-structures.index') }}" class="nav-link {{ Request::is('fee-structures*') ? 'active' : '' }}">
-                <i class="fas fa-file-invoice nav-icon text-success"></i>
-                <p>Fee Structures</p>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('fee-categories.index') }}" class="nav-link {{ Request::is('fee-categories*') ? 'active' : '' }}">
-                <i class="fas fa-tags nav-icon text-success"></i>
-                <p>Fee Categories</p>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('student-fee-discounts.index') }}" class="nav-link {{ Request::is('student-fee-discounts*') ? 'active' : '' }}">
-                <i class="fas fa-percent nav-icon text-success"></i>
-                <p>Fee Discounts</p>
-            </a>
-        </li>
-        <li class="nav-item border-top mt-2 pt-2">
-            <a href="{{ route('expenses.index') }}" class="nav-link {{ Request::is('expenses*') ? 'active' : '' }}">
+            <a href="{{ route('expenseCategories.index') }}" class="nav-link {{ Request::is('expense-categories*') ? 'active' : '' }}">
                 <i class="fas fa-minus-circle nav-icon text-danger"></i>
-                <p>Expenses</p>
+                <p>Expense Categories</p>
             </a>
         </li>
+        <li class="nav-item">
+            <a href="{{ route('expenses.create') }}" class="nav-link {{ Request::is('expenses/create') ? 'active' : '' }}">
+                <i class="fas fa-arrow-up nav-icon text-danger"></i>
+                <p>Record Expense</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('expenses.index') }}" class="nav-link {{ Request::is('expenses') ? 'active' : '' }}">
+                <i class="fas fa-receipt nav-icon text-danger"></i>
+                <p>Expense Transactions</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('expenses.pending') }}" class="nav-link {{ Request::is('expenses/pending') ? 'active' : '' }}">
+                <i class="fas fa-clock nav-icon text-warning"></i>
+                <p>Pending Approvals</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-primary">Banking</li>
         <li class="nav-item">
             <a href="{{ route('bank-accounts.index') }}" class="nav-link {{ Request::is('bank-accounts*') ? 'active' : '' }}">
                 <i class="fas fa-university nav-icon text-primary"></i>
                 <p>Bank Accounts</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('bank-transactions.index') }}" class="nav-link {{ Request::is('bank-transactions*') ? 'active' : '' }}">
+                <i class="fas fa-exchange-alt nav-icon text-primary"></i>
+                <p>Bank Transactions</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('bank-reconciliations.index') }}" class="nav-link {{ Request::is('bank-reconciliations*') ? 'active' : '' }}">
+                <i class="fas fa-balance-scale nav-icon text-primary"></i>
+                <p>Bank Reconciliation</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-info">Budgeting</li>
+        <li class="nav-item">
+            <a href="{{ route('budgets.index') }}" class="nav-link {{ Request::is('budgets*') ? 'active' : '' }}">
+                <i class="fas fa-clipboard-list nav-icon text-info"></i>
+                <p>Budget Planning</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('budgets.vs-actual') }}" class="nav-link {{ Request::is('budgets/vs-actual') ? 'active' : '' }}">
+                <i class="fas fa-chart-bar nav-icon text-info"></i>
+                <p>Budget vs Actual</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-dark">Reports & Analysis</li>
+        <li class="nav-item">
+            <a href="{{ route('financial-reports.index') }}" class="nav-link {{ Request::is('financial-reports*') ? 'active' : '' }}">
+                <i class="fas fa-file-alt nav-icon text-dark"></i>
+                <p>Financial Reports</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('financial-reports.cashflow') }}" class="nav-link {{ Request::is('financial-reports/cashflow') ? 'active' : '' }}">
+                <i class="fas fa-chart-line nav-icon text-dark"></i>
+                <p>Cashflow Analysis</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('financial-reports.p-and-l') }}" class="nav-link {{ Request::is('financial-reports/p-and-l') ? 'active' : '' }}">
+                <i class="fas fa-calculator nav-icon text-dark"></i>
+                <p>Profit & Loss</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-secondary">Auditing & Setup</li>
+        <li class="nav-item">
+            <a href="{{ route('audit-trail.index') }}" class="nav-link {{ Request::is('audit-trail*') ? 'active' : '' }}">
+                <i class="fas fa-history nav-icon text-secondary"></i>
+                <p>Audit Trail</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('financial-years.index') }}" class="nav-link {{ Request::is('financial-years*') ? 'active' : '' }}">
+                <i class="fas fa-calendar-alt nav-icon text-secondary"></i>
+                <p>Financial Year</p>
             </a>
         </li>
     </ul>
@@ -417,7 +615,7 @@
 
         <!-- Library Members -->
         <li class="nav-item">
-            <a href="{{ route('libraryMembers.index') }}" class="nav-link {{ Request::is('library-members*') ? 'active' : '' }}">
+            <a href="{{ route('library-members.index') }}" class="nav-link {{ Request::is('library-members*') ? 'active' : '' }}">
                 <i class="fas fa-users-cog nav-icon text-primary"></i>
                 <p>Library Members</p>
             </a>
@@ -522,9 +720,9 @@
 </li>
 
 <!-- Hostel Management -->
-<li class="nav-item has-treeview {{ Request::is('hostels*') || Request::is('hostel-rooms*') || Request::is('hostel-allocations*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('hostels*') || Request::is('hostel-rooms*') || Request::is('hostel-allocations*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-home text-warning"></i>
+<li class="nav-item has-treeview {{ Request::is('hostel*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('hostel*') ? 'active' : '' }}">
+        <i class="nav-icon fas fa-hotel text-warning"></i>
         <p>
             Hostel Management
             <i class="right fas fa-angle-left"></i>
@@ -532,29 +730,41 @@
     </a>
     <ul class="nav nav-treeview">
         <li class="nav-item">
+            <a href="{{ route('hostel.dashboard') }}" class="nav-link {{ Request::is('hostel/dashboard') ? 'active' : '' }}">
+                <i class="fas fa-tachometer-alt nav-icon text-warning"></i>
+                <p>Dashboard</p>
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="{{ route('hostels.index') }}" class="nav-link {{ Request::is('hostels*') ? 'active' : '' }}">
-                <i class="far fa-building nav-icon text-warning"></i>
+                <i class="fas fa-building nav-icon text-warning"></i>
                 <p>Hostels</p>
             </a>
         </li>
         <li class="nav-item">
             <a href="{{ route('hostel-rooms.index') }}" class="nav-link {{ Request::is('hostel-rooms*') ? 'active' : '' }}">
-                <i class="far fa-bed nav-icon text-warning"></i>
-                <p>Hostel Rooms</p>
+                <i class="fas fa-bed nav-icon text-warning"></i>
+                <p>Rooms</p>
             </a>
         </li>
         <li class="nav-item">
             <a href="{{ route('hostel-allocations.index') }}" class="nav-link {{ Request::is('hostel-allocations*') ? 'active' : '' }}">
-                <i class="far fa-user-check nav-icon text-warning"></i>
-                <p>Hostel Allocations</p>
+                <i class="fas fa-user-check nav-icon text-warning"></i>
+                <p>Allocations</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('hostel.reports') }}" class="nav-link {{ Request::is('hostel/reports*') ? 'active' : '' }}">
+                <i class="fas fa-file-alt nav-icon text-warning"></i>
+                <p>Reports</p>
             </a>
         </li>
     </ul>
 </li>
 
 <!-- Transportation -->
-<li class="nav-item has-treeview {{ Request::is('routes*') || Request::is('route-stops*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('routes*') || Request::is('route-stops*') ? 'active' : '' }}">
+<li class="nav-item has-treeview {{ Request::is('transportation*') || Request::is('routes*') || Request::is('route-stops*') || Request::is('student-transport-assignments*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('transportation*') || Request::is('routes*') || Request::is('route-stops*') || Request::is('student-transport-assignments*') ? 'active' : '' }}">
         <i class="nav-icon fas fa-bus text-danger"></i>
         <p>
             Transportation
@@ -563,15 +773,33 @@
     </a>
     <ul class="nav nav-treeview">
         <li class="nav-item">
+            <a href="{{ route('transportation.dashboard') }}" class="nav-link {{ Request::is('transportation/dashboard') ? 'active' : '' }}">
+                <i class="fas fa-tachometer-alt nav-icon text-danger"></i>
+                <p>Dashboard</p>
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="{{ route('routes.index') }}" class="nav-link {{ Request::is('routes*') ? 'active' : '' }}">
-                <i class="far fa-route nav-icon text-danger"></i>
+                <i class="fas fa-route nav-icon text-danger"></i>
                 <p>Routes</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('route-stops.index') }}" class="nav-link {{ Request::is('route-stops*') ? 'active' : '' }}">
-                <i class="far fa-map-marker-alt nav-icon text-danger"></i>
+            <a href="{{ route('routeStops.index') }}" class="nav-link {{ Request::is('route-stops*') ? 'active' : '' }}">
+                <i class="fas fa-map-marker-alt nav-icon text-danger"></i>
                 <p>Route Stops</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('student-transport-assignments.index') }}" class="nav-link {{ Request::is('student-transport-assignments*') ? 'active' : '' }}">
+                <i class="fas fa-user-check nav-icon text-danger"></i>
+                <p>Assignment</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('transportation.reports.index') }}" class="nav-link {{ Request::is('transportation/reports*') ? 'active' : '' }}">
+                <i class="fas fa-file-invoice nav-icon text-danger"></i>
+                <p>Reports</p>
             </a>
         </li>
     </ul>

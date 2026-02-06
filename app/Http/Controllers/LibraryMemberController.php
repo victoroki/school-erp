@@ -69,7 +69,7 @@ class LibraryMemberController extends AppBaseController
 
         Flash::success('Library Member saved successfully.');
 
-        return redirect(route('libraryMembers.index'));
+        return redirect(route('library-members.index'));
     }
 
     /**
@@ -82,7 +82,7 @@ class LibraryMemberController extends AppBaseController
         if (empty($libraryMember)) {
             Flash::error('Library Member not found');
 
-            return redirect(route('libraryMembers.index'));
+            return redirect(route('library-members.index'));
         }
 
         return view('library_members.show')->with('libraryMember', $libraryMember);
@@ -98,7 +98,7 @@ class LibraryMemberController extends AppBaseController
         if (empty($libraryMember)) {
             Flash::error('Library Member not found');
 
-            return redirect(route('libraryMembers.index'));
+            return redirect(route('library-members.index'));
         }
 
         return view('library_members.edit')->with('libraryMember', $libraryMember);
@@ -114,14 +114,14 @@ class LibraryMemberController extends AppBaseController
         if (empty($libraryMember)) {
             Flash::error('Library Member not found');
 
-            return redirect(route('libraryMembers.index'));
+            return redirect(route('library-members.index'));
         }
 
         $libraryMember = $this->libraryMemberRepository->update($request->all(), $id);
 
         Flash::success('Library Member updated successfully.');
 
-        return redirect(route('libraryMembers.index'));
+        return redirect(route('library-members.index'));
     }
 
     /**
@@ -136,13 +136,13 @@ class LibraryMemberController extends AppBaseController
         if (empty($libraryMember)) {
             Flash::error('Library Member not found');
 
-            return redirect(route('libraryMembers.index'));
+            return redirect(route('library-members.index'));
         }
 
         $this->libraryMemberRepository->delete($id);
 
         Flash::success('Library Member deleted successfully.');
 
-        return redirect(route('libraryMembers.index'));
+        return redirect(route('library-members.index'));
     }
 }

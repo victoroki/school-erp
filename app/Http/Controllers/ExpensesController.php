@@ -5,121 +5,152 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateExpensesRequest;
 use App\Http\Requests\UpdateExpensesRequest;
 use App\Http\Controllers\AppBaseController;
-use App\Repositories\ExpensesRepository;
+use App\Models\Expenses;
+use App\Models\ExpenseCategory;
+use App\Models\BankAccount;
+use App\Models\Supplier;
+use App\Models\Staff;
 use Illuminate\Http\Request;
 use Flash;
 
 class ExpensesController extends AppBaseController
 {
-    /** @var ExpensesRepository $expensesRepository*/
-    private $expensesRepository;
-
-    public function __construct(ExpensesRepository $expensesRepo)
-    {
-        $this->expensesRepository = $expensesRepo;
-    }
-
-    /**
-     * Display a listing of the Expenses.
-     */
     public function index(Request $request)
     {
-        $expenses = $this->expensesRepository->paginate(10);
+        $query = Expenses::with(['category', 'bankAccount', 'requestedBy', 'approvedBy']);
 
-        return view('expenses.index')
-            ->with('expenses', $expenses);
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        $expenses = $query->latest('expense_date')->paginate(15);
+        $categories = ExpenseCategory::pluck('name', 'category_id');
+
+        return view('expenses.index', compact('expenses', 'categories'));
     }
 
-    /**
-     * Show the form for creating a new Expenses.
-     */
+    public function pending()
+    {
+        $expenses = Expenses::with(['category', 'requestedBy'])
+            ->where('status', 'pending')
+            ->latest()
+            ->paginate(15);
+            
+        return view('expenses.pending', compact('expenses'));
+    }
+
     public function create()
     {
-        return view('expenses.create');
+        $categories = ExpenseCategory::pluck('name', 'category_id');
+        $bankAccounts = BankAccount::where('status', 'active')->get()->pluck('account_name', 'account_id');
+        $suppliers = Supplier::pluck('name', 'supplier_id');
+        $staff = Staff::select('staff_id', 'first_name', 'last_name')->get()->mapWithKeys(function ($item) {
+            return [$item->staff_id => $item->first_name . ' ' . $item->last_name];
+        });
+
+        return view('expenses.create', compact('categories', 'bankAccounts', 'suppliers', 'staff'));
     }
 
-    /**
-     * Store a newly created Expenses in storage.
-     */
     public function store(CreateExpensesRequest $request)
     {
         $input = $request->all();
+        $input['created_by'] = auth()->id();
+        
+        // Default status is pending for normal users, maybe approved for admins
+        $input['status'] = 'pending';
 
-        $expenses = $this->expensesRepository->create($input);
+        if ($request->hasFile('attachment')) {
+            $path = $request->file('attachment')->store('expense_attachments', 'public');
+            $input['attachment'] = $path;
+        }
 
-        Flash::success('Expenses saved successfully.');
+        $expenses = Expenses::create($input);
+
+        Flash::success('Expense request submitted and is pending approval.');
 
         return redirect(route('expenses.index'));
     }
 
-    /**
-     * Display the specified Expenses.
-     */
     public function show($id)
     {
-        $expenses = $this->expensesRepository->find($id);
+        $expenses = Expenses::with(['category', 'bankAccount', 'supplier', 'requestedBy', 'approvedBy', 'createdBy'])->find($id);
 
         if (empty($expenses)) {
             Flash::error('Expenses not found');
-
             return redirect(route('expenses.index'));
         }
 
-        return view('expenses.show')->with('expenses', $expenses);
+        return view('expenses.show', compact('expenses'));
     }
 
-    /**
-     * Show the form for editing the specified Expenses.
-     */
-    public function edit($id)
+    public function approve(Request $request, $id)
     {
-        $expenses = $this->expensesRepository->find($id);
-
-        if (empty($expenses)) {
-            Flash::error('Expenses not found');
-
-            return redirect(route('expenses.index'));
+        $expense = Expenses::find($id);
+        if (empty($expense)) {
+            Flash::error('Expense not found');
+            return redirect()->back();
         }
 
-        return view('expenses.edit')->with('expenses', $expenses);
+        $expense->update([
+            'status' => 'approved',
+            'approved_by' => auth()->id()
+        ]);
+
+        Flash::success('Expense approved successfully.');
+        return redirect()->back();
     }
 
-    /**
-     * Update the specified Expenses in storage.
-     */
-    public function update($id, UpdateExpensesRequest $request)
+    public function markAsPaid(Request $request, $id)
     {
-        $expenses = $this->expensesRepository->find($id);
-
-        if (empty($expenses)) {
-            Flash::error('Expenses not found');
-
-            return redirect(route('expenses.index'));
+        $expense = Expenses::find($id);
+        if (empty($expense)) {
+            Flash::error('Expense not found');
+            return redirect()->back();
         }
 
-        $expenses = $this->expensesRepository->update($request->all(), $id);
+        if (!$expense->bank_account_id && $expense->payment_method !== 'cash') {
+            Flash::error('Please assign a bank account before marking as paid.');
+            return redirect()->back();
+        }
 
-        Flash::success('Expenses updated successfully.');
+        $expense->update([
+            'status' => 'paid',
+            'payment_date' => now()
+        ]);
 
-        return redirect(route('expenses.index'));
+        // Deduct from bank account
+        if ($expense->bank_account_id) {
+            $bankAccount = BankAccount::find($expense->bank_account_id);
+            if ($bankAccount) {
+                $bankAccount->decrement('current_balance', $expense->amount);
+            }
+        }
+
+        Flash::success('Expense marked as paid and bank balance updated.');
+        return redirect()->back();
     }
 
-    /**
-     * Remove the specified Expenses from storage.
-     *
-     * @throws \Exception
-     */
     public function destroy($id)
     {
-        $expenses = $this->expensesRepository->find($id);
+        $expenses = Expenses::find($id);
 
         if (empty($expenses)) {
             Flash::error('Expenses not found');
-
             return redirect(route('expenses.index'));
         }
 
-        $this->expensesRepository->delete($id);
+        // If it was already paid, reverse the bank balance update
+        if ($expenses->status === 'paid' && $expenses->bank_account_id) {
+            $bankAccount = BankAccount::find($expenses->bank_account_id);
+            if ($bankAccount) {
+                $bankAccount->increment('current_balance', $expenses->amount);
+            }
+        }
+
+        $expenses->delete();
 
         Flash::success('Expenses deleted successfully.');
 

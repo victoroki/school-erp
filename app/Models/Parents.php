@@ -52,4 +52,41 @@ class Parents extends Model
     {
         return $this->belongsToMany(\App\Models\Student::class, 'student_parent_relationship', 'parent_id', 'student_id');
     }
+
+    /**
+     * Kenyan Phone Formatting
+     */
+    public function formatKenyanPhone($phone)
+    {
+        if (!$phone) return null;
+        
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        
+        if (str_starts_with($phone, '0')) {
+            $phone = '254' . substr($phone, 1);
+        } elseif (str_starts_with($phone, '7') || str_starts_with($phone, '1')) {
+            $phone = '254' . $phone;
+        }
+        
+        if (strlen($phone) == 12) {
+            return '+' . substr($phone, 0, 3) . ' ' . substr($phone, 3, 3) . ' ' . substr($phone, 6, 3) . ' ' . substr($phone, 9);
+        }
+        
+        return '+' . $phone;
+    }
+
+    public function getFormattedPhoneAttribute()
+    {
+        return $this->formatKenyanPhone($this->phone) ?? 'N/A';
+    }
+
+    public function getFormattedAlternatePhoneAttribute()
+    {
+        return $this->formatKenyanPhone($this->alternate_phone) ?? 'N/A';
+    }
+
+    public function getFullNameAttribute()
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
 }

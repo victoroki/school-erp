@@ -1,42 +1,50 @@
 <div class="card-body p-0">
     <div class="table-responsive">
-        <table class="table" id="parents-table">
-            <thead>
+        <table class="table table-hover align-middle" id="parents-table">
+            <thead class="bg-light">
             <tr>
-                <th>First Name</th>
-                <th>Last Name</th>
+                <th>Parent Name</th>
                 <th>Relationship</th>
                 <th>Email</th>
-                <th>Phone</th>
-                <th>Alternate Phone</th>
+                <th>Phone Numbers</th>
                 <th>Occupation</th>
-                <th colspan="3">Action</th>
+                <th class="text-right pr-4">Action</th>
             </tr>
             </thead>
             <tbody>
-            @foreach($parents as $parents)
+            @foreach($parents as $parent)
                 <tr>
-                    <td>{{ $parents->first_name }}</td>
-                    <td>{{ $parents->last_name }}</td>
-                    <td>{{ $parents->relationship }}</td>
-                    <td>{{ $parents->email }}</td>
-                    <td>{{ $parents->phone }}</td>
-                    <td>{{ $parents->alternate_phone }}</td>
-                    <td>{{ $parents->occupation }}</td>
-                    <td  style="width: 120px">
-                        {!! Form::open(['route' => ['parents.destroy', $parents->parent_id], 'method' => 'delete']) !!}
-                        <div class='btn-group'>
-                            <a href="{{ route('parents.show', [$parents->parent_id]) }}"
-                               class='btn btn-default btn-xs'>
-                                <i class="far fa-eye"></i>
+                    <td>
+                        <div class="font-weight-bold">{{ $parent->full_name }}</div>
+                    </td>
+                    <td class="text-capitalize">{{ $parent->relationship }}</td>
+                    <td>{{ $parent->email ?? 'N/A' }}</td>
+                    <td>
+                        <div><i class="fas fa-phone mr-1 text-success small"></i> {{ $parent->formatted_phone }}</div>
+                        @if($parent->alternate_phone)
+                            <div class="small text-muted"><i class="fas fa-phone mr-1 small"></i> {{ $parent->formatted_alternate_phone }}</div>
+                        @endif
+                    </td>
+                    <td>{{ $parent->occupation ?? 'N/A' }}</td>
+                    <td class="text-right pr-4">
+                        <div class='btn-group shadow-sm'>
+                            <a href="{{ route('parents.show', [$parent->parent_id]) }}"
+                               class='btn btn-light btn-sm border' title="View">
+                                <i class="far fa-eye text-primary"></i>
                             </a>
-                            <a href="{{ route('parents.edit', [$parents->parent_id]) }}"
-                               class='btn btn-default btn-xs'>
-                                <i class="far fa-edit"></i>
+                            <a href="{{ route('parents.edit', [$parent->parent_id]) }}"
+                               class='btn btn-light btn-sm border' title="Edit">
+                                <i class="far fa-edit text-secondary"></i>
                             </a>
-                            {!! Form::button('<i class="far fa-trash-alt"></i>', ['type' => 'submit', 'class' => 'btn btn-danger btn-xs', 'onclick' => "return confirm('Are you sure?')"]) !!}
+                            <button type="button" class="btn btn-light btn-sm border text-danger" 
+                                    onclick="if(confirm('Are you sure?')) document.getElementById('delete-parent-{{ $parent->parent_id }}').submit()" title="Delete">
+                                <i class="far fa-trash-alt"></i>
+                            </button>
                         </div>
-                        {!! Form::close() !!}
+                        <form id="delete-parent-{{ $parent->parent_id }}" action="{{ route('parents.destroy', $parent->parent_id) }}" method="POST" style="display:none">
+                            @csrf
+                            @method('DELETE')
+                        </form>
                     </td>
                 </tr>
             @endforeach
@@ -44,8 +52,13 @@
         </table>
     </div>
 
-    <div class="card-footer clearfix">
-
+    <div class="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center">
+        <div class="small text-muted">
+            Showing {{ $parents->firstItem() }} to {{ $parents->lastItem() }} of {{ $parents->total() }} parents
+        </div>
+        <div>
+            {{ $parents->links() }}
+        </div>
     </div>
 </div>
 <style>

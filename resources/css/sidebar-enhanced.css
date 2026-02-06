@@ -1,0 +1,65 @@
+/* sidebar-enhanced.css
+ * Minimal responsive tweaks for the sidebar to avoid extra spacing
+ * and improve small-screen layout. Keep changes conservative so AdminLTE
+ * treeview/pushmenu behavior remains intact.
+ */
+
+.brand-container {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+}
+
+.brand-logo-hex {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.brand-info {
+    margin-left: 0.5rem;
+}
+
+.brand-title {
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.brand-subtitle {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.8);
+    line-height: 1;
+}
+
+.sidebar-search-container {
+    padding: 0.5rem 1rem;
+}
+
+.sidebar {
+    padding-top: 0;
+    overflow-y: auto;
+}
+
+.sidebar-user-panel {
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Small screen adjustments */
+@media (max-width: 768px) {
+    /* Hide brand text to reduce sidebar horizontal footprint on narrow screens */
+    .brand-info { display: none; }
+
+    /* Reduce padding around search/user areas */
+    .sidebar-search-container,
+    .sidebar-user-panel { padding: 0.25rem 0.5rem; }
+
+    /* Ensure the sidebar overlays cleanly over content when toggled */
+    .main-sidebar { z-index: 1030; }
+}

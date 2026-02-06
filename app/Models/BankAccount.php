@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class BankAccount extends Model
 {
     public $table = 'bank_accounts';
+    protected $primaryKey = 'account_id';
 
     public $fillable = [
         'account_name',
@@ -16,7 +17,12 @@ class BankAccount extends Model
         'ifsc_code',
         'opening_balance',
         'current_balance',
-        'account_type'
+        'account_type',
+        'account_holder',
+        'minimum_balance',
+        'interest_rate',
+        'currency',
+        'status'
     ];
 
     protected $casts = [
@@ -27,13 +33,15 @@ class BankAccount extends Model
         'ifsc_code' => 'string',
         'opening_balance' => 'decimal:2',
         'current_balance' => 'decimal:2',
-        'account_type' => 'string'
+        'account_type' => 'string',
+        'account_holder' => 'string',
+        'minimum_balance' => 'decimal:2',
+        'interest_rate' => 'decimal:2',
+        'currency' => 'string',
+        'status' => 'string'
     ];
 
     public static array $rules = [
-        'account_name' => 'required|string|max:100',
-        'account_number' => 'required|string|max:50',
-        'bank_name' => 'required|string|max:100',
         'branch_name' => 'nullable|string|max:100',
         'ifsc_code' => 'nullable|string|max:20',
         'opening_balance' => 'required|numeric',

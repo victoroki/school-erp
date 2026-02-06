@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,6 +14,12 @@ use Illuminate\Support\Facades\Route;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+
+// Route to clear cache on deployment
+Route::get('/clear-all-cache', function() {
+    Artisan::call('optimize:clear');
+    return "<h1>All Cache Cleared Successfully</h1>";
+});
 
 // Redirect root to login if not authenticated, otherwise to dashboard
 Route::get('/', function () {
@@ -46,14 +53,12 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('book-categories', App\Http\Controllers\BookCategoryController::class);
     Route::resource('inventory-categories', App\Http\Controllers\InventoryCategoryController::class);
     Route::resource('suppliers', App\Http\Controllers\SupplierController::class);
-    Route::resource('expense-categories', App\Http\Controllers\ExpenseCategoryController::class);
-    Route::resource('income-categories', App\Http\Controllers\IncomeCategoryController::class);
     Route::resource('bank-accounts', App\Http\Controllers\BankAccountController::class);
     Route::resource('job-positions', App\Http\Controllers\JobPositionController::class);
     Route::resource('leave-types', App\Http\Controllers\LeaveTypeController::class);
-    Route::resource('sms-templates', App\Http\Controllers\SmsTemplateController::class);
+    Route::resource('sms-templates', App\Http\Controllers\SmsTemplateController::class)->names('smsTemplates');
+    Route::resource('email-templates', App\Http\Controllers\EmailTemplateController::class)->names('emailTemplates');
     Route::resource('users', App\Http\Controllers\UserController::class);
-    Route::resource('email-templates', App\Http\Controllers\EmailTemplateController::class);
     Route::resource('student-parent-relationships', App\Http\Controllers\StudentParentRelationshipController::class);
     Route::resource('student-documents', App\Http\Controllers\StudentDocumentController::class);
     Route::get('student-documents/{id}/download', [App\Http\Controllers\StudentDocumentController::class, 'download'])->name('student-documents.download');
@@ -63,6 +68,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('teacher-subjects', App\Http\Controllers\TeacherSubjectController::class);
     Route::resource('exams', App\Http\Controllers\ExamController::class);
     Route::resource('exam-schedules', App\Http\Controllers\ExamScheduleController::class);
+    Route::get('exam-results/bulk', [App\Http\Controllers\ExamResultController::class, 'bulk'])->name('exam-results.bulk');
+    Route::post('exam-results/bulk', [App\Http\Controllers\ExamResultController::class, 'postBulk'])->name('exam-results.bulk.store');
     Route::resource('exam-results', App\Http\Controllers\ExamResultController::class);
     Route::resource('fee-structures', App\Http\Controllers\FeeStructureController::class);
     Route::resource('student-fee-discounts', App\Http\Controllers\StudentFeeDiscountController::class);
@@ -94,27 +101,150 @@ Route::middleware(['auth'])->group(function () {
     });
     
     Route::resource('routes', App\Http\Controllers\RouteController::class);
-    Route::resource('route-stops', App\Http\Controllers\RouteStopController::class);
+    Route::resource('route-stops', App\Http\Controllers\RouteStopController::class)->names('routeStops');
     Route::resource('vehicles', App\Http\Controllers\VehicleController::class);
     Route::resource('transport-assignments', App\Http\Controllers\TransportAssignmentController::class);
     Route::resource('transport-registrations', App\Http\Controllers\TransportRegistrationController::class);
+    Route::resource('student-transport-assignments', App\Http\Controllers\StudentTransportAssignmentController::class);
+    Route::get('api/routes/{routeId}/stops', [App\Http\Controllers\StudentTransportAssignmentController::class, 'getStopsByRoute'])->name('api.routes.stops');
+    
+    Route::prefix('transportation')->name('transportation.')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\TransportDashboardController::class, 'index'])->name('dashboard');
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/', [App\Http\Controllers\TransportReportController::class, 'index'])->name('index');
+            Route::get('/route-wise', [App\Http\Controllers\TransportReportController::class, 'routeWiseStudentList'])->name('route-wise');
+            Route::get('/occupancy', [App\Http\Controllers\TransportReportController::class, 'occupancyReport'])->name('occupancy');
+        });
+    });
+
+    // Communication Management Routes
+    Route::prefix('communication')->name('communication.')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\CommunicationDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/compose', [App\Http\Controllers\CommunicationController::class, 'compose'])->name('compose');
+        Route::post('/send', [App\Http\Controllers\CommunicationController::class, 'send'])->name('send');
+        Route::get('/history', [App\Http\Controllers\CommunicationController::class, 'history'])->name('history.index');
+        Route::get('/history/{id}', [App\Http\Controllers\CommunicationController::class, 'showHistory'])->name('history.show');
+        Route::get('/api/template/{type}/{id}', [App\Http\Controllers\CommunicationController::class, 'getTemplate']);
+    });
+
     Route::resource('notifications', App\Http\Controllers\NotificationController::class);
     Route::resource('messages', App\Http\Controllers\MessageController::class);
     Route::resource('parents', App\Http\Controllers\ParentsController::class);
     Route::resource('hostels', App\Http\Controllers\HostelController::class);
-    Route::resource('hostel-allocations', App\Http\Controllers\HostelAllocationController::class);
+    Route::prefix('hostel')->name('hostel.')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\HostelDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/reports', [App\Http\Controllers\HostelReportController::class, 'index'])->name('reports');
+        Route::get('/vacancy-report', [App\Http\Controllers\HostelReportController::class, 'vacancyReport'])->name('vacancy-report');
+        Route::get('/student-list', [App\Http\Controllers\HostelReportController::class, 'studentList'])->name('student-list');
+    });
+    
     Route::resource('hostel-rooms', App\Http\Controllers\HostelRoomController::class);
+    Route::resource('hostel-allocations', App\Http\Controllers\HostelAllocationController::class);
+    Route::post('hostel-allocations/{id}/checkout', [App\Http\Controllers\HostelAllocationController::class, 'checkout'])->name('hostel-allocations.checkout');
+    Route::get('hostel-allocations/bulk', [App\Http\Controllers\HostelAllocationController::class, 'bulkForm'])->name('hostel-allocations.bulk-form');
+    Route::post('hostel-allocations/bulk', [App\Http\Controllers\HostelAllocationController::class, 'bulkStore'])->name('hostel-allocations.bulk-store');
+    Route::get('hostel-allocations/{id}/transfer', [App\Http\Controllers\HostelAllocationController::class, 'transferForm'])->name('hostel-allocations.transfer-form');
+    Route::post('hostel-allocations/{id}/transfer', [App\Http\Controllers\HostelAllocationController::class, 'transferStore'])->name('hostel-allocations.transfer-store');
     Route::resource('payrolls', App\Http\Controllers\PayrollController::class);
     Route::resource('expenses', App\Http\Controllers\ExpensesController::class);
-    Route::resource('expense-categories', App\Http\Controllers\ExpenseCategoriesController::class);
-    Route::resource('library-members', App\Http\Controllers\LibraryMemberController::class)->names('libraryMembers');
+    Route::get('expenses-pending', [App\Http\Controllers\ExpensesController::class, 'pending'])->name('expenses.pending');
+    Route::post('expenses/{id}/approve', [App\Http\Controllers\ExpensesController::class, 'approve'])->name('expenses.approve');
+    Route::post('expenses/{id}/pay', [App\Http\Controllers\ExpensesController::class, 'markAsPaid'])->name('expenses.pay');
+    
+    Route::resource('expense-categories', App\Http\Controllers\ExpenseCategoryController::class)->names('expenseCategories');
+    Route::resource('income-categories', App\Http\Controllers\IncomeCategoryController::class)->names('incomeCategories');
+    Route::resource('library-members', App\Http\Controllers\LibraryMemberController::class);
     Route::resource('students', App\Http\Controllers\StudentController::class);
     Route::resource('student-class-enrollments', App\Http\Controllers\StudentClassEnrollmentController::class);
     Route::resource('staff', App\Http\Controllers\StaffController::class);
+
+    // Financial Management Routes
+    Route::prefix('finance')->name('finance.')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\FinanceDashboardController::class, 'index'])->name('dashboard');
+    });
+
+    Route::resource('income', App\Http\Controllers\IncomeController::class);
+    Route::resource('bank-transactions', App\Http\Controllers\BankTransactionController::class);
+    Route::resource('bank-reconciliations', App\Http\Controllers\BankReconciliationController::class);
+    Route::resource('budgets', App\Http\Controllers\BudgetController::class);
+    Route::get('budget-vs-actual', [App\Http\Controllers\BudgetController::class, 'vsActual'])->name('budgets.vs-actual');
+    
+    Route::prefix('financial-reports')->name('financial-reports.')->group(function () {
+        Route::get('/', [App\Http\Controllers\FinancialReportController::class, 'index'])->name('index');
+        Route::get('/cashflow', [App\Http\Controllers\FinancialReportController::class, 'cashflow'])->name('cashflow');
+        Route::get('/p-and-l', [App\Http\Controllers\FinancialReportController::class, 'pAndL'])->name('p-and-l');
+    });
+
+    Route::resource('financial-years', App\Http\Controllers\FinancialYearController::class);
+    Route::get('audit-trail', [App\Http\Controllers\AuditTrailController::class, 'index'])->name('audit-trail.index');
+    
+    // Student Management Enhanced Routes
+    Route::get('student-dashboard', [App\Http\Controllers\StudentDashboardController::class, 'index'])->name('student-dashboard.index');
+    Route::resource('student-documents', App\Http\Controllers\StudentDocumentController::class);
+    Route::resource('student-parent-relationships', App\Http\Controllers\StudentParentRelationshipController::class);
+
+    // Attendance Routes
+    Route::get('student-attendance', [App\Http\Controllers\StudentAttendanceController::class, 'index'])->name('student-attendance.index');
+    Route::post('student-attendance', [App\Http\Controllers\StudentAttendanceController::class, 'store'])->name('student-attendance.store');
+    Route::get('student-attendance/report', [App\Http\Controllers\StudentAttendanceController::class, 'report'])->name('student-attendance.report');
+
+    // Promotion Routes
+    Route::get('student-promotion', [App\Http\Controllers\StudentPromotionController::class, 'index'])->name('student-promotion.index');
+    Route::post('student-promotion', [App\Http\Controllers\StudentPromotionController::class, 'store'])->name('student-promotion.store');
+
+    // ID Card Routes
+    Route::get('students/{id}/id-card', [App\Http\Controllers\StudentIdCardController::class, 'generate'])->name('students.id-card');
+    Route::post('students/bulk-id-cards', [App\Http\Controllers\StudentIdCardController::class, 'bulk'])->name('students.bulk-id-cards');
+
+    // Report Routes
+    Route::get('student-reports', [App\Http\Controllers\StudentReportController::class, 'index'])->name('student-reports.index');
+    Route::get('student-reports/strength', [App\Http\Controllers\StudentReportController::class, 'studentStrength'])->name('student-reports.strength');
+    Route::get('student-reports/gender', [App\Http\Controllers\StudentReportController::class, 'genderRatio'])->name('student-reports.gender');
+    Route::get('student-reports/attendance', [App\Http\Controllers\StudentReportController::class, 'attendanceSummary'])->name('student-reports.attendance');
+
+    // Import Routes
+    Route::get('students/import', [App\Http\Controllers\StudentImportController::class, 'index'])->name('students.import');
+    Route::post('students/import', [App\Http\Controllers\StudentImportController::class, 'store'])->name('students.import.store');
+    
+    // Logging & Incident Routes
+    Route::post('disciplinary-records', [App\Http\Controllers\DisciplinaryController::class, 'store'])->name('disciplinary-records.store');
+    Route::patch('disciplinary-records/{id}', [App\Http\Controllers\DisciplinaryController::class, 'update'])->name('disciplinary-records.update');
+    Route::post('medical-incidents', [App\Http\Controllers\MedicalIncidentController::class, 'store'])->name('medical-incidents.store');
+    
+    // Academic Management Enhanced Routes
+    Route::get('academic-dashboard', [App\Http\Controllers\AcademicDashboardController::class, 'index'])->name('academic-dashboard.index');
+    Route::get('timetables/teacher', [App\Http\Controllers\TimetableController::class, 'teacherTimetable'])->name('timetables.teacher');
+    Route::resource('academic-calendar', App\Http\Controllers\AcademicCalendarController::class);
+    Route::get('class-teachers', [App\Http\Controllers\ClassTeacherController::class, 'index'])->name('class-teachers.index');
+    Route::patch('class-teachers/{id}', [App\Http\Controllers\ClassTeacherController::class, 'update'])->name('class-teachers.update');
+    Route::get('teacher-workload', [App\Http\Controllers\TeacherWorkloadController::class, 'index'])->name('teacher-workload.index');
+    
     Route::resource('timetables', App\Http\Controllers\TimetableController::class);
     Route::get('fee-management', [App\Http\Controllers\FeeManagementController::class, 'index'])->name('fee-management.index');
     Route::get('fee-management/{id}', [App\Http\Controllers\FeeManagementController::class, 'show'])->name('fee-management.show');
     Route::get('fee-management/{id}/collect-payment', [App\Http\Controllers\FeeManagementController::class, 'collectPayment'])->name('fee-management.collect-payment');
     Route::post('fee-management/{id}/store-payment', [App\Http\Controllers\FeeManagementController::class, 'storePayment'])->name('fee-management.store-payment');
     Route::get('fee-management/{id}/print', [App\Http\Controllers\FeeManagementController::class, 'print'])->name('fee-management.print');
+
+    // Examination Management Enhanced Routes
+    Route::get('exam-dashboard', [App\Http\Controllers\ExamDashboardController::class, 'index'])->name('exam-dashboard.index');
+    Route::resource('assessment-types', App\Http\Controllers\AssessmentTypeController::class);
+    Route::resource('exam-rooms', App\Http\Controllers\ExamRoomController::class);
+    Route::get('grade-book', [App\Http\Controllers\GradeBookController::class, 'index'])->name('grade-book.index');
+    Route::get('mark-sheets', [App\Http\Controllers\MarkSheetController::class, 'index'])->name('mark-sheets.index');
+    Route::get('marks-approval', [App\Http\Controllers\MarksApprovalController::class, 'index'])->name('marks-approval.index');
+    Route::post('marks-approval/approve', [App\Http\Controllers\MarksApprovalController::class, 'approve'])->name('marks-approval.approve');
+    Route::get('cbc-assessments', [App\Http\Controllers\CompetencyAssessmentController::class, 'index'])->name('cbc-assessments.index');
+    Route::post('cbc-assessments', [App\Http\Controllers\CompetencyAssessmentController::class, 'store'])->name('cbc-assessments.store');
+    Route::get('exam-reports/individual/{exam_id}/{student_id}', [App\Http\Controllers\ExamReportController::class, 'individual'])->name('exam-reports.individual');
+    Route::get('exam-reports/generate', [App\Http\Controllers\ExamReportController::class, 'generate'])->name('exam-reports.generate');
+    Route::resource('report-card-templates', App\Http\Controllers\ReportCardTemplateController::class);
+    Route::get('bulk-report-cards', [App\Http\Controllers\ExamReportController::class, 'bulk'])->name('exam-reports.bulk');
+    Route::get('exam-analysis/performance', [App\Http\Controllers\ExamAnalysisController::class, 'performance'])->name('exam-analysis.performance');
+    Route::get('exam-analysis/subject', [App\Http\Controllers\ExamAnalysisController::class, 'subject'])->name('exam-analysis.subject');
+    Route::get('exam-analysis/rankings', [App\Http\Controllers\ExamAnalysisController::class, 'rankings'])->name('exam-analysis.rankings');
+    Route::resource('learning-areas', App\Http\Controllers\LearningAreaController::class);
+    Route::resource('strands', App\Http\Controllers\StrandController::class);
+    Route::resource('sub-strands', App\Http\Controllers\SubStrandController::class);
+    Route::get('competency-assessment', [App\Http\Controllers\CompetencyAssessmentController::class, 'index'])->name('competency-assessment.index');
 });

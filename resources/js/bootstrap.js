@@ -1,4 +1,8 @@
 import 'bootstrap';
+import $ from 'jquery';
+
+// Ensure jQuery is available globally for libraries that expect it (AdminLTE)
+window.$ = window.jQuery = $;
 
 /**
  * We'll load the axios HTTP library which allows us to easily issue requests
