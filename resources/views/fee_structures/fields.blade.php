@@ -31,10 +31,22 @@
         </div>
     </div>
 
+    <!-- Payment Frequency Field -->
+    <div class="form-group col-sm-6">
+        {!! Form::label('payment_frequency', 'Payment Frequency') !!}
+        {!! Form::select('payment_frequency', ['one-time' => 'One-time', 'termly' => 'Termly', 'monthly' => 'Monthly', 'custom' => 'Custom'], null, ['class' => 'form-control', 'required']) !!}
+    </div>
+
     <!-- Due Date Field -->
     <div class="form-group col-sm-6">
         {!! Form::label('due_date', 'Payment Due Date') !!}
         {!! Form::date('due_date', null, ['class' => 'form-control', 'id' => 'due_date', 'required']) !!}
+    </div>
+
+    <!-- Status Field -->
+    <div class="form-group col-sm-6">
+        {!! Form::label('status', 'Status') !!}
+        {!! Form::select('status', ['active' => 'Active', 'draft' => 'Draft', 'inactive' => 'Inactive', 'archived' => 'Archived'], 'active', ['class' => 'form-control', 'required']) !!}
     </div>
 
     @if(!isset($feeStructure))

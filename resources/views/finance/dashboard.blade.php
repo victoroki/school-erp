@@ -300,7 +300,7 @@
     </style>
 @endsection
 
-@section('scripts')
+@push('page_scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         $(function () {
@@ -370,4 +370,4 @@
             });
         });
     </script>
-@endsection
+@endpush

@@ -9,9 +9,12 @@ class EmailTemplateRepository extends BaseRepository
 {
     protected $fieldSearchable = [
         'title',
+        'category',
         'subject',
         'content',
-        'variables'
+        'variables',
+        'status',
+        'created_by'
     ];
 
     public function getFieldsSearchable(): array

@@ -10,6 +10,24 @@ use Auth;
 
 class DisciplinaryController extends Controller
 {
+    public function index()
+    {
+        $disciplinaryRecords = DisciplinaryRecord::with(['student', 'reporter'])
+            ->orderBy('incident_date', 'desc')
+            ->paginate(15);
+
+        return view('disciplinary_records.index', compact('disciplinaryRecords'));
+    }
+
+    public function create()
+    {
+        $students = Student::orderBy('first_name')->get()
+            ->mapWithKeys(fn($s) => [$s->student_id => "$s->first_name $s->last_name ($s->admission_no)"])
+            ->toArray();
+            
+        return view('disciplinary_records.create', compact('students'));
+    }
+
     public function store(Request $request)
     {
         $request->validate([

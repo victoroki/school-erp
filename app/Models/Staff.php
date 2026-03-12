@@ -3,84 +3,99 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Staff extends Model
 {
+    use SoftDeletes;
+
     public $table = 'staff';
     protected $primaryKey = 'staff_id';
 
     public $fillable = [
         'user_id',
-        'employee_id',
+        'employee_number',
         'first_name',
         'middle_name',
         'last_name',
+        'national_id_number',
+        'passport_number',
         'date_of_birth',
         'gender',
-        'joining_date',
+        'marital_status',
+        'nationality',
+        'religion',
+        'phone_primary',
+        'phone_secondary',
+        'personal_email',
+        'work_email',
+        'current_address',
+        'postal_address',
+        'city',
+        'county',
+        'country',
+        'emergency_contact_name',
+        'emergency_contact_relationship',
+        'emergency_contact_phone',
+        'blood_group',
+        'disability_status',
         'department_id',
+        'job_position_id',
+        'employment_type',
+        'employment_status',
+        'date_of_joining',
+        'contract_start_date',
+        'contract_end_date',
+        'probation_period_months',
+        'probation_end_date',
+        'confirmation_status',
+        'reporting_manager_id',
+        'work_location',
+        'work_schedule',
+        'tsc_number',
+        'kra_pin',
+        'nhif_number',
+        'nssf_number',
+        'basic_salary',
+        'salary_grade',
+        'bank_name',
+        'bank_branch',
+        'account_number',
+        'account_name',
+        'annual_leave_entitlement',
+        'photo_url',
+        'staff_type',
         'designation',
         'qualification',
         'experience',
-        'email',
-        'phone',
-        'address',
-        'city',
-        'country',
-        'photo_url',
-        'staff_type',
-        'status'
+        'exit_date',
+        'exit_reason',
+        'notes',
+        'created_by',
+        'updated_by'
     ];
 
     protected $casts = [
-        'employee_id' => 'string',
-        'first_name' => 'string',
-        'middle_name' => 'string',
-        'last_name' => 'string',
         'date_of_birth' => 'date',
-        'gender' => 'string',
-        'joining_date' => 'date',
-        'designation' => 'string',
-        'qualification' => 'string',
-        'experience' => 'float',
-        'email' => 'string',
-        'phone' => 'string',
-        'address' => 'string',
-        'city' => 'string',
-        'country' => 'string',
-        'photo_url' => 'string',
-        'staff_type' => 'string',
-        'status' => 'string'
+        'date_of_joining' => 'date',
+        'contract_start_date' => 'date',
+        'contract_end_date' => 'date',
+        'probation_end_date' => 'date',
+        'exit_date' => 'date',
+        'basic_salary' => 'decimal:2',
+        'annual_leave_entitlement' => 'integer',
+        'probation_period_months' => 'integer',
     ];
 
-    public static array $rules = [
-        'user_id' => 'nullable',
-        'employee_id' => 'required|string|max:20',
-        'first_name' => 'required|string|max:50',
-        'middle_name' => 'nullable|string|max:50',
-        'last_name' => 'required|string|max:50',
-        'date_of_birth' => 'required',
-        'gender' => 'required|string',
-        'joining_date' => 'required',
-        'department_id' => 'nullable',
-        'designation' => 'required|string|max:100',
-        'qualification' => 'nullable|string|max:255',
-        'experience' => 'nullable|numeric',
-        'email' => 'required|string|max:100',
-        'phone' => 'required|string|max:20',
-        'address' => 'required|string|max:65535',
-        'city' => 'required|string|max:50',
-        'country' => 'required|string|max:50',
-        'photo_url' => 'nullable|string|max:255',
-        'staff_type' => 'required|string',
-        'status' => 'nullable|string',
-        'created_at' => 'nullable',
-        'updated_at' => 'nullable'
-    ];
-
+    // Relationships
     public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(\App\Models\Department::class, 'department_id');
+    }
+
+    public function jobPosition(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\JobPosition::class, 'job_position_id');
     }
 
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -88,137 +103,194 @@ class Staff extends Model
         return $this->belongsTo(\App\Models\User::class, 'user_id');
     }
 
-    public function assignments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function reportingManager(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->hasMany(\App\Models\Assignment::class, 'teacher_id');
+        return $this->belongsTo(\App\Models\Staff::class, 'reporting_manager_id', 'staff_id');
     }
 
-    public function bankTransactions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function subordinates(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\BankTransaction::class, 'created_by');
+        return $this->hasMany(\App\Models\Staff::class, 'reporting_manager_id', 'staff_id');
     }
 
-    public function bookIssues(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function qualifications(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\BookIssue::class, 'received_by');
+        return $this->hasMany(\App\Models\StaffQualification::class, 'staff_id', 'staff_id');
     }
 
-    public function bookIssue1s(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function employmentHistory(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\BookIssue::class, 'issued_by');
+        return $this->hasMany(\App\Models\StaffEmploymentHistory::class, 'staff_id', 'staff_id');
     }
 
-    public function classSections(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function allowances(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\ClassSection::class, 'class_teacher_id');
+        return $this->hasMany(\App\Models\StaffAllowance::class, 'staff_id', 'staff_id')
+            ->where('status', 'active');
     }
 
-    public function examResults(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function deductions(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\ExamResult::class, 'created_by');
+        return $this->hasMany(\App\Models\StaffDeduction::class, 'staff_id', 'staff_id')
+            ->where('status', 'active');
     }
 
-    public function expenses(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function leaveApplications(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\Expense::class, 'created_by');
+        return $this->hasMany(\App\Models\LeaveApplication::class, 'staff_id', 'staff_id');
     }
 
-    public function expense2s(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function leaveBalances(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\Expense::class, 'approved_by');
+        return $this->hasMany(\App\Models\StaffLeaveBalance::class, 'staff_id', 'staff_id');
     }
 
-    public function studentFees(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function attendance(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->belongsToMany(\App\Models\StudentFee::class, 'fee_payments');
+        return $this->hasMany(\App\Models\StaffAttendance::class, 'staff_id', 'staff_id');
     }
 
-    public function hostels(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function documents(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\Hostel::class, 'warden_id');
+        return $this->hasMany(\App\Models\StaffDocument::class, 'staff_id', 'staff_id');
     }
 
-    public function incomeCategories(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function payrollDetails(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->belongsToMany(\App\Models\IncomeCategory::class, 'income');
+        return $this->hasMany(\App\Models\PayrollDetail::class, 'staff_id', 'staff_id');
     }
 
-    public function inventoryItems(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function onboardingChecklist(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->belongsToMany(\App\Models\InventoryItem::class, 'inventory_transactions');
+        return $this->hasMany(\App\Models\StaffOnboardingChecklist::class, 'staff_id', 'staff_id');
     }
 
-    public function staffSalaries(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function exitClearance(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
-        return $this->belongsToMany(\App\Models\StaffSalary::class, 'payroll');
+        return $this->hasOne(\App\Models\StaffExitClearance::class, 'staff_id', 'staff_id');
     }
 
+    // Legacy relationships (keep for backward compatibility)
     public function staffAttendances(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\StaffAttendance::class, 'staff_id');
-    }
-
-    public function staffAttendance3s(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(\App\Models\StaffAttendance::class, 'marked_by');
+        return $this->hasMany(\App\Models\StaffAttendance::class, 'staff_id', 'staff_id');
     }
 
     public function staffDocuments(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\StaffDocument::class, 'staff_id');
-    }
-
-    public function staffLeaves(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(\App\Models\StaffLeafe::class, 'approved_by');
-    }
-
-    public function staffLeafe4s(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(\App\Models\StaffLeafe::class, 'staff_id');
-    }
-
-    public function staffSalary5s(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(\App\Models\StaffSalary::class, 'staff_id');
-    }
-
-    public function studentAttendances(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(\App\Models\StudentAttendance::class, 'marked_by');
+        return $this->hasMany(\App\Models\StaffDocument::class, 'staff_id', 'staff_id');
     }
 
     public function teacherSubjects(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\TeacherSubject::class, 'staff_id');
+        return $this->hasMany(\App\Models\TeacherSubject::class, 'staff_id', 'staff_id');
+    }
+
+    public function classSections(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\ClassSection::class, 'class_teacher_id', 'staff_id');
     }
 
     public function timetables(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\Timetable::class, 'teacher_id');
+        return $this->hasMany(\App\Models\Timetable::class, 'teacher_id', 'staff_id');
     }
 
-    public function transportAssignments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    // Scopes
+    public function scopeActive($query)
     {
-        return $this->hasMany(\App\Models\TransportAssignment::class, 'driver_id');
+        return $query->where('employment_status', 'active');
     }
 
-    public function transportAssignment6s(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function scopeTeachers($query)
     {
-        return $this->hasMany(\App\Models\TransportAssignment::class, 'assistant_id');
+        return $query->where('staff_type', 'teaching');
     }
 
-    public function vehicles(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function scopeNonTeaching($query)
     {
-        return $this->hasMany(\App\Models\Vehicle::class, 'driver_id');
+        return $query->where('staff_type', 'non-teaching');
     }
+
+    public function scopeOnProbation($query)
+    {
+        return $query->where('confirmation_status', 'on_probation');
+    }
+
+    // Accessors
     public function getFullNameAttribute()
     {
         $names = array_filter([
             $this->first_name,
+            $this->middle_name,
             $this->last_name
         ]);
         
         return implode(' ', $names);
     }
+
+    public function getAgeAttribute()
+    {
+        if (!$this->date_of_birth) return null;
+        return $this->date_of_birth->age;
+    }
+
+    public function getTenureAttribute()
+    {
+        if (!$this->date_of_joining) return null;
+        
+        $diff = $this->date_of_joining->diff(now());
+        $years = $diff->y;
+        $months = $diff->m;
+        
+        if ($years > 0) {
+            return $years . ' year' . ($years > 1 ? 's' : '') . 
+                   ($months > 0 ? ', ' . $months . ' month' . ($months > 1 ? 's' : '') : '');
+        }
+        
+        return $months . ' month' . ($months > 1 ? 's' : '');
+    }
+
+    public function getTotalAllowancesAttribute()
+    {
+        return $this->allowances()->sum('amount');
+    }
+
+    public function getTotalDeductionsAttribute()
+    {
+        return $this->deductions()->sum('monthly_amount');
+    }
+
+    public function getGrossSalaryAttribute()
+    {
+        return $this->basic_salary + $this->total_allowances;
+    }
+
+    public function getIsOnProbationAttribute()
+    {
+        return $this->confirmation_status === 'on_probation';
+    }
+
+    public function getIsContractExpiringAttribute()
+    {
+        if (!$this->contract_end_date) return false;
+        return $this->contract_end_date->diffInDays(now()) <= 30;
+    }
+
+    // Validation Rules
+    public static array $rules = [
+        'employee_number' => 'required|string|max:20|unique:staff,employee_number',
+        'first_name' => 'required|string|max:50',
+        'last_name' => 'required|string|max:50',
+        'date_of_birth' => 'required|date|before:18 years ago',
+        'gender' => 'required|in:male,female,other',
+        'phone_primary' => 'required|string|max:20',
+        'work_email' => 'required|email|unique:staff,work_email',
+        'department_id' => 'required|exists:departments,department_id',
+        'job_position_id' => 'required|exists:job_positions,job_position_id',
+        'date_of_joining' => 'required|date',
+        'basic_salary' => 'required|numeric|min:0',
+        'employment_type' => 'required|in:full_time,part_time,contract,casual,intern',
+        'employment_status' => 'required|in:active,on_leave,suspended,terminated,resigned,retired',
+    ];
 }

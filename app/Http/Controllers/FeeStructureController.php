@@ -31,7 +31,7 @@ class FeeStructureController extends AppBaseController
     {
         $query = $this->feeStructureRepository->allQuery()
             ->with(['academicYear', 'schoolClass', 'category'])
-            ->withCount('students');
+            ->withCount('assignments');
 
         if ($request->has('class_id') && $request->class_id != '') {
             $query->where('class_id', $request->class_id);

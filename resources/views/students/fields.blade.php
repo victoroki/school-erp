@@ -252,9 +252,52 @@
             </div>
         </div>
     </div>
+
+    <!-- Section 5: Initial Enrollment (Optional) -->
+    @if(isset($classSections))
+    <div class="card card-outline card-info mb-4 shadow-sm">
+        <div class="card-header bg-white">
+            <h3 class="card-title text-info"><i class="fas fa-sign-in-alt mr-2"></i> Initial Class Enrollment (Optional)</h3>
+        </div>
+        <div class="card-body">
+            <p class="text-muted small mb-4">Complete this section if you want to enroll the student in a class immediately upon admission.</p>
+            <div class="row">
+                <div class="form-group col-sm-6">
+                    {!! Form::label('class_section_id', 'Class Section:') !!}
+                    {!! Form::select('class_section_id', ['' => 'Select Class Section'] + $classSections, null, ['class' => 'form-control select2']) !!}
+                </div>
+                <div class="form-group col-sm-3">
+                    {!! Form::label('academic_year_id', 'Academic Year:') !!}
+                    {!! Form::select('academic_year_id', ['' => 'Select Academic Year'] + $academicYears, null, ['class' => 'form-control select2']) !!}
+                </div>
+                <div class="form-group col-sm-3">
+                    {!! Form::label('roll_number_enrollment', 'Class Roll Number:') !!}
+                    {!! Form::text('roll_number_enrollment', null, ['class' => 'form-control', 'placeholder' => 'Optional']) !!}
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 </div>
 
+@push('page_css')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
+    <style>
+        .select2-container .select2-selection--single {
+            height: 38px !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 36px !important;
+        }
+    </style>
+@endpush
+
 @push('page_scripts')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function() {
         // Handle file input label
@@ -263,13 +306,13 @@
             $(this).next('.custom-file-label').addClass("selected").html(fileName);
         });
 
-        // Initialize Select2 if available
-        if (typeof $.fn.select2 !== 'undefined') {
-            $('.select2').select2({
-                theme: 'bootstrap4',
-                width: '100%'
-            });
-        }
+        // Initialize Select2
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            placeholder: "Select an option",
+            allowClear: true,
+            width: '100%'
+        });
     });
 </script>
 @endpush

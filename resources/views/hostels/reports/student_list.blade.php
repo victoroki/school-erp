@@ -31,12 +31,12 @@
                     <tbody>
                         @forelse($allocations as $allocation)
                             <tr>
-                                <td>{{ $allocation->student->student_id }}</td>
-                                <td>{{ $allocation->student->first_name }} {{ $allocation->student->last_name }}</td>
-                                <td>{{ ucfirst($allocation->student->gender) }}</td>
-                                <td>{{ $allocation->hostel->name }}</td>
-                                <td>{{ $allocation->room->room_number }}</td>
-                                <td>{{ $allocation->allocation_date->format('d M, Y') }}</td>
+                                <td>{{ optional($allocation->student)->student_id ?? 'N/A' }}</td>
+                                <td>{{ optional($allocation->student)->first_name ?? 'Unknown' }} {{ optional($allocation->student)->last_name ?? '' }}</td>
+                                <td>{{ optional($allocation->student)->gender ? ucfirst($allocation->student->gender) : 'N/A' }}</td>
+                                <td>{{ optional($allocation->hostel)->name ?? 'N/A' }}</td>
+                                <td>{{ optional($allocation->room)->room_number ?? 'N/A' }}</td>
+                                <td>{{ $allocation->allocation_date ? $allocation->allocation_date->format('d M, Y') : 'N/A' }}</td>
                             </tr>
                         @empty
                             <tr>

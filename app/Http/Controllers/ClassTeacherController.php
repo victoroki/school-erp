@@ -30,7 +30,7 @@ class ClassTeacherController extends Controller
             ->get();
 
         $teachers = Staff::where('staff_type', 'teaching')
-            ->where('status', 'active')
+            ->active()
             ->orderBy('first_name')
             ->get();
 

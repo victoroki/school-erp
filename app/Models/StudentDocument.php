@@ -8,7 +8,7 @@ class StudentDocument extends Model
 {
     public $table = 'student_documents';
     protected $primaryKey = 'document_id';
-    public $timestamps = true;
+    public $timestamps = false;
 
     public $fillable = [
         'student_id',

@@ -9,8 +9,8 @@
 
 <!-- User Management -->
 <li class="nav-item has-treeview {{ Request::is('users*') || Request::is('roles*') || Request::is('permissions*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('users*') || Request::is('roles*') || Request::is('permissions*') ? 'active' : '' }}">
-        <i class="nav-icon fas fa-users-cog text-success"></i>
+    <a href="#" class="nav-link {{ Request::is('users*') || Request::is('roles*') || Request::is('permissions*') ? 'active' : '' }}" data-tooltip="System Access Control">
+        <i class="nav-icon fas fa-user-shield text-indigo"></i>
         <p>
             User Management
             <i class="right fas fa-angle-left"></i>
@@ -19,24 +19,24 @@
     <ul class="nav nav-treeview">
         @can('users.index')
         <li class="nav-item">
-            <a href="{{ route('users.index') }}" class="nav-link {{ Request::is('users*') ? 'active' : '' }}" data-tooltip="Users">
-                <i class="far fa-user nav-icon text-success"></i>
+            <a href="{{ route('users.index') }}" class="nav-link {{ Request::is('users*') ? 'active' : '' }}" data-tooltip="Manage Users">
+                <i class="fas fa-users nav-icon text-indigo"></i>
                 <p>Users</p>
             </a>
         </li>
         @endcan
         @can('roles.index')
         <li class="nav-item">
-            <a href="{{ route('roles.index') }}" class="nav-link {{ Request::is('roles*') ? 'active' : '' }}" data-tooltip="Roles">
-                <i class="far fa-circle nav-icon text-success"></i>
+            <a href="{{ route('roles.index') }}" class="nav-link {{ Request::is('roles*') ? 'active' : '' }}" data-tooltip="Manage Roles">
+                <i class="fas fa-user-tag nav-icon text-indigo"></i>
                 <p>Roles</p>
             </a>
         </li>
         @endcan
         @can('permissions.index')
         <li class="nav-item">
-            <a href="{{ route('permissions.index') }}" class="nav-link {{ Request::is('permissions*') ? 'active' : '' }}" data-tooltip="Permissions">
-                <i class="far fa-circle nav-icon text-success"></i>
+            <a href="{{ route('permissions.index') }}" class="nav-link {{ Request::is('permissions*') ? 'active' : '' }}" data-tooltip="Manage Permissions">
+                <i class="fas fa-key nav-icon text-indigo"></i>
                 <p>Permissions</p>
             </a>
         </li>
@@ -163,8 +163,8 @@
 </li>
 
 <!-- Student Management -->
-<li class="nav-item has-treeview {{ Request::is('student-dashboard*') || Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('parents*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('student-dashboard*') || Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('parents*') ? 'active' : '' }}" data-tooltip="Student Management">
+<li class="nav-item has-treeview {{ Request::is('student-dashboard*') || Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('parents*') || Request::is('disciplinary-records*') || Request::is('medical-incidents*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('student-dashboard*') || Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('parents*') || Request::is('disciplinary-records*') || Request::is('medical-incidents*') ? 'active' : '' }}" data-tooltip="Student Management">
         <i class="nav-icon fas fa-user-graduate text-warning"></i>
         <p>
             Student Management
@@ -259,13 +259,13 @@
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link" data-tooltip="Disciplinary Records">
+            <a href="{{ route('disciplinary-records.index') }}" class="nav-link {{ Request::is('disciplinary-records*') ? 'active' : '' }}" data-tooltip="Disciplinary Records">
                 <i class="fas fa-gavel nav-icon text-warning"></i>
                 <p>Disciplinary Records</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link" data-tooltip="Medical Records">
+            <a href="{{ route('medical-incidents.index') }}" class="nav-link {{ Request::is('medical-incidents*') ? 'active' : '' }}" data-tooltip="Medical Records">
                 <i class="fas fa-notes-medical nav-icon text-warning"></i>
                 <p>Medical Records</p>
             </a>
@@ -540,8 +540,8 @@
 
 <li class="nav-header">GOVERNANCE</li>
 <!-- Human Resources -->
-<li class="nav-item has-treeview {{ Request::is('departments*') || Request::is('job-positions*') || Request::is('leave-types*') || Request::is('staff-documents*') || Request::is('payrolls*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('departments*') || Request::is('job-positions*') || Request::is('leave-types*') || Request::is('staff-documents*') || Request::is('payrolls*') ? 'active' : '' }}" data-tooltip="Human Resources">
+<li class="nav-item has-treeview {{ Request::is('hr*') || Request::is('departments*') || Request::is('job-positions*') || Request::is('leave-*') || Request::is('staff-*') || Request::is('payroll-*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('hr*') || Request::is('departments*') || Request::is('job-positions*') || Request::is('leave-*') || Request::is('staff-*') || Request::is('payroll-*') ? 'active' : '' }}" data-tooltip="Human Resources">
         <i class="nav-icon fas fa-user-tie text-secondary"></i>
         <p>
             Human Resources
@@ -549,6 +549,34 @@
         </p>
     </a>
     <ul class="nav nav-treeview">
+        <li class="nav-item">
+            <a href="{{ route('hr.dashboard') }}" class="nav-link {{ Request::is('hr/dashboard') ? 'active' : '' }}" data-tooltip="HR Dashboard">
+                <i class="fas fa-chart-line nav-icon text-secondary"></i>
+                <p>HR Dashboard</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-secondary">Staff Management</li>
+        <li class="nav-item">
+            <a href="{{ route('staff.index') }}" class="nav-link {{ Request::is('staff') || Request::is('staff/show*') ? 'active' : '' }}" data-tooltip="All Staff">
+                <i class="fas fa-users nav-icon text-secondary"></i>
+                <p>All Staff</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('hr.onboarding') }}" class="nav-link {{ Request::is('hr/onboarding*') ? 'active' : '' }}" data-tooltip="Staff Onboarding">
+                <i class="fas fa-user-plus nav-icon text-secondary"></i>
+                <p>Onboarding</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" data-tooltip="Staff Directory">
+                <i class="fas fa-address-book nav-icon text-secondary"></i>
+                <p>Staff Directory</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-secondary">Organization</li>
         <li class="nav-item">
             <a href="{{ route('departments.index') }}" class="nav-link {{ Request::is('departments*') ? 'active' : '' }}" data-tooltip="Departments">
                 <i class="far fa-building nav-icon text-secondary"></i>
@@ -561,6 +589,14 @@
                 <p>Job Positions</p>
             </a>
         </li>
+
+        <li class="nav-header small text-uppercase text-secondary">Time Off & Attendance</li>
+        <li class="nav-item">
+            <a href="{{ route('leave-applications.index') }}" class="nav-link {{ Request::is('leave-applications*') ? 'active' : '' }}" data-tooltip="Leave Applications">
+                <i class="fas fa-calendar-alt nav-icon text-secondary"></i>
+                <p>Leave Applications</p>
+            </a>
+        </li>
         <li class="nav-item">
             <a href="{{ route('leave-types.index') }}" class="nav-link {{ Request::is('leave-types*') ? 'active' : '' }}" data-tooltip="Leave Types">
                 <i class="far fa-calendar-times nav-icon text-secondary"></i>
@@ -568,21 +604,49 @@
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('staff.index') }}" class="nav-link {{ Request::is('staff*') ? 'active' : '' }}" data-tooltip="Staff">
-                <i class="nav-icon fas fa-work"></i>
-                <p>Staff</p>
+            <a href="{{ route('staff-attendance.index') }}" class="nav-link {{ Request::is('staff-attendance*') ? 'active' : '' }}" data-tooltip="Staff Attendance">
+                <i class="fas fa-calendar-check nav-icon text-secondary"></i>
+                <p>Attendance</p>
             </a>
         </li>
+
+        <li class="nav-header small text-uppercase text-secondary">Ops & Finance</li>
         <li class="nav-item">
             <a href="{{ route('staff-documents.index') }}" class="nav-link {{ Request::is('staff-documents*') ? 'active' : '' }}" data-tooltip="Staff Documents">
                 <i class="far fa-folder nav-icon text-secondary"></i>
-                <p>Staff Documents</p>
+                <p>Documents</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('payrolls.index') }}" class="nav-link {{ Request::is('payrolls*') ? 'active' : '' }}" data-tooltip="Payrolls">
-                <i class="far fa-money-check-alt nav-icon text-secondary"></i>
-                <p>Payrolls</p>
+            <a href="{{ route('payroll-processing.index') }}" class="nav-link {{ Request::is('payroll-processing*') ? 'active' : '' }}" data-tooltip="Payroll Processing">
+                <i class="fas fa-money-check-alt nav-icon text-secondary"></i>
+                <p>Payroll</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('hr.exit') }}" class="nav-link {{ Request::is('hr/exit*') ? 'active' : '' }}" data-tooltip="Exit Management">
+                <i class="fas fa-sign-out-alt nav-icon text-secondary"></i>
+                <p>Exit Management</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-secondary">Reports</li>
+        <li class="nav-item">
+            <a href="{{ route('hr.reports.headcount') }}" class="nav-link {{ Request::is('hr/reports/headcount*') ? 'active' : '' }}" data-tooltip="Headcount Report">
+                <i class="fas fa-users nav-icon text-secondary"></i>
+                <p>Headcount</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('hr.reports.leave') }}" class="nav-link {{ Request::is('hr/reports/leave*') ? 'active' : '' }}" data-tooltip="Leave Analytics">
+                <i class="fas fa-chart-bar nav-icon text-secondary"></i>
+                <p>Leave Analytics</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('hr.reports.payroll') }}" class="nav-link {{ Request::is('hr/reports/payroll*') ? 'active' : '' }}" data-tooltip="Payroll Analytics">
+                <i class="fas fa-chart-pie nav-icon text-secondary"></i>
+                <p>Payroll Analytics</p>
             </a>
         </li>
     </ul>
@@ -728,9 +792,9 @@
 </li>
 
 <!-- Fee Management -->
-<li class="nav-item has-treeview {{ Request::is('fee-categories*') || Request::is('fee-structures*') || Request::is('student-fee-discounts*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('fee-categories*') || Request::is('fee-structures*') || Request::is('student-fee-discounts*') ? 'active' : '' }}" data-tooltip="Fee Management">
-        <i class="nav-icon fas fa-money-bill-wave text-success"></i>
+<li class="nav-item has-treeview {{ Request::is('fees*') || Request::is('fee-*') || Request::is('student-fee-*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('fees*') || Request::is('fee-*') || Request::is('student-fee-*') ? 'active' : '' }}" data-tooltip="Fee Management System">
+        <i class="nav-icon fas fa-coins text-success"></i>
         <p>
             Fee Management
             <i class="right fas fa-angle-left"></i>
@@ -738,62 +802,75 @@
     </a>
     <ul class="nav nav-treeview">
         <li class="nav-item">
+            <a href="{{ route('fees.dashboard') }}" class="nav-link {{ Request::is('fees/dashboard') ? 'active' : '' }}" data-tooltip="Fee Dashboard">
+                <i class="fas fa-chart-pie nav-icon text-success"></i>
+                <p>Dashboard</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-success">Setup & Structure</li>
+        <li class="nav-item">
             <a href="{{ route('fee-categories.index') }}" class="nav-link {{ Request::is('fee-categories*') ? 'active' : '' }}" data-tooltip="Fee Categories">
-                <i class="far fa-tags nav-icon text-success"></i>
+                <i class="fas fa-tags nav-icon text-success"></i>
                 <p>Fee Categories</p>
             </a>
         </li>
         <li class="nav-item">
             <a href="{{ route('fee-structures.index') }}" class="nav-link {{ Request::is('fee-structures*') ? 'active' : '' }}" data-tooltip="Fee Structures">
-                <i class="far fa-table nav-icon text-success"></i>
+                <i class="fas fa-list-alt nav-icon text-success"></i>
                 <p>Fee Structures</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('student-fee-discounts.index') }}" class="nav-link {{ Request::is('student-fee-discounts*') ? 'active' : '' }}" data-tooltip="Student Fee Discounts">
-                <i class="far fa-percent nav-icon text-success"></i>
-                <p>Student Fee Discounts</p>
+            <a href="{{ route('fees.discounts.index') }}" class="nav-link {{ Request::is('fees/discounts*') ? 'active' : '' }}" data-tooltip="Discount Schemes">
+                <i class="fas fa-percent nav-icon text-success"></i>
+                <p>Discount Schemes</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-success">Operations</li>
+        <li class="nav-item">
+            <a href="{{ route('fees.assignments.index') }}" class="nav-link {{ Request::is('fees/assignments*') ? 'active' : '' }}" data-tooltip="Student Assignments">
+                <i class="fas fa-file-invoice-dollar nav-icon text-success"></i>
+                <p>Fee Assignments</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('fee-management.index') }}" class="nav-link {{ Request::is('fee-management*') ? 'active' : '' }}" data-tooltip="Collect Fees">
+                <i class="fas fa-cash-register nav-icon text-success"></i>
+                <p>Collect Fees</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-success">Reports</li>
+        <li class="nav-item">
+            <a href="{{ route('fees.reports.expected-revenue') }}" class="nav-link {{ Request::is('fees/reports/expected-revenue') ? 'active' : '' }}" data-tooltip="Revenue Forecast">
+                <i class="fas fa-chart-line nav-icon text-success"></i>
+                <p>Expected Revenue</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('fees.reports.assignment-status') }}" class="nav-link {{ Request::is('fees/reports/assignment-status*') ? 'active' : '' }}" data-tooltip="Payment Status">
+                <i class="fas fa-tasks nav-icon text-success"></i>
+                <p>Assignment Status</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('fees.reports.discount-summary') }}" class="nav-link {{ Request::is('fees/reports/discount-summary*') ? 'active' : '' }}" data-tooltip="Discounts Summary">
+                <i class="fas fa-percent nav-icon text-success"></i>
+                <p>Discount Summary</p>
             </a>
         </li>
     </ul>
 </li>
 
 
-<!-- Inventory Management -->
-<li class="nav-item has-treeview {{ Request::is('inventory-categories*') || Request::is('inventory-items*') || Request::is('suppliers*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('inventory-categories*') || Request::is('inventory-items*') || Request::is('suppliers*') ? 'active' : '' }}" data-tooltip="Inventory Management">
-        <i class="nav-icon fas fa-boxes text-info"></i>
-        <p>
-            Inventory Management
-            <i class="right fas fa-angle-left"></i>
-        </p>
-    </a>
-    <ul class="nav nav-treeview">
-        <li class="nav-item">
-            <a href="{{ route('inventory-categories.index') }}" class="nav-link {{ Request::is('inventory-categories*') ? 'active' : '' }}" data-tooltip="Inventory Categories">
-                <i class="far fa-list-alt nav-icon text-info"></i>
-                <p>Inventory Categories</p>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('inventory-items.index') }}" class="nav-link {{ Request::is('inventory-items*') ? 'active' : '' }}" data-tooltip="Inventory Items">
-                <i class="far fa-cube nav-icon text-info"></i>
-                <p>Inventory Items</p>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('suppliers.index') }}" class="nav-link {{ Request::is('suppliers*') ? 'active' : '' }}" data-tooltip="Suppliers">
-                <i class="far fa-truck nav-icon text-info"></i>
-                <p>Suppliers</p>
-            </a>
-        </li>
-    </ul>
-</li>
+
 
 <!-- Hostel Management -->
-<li class="nav-item has-treeview {{ Request::is('hostels*') || Request::is('hostel-rooms*') || Request::is('hostel-allocations*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('hostels*') || Request::is('hostel-rooms*') || Request::is('hostel-allocations*') ? 'active' : '' }}" data-tooltip="Hostel Management">
-        <i class="nav-icon fas fa-home text-warning"></i>
+<li class="nav-item has-treeview {{ Request::is('hostel*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('hostel*') ? 'active' : '' }}" data-tooltip="Hostel Management">
+        <i class="nav-icon fas fa-hotel text-warning"></i>
         <p>
             Hostel Management
             <i class="right fas fa-angle-left"></i>
@@ -801,30 +878,52 @@
     </a>
     <ul class="nav nav-treeview">
         <li class="nav-item">
-            <a href="{{ route('hostels.index') }}" class="nav-link {{ Request::is('hostels*') ? 'active' : '' }}" data-tooltip="Hostels">
-                <i class="far fa-building nav-icon text-warning"></i>
+            <a href="{{ route('hostel.dashboard') }}" class="nav-link {{ Request::is('hostel/dashboard') ? 'active' : '' }}" data-tooltip="Hostel Dashboard">
+                <i class="fas fa-chart-pie nav-icon text-warning"></i>
+                <p>Dashboard</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-warning">Accommodation</li>
+        <li class="nav-item">
+            <a href="{{ route('hostels.index') }}" class="nav-link {{ Request::is('hostels*') ? 'active' : '' }}" data-tooltip="Manage Hostels">
+                <i class="fas fa-building nav-icon text-warning"></i>
                 <p>Hostels</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('hostel-rooms.index') }}" class="nav-link {{ Request::is('hostel-rooms*') ? 'active' : '' }}" data-tooltip="Hostel Rooms">
-                <i class="far fa-bed nav-icon text-warning"></i>
+            <a href="{{ route('hostel-rooms.index') }}" class="nav-link {{ Request::is('hostel-rooms*') ? 'active' : '' }}" data-tooltip="Manage Rooms">
+                <i class="fas fa-door-open nav-icon text-warning"></i>
                 <p>Hostel Rooms</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('hostel-allocations.index') }}" class="nav-link {{ Request::is('hostel-allocations*') ? 'active' : '' }}" data-tooltip="Hostel Allocations">
-                <i class="far fa-user-check nav-icon text-warning"></i>
+            <a href="{{ route('hostel-allocations.index') }}" class="nav-link {{ Request::is('hostel-allocations*') ? 'active' : '' }}" data-tooltip="Manage Allocations">
+                <i class="fas fa-key nav-icon text-warning"></i>
                 <p>Hostel Allocations</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-warning">Reports</li>
+        <li class="nav-item">
+            <a href="{{ route('hostel.vacancy-report') }}" class="nav-link {{ Request::is('hostel/vacancy-report') ? 'active' : '' }}" data-tooltip="Vacancy Report">
+                <i class="fas fa-percentage nav-icon text-warning"></i>
+                <p>Vacancy Report</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('hostel.student-list') }}" class="nav-link {{ Request::is('hostel/student-list') ? 'active' : '' }}" data-tooltip="Hostel Students">
+                <i class="fas fa-list nav-icon text-warning"></i>
+                <p>Student List</p>
             </a>
         </li>
     </ul>
 </li>
 
 <!-- Transportation -->
-<li class="nav-item has-treeview {{ Request::is('routes*') || Request::is('route-stops*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('routes*') || Request::is('route-stops*') ? 'active' : '' }}" data-tooltip="Transportation">
-        <i class="nav-icon fas fa-bus text-danger"></i>
+<li class="nav-item has-treeview {{ Request::is('routes*') || Request::is('route-stops*') || Request::is('transportation*') || Request::is('vehicles*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('routes*') || Request::is('route-stops*') || Request::is('transportation*') || Request::is('vehicles*') ? 'active' : '' }}" data-tooltip="Transportation Management">
+        <i class="nav-icon fas fa-bus-alt text-danger"></i>
         <p>
             Transportation
             <i class="right fas fa-angle-left"></i>
@@ -832,21 +931,57 @@
     </a>
     <ul class="nav nav-treeview">
         <li class="nav-item">
-            <a href="{{ route('routes.index') }}" class="nav-link {{ Request::is('routes*') ? 'active' : '' }}" data-tooltip="Routes">
-                <i class="far fa-route nav-icon text-danger"></i>
+            <a href="{{ route('transportation.dashboard') }}" class="nav-link {{ Request::is('transportation/dashboard') ? 'active' : '' }}" data-tooltip="Transport Dashboard">
+                <i class="fas fa-chart-pie nav-icon text-danger"></i>
+                <p>Dashboard</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-danger">Fleet & Routes</li>
+        <li class="nav-item">
+            <a href="{{ route('routes.index') }}" class="nav-link {{ Request::is('routes*') ? 'active' : '' }}" data-tooltip="Manage Routes">
+                <i class="fas fa-route nav-icon text-danger"></i>
                 <p>Routes</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('route-stops.index') }}" class="nav-link {{ Request::is('route-stops*') ? 'active' : '' }}" data-tooltip="Route Stops">
-                <i class="far fa-map-marker-alt nav-icon text-danger"></i>
+            <a href="{{ route('routeStops.index') }}" class="nav-link {{ Request::is('route-stops*') ? 'active' : '' }}" data-tooltip="Manage Stops">
+                <i class="fas fa-map-marker-alt nav-icon text-danger"></i>
                 <p>Route Stops</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('vehicles.index') }}" class="nav-link {{ Request::is('vehicles*') ? 'active' : '' }}" data-tooltip="Manage Vehicles">
+                <i class="fas fa-shuttle-van nav-icon text-danger"></i>
+                <p>Vehicles</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-danger">Allocations</li>
+        <li class="nav-item">
+            <a href="{{ route('student-transport-assignments.index') }}" class="nav-link {{ Request::is('student-transport-assignments*') ? 'active' : '' }}" data-tooltip="Student Assignments">
+                <i class="fas fa-user-graduate nav-icon text-danger"></i>
+                <p>Student Assignments</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-danger">Reports</li>
+        <li class="nav-item">
+            <a href="{{ route('transportation.reports.route-wise') }}" class="nav-link {{ Request::is('transportation/reports/route-wise') ? 'active' : '' }}" data-tooltip="Route Student List">
+                <i class="fas fa-list-ol nav-icon text-danger"></i>
+                <p>Route Wise List</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('transportation.reports.occupancy') }}" class="nav-link {{ Request::is('transportation/reports/occupancy') ? 'active' : '' }}" data-tooltip="Occupancy Report">
+                <i class="fas fa-chair nav-icon text-danger"></i>
+                <p>Occupancy Report</p>
             </a>
         </li>
     </ul>
 </li>
 
-<!-- Communication -->
+{{-- <!-- Communication -->
 <li class="nav-item has-treeview {{ Request::is('sms-templates*') || Request::is('email-templates*') ? 'menu-open' : '' }}">
     <a href="#" class="nav-link {{ Request::is('sms-templates*') || Request::is('email-templates*') ? 'active' : '' }}" data-tooltip="Communication">
         <i class="nav-icon fas fa-comments text-secondary"></i>
@@ -869,4 +1004,4 @@
             </a>
         </li>
     </ul>
-</li>
+</li> --}}

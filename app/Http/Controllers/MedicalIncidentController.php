@@ -10,6 +10,24 @@ use Auth;
 
 class MedicalIncidentController extends Controller
 {
+    public function index()
+    {
+        $medicalIncidents = MedicalIncident::with(['student', 'marker'])
+            ->orderBy('incident_date', 'desc')
+            ->paginate(15);
+
+        return view('medical_incidents.index', compact('medicalIncidents'));
+    }
+
+    public function create()
+    {
+        $students = Student::orderBy('first_name')->get()
+            ->mapWithKeys(fn($s) => [$s->student_id => "$s->first_name $s->last_name ($s->admission_no)"])
+            ->toArray();
+            
+        return view('medical_incidents.create', compact('students'));
+    }
+
     public function store(Request $request)
     {
         $request->validate([

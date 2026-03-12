@@ -63,18 +63,18 @@
                                             @endif
                                         </td>
                                         <td class="text-right px-4">
-                                            {!! Form::open(['route' => ['class-teachers.update', $cs->class_section_id], 'method' => 'PATCH', 'class' => 'form-inline float-right']) !!}
-                                                <div class="input-group input-group-sm">
-                                                    <select name="teacher_id" class="form-control select2">
-                                                        <option value="">-- Unassign --</option>
+                                            {!! Form::open(['route' => ['class-teachers.update', $cs->class_section_id], 'method' => 'PATCH', 'class' => 'd-flex justify-content-end align-items-center']) !!}
+                                                <div class="input-group" style="width: 250px;">
+                                                    <select name="teacher_id" class="custom-select" onchange="this.form.submit()">
+                                                        <option value="">-- Select Teacher --</option>
                                                         @foreach($teachers as $teacher)
                                                             <option value="{{ $teacher->staff_id }}" {{ $cs->class_teacher_id == $teacher->staff_id ? 'selected' : '' }}>
-                                                                {{ $teacher->full_name }} ({{ $teacher->employee_id }})
+                                                                {{ $teacher->first_name }} {{ $teacher->last_name }} 
                                                             </option>
                                                         @endforeach
                                                     </select>
                                                     <div class="input-group-append">
-                                                        <button type="submit" class="btn btn-info">Update</button>
+                                                        <span class="input-group-text bg-white"><i class="fas fa-chalkboard-teacher text-muted"></i></span>
                                                     </div>
                                                 </div>
                                             {!! Form::close() !!}

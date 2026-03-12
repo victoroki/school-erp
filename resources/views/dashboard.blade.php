@@ -243,7 +243,7 @@
 </section>
 @endsection
 
-@section('scripts')
+@push('page_scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Initialize charts
@@ -251,6 +251,8 @@
     
     // Initialize dashboard
     document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+        
         // Store route URLs in JavaScript variables
         const studentCreateUrl = "{{ route('students.create') }}";
         const feeManagementUrl = "{{ route('fee-management.index') }}";
@@ -508,4 +510,4 @@
         document.getElementById('schedule-list').innerHTML = scheduleHtml;
     }
 </script>
-@endsection
+@endpush

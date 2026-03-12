@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Department extends Model
 {
     public $table = 'departments';
+    public $primaryKey = 'department_id';
 
     public $fillable = [
         'name',
@@ -35,5 +36,10 @@ class Department extends Model
     public function users(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(\App\Models\User::class, 'staff');
+    }
+
+    public function staff(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\Staff::class, 'department_id');
     }
 }

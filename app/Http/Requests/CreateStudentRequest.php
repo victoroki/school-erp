@@ -27,6 +27,12 @@ class CreateStudentRequest extends FormRequest
         $rules = Student::$rules;
         $rules['admission_no'] .= '|unique:students,admission_no';
         $rules['user_id'] .= '|unique:students,user_id';
+        
+        // Add rules for optional initial enrollment
+        $rules['class_section_id'] = 'nullable|exists:class_sections,class_section_id';
+        $rules['academic_year_id'] = 'nullable|required_with:class_section_id|exists:academic_years,academic_year_id';
+        $rules['roll_number_enrollment'] = 'nullable|string|max:20';
+        
         return $rules;
     }
 }

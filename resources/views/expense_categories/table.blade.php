@@ -9,18 +9,18 @@
             </tr>
             </thead>
             <tbody>
-            @foreach($expenseCategories as $expenseCategories)
+            @foreach($expenseCategories as $expenseCategory)
                 <tr>
-                    <td>{{ $expenseCategories->name }}</td>
-                    <td>{{ $expenseCategories->description }}</td>
+                    <td>{{ $expenseCategory->name }}</td>
+                    <td>{{ $expenseCategory->description }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['expenseCategories.destroy', $expenseCategories->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['expenseCategories.destroy', $expenseCategory->category_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('expenseCategories.show', [$expenseCategories->id]) }}"
+                            <a href="{{ route('expenseCategories.show', [$expenseCategory->category_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('expenseCategories.edit', [$expenseCategories->id]) }}"
+                            <a href="{{ route('expenseCategories.edit', [$expenseCategory->category_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

@@ -46,7 +46,12 @@ class ClassSubjectController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $classSubjects = $this->classSubjectRepository->with(['class','subject','academicYear'])->paginate(10);
+        $allClassSubjects = $this->classSubjectRepository->with(['class','subject','academicYear'])->get();
+
+        // Group by Class Name
+        $classSubjects = $allClassSubjects->groupBy(function($classSubject) {
+            return $classSubject->class ? $classSubject->class->name : 'Unassigned';
+        });
 
         return view('class_subjects.index')
             ->with('classSubjects', $classSubjects);

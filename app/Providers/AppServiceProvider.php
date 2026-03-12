@@ -15,6 +15,8 @@ class AppServiceProvider extends ServiceProvider
 
 public function boot()
 {
+    \Illuminate\Pagination\Paginator::useBootstrapFour();
+    
     // Fix for Doctrine DBAL ENUM type issue
     $platform = DB::connection()->getDoctrineSchemaManager()->getDatabasePlatform();
     $platform->registerDoctrineTypeMapping('enum', 'string');

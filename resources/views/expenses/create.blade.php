@@ -105,7 +105,7 @@
     </div>
 @endsection
 
-@section('scripts')
+@push('page_scripts')
     <script>
         $(document).ready(function() {
             function toggleBank() {
@@ -126,4 +126,4 @@
             });
         });
     </script>
-@endsection
+@endpush

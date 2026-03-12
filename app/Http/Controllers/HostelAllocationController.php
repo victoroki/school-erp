@@ -12,6 +12,7 @@ use App\Http\Requests\UpdateHostelAllocationRequest;
 use App\Models\AcademicYear;
 use App\Models\Hostel;
 use App\Models\HostelRoom;
+use App\Models\HostelAllocation;
 
 class HostelAllocationController extends AppBaseController
 {
@@ -26,17 +27,17 @@ class HostelAllocationController extends AppBaseController
         private function getDropdownData()
     {
         return [
-            'students' => Student::selectRaw("id, CONCAT(first_name, ' ', last_name, ' (', student_id, ')') as full_name")
-                ->pluck('full_name', 'id')
+            'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' (', admission_no, ')') as full_name")
+                ->pluck('full_name', 'student_id')
                 ->toArray(),
-            'hostels' => Hostel::pluck('name', 'hostel_id'),
-            'rooms' => HostelRoom::where('status', '!=', 'full')
+            'hostels' => Hostel::pluck('name', 'hostel_id')->toArray(),
+            'rooms' => HostelRoom::with('hostel')->where('status', '!=', 'full')
                 ->where('status', '!=', 'under_maintenance')
                 ->get()
                 ->mapWithKeys(function ($room) {
-                    return [$room->room_id => $room->room_number . " (" . $room->hostel->name . " - " . ($room->capacity - $room->occupied) . " beds left)"];
+                    return [$room->room_id => $room->room_number . " (" . ($room->hostel->name ?? 'N/A') . " - " . ($room->capacity - $room->occupied) . " beds left)"];
                 })->toArray(),
-            'academicYears' => AcademicYear::pluck('name', 'id')
+            'academicYears' => AcademicYear::pluck('name', 'academic_year_id')->toArray()
         ];
     }
 
@@ -55,7 +56,7 @@ class HostelAllocationController extends AppBaseController
         }
 
         $hostelAllocations = $query->latest()->paginate(10);
-        $hostels = Hostel::pluck('name', 'hostel_id');
+        $hostels = Hostel::pluck('name', 'hostel_id')->toArray();
 
         return view('hostel_allocations.index', compact('hostelAllocations', 'hostels'));
     }
@@ -110,7 +111,7 @@ class HostelAllocationController extends AppBaseController
 
         Flash::success('Hostel Allocation saved successfully.');
 
-        return redirect(route('hostelAllocations.index'));
+        return redirect(route('hostel-allocations.index'));
     }
 
     /**
@@ -122,7 +123,7 @@ class HostelAllocationController extends AppBaseController
 
         if (empty($hostelAllocation)) {
             Flash::error('Hostel Allocation not found');
-            return redirect(route('hostelAllocations.index'));
+            return redirect(route('hostel-allocations.index'));
         }
 
         return view('hostel_allocations.show')->with('hostelAllocation', $hostelAllocation);
@@ -138,7 +139,7 @@ class HostelAllocationController extends AppBaseController
 
         if (empty($hostelAllocation)) {
             Flash::error('Hostel Allocation not found');
-            return redirect(route('hostelAllocations.index'));
+            return redirect(route('hostel-allocations.index'));
         }
 
         return view('hostel_allocations.edit')->with(array_merge($data, ['hostelAllocation' => $hostelAllocation]));
@@ -153,14 +154,14 @@ class HostelAllocationController extends AppBaseController
 
         if (empty($hostelAllocation)) {
             Flash::error('Hostel Allocation not found');
-            return redirect(route('hostelAllocations.index'));
+            return redirect(route('hostel-allocations.index'));
         }
 
         $hostelAllocation = $this->hostelAllocationRepository->update($request->all(), $id);
 
         Flash::success('Hostel Allocation updated successfully.');
 
-        return redirect(route('hostelAllocations.index'));
+        return redirect(route('hostel-allocations.index'));
     }
 
     /**
@@ -172,7 +173,7 @@ class HostelAllocationController extends AppBaseController
 
         if (empty($hostelAllocation)) {
             Flash::error('Hostel Allocation not found');
-            return redirect(route('hostelAllocations.index'));
+            return redirect(route('hostel-allocations.index'));
         }
 
         // Decrement room occupancy if active
@@ -192,7 +193,7 @@ class HostelAllocationController extends AppBaseController
 
         Flash::success('Hostel Allocation deleted successfully.');
 
-        return redirect(route('hostelAllocations.index'));
+        return redirect(route('hostel-allocations.index'));
     }
 
     /**
@@ -274,7 +275,7 @@ class HostelAllocationController extends AppBaseController
         }
 
         Flash::success("$count students allocated successfully.");
-        return redirect(route('hostelAllocations.index'));
+        return redirect(route('hostel-allocations.index'));
     }
 
     /**
@@ -333,6 +334,6 @@ class HostelAllocationController extends AppBaseController
         }
 
         Flash::success('Student transferred successfully.');
-        return redirect(route('hostelAllocations.index'));
+        return redirect(route('hostel-allocations.index'));
     }
 }

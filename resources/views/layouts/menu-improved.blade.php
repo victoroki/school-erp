@@ -428,16 +428,16 @@
                 <p>Routes</p>
             </a>
         </li>
-        <li class="nav-item">
+        {{-- <li class="nav-item">
             <a href="{{ route('route-stops.index') }}" class="nav-link {{ Request::is('route-stops*') ? 'active' : '' }}">
                 <i class="far fa-map-marker-alt nav-icon text-danger"></i>
                 <p>Route Stops</p>
             </a>
-        </li>
+        </li> --}}
     </ul>
 </li>
 
-<!-- Communication -->
+{{-- <!-- Communication -->
 <li class="nav-item has-treeview {{ Request::is('sms-templates*') || Request::is('email-templates*') ? 'menu-open' : '' }}">
     <a href="#" class="nav-link {{ Request::is('sms-templates*') || Request::is('email-templates*') ? 'active' : '' }}">
         <i class="nav-icon fas fa-comments text-secondary"></i>
@@ -460,4 +460,4 @@
             </a>
         </li>
     </ul>
-</li>
+</li> --}}

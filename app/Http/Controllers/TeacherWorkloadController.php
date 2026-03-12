@@ -26,7 +26,7 @@ class TeacherWorkloadController extends Controller
 
         // Get all teaching staff
         $teachers = Staff::where('staff_type', 'teaching')
-            ->where('status', 'active')
+            ->active()
             ->with(['department'])
             ->get();
 
@@ -47,7 +47,7 @@ class TeacherWorkloadController extends Controller
             $workloadData[] = [
                 'teacher' => $teacher,
                 'total_periods' => $count,
-                'est_hours' => round($count * 0.75, 1), // Assuming 45 min periods
+                'est_hours' => round($count * 0.75, 1), 
                 'max_daily' => $maxDaily,
                 'distribution' => $distribution,
                 'status' => $this->getWorkloadStatus($count)

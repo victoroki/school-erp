@@ -87,12 +87,9 @@
     </table>
 </div>
 
-<div class="card-footer bg-white border-top-0 d-flex justify-content-between align-items-center">
-    <div class="small text-muted">
-        Showing {{ $students->firstItem() }} to {{ $students->lastItem() }} of {{ $students->total() }} students
-    </div>
-    <div>
-        {{ $students->links() }}
+<div class="card-footer clearfix">
+    <div class="float-right">
+        @include('adminlte-templates::common.paginate', ['records' => $students])
     </div>
 </div>
 

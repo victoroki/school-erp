@@ -100,7 +100,7 @@
     </style>
 @endsection
 
-@section('scripts')
+@push('page_scripts')
     <script>
         $(document).ready(function() {
             $('input[name="opening_balance"]').on('input', function() {
@@ -108,4 +108,4 @@
             });
         });
     </script>
-@endsection
+@endpush

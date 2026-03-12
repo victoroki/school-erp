@@ -28,7 +28,12 @@ class PermissionController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $permissions = $this->permissionRepository->paginate(10);
+        $allPermissions = $this->permissionRepository->all();
+
+        // Group permissions by their prefix (e.g., "users" from "users.create")
+        $permissions = $allPermissions->groupBy(function($permission) {
+            return explode('.', $permission->permission_name)[0];
+        });
 
         return view('permissions.index')
             ->with('permissions', $permissions);

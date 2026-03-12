@@ -3,7 +3,9 @@
         <table class="table table-striped table-hover table-sm" id="student-documents-table">
             <thead>
             <tr>
-                <th>Student </th>
+                <th>Student</th>
+                <th>Admission No</th>
+                <th>Class/Section</th>
                 <th>Document Type</th>
                 <th>Document Name</th>
                 <th>File</th>
@@ -12,8 +14,26 @@
             </thead>
             <tbody>
             @foreach($studentDocuments as $studentDocument)
+                @php
+                    $currentEnrollment = optional($studentDocument->student)->current_enrollment;
+                    $classSection = optional($currentEnrollment)->classSection;
+                @endphp
                 <tr>
-                    <td>{{ optional($studentDocument->student)->first_name }} {{ optional($studentDocument->student)->last_name }}</td>
+                    <td>
+                        <a href="{{ route('students.show', [$studentDocument->student_id]) }}" class="font-weight-bold">
+                            {{ optional($studentDocument->student)->first_name }} {{ optional($studentDocument->student)->last_name }}
+                        </a>
+                    </td>
+                    <td><span class="badge badge-light border">{{ optional($studentDocument->student)->admission_no }}</span></td>
+                    <td>
+                        @if($classSection)
+                            <span class="badge badge-info">
+                                {{ optional($classSection->schoolClass)->name }} - {{ optional($classSection->section)->name }}
+                            </span>
+                        @else
+                            <span class="text-muted small">Not Enrolled</span>
+                        @endif
+                    </td>
                     <td>{{ $studentDocument->document_type }}</td>
                     <td>{{ $studentDocument->document_name }}</td>
                     <td>

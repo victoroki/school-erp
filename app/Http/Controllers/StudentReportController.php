@@ -50,8 +50,8 @@ class StudentReportController extends Controller
         // Simple aggregate for now
         $data = DB::table('student_attendance')
             ->join('students', 'student_attendance.student_id', '=', 'students.student_id')
-            ->select('status', DB::raw('count(*) as count'))
-            ->groupBy('status')
+            ->select('student_attendance.status as status', DB::raw('count(*) as count'))
+            ->groupBy('student_attendance.status')
             ->get();
 
         return view('students.reports.attendance', compact('data'));

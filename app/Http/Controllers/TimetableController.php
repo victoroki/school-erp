@@ -233,7 +233,7 @@ class TimetableController extends AppBaseController
 
         if ($isAdmin) {
             $allTeachers = Staff::where('staff_type', 'teaching')
-                ->where('status', 'active')
+                ->active()
                 ->orderBy('first_name')
                 ->get();
             
@@ -348,7 +348,7 @@ class TimetableController extends AppBaseController
                 ->toArray(),
 
             'teachers' => Staff::where('staff_type', 'teaching')
-                ->where('status', 'active')
+                ->active()
                 ->orderBy('first_name')
                 ->get()
                 ->mapWithKeys(function ($staff) {

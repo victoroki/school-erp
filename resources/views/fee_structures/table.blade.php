@@ -31,7 +31,7 @@
                         <span class="text-muted"><i class="far fa-calendar-alt mr-1"></i> {{ $feeStructure->due_date ? $feeStructure->due_date->format('M d, Y') : 'N/A' }}</span>
                     </td>
                     <td class="text-center">
-                        <span class="badge badge-info">{{ $feeStructure->students_count ?? $feeStructure->students()->count() }}</span>
+                        <span class="badge badge-info">{{ $feeStructure->assignments_count ?? $feeStructure->assignments()->count() }}</span>
                     </td>
                     <td class="text-center">
                         {!! Form::open(['route' => ['fee-structures.destroy', $feeStructure->fee_structure_id], 'method' => 'delete']) !!}

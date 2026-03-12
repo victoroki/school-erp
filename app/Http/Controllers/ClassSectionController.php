@@ -30,13 +30,18 @@ class ClassSectionController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $classSections = $this->classSectionRepository->with([
+        $allClassSections = $this->classSectionRepository->with([
             'academicYear',
             'class',
             'section',
             'classroom',
             'classTeacher'
-        ])->paginate(10);
+        ])->get();
+
+        // Group class sections by Class Name
+        $classSections = $allClassSections->groupBy(function($classSection) {
+             return $classSection->class ? $classSection->class->name : 'Unassigned';
+        });
 
         return view('class_sections.index')
             ->with('classSections', $classSections);

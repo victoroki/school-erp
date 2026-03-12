@@ -32,10 +32,11 @@ class StudentTransportAssignmentController extends Controller
 
     public function create()
     {
-        $students = Student::selectRaw("id, CONCAT(first_name, ' ', last_name, ' (', student_id, ')') as name")
-            ->pluck('name', 'id');
-        $routes = Route::pluck('name', 'route_id');
-        $academicYears = AcademicYear::pluck('name', 'id');
+        $students = Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' (', admission_no, ')') as name")
+            ->pluck('name', 'student_id')
+            ->toArray();
+        $routes = Route::pluck('name', 'route_id')->toArray();
+        $academicYears = AcademicYear::pluck('name', 'academic_year_id')->toArray();
         $stops = RouteStop::all()->groupBy('route_id');
 
         return view('student_transport_assignments.create', compact('students', 'routes', 'academicYears', 'stops'));
@@ -70,11 +71,12 @@ class StudentTransportAssignmentController extends Controller
             return redirect(route('student-transport-assignments.index'));
         }
 
-        $students = Student::selectRaw("id, CONCAT(first_name, ' ', last_name, ' (', student_id, ')') as name")
-            ->pluck('name', 'id');
-        $routes = Route::pluck('name', 'route_id');
-        $academicYears = AcademicYear::pluck('name', 'id');
-        $stops = RouteStop::where('route_id', $assignment->route_id)->pluck('stop_name', 'stop_id');
+        $students = Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' (', admission_no, ')') as name")
+            ->pluck('name', 'student_id')
+            ->toArray();
+        $routes = Route::pluck('name', 'route_id')->toArray();
+        $academicYears = AcademicYear::pluck('name', 'academic_year_id')->toArray();
+        $stops = RouteStop::where('route_id', $assignment->route_id)->pluck('stop_name', 'stop_id')->toArray();
 
         return view('student_transport_assignments.edit', compact('assignment', 'students', 'routes', 'academicYears', 'stops'));
     }

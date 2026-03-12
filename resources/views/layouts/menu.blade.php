@@ -353,8 +353,9 @@
 </li>
 
 <!-- Human Resources -->
-<li class="nav-item has-treeview {{ Request::is('departments*') || Request::is('job-positions*') || Request::is('leave-types*') || Request::is('staff-documents*') || Request::is('payrolls*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('departments*') || Request::is('job-positions*') || Request::is('leave-types*') || Request::is('staff-documents*') || Request::is('payrolls*') ? 'active' : '' }}">
+<!-- Human Resources (Revamped) -->
+<li class="nav-item has-treeview {{ Request::is('hr*') || Request::is('staff*') || Request::is('departments*') || Request::is('job-positions*') || Request::is('leave*') || Request::is('payroll*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('hr*') || Request::is('staff*') || Request::is('departments*') || Request::is('job-positions*') || Request::is('leave*') || Request::is('payroll*') ? 'active' : '' }}">
         <i class="nav-icon fas fa-user-tie text-secondary"></i>
         <p>
             Human Resources
@@ -362,40 +363,112 @@
         </p>
     </a>
     <ul class="nav nav-treeview">
+        <!-- Dashboard -->
+        <li class="nav-item">
+            <a href="{{ route('hr.dashboard') }}" class="nav-link {{ Request::is('hr/dashboard') ? 'active' : '' }}">
+                <i class="fas fa-tachometer-alt nav-icon text-secondary"></i>
+                <p>HR Dashboard</p>
+            </a>
+        </li>
+        
+        <!-- Staff Management -->
+        <li class="nav-header small text-uppercase text-secondary">Staff Management</li>
+        <li class="nav-item">
+            <a href="{{ route('staff.index') }}" class="nav-link {{ Request::is('staff') || Request::is('staff/create') ? 'active' : '' }}">
+                <i class="fas fa-users nav-icon text-secondary"></i>
+                <p>All Staff</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('hr.onboarding.index') }}" class="nav-link {{ Request::is('hr/onboarding*') ? 'active' : '' }}">
+                <i class="fas fa-user-plus nav-icon text-secondary"></i>
+                <p>Onboarding</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('hr.staff.directory') }}" class="nav-link {{ Request::is('hr/staff-directory') ? 'active' : '' }}">
+                <i class="fas fa-address-book nav-icon text-secondary"></i>
+                <p>Staff Directory</p>
+            </a>
+        </li>
+
+        <!-- Organization -->
+        <li class="nav-header small text-uppercase text-secondary">Organization</li>
         <li class="nav-item">
             <a href="{{ route('departments.index') }}" class="nav-link {{ Request::is('departments*') ? 'active' : '' }}">
-                <i class="far fa-building nav-icon text-secondary"></i>
+                <i class="fas fa-building nav-icon text-secondary"></i>
                 <p>Departments</p>
             </a>
         </li>
         <li class="nav-item">
             <a href="{{ route('job-positions.index') }}" class="nav-link {{ Request::is('job-positions*') ? 'active' : '' }}">
-                <i class="far fa-briefcase nav-icon text-secondary"></i>
+                <i class="fas fa-briefcase nav-icon text-secondary"></i>
                 <p>Job Positions</p>
+            </a>
+        </li>
+
+        <!-- Leave & Attendance -->
+        <li class="nav-header small text-uppercase text-secondary">Time Off & Attendance</li>
+        <li class="nav-item">
+            <a href="{{ route('leave-applications.index') }}" class="nav-link {{ Request::is('leave-applications*') ? 'active' : '' }}">
+                <i class="fas fa-calendar-times nav-icon text-secondary"></i>
+                <p>Leave Applications</p>
             </a>
         </li>
         <li class="nav-item">
             <a href="{{ route('leave-types.index') }}" class="nav-link {{ Request::is('leave-types*') ? 'active' : '' }}">
-                <i class="far fa-calendar-times nav-icon text-secondary"></i>
+                <i class="fas fa-cog nav-icon text-secondary"></i>
                 <p>Leave Types</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('staff.index') }}" class="nav-link {{ Request::is('staff*') ? 'active' : '' }}">
-                <i class="nav-icon fas fa-work"></i>
-                <p>Staff</p>
+            <a href="{{ route('staff-attendance.index') }}" class="nav-link {{ Request::is('staff-attendance*') ? 'active' : '' }}">
+                <i class="fas fa-calendar-check nav-icon text-secondary"></i>
+                <p>Attendance</p>
             </a>
         </li>
+
+        <!-- Documents & Payroll -->
+        <li class="nav-header small text-uppercase text-secondary">Ops & Finance</li>
         <li class="nav-item">
             <a href="{{ route('staff-documents.index') }}" class="nav-link {{ Request::is('staff-documents*') ? 'active' : '' }}">
-                <i class="far fa-folder nav-icon text-secondary"></i>
-                <p>Staff Documents</p>
+                <i class="fas fa-file-alt nav-icon text-secondary"></i>
+                <p>Documents</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('payrolls.index') }}" class="nav-link {{ Request::is('payrolls*') ? 'active' : '' }}">
-                <i class="far fa-money-check-alt nav-icon text-secondary"></i>
-                <p>Payrolls</p>
+            <a href="{{ route('payroll-processing.index') }}" class="nav-link {{ Request::is('payroll-processing*') || Request::is('payrolls*') ? 'active' : '' }}">
+                <i class="fas fa-money-check-alt nav-icon text-secondary"></i>
+                <p>Payroll</p>
+            </a>
+        </li>
+        
+        <!-- Exit -->
+        <li class="nav-item">
+            <a href="{{ route('hr.exit.index') }}" class="nav-link {{ Request::is('hr/exit*') ? 'active' : '' }}">
+                <i class="fas fa-user-slash nav-icon text-secondary"></i>
+                <p>Exit Management</p>
+            </a>
+        </li>
+
+        <!-- Reports -->
+        <li class="nav-header small text-uppercase text-secondary">Reports</li>
+        <li class="nav-item">
+            <a href="{{ route('hr.reports.headcount') }}" class="nav-link {{ Request::is('hr/reports/headcount') ? 'active' : '' }}">
+                <i class="fas fa-chart-bar nav-icon text-secondary"></i>
+                <p>Headcount</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('hr.reports.leave') }}" class="nav-link {{ Request::is('hr/reports/leave') ? 'active' : '' }}">
+                <i class="fas fa-chart-pie nav-icon text-secondary"></i>
+                <p>Leave Analytics</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('hr.reports.payroll') }}" class="nav-link {{ Request::is('hr/reports/payroll') ? 'active' : '' }}">
+                <i class="fas fa-chart-line nav-icon text-secondary"></i>
+                <p>Payroll Analytics</p>
             </a>
         </li>
     </ul>
@@ -437,12 +510,80 @@
                 <p>Income Transactions</p>
             </a>
         </li>
+<!-- Fee Management (Revamped) -->
+<li class="nav-item has-treeview {{ Request::is('fees*') || Request::is('fee-categories*') || Request::is('fee-structures*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('fees*') || Request::is('fee-categories*') || Request::is('fee-structures*') ? 'active' : '' }}">
+        <i class="nav-icon fas fa-money-bill-wave text-success"></i>
+        <p>
+            Fee Management
+            <i class="right fas fa-angle-left"></i>
+        </p>
+    </a>
+    <ul class="nav nav-treeview">
+        <li class="nav-item">
+            <a href="{{ route('fees.dashboard') }}" class="nav-link {{ Request::is('fees/dashboard') ? 'active' : '' }}">
+                <i class="fas fa-tachometer-alt nav-icon text-success"></i>
+                <p>Dashboard</p>
+            </a>
+        </li>
+        
+        <li class="nav-header small text-uppercase text-success">Student Fees</li>
+        <li class="nav-item">
+            <a href="{{ route('fees.assignments.index') }}" class="nav-link {{ Request::is('fees/assignments') ? 'active' : '' }}">
+                <i class="fas fa-user-check nav-icon text-success"></i>
+                <p>Assignments</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('fees.assignments.create') }}" class="nav-link {{ Request::is('fees/assignments/create') ? 'active' : '' }}">
+                <i class="fas fa-plus-circle nav-icon text-success"></i>
+                <p>Assign Fees</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('fees.assignments.unassigned') }}" class="nav-link {{ Request::is('fees/assignments/unassigned') ? 'active' : '' }}">
+                <i class="fas fa-user-times nav-icon text-danger"></i>
+                <p>Unassigned Students</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-success">Setup & Config</li>
+        <li class="nav-item">
+            <a href="{{ route('fee-categories.index') }}" class="nav-link {{ Request::is('fee-categories*') ? 'active' : '' }}">
+                <i class="fas fa-tags nav-icon text-success"></i>
+                <p>Fee Categories</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('fee-structures.index') }}" class="nav-link {{ Request::is('fee-structures*') ? 'active' : '' }}">
+                <i class="fas fa-table nav-icon text-success"></i>
+                <p>Fee Structures</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('fees.discounts.index') }}" class="nav-link {{ Request::is('fees/discounts*') ? 'active' : '' }}">
+                <i class="fas fa-percent nav-icon text-success"></i>
+                <p>Discounts & Schemes</p>
+            </a>
+        </li>
+
+        <li class="nav-header small text-uppercase text-success">Reporting</li>
+        <li class="nav-item">
+            <a href="{{ route('fees.reports.expected-revenue') }}" class="nav-link {{ Request::is('fees/reports/expected-revenue') ? 'active' : '' }}">
+                <i class="fas fa-chart-line nav-icon text-success"></i>
+                <p>Expected Revenue</p>
+            </a>
+        </li>
+        
+        <!-- Integration with Collection -->
         <li class="nav-item">
             <a href="{{ route('fee-management.index') }}" class="nav-link {{ Request::is('fee-management*') ? 'active' : '' }}">
                 <i class="fas fa-cash-register nav-icon text-success"></i>
                 <p>Fee Collection</p>
             </a>
         </li>
+    </ul>
+</li>
 
         <li class="nav-header small text-uppercase text-danger">Expenses</li>
         <li class="nav-item">
@@ -784,12 +925,12 @@
                 <p>Routes</p>
             </a>
         </li>
-        <li class="nav-item">
+        {{-- <li class="nav-item">
             <a href="{{ route('routeStops.index') }}" class="nav-link {{ Request::is('route-stops*') ? 'active' : '' }}">
                 <i class="fas fa-map-marker-alt nav-icon text-danger"></i>
                 <p>Route Stops</p>
             </a>
-        </li>
+        </li> --}}
         <li class="nav-item">
             <a href="{{ route('student-transport-assignments.index') }}" class="nav-link {{ Request::is('student-transport-assignments*') ? 'active' : '' }}">
                 <i class="fas fa-user-check nav-icon text-danger"></i>
@@ -806,8 +947,9 @@
 </li>
 
 <!-- Communication -->
-<li class="nav-item has-treeview {{ Request::is('sms-templates*') || Request::is('email-templates*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('sms-templates*') || Request::is('email-templates*') ? 'active' : '' }}">
+<!-- Communication -->
+<li class="nav-item has-treeview {{ Request::is('communication*') || Request::is('sms-templates*') || Request::is('email-templates*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('communication*') || Request::is('sms-templates*') || Request::is('email-templates*') ? 'active' : '' }}">
         <i class="nav-icon fas fa-comments text-secondary"></i>
         <p>
             Communication
@@ -816,16 +958,34 @@
     </a>
     <ul class="nav nav-treeview">
         <li class="nav-item">
-            <a href="{{ route('sms-templates.index') }}" class="nav-link {{ Request::is('sms-templates*') ? 'active' : '' }}">
-                <i class="far fa-sms nav-icon text-secondary"></i>
+            <a href="{{ route('communication.dashboard') }}" class="nav-link {{ Request::is('communication/dashboard') ? 'active' : '' }}">
+                <i class="fas fa-tachometer-alt nav-icon text-secondary"></i>
+                <p>Dashboard</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('communication.compose') }}" class="nav-link {{ Request::is('communication/compose') ? 'active' : '' }}">
+                <i class="fas fa-pen-nib nav-icon text-secondary"></i>
+                <p>Compose Message</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('communication.history.index') }}" class="nav-link {{ Request::is('communication/history*') ? 'active' : '' }}">
+                <i class="fas fa-history nav-icon text-secondary"></i>
+                <p>Message History</p>
+            </a>
+        </li>
+        {{-- <li class="nav-item">
+            <a href="{{ route('smsTemplates.index') }}" class="nav-link {{ Request::is('sms-templates*') ? 'active' : '' }}">
+                <i class="fas fa-sms nav-icon text-secondary"></i>
                 <p>SMS Templates</p>
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('email-templates.index') }}" class="nav-link {{ Request::is('email-templates*') ? 'active' : '' }}">
-                <i class="far fa-envelope nav-icon text-secondary"></i>
+            <a href="{{ route('emailTemplates.index') }}" class="nav-link {{ Request::is('email-templates*') ? 'active' : '' }}">
+                <i class="fas fa-envelope nav-icon text-secondary"></i>
                 <p>Email Templates</p>
             </a>
-        </li>
+        </li> --}}
     </ul>
 </li>

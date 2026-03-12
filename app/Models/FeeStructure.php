@@ -11,30 +11,42 @@ class FeeStructure extends Model
 
     public $fillable = [
         'academic_year_id',
+        'term',
         'class_id',
         'category_id',
         'amount',
-        'due_date'
+        'payment_frequency',
+        'due_date',
+        'late_fee_amount',
+        'late_fee_type',
+        'pro_rata_enabled',
+        'status',
+        'notes',
+        'created_by'
     ];
 
     protected $casts = [
+        'academic_year_id' => 'integer',
+        'class_id' => 'integer',
+        'category_id' => 'integer',
         'amount' => 'decimal:2',
-        'due_date' => 'date'
+        'due_date' => 'date',
+        'late_fee_amount' => 'decimal:2',
+        'pro_rata_enabled' => 'boolean'
     ];
 
     public static array $rules = [
-        'academic_year_id' => 'nullable',
-        'class_id' => 'nullable',
-        'category_id' => 'nullable',
-        'amount' => 'required|numeric',
-        'due_date' => 'nullable',
-        'created_at' => 'nullable',
-        'updated_at' => 'nullable'
+        'academic_year_id' => 'required',
+        'class_id' => 'required',
+        'category_id' => 'required',
+        'amount' => 'required|numeric|min:0',
+        'payment_frequency' => 'required|in:one-time,termly,monthly,custom',
+        'status' => 'required|in:active,inactive,draft,archived'
     ];
 
     public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(\App\Models\FeeCategory::class, 'category_id');
+        return $this->belongsTo(\App\Models\FeeCategory::class, 'category_id', 'category_id');
     }
 
     public function academicYear(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -47,8 +59,8 @@ class FeeStructure extends Model
         return $this->belongsTo(\App\Models\SchoolClass::class, 'class_id', 'class_id');
     }
 
-    public function students(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function assignments(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->belongsToMany(\App\Models\Student::class, 'student_fees', 'fee_structure_id', 'student_id');
+        return $this->hasMany(\App\Models\StudentFeeAssignment::class, 'fee_structure_id');
     }
 }

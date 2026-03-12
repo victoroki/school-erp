@@ -78,7 +78,7 @@ class StudentController extends AppBaseController
             'studentClassEnrollments.academicYear'
         ])
         ->orderBy('admission_no', 'desc')
-        ->paginate(20)
+        ->paginate(10)
         ->appends($request->all());
 
         $classSections = ClassSection::with(['schoolClass', 'section'])->get();
@@ -92,7 +92,18 @@ class StudentController extends AppBaseController
      */
     public function create()
     {
-        return view('students.create');
+        $classSections = ClassSection::with(['schoolClass', 'section', 'academicYear'])
+            ->get()
+            ->mapWithKeys(function ($cs) {
+                $name = ($cs->schoolClass && $cs->schoolClass->name ? $cs->schoolClass->name : 'Class')
+                    . ' - ' . ($cs->section && $cs->section->name ? $cs->section->name : 'Section')
+                    . ' (' . ($cs->academicYear && $cs->academicYear->name ? $cs->academicYear->name : 'Year') . ')';
+                return [$cs->class_section_id => $name];
+            })
+            ->toArray();
+        $academicYears = AcademicYear::pluck('name', 'academic_year_id')->toArray();
+
+        return view('students.create', compact('classSections', 'academicYears'));
     }
 
     /**
@@ -110,6 +121,19 @@ class StudentController extends AppBaseController
         }
 
         $student = $this->studentRepository->create($input);
+
+        // Auto-enroll if class section is provided
+        if ($request->filled('class_section_id')) {
+            \App\Models\StudentClassEnrollment::create([
+                'student_id' => $student->student_id,
+                'class_section_id' => $request->class_section_id,
+                'academic_year_id' => $request->academic_year_id,
+                'roll_number' => $request->input('roll_number_enrollment'), // separate name in fields to avoid confusion with student's own roll number
+                'enrollment_date' => $request->admission_date ?? now(),
+                'status' => 'active',
+                'is_current' => true
+            ]);
+        }
 
         Flash::success('Student saved successfully.');
 

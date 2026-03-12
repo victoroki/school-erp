@@ -83,8 +83,8 @@ class FinanceDashboardController extends AppBaseController
         $chartData = $this->getChartData();
 
         return view('finance.dashboard', compact(
-            'combinedIncomeThisMonth', 'incomeChange',
-            'totalExpensesThisMonth', 'expenseChange',
+            'totalIncomeThisMonth', 'combinedIncomeThisMonth', 'incomeChange',
+            'totalExpensesThisMonth', 'totalExpensesLastMonth', 'expenseChange',
             'netCashFlow', 'cashFlowPercentage',
             'totalBankBalance', 'lowBalanceAccounts',
             'pendingApprovalsCount', 'pendingApprovalsAmount',

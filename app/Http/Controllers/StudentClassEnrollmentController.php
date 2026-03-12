@@ -25,8 +25,10 @@ class StudentClassEnrollmentController extends AppBaseController
 
     private function getDropdownData(){
         return [
-            'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' (', student_id, ')') as full_name")
-                ->pluck('full_name', 'student_id')
+            'students' => Student::orderBy('first_name', 'asc')->get()
+                ->mapWithKeys(function ($s) {
+                    return [$s->student_id => $s->first_name . ' ' . $s->last_name . ' (' . $s->admission_no . ')'];
+                })
                 ->toArray(),
             'classSections' => ClassSection::with(['class', 'section', 'academicYear'])
                 ->get()

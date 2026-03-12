@@ -105,7 +105,7 @@
     </div>
 @endsection
 
-@section('scripts')
+@push('page_scripts')
     <script>
         $(document).ready(function() {
             // Show/Hide bank account based on payment method
@@ -129,4 +129,4 @@
             });
         });
     </script>
-@endsection
+@endpush

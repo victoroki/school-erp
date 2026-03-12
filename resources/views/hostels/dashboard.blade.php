@@ -121,11 +121,11 @@
                                 <li class="item">
                                     <div class="product-info">
                                         <a href="{{ route('hostel-allocations.show', $allocation->allocation_id) }}" class="product-title">
-                                            {{ $allocation->student->first_name }} {{ $allocation->student->last_name }}
+                                            {{ $allocation->student->first_name ?? 'Unknown' }} {{ $allocation->student->last_name ?? 'Student' }}
                                             <span class="badge badge-info float-right">{{ $allocation->allocation_date->format('M d') }}</span>
                                         </a>
                                         <span class="product-description">
-                                            {{ $allocation->hostel->name }} - Room {{ $allocation->room->room_number }}
+                                            {{ $allocation->hostel->name ?? 'Unknown Hostel' }} - Room {{ $allocation->room->room_number ?? 'N/A' }}
                                         </span>
                                     </div>
                                 </li>

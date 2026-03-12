@@ -23,9 +23,82 @@
 
         <div class="clearfix"></div>
 
-        <div class="card">
-            @include('permissions.table')
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <input type="text" id="permissionSearch" class="form-control" placeholder="Search permissions...">
+                    </div>
+                    <div class="col-md-6 text-right">
+                        <button class="btn btn-default btn-sm" onclick="expandAll()">
+                            <i class="fas fa-expand-arrows-alt"></i> Expand All
+                        </button>
+                        <button class="btn btn-default btn-sm" onclick="collapseAll()">
+                            <i class="fas fa-compress-arrows-alt"></i> Collapse All
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        @include('permissions.table')
     </div>
 
 @endsection
+
+@push('page_scripts')
+<script>
+    $(document).ready(function() {
+        // Search Functionality
+        $('#permissionSearch').on('keyup', function() {
+            var value = $(this).val().toLowerCase();
+
+            $('.permission-group').each(function() {
+                var group = $(this);
+                var groupName = group.data('group-name');
+                var groupMatches = groupName.indexOf(value) > -1;
+                var hasVisibleRows = false;
+
+                var rows = group.find('.permission-row');
+                
+                if (groupMatches) {
+                    // If group matches, show all rows and the group
+                    rows.show();
+                    hasVisibleRows = true;
+                } else {
+                    // Otherwise, filter rows
+                    rows.each(function() {
+                        var row = $(this);
+                        var text = row.text().toLowerCase();
+                        if (text.indexOf(value) > -1) {
+                            row.show();
+                            hasVisibleRows = true;
+                        } else {
+                            row.hide();
+                        }
+                    });
+                }
+
+                if (hasVisibleRows) {
+                    group.show();
+                } else {
+                    group.hide();
+                }
+            });
+        });
+
+        // Expand/Collapse All
+        window.expandAll = function() {
+            $('.permission-group .card').removeClass('collapsed-card');
+            $('.permission-group .card-body').show();
+            $('.permission-group .btn-tool i').removeClass('fa-plus').addClass('fa-minus');
+        };
+
+        window.collapseAll = function() {
+            $('.permission-group .card').addClass('collapsed-card');
+            $('.permission-group .card-body').hide();
+            $('.permission-group .btn-tool i').removeClass('fa-minus').addClass('fa-plus');
+        };
+    });
+</script>
+@endpush

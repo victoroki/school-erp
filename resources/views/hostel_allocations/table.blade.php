@@ -73,7 +73,7 @@
                                     <div class="modal-content">
                                         {!! Form::open(['route' => ['hostel-allocations.checkout', $hostelAllocation->allocation_id]]) !!}
                                         <div class="modal-header">
-                                            <h5 class="modal-title">Checkout Student: {{ $hostelAllocation->student->first_name }}</h5>
+                                            <h5 class="modal-title">Checkout Student: {{ optional($hostelAllocation->student)->first_name ?? 'Unknown Student' }}</h5>
                                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                 <span aria-hidden="true">&times;</span>
                                             </button>

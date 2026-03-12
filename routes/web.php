@@ -154,6 +154,14 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('expense-categories', App\Http\Controllers\ExpenseCategoryController::class)->names('expenseCategories');
     Route::resource('income-categories', App\Http\Controllers\IncomeCategoryController::class)->names('incomeCategories');
     Route::resource('library-members', App\Http\Controllers\LibraryMemberController::class);
+    // Import Routes
+    Route::get('students/import', [App\Http\Controllers\StudentImportController::class, 'index'])->name('students.import');
+    Route::post('students/import', [App\Http\Controllers\StudentImportController::class, 'store'])->name('students.import.store');
+
+    // ID Card Routes
+    Route::get('students/{id}/id-card', [App\Http\Controllers\StudentIdCardController::class, 'generate'])->name('students.id-card');
+    Route::post('students/bulk-id-cards', [App\Http\Controllers\StudentIdCardController::class, 'bulk'])->name('students.bulk-id-cards');
+
     Route::resource('students', App\Http\Controllers\StudentController::class);
     Route::resource('student-class-enrollments', App\Http\Controllers\StudentClassEnrollmentController::class);
     Route::resource('staff', App\Http\Controllers\StaffController::class);
@@ -192,9 +200,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('student-promotion', [App\Http\Controllers\StudentPromotionController::class, 'index'])->name('student-promotion.index');
     Route::post('student-promotion', [App\Http\Controllers\StudentPromotionController::class, 'store'])->name('student-promotion.store');
 
-    // ID Card Routes
-    Route::get('students/{id}/id-card', [App\Http\Controllers\StudentIdCardController::class, 'generate'])->name('students.id-card');
-    Route::post('students/bulk-id-cards', [App\Http\Controllers\StudentIdCardController::class, 'bulk'])->name('students.bulk-id-cards');
+
 
     // Report Routes
     Route::get('student-reports', [App\Http\Controllers\StudentReportController::class, 'index'])->name('student-reports.index');
@@ -202,13 +208,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('student-reports/gender', [App\Http\Controllers\StudentReportController::class, 'genderRatio'])->name('student-reports.gender');
     Route::get('student-reports/attendance', [App\Http\Controllers\StudentReportController::class, 'attendanceSummary'])->name('student-reports.attendance');
 
-    // Import Routes
-    Route::get('students/import', [App\Http\Controllers\StudentImportController::class, 'index'])->name('students.import');
-    Route::post('students/import', [App\Http\Controllers\StudentImportController::class, 'store'])->name('students.import.store');
+
     
     // Logging & Incident Routes
+    Route::get('disciplinary-records', [App\Http\Controllers\DisciplinaryController::class, 'index'])->name('disciplinary-records.index');
+    Route::get('disciplinary-records/create', [App\Http\Controllers\DisciplinaryController::class, 'create'])->name('disciplinary-records.create');
     Route::post('disciplinary-records', [App\Http\Controllers\DisciplinaryController::class, 'store'])->name('disciplinary-records.store');
     Route::patch('disciplinary-records/{id}', [App\Http\Controllers\DisciplinaryController::class, 'update'])->name('disciplinary-records.update');
+    
+    Route::get('medical-incidents', [App\Http\Controllers\MedicalIncidentController::class, 'index'])->name('medical-incidents.index');
+    Route::get('medical-incidents/create', [App\Http\Controllers\MedicalIncidentController::class, 'create'])->name('medical-incidents.create');
     Route::post('medical-incidents', [App\Http\Controllers\MedicalIncidentController::class, 'store'])->name('medical-incidents.store');
     
     // Academic Management Enhanced Routes
@@ -220,6 +229,30 @@ Route::middleware(['auth'])->group(function () {
     Route::get('teacher-workload', [App\Http\Controllers\TeacherWorkloadController::class, 'index'])->name('teacher-workload.index');
     
     Route::resource('timetables', App\Http\Controllers\TimetableController::class);
+    
+    // Fee Management Revamped Routes
+    Route::group(['prefix' => 'fees', 'as' => 'fees.'], function () {
+        Route::get('/dashboard', [App\Http\Controllers\FeeDashboardController::class, 'index'])->name('dashboard');
+        
+        // Fee Assignments
+        Route::get('/assignments', [App\Http\Controllers\StudentFeeAssignmentController::class, 'index'])->name('assignments.index');
+        Route::get('/assignments/create', [App\Http\Controllers\StudentFeeAssignmentController::class, 'create'])->name('assignments.create');
+        Route::post('/assignments', [App\Http\Controllers\StudentFeeAssignmentController::class, 'store'])->name('assignments.store');
+        Route::delete('/assignments/{id}', [App\Http\Controllers\StudentFeeAssignmentController::class, 'destroy'])->name('assignments.destroy');
+        Route::get('/assignments/student/{id}', [App\Http\Controllers\StudentFeeAssignmentController::class, 'studentSummary'])->name('assignments.student-summary');
+        Route::get('/assignments/unassigned', [App\Http\Controllers\StudentFeeAssignmentController::class, 'unassigned'])->name('assignments.unassigned');
+        Route::get('/assignments/ajax/class-fees', [App\Http\Controllers\StudentFeeAssignmentController::class, 'getFeesByClass'])->name('assignments.ajax.class-fees');
+
+        // Discount Schemes
+        Route::resource('discounts', App\Http\Controllers\DiscountSchemeController::class);
+        
+        // Reports
+        Route::get('/reports/expected-revenue', [App\Http\Controllers\FeeReportsController::class, 'expectedRevenue'])->name('reports.expected-revenue');
+        Route::get('/reports/assignment-status', [App\Http\Controllers\FeeReportsController::class, 'assignmentStatus'])->name('reports.assignment-status');
+        Route::get('/reports/discount-summary', [App\Http\Controllers\FeeReportsController::class, 'discountSummary'])->name('reports.discount-summary');
+    });
+
+    // Legacy Fee Management (Collection) - Kept/Modified for integration
     Route::get('fee-management', [App\Http\Controllers\FeeManagementController::class, 'index'])->name('fee-management.index');
     Route::get('fee-management/{id}', [App\Http\Controllers\FeeManagementController::class, 'show'])->name('fee-management.show');
     Route::get('fee-management/{id}/collect-payment', [App\Http\Controllers\FeeManagementController::class, 'collectPayment'])->name('fee-management.collect-payment');
@@ -247,4 +280,44 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('strands', App\Http\Controllers\StrandController::class);
     Route::resource('sub-strands', App\Http\Controllers\SubStrandController::class);
     Route::get('competency-assessment', [App\Http\Controllers\CompetencyAssessmentController::class, 'index'])->name('competency-assessment.index');
+    // Human Resources Management Revamped Routes
+    Route::prefix('hr')->name('hr.')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\HRDashboardController::class, 'index'])->name('dashboard');
+        
+        // Reports
+        Route::get('/reports/headcount', [App\Http\Controllers\HRReportController::class, 'headcount'])->name('reports.headcount');
+        Route::get('/reports/payroll', [App\Http\Controllers\HRReportController::class, 'payroll'])->name('reports.payroll');
+        Route::get('/reports/leave', [App\Http\Controllers\HRReportController::class, 'leave'])->name('reports.leave');
+        Route::get('/reports/attendance', [App\Http\Controllers\HRReportController::class, 'attendance'])->name('reports.attendance');
+        
+        // Onboarding
+        Route::get('/onboarding', [App\Http\Controllers\StaffOnboardingController::class, 'index'])->name('onboarding');
+        Route::get('/onboarding/{id}', [App\Http\Controllers\StaffOnboardingController::class, 'show'])->name('onboarding.show');
+        Route::post('/onboarding/{id}/complete/{item}', [App\Http\Controllers\StaffOnboardingController::class, 'completeItem'])->name('onboarding.complete-item');
+
+        // Exit
+        Route::get('/exit', [App\Http\Controllers\StaffExitController::class, 'index'])->name('exit');
+        Route::get('/exit/create/{staff}', [App\Http\Controllers\StaffExitController::class, 'create'])->name('exit.create');
+        Route::post('/exit', [App\Http\Controllers\StaffExitController::class, 'store'])->name('exit.store');
+
+        // Staff Directory
+        Route::get('staff-directory', [App\Http\Controllers\StaffController::class, 'directory'])->name('staff.directory');
+    });
+
+    // Enhanced Resource Routes
+    Route::resource('leave-applications', App\Http\Controllers\LeaveApplicationController::class);
+    Route::post('leave-applications/{id}/approve', [App\Http\Controllers\LeaveApplicationController::class, 'approve'])->name('leave-applications.approve');
+    Route::post('leave-applications/{id}/reject', [App\Http\Controllers\LeaveApplicationController::class, 'reject'])->name('leave-applications.reject');
+
+    Route::resource('staff-attendance', App\Http\Controllers\StaffAttendanceController::class);
+    
+    // Payroll Processing Wizard
+    Route::prefix('payroll-processing')->name('payroll-processing.')->group(function() {
+        Route::get('/', [App\Http\Controllers\PayrollProcessingController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\PayrollProcessingController::class, 'create'])->name('create');
+        Route::post('/calculate', [App\Http\Controllers\PayrollProcessingController::class, 'calculate'])->name('calculate');
+        Route::get('/review/{payroll}', [App\Http\Controllers\PayrollProcessingController::class, 'review'])->name('review');
+        Route::post('/finalize/{payroll}', [App\Http\Controllers\PayrollProcessingController::class, 'finalize'])->name('finalize');
+    });
+
 });

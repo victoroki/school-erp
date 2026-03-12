@@ -9,8 +9,11 @@ class SmsTemplateRepository extends BaseRepository
 {
     protected $fieldSearchable = [
         'title',
+        'category',
         'content',
-        'variables'
+        'variables',
+        'status',
+        'created_by'
     ];
 
     public function getFieldsSearchable(): array

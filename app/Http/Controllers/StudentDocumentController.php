@@ -59,10 +59,55 @@ class StudentDocumentController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $studentDocuments = $this->studentDocumentRepository->paginate(10);
+        $query = \App\Models\StudentDocument::query();
+
+        // Filter by Student (via Search q)
+        if ($request->filled('q')) {
+            $q = $request->get('q');
+            $query->whereHas('student', function ($sub) use ($q) {
+                $sub->where('first_name', 'like', "%$q%")
+                    ->orWhere('last_name', 'like', "%$q%")
+                    ->orWhere('admission_no', 'like', "%$q%");
+            });
+        }
+
+        // Filter by Class Section
+        if ($request->filled('class_section_id')) {
+            $classSectionId = $request->get('class_section_id');
+            $query->whereHas('student.studentClassEnrollments', function ($sub) use ($classSectionId) {
+                $sub->where('class_section_id', $classSectionId)->where('is_current', true);
+            });
+        }
+
+        // Filter by Academic Year
+        if ($request->filled('academic_year_id')) {
+            $academicYearId = $request->get('academic_year_id');
+            $query->whereHas('student.studentClassEnrollments', function ($sub) use ($academicYearId) {
+                $sub->where('academic_year_id', $academicYearId);
+            });
+        }
+
+        $studentDocuments = $query->with(['student.studentClassEnrollments.classSection'])
+            ->orderBy('uploaded_at', 'desc')
+            ->paginate(15)
+            ->appends($request->all());
+
+        $filterData = $this->getFilterData();
 
         return view('student_documents.index')
-            ->with('studentDocuments', $studentDocuments);
+            ->with('studentDocuments', $studentDocuments)
+            ->with($filterData);
+    }
+
+    /**
+     * Get data for filter dropdowns
+     */
+    private function getFilterData()
+    {
+        $classSections = \App\Models\ClassSection::with(['schoolClass', 'section'])->get();
+        $academicYears = \App\Models\AcademicYear::orderBy('start_date', 'desc')->get();
+
+        return compact('classSections', 'academicYears');
     }
 
     /**

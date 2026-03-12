@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class JobPosition extends Model
 {
     public $table = 'job_positions';
+    public $primaryKey = 'position_id';
 
     public $fillable = [
         'title',

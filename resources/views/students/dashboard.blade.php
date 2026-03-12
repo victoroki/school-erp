@@ -292,7 +292,7 @@
         .bg-light-soft { background-color: rgba(0, 0, 0, 0.02); }
     </style>
 
-    @push('scripts')
+    @push('page_scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
         // Students by Class Chart

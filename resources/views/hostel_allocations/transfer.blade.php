@@ -5,7 +5,7 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-12">
-                    <h1>Transfer Student: {{ $hostelAllocation->student->first_name }} {{ $hostelAllocation->student->last_name }}</h1>
+                    <h1>Transfer Student: {{ optional($hostelAllocation->student)->first_name ?? 'N/A' }} {{ optional($hostelAllocation->student)->last_name ?? '' }}</h1>
                 </div>
             </div>
         </div>
@@ -24,15 +24,15 @@
                         <div class="text-center">
                             <i class="fas fa-user-graduate fa-3x text-primary"></i>
                         </div>
-                        <h3 class="profile-username text-center">{{ $hostelAllocation->student->first_name }}</h3>
-                        <p class="text-muted text-center">{{ $hostelAllocation->student->student_id }}</p>
+                        <h3 class="profile-username text-center">{{ optional($hostelAllocation->student)->first_name ?? 'N/A' }}</h3>
+                        <p class="text-muted text-center">{{ optional($hostelAllocation->student)->student_id ?? 'No ID' }}</p>
 
                         <ul class="list-group list-group-unbordered mb-3">
                             <li class="list-group-item">
-                                <b>Hostel</b> <a class="float-right">{{ $hostelAllocation->hostel->name }}</a>
+                                <b>Hostel</b> <a class="float-right">{{ optional($hostelAllocation->hostel)->name ?? 'N/A' }}</a>
                             </li>
                             <li class="list-group-item">
-                                <b>Room</b> <a class="float-right">{{ $hostelAllocation->room->room_number }}</a>
+                                <b>Room</b> <a class="float-right">{{ optional($hostelAllocation->room)->room_number ?? 'N/A' }}</a>
                             </li>
                             <li class="list-group-item">
                                 <b>Allotted On</b> <a class="float-right">{{ $hostelAllocation->allocation_date->format('d M, Y') }}</a>

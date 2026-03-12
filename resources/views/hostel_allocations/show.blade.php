@@ -5,7 +5,7 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Allocation Record: {{ $hostelAllocation->student->first_name }}</h1>
+                    <h1>Allocation Record: {{ optional($hostelAllocation->student)->first_name ?? 'N/A' }}</h1>
                 </div>
                 <div class="col-sm-6 text-right">
                     <a class="btn btn-default" href="{{ route('hostel-allocations.index') }}">Back</a>
@@ -27,8 +27,8 @@
                         <div class="text-center">
                             <i class="fas fa-id-card-alt fa-3x text-primary shadow-sm p-3 rounded-circle border mb-3"></i>
                         </div>
-                        <h3 class="profile-username text-center">{{ $hostelAllocation->student->first_name }} {{ $hostelAllocation->student->last_name }}</h3>
-                        <p class="text-muted text-center">{{ $hostelAllocation->student->student_id }}</p>
+                        <h3 class="profile-username text-center">{{ optional($hostelAllocation->student)->first_name ?? 'N/A' }} {{ optional($hostelAllocation->student)->last_name ?? '' }}</h3>
+                        <p class="text-muted text-center">{{ optional($hostelAllocation->student)->student_id ?? 'No ID' }}</p>
 
                         <div class="text-center mb-3">
                             <span class="badge badge-{{ $hostelAllocation->status == 'active' ? 'success' : ($hostelAllocation->status == 'vacated' ? 'danger' : 'warning') }} px-3 py-2">
@@ -38,10 +38,10 @@
 
                         <ul class="list-group list-group-unbordered mb-3">
                             <li class="list-group-item">
-                                <b>Hostel</b> <a class="float-right text-dark font-weight-bold">{{ $hostelAllocation->hostel->name }}</a>
+                                <b>Hostel</b> <a class="float-right text-dark font-weight-bold">{{ optional($hostelAllocation->hostel)->name ?? 'N/A' }}</a>
                             </li>
                             <li class="list-group-item">
-                                <b>Room Number</b> <a class="float-right text-dark font-weight-bold">{{ $hostelAllocation->room->room_number }}</a>
+                                <b>Room Number</b> <a class="float-right text-dark font-weight-bold">{{ optional($hostelAllocation->room)->room_number ?? 'N/A' }}</a>
                             </li>
                             <li class="list-group-item">
                                 <b>Bed</b> <a class="float-right">{{ $hostelAllocation->bed_number ?? 'Not Specified' }}</a>
@@ -119,7 +119,7 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        <p>Are you sure you want to checkout <strong>{{ $hostelAllocation->student->first_name }}</strong> from Room <strong>{{ $hostelAllocation->room->room_number }}</strong>?</p>
+                        <p>Are you sure you want to checkout <strong>{{ optional($hostelAllocation->student)->first_name ?? 'this student' }}</strong> from Room <strong>{{ optional($hostelAllocation->room)->room_number ?? 'N/A' }}</strong>?</p>
                         <p class="small text-muted">This will free up the bed and mark the allocation as vacated.</p>
                         <div class="form-group mt-3 text-left">
                             {!! Form::label('checkout_notes', 'Checkout Notes:') !!}
