@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Tooltip Test</title>
-    <link rel="stylesheet" href="{{ asset('css/sidebar-enhanced.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/sidebar-fixed-final.css') }}?v={{ time() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {

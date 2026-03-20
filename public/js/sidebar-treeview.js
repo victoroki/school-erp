@@ -1,19 +1,24 @@
 /**
  * SIDEBAR TREEVIEW & RESPONSIVE HANDLER
- * - Desktop: hamburger toggles icon-only collapsed mode
- * - Mobile: hamburger slides sidebar in/out as overlay
+ * - Desktop : hamburger toggles icon-only collapsed mode (body.sidebar-collapse)
+ * - Mobile  : hamburger slides sidebar in as an overlay drawer (body.sidebar-open)
+ *             CSS handles the actual transform; JS just toggles the class.
  */
 
 function initSidebarHandler() {
     (function ($) {
         'use strict';
 
-        // ─── 1. Copy data-tooltip from nav-link to parent nav-item for CSS tooltips ───
-        // The menu HTML already has data-tooltip on .nav-link; we copy it to .nav-item
-        // so our CSS ::after pseudo-element can display it in collapsed mode.
+        var MOBILE_BP = 991; // px — matches CSS breakpoint
+
+        function isMobile() {
+            return $(window).width() <= MOBILE_BP;
+        }
+
+        // ─── 1. Attach tooltip text to parent nav-item ──────────────────────────
+        // CSS ::after uses data-tooltip on .nav-item for the collapsed tooltip.
         function attachTooltips() {
             $('.nav-sidebar .nav-item').each(function () {
-                // Prefer the data-tooltip already on the link, fallback to <p> text
                 var $link = $(this).find('> .nav-link');
                 var label = $link.attr('data-tooltip') || $link.find('> p').text().trim();
                 if (label) {
@@ -23,116 +28,141 @@ function initSidebarHandler() {
         }
         attachTooltips();
 
-        // ─── 2. Treeview Toggle (accordion expand/collapse) ───────────────────────
+        // ─── 2. Treeview accordion (expand / collapse submenus) ────────────────
         $(document).off('click.treeview', '.has-treeview > a')
             .on('click.treeview', '.has-treeview > a', function (e) {
-                var $link = $(this);
+                var $link   = $(this);
                 var $parent = $link.parent('.has-treeview');
-                var $submenu = $parent.find('> .nav-treeview');
+                var $sub    = $parent.find('> .nav-treeview');
 
-                // Only intercept if not in collapsed mode on desktop
-                if ($submenu.length > 0 && !($('body').hasClass('sidebar-collapse') && $(window).width() > 991)) {
-                    e.preventDefault();
-                    e.stopPropagation();
+                // In desktop collapsed mode the flyout is CSS-only (hover).
+                // Don't intercept clicks — let the link navigate normally.
+                if (!isMobile() && $('body').hasClass('sidebar-collapse')) {
+                    return;
+                }
 
-                    // Accordion: close siblings
-                    $parent.siblings('.menu-open').each(function () {
-                        $(this).removeClass('menu-open');
-                        $(this).find('> .nav-treeview').slideUp(220);
+                if ($sub.length === 0) { return; }
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Accordion: close open siblings first
+                $parent.siblings('.menu-open').each(function () {
+                    $(this).removeClass('menu-open');
+                    $(this).find('> .nav-treeview').slideUp(220);
+                });
+
+                // Toggle current item
+                if ($parent.hasClass('menu-open')) {
+                    $sub.slideUp(220, function () {
+                        $parent.removeClass('menu-open');
                     });
-
-                    // Toggle current
-                    if ($parent.hasClass('menu-open')) {
-                        $submenu.slideUp(220, function () {
-                            $parent.removeClass('menu-open');
-                        });
-                    } else {
-                        $parent.addClass('menu-is-opening');
-                        $submenu.slideDown(220, function () {
-                            $parent.addClass('menu-open').removeClass('menu-is-opening');
-                        });
-                    }
+                } else {
+                    $parent.addClass('menu-is-opening');
+                    $sub.slideDown(220, function () {
+                        $parent.addClass('menu-open').removeClass('menu-is-opening');
+                    });
                 }
             });
 
-        // ─── 3. Open active menu on page load ────────────────────────────────────
+        // ─── 3. Open active menu on page load ──────────────────────────────────
         $('.nav-sidebar .nav-link.active')
             .parents('.has-treeview')
             .addClass('menu-open')
             .find('> .nav-treeview')
             .show();
 
-        // ─── 4. Hamburger / PushMenu Logic ───────────────────────────────────────
-        // Disable AdminLTE's own pushmenu to prevent double-firing
+        // ─── 4. Hamburger / PushMenu ────────────────────────────────────────────
+        // Disable AdminLTE's built-in handler so we have full control.
         $(document).off('click', '[data-widget="pushmenu"]');
 
         $(document).on('click.pushmenu', '[data-widget="pushmenu"]', function (e) {
             e.preventDefault();
             e.stopImmediatePropagation();
 
-            var isMobile = $(window).width() <= 991;
-
-            if (isMobile) {
-                // Mobile: slide sidebar in/out as overlay - instant toggle
+            if (isMobile()) {
+                // ── Mobile: toggle body.sidebar-open; CSS does the transform ──
                 var isOpen = $('body').hasClass('sidebar-open');
 
                 if (isOpen) {
-                    $('body').removeClass('sidebar-open');
-                    $('.sidebar-overlay').remove();
+                    closeMobileSidebar();
                 } else {
-                    $('body').addClass('sidebar-open');
-                    if ($('.sidebar-overlay').length === 0) {
-                        $('<div class="sidebar-overlay"></div>').appendTo('body');
-                    }
+                    openMobileSidebar();
                 }
             } else {
-                // Desktop: toggle icon-only collapsed mode - instant
+                // ── Desktop: toggle icon-only collapsed mode ──
                 $('body').toggleClass('sidebar-collapse');
 
-                // Persist preference in localStorage
+                // Persist preference
                 try {
-                    localStorage.setItem('sidebarCollapsed', $('body').hasClass('sidebar-collapse') ? '1' : '0');
-                } catch (err) { }
+                    localStorage.setItem(
+                        'sidebarCollapsed',
+                        $('body').hasClass('sidebar-collapse') ? '1' : '0'
+                    );
+                } catch (_) {}
             }
         });
 
-        // ─── 5. Close sidebar on mobile when clicking overlay ────────────────────
-        $(document).on('click.overlay', '.sidebar-overlay', function () {
+        // ─── helpers ────────────────────────────────────────────────────────────
+        function openMobileSidebar() {
+            // Inject overlay if it doesn't exist yet
+            if ($('.sidebar-overlay').length === 0) {
+                $('<div class="sidebar-overlay"></div>').appendTo('body');
+            }
+            $('body').addClass('sidebar-open');
+        }
+
+        function closeMobileSidebar() {
             $('body').removeClass('sidebar-open');
-            $(this).remove();
+            // Give the CSS slide-out transition (0.3 s) time to finish
+            setTimeout(function () {
+                $('.sidebar-overlay').remove();
+            }, 320);
+        }
+
+        // ─── 5. Close mobile sidebar when overlay is clicked ──────────────────
+        $(document).on('click.overlay', '.sidebar-overlay', function () {
+            closeMobileSidebar();
         });
 
-        // ─── 6. Close sidebar on mobile when clicking a leaf nav link ────────────
-        $(document).on('click.mobilenav', '.nav-sidebar .nav-link:not(.has-treeview > a)', function () {
-            if ($(window).width() <= 991) {
-                $('body').removeClass('sidebar-open');
-                $('.sidebar-overlay').remove();
+        // ─── 6. Close mobile sidebar on Escape key ────────────────────────────
+        $(document).on('keydown.sidebar', function (e) {
+            if (e.key === 'Escape' && $('body').hasClass('sidebar-open')) {
+                closeMobileSidebar();
             }
         });
 
-        // ─── 7. Restore collapsed state on desktop from localStorage ─────────────
+        // ─── 7. Close mobile sidebar when a leaf nav-link is tapped ──────────
+        // (Don't close when tapping a parent with a submenu — let accordion handle it)
+        $(document).on('click.mobilenav', '.nav-sidebar .nav-link', function () {
+            if (!isMobile()) { return; }
+            var $parentItem = $(this).closest('.has-treeview');
+            if ($parentItem.length === 0) {
+                // It's a leaf link — close the drawer
+                closeMobileSidebar();
+            }
+        });
+
+        // ─── 8. Restore desktop collapsed state from localStorage ─────────────
         try {
-            if ($(window).width() > 991 && localStorage.getItem('sidebarCollapsed') === '1') {
+            if (!isMobile() && localStorage.getItem('sidebarCollapsed') === '1') {
                 $('body').addClass('sidebar-collapse');
             }
-        } catch (err) { }
+        } catch (_) {}
 
-        // ─── 8. Handle window resize ──────────────────────────────────────────────
+        // ─── 9. Handle window resize ──────────────────────────────────────────
         $(window).on('resize.sidebar', function () {
-            if ($(window).width() > 991) {
-                // Switched to desktop: clean up mobile overlay state
+            if (!isMobile()) {
+                // Switched to desktop — clean up mobile state
                 $('body').removeClass('sidebar-open');
                 $('.sidebar-overlay').remove();
-            } else {
-                // Switched to mobile: remove desktop collapse so sidebar shows full width
-                // (we keep the class but override via CSS media query)
             }
         });
 
     })(window.jQuery);
 }
 
-// Bootstrap: wait for jQuery if not yet available
+// Bootstrap: wait for jQuery if it hasn't loaded yet
 if (window.jQuery) {
     initSidebarHandler();
 } else {
@@ -143,6 +173,6 @@ if (window.jQuery) {
             clearInterval(_sbInterval);
             initSidebarHandler();
         }
-        if (_sbCheckCount > 100) clearInterval(_sbInterval);
+        if (_sbCheckCount > 100) { clearInterval(_sbInterval); }
     }, 50);
 }

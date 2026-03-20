@@ -6,238 +6,141 @@ use App\Models\Student;
 use App\Models\User;
 use App\Models\SchoolClass;
 use App\Models\FeePayment;
-use App\Models\ExamResult;
-use App\Models\Attendance;
+use App\Models\StudentFee;
+use App\Models\AuditTrail;
+use App\Models\LeaveApplication;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        return view('dashboard');
+        $user = Auth::user();
+        $user->load('roles');
+        $roleName = strtolower($user->roles->first()->role_name ?? 'administrator');
+
+        // Real stats filtered by role
+        $stats = $this->getStats($roleName);
+
+        // Enrollment chart — 12 months
+        $enrollmentTrend = $this->getEnrollmentTrend();
+
+        // Fee collection chart — 6 months
+        $feeTrend = $this->getFeeTrend();
+
+        // Real recent activity from audit_trails table
+        $recentActivity = AuditTrail::with('user')
+            ->latest()
+            ->limit(6)
+            ->get()
+            ->map(fn($a) => [
+                'module' => ucfirst($a->module ?? 'System'),
+                'action' => ucfirst($a->action ?? 'Action'),
+                'user'   => optional($a->user)->name ?? 'System',
+                'time'   => $a->created_at->diffForHumans(),
+            ]);
+
+        // Alert counts from real data
+        $pendingFeeQuery   = StudentFee::whereIn('status', ['unpaid', 'partially_paid']);
+        $pendingFeeCount   = $pendingFeeQuery->count();
+        $pendingFeeAmount  = $pendingFeeQuery->get()->sum(fn($fee) => $fee->balance);
+        $pendingLeaveCount = LeaveApplication::where('application_status', 'pending')->count();
+
+        return view('dashboard', compact(
+            'user', 'roleName', 'stats',
+            'enrollmentTrend', 'feeTrend',
+            'recentActivity',
+            'pendingFeeCount', 'pendingFeeAmount', 'pendingLeaveCount'
+        ));
     }
 
+    // Legacy AJAX endpoint — kept for compatibility
     public function getData(Request $request)
-    {
-        $range = $request->get('range', 'year');
-        
-        // Get statistics
-        $statistics = $this->getStatistics();
-        
-        // Get chart data
-        $chartData = $this->getChartData($range);
-        
-        // Get recent activities
-        $recentActivities = $this->getRecentActivities();
-        
-        // Get notices
-        $notices = $this->getNotices();
-        
-        // Get schedule
-        $schedule = $this->getSchedule();
-        
-        return response()->json([
-            'statistics' => $statistics,
-            'charts' => $chartData,
-            'activities' => $recentActivities,
-            'notices' => $notices,
-            'schedule' => $schedule
-        ]);
-    }
-
-    private function getStatistics()
-    {
-        $totalStudents = Student::count();
-        $totalTeachers = User::whereHas('roles', function($query) {
-            $query->where('name', 'teacher');
-        })->count();
-        $totalClasses = SchoolClass::count();
-        $monthlyRevenue = FeePayment::whereMonth('created_at', Carbon::now()->month)
-            ->whereYear('created_at', Carbon::now()->year)
-            ->sum('amount');
-
-        return [
-            'total_students' => $totalStudents,
-            'total_teachers' => $totalTeachers,
-            'total_classes' => $totalClasses,
-            'monthly_revenue' => $monthlyRevenue
-        ];
-    }
-
-    private function getChartData($range)
-    {
-        $enrollmentData = $this->getEnrollmentTrend($range);
-        $classDistribution = $this->getClassDistribution();
-
-        return [
-            'enrollment_trend' => $enrollmentData,
-            'class_distribution' => $classDistribution
-        ];
-    }
-
-    private function getEnrollmentTrend($range)
     {
         $months = [];
         $counts = [];
-        
-        switch ($range) {
-            case 'today':
-                // Get hourly data for today
-                for ($i = 0; $i < 24; $i++) {
-                    $hour = Carbon::today()->addHours($i);
-                    $months[] = $hour->format('H:00');
-                    $counts[] = Student::whereDate('created_at', Carbon::today())
-                        ->whereHour('created_at', $i)
-                        ->count();
-                }
-                break;
-                
-            case 'week':
-                // Get daily data for the week
-                for ($i = 6; $i >= 0; $i--) {
-                    $date = Carbon::today()->subDays($i);
-                    $months[] = $date->format('D');
-                    $counts[] = Student::whereDate('created_at', $date)->count();
-                }
-                break;
-                
-            case 'month':
-                // Get daily data for the month
-                for ($i = 30; $i >= 0; $i--) {
-                    $date = Carbon::today()->subDays($i);
-                    $months[] = $date->format('M d');
-                    $counts[] = Student::whereDate('created_at', $date)->count();
-                }
-                break;
-                
-            case 'year':
-            default:
-                // Get monthly data for the year
-                for ($i = 11; $i >= 0; $i--) {
-                    $month = Carbon::today()->subMonths($i);
-                    $months[] = $month->format('M');
-                    $counts[] = Student::whereYear('created_at', $month->year)
-                        ->whereMonth('created_at', $month->month)
-                        ->count();
-                }
-                break;
+        for ($i = 11; $i >= 0; $i--) {
+            $month    = Carbon::today()->subMonths($i);
+            $months[] = $month->format('M');
+            $counts[] = Student::whereYear('created_at', $month->year)
+                ->whereMonth('created_at', $month->month)
+                ->count();
         }
 
+        return response()->json([
+            'statistics' => [
+                'total_students'  => Student::count(),
+                'total_teachers'  => User::whereHas('roles', fn($q) => $q->where('role_name', 'teacher'))->count(),
+                'total_classes'   => SchoolClass::count(),
+                'monthly_revenue' => FeePayment::whereMonth('created_at', now()->month)->sum('amount'),
+            ],
+            'charts' => [
+                'enrollment_trend' => ['labels' => $months, 'data' => $counts],
+            ],
+        ]);
+    }
+
+    private function getStats(string $role): array
+    {
+        $isFinance = in_array($role, ['finance', 'accountant', 'bursar']);
+        $isHR      = in_array($role, ['hr', 'human resources', 'hr manager']);
+
+        if ($isFinance) {
+            $pendingQuery = StudentFee::whereIn('status', ['unpaid', 'partially_paid']);
+            return [
+                'todayRevenue'    => FeePayment::whereDate('created_at', today())->sum('amount'),
+                'monthRevenue'    => FeePayment::whereMonth('created_at', now()->month)->sum('amount'),
+                'pendingFees'     => $pendingQuery->get()->sum(fn($fee) => $fee->balance),
+                'pendingAccounts' => $pendingQuery->count(),
+            ];
+        }
+
+        if ($isHR) {
+            return [
+                'totalStaff'    => User::whereHas('roles')->count(),
+                'pendingLeaves' => LeaveApplication::where('application_status', 'pending')->count(),
+            ];
+        }
+
+        // Admin / principal / default: full overview
+        $pendingQuery = StudentFee::whereIn('status', ['unpaid', 'partially_paid']);
         return [
-            'labels' => $months,
-            'data' => $counts
+            'totalStudents'  => Student::count(),
+            'activeStudents' => Student::where('is_active', true)->count(),
+            'totalStaff'     => User::whereHas('roles')->count(),
+            'totalClasses'   => SchoolClass::count(),
+            'monthRevenue'   => FeePayment::whereMonth('created_at', now()->month)->sum('amount'),
+            'pendingFees'    => $pendingQuery->get()->sum(fn($fee) => $fee->balance),
         ];
     }
 
-    private function getClassDistribution()
+    private function getEnrollmentTrend(): array
     {
-        $classes = SchoolClass::withCount('students')->get();
-        
         $labels = [];
-        $data = [];
-        
-        foreach ($classes as $class) {
-            $labels[] = $class->name;
-            $data[] = $class->students_count;
+        $data   = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $month    = Carbon::today()->subMonths($i);
+            $labels[] = $month->format('M Y');
+            $data[]   = Student::whereYear('created_at', $month->year)
+                ->whereMonth('created_at', $month->month)
+                ->count();
         }
-        
-        return [
-            'labels' => $labels,
-            'data' => $data
-        ];
+        return ['labels' => $labels, 'data' => $data];
     }
 
-    private function getRecentActivities()
+    private function getFeeTrend(): array
     {
-        // In a real application, you would fetch actual activities from your models
-        // For now, we'll return sample data but in a production environment, you would do something like:
-        // $activities = ActivityLog::latest()->limit(10)->get();
-        
-        return [
-            [
-                'activity' => 'New student admission',
-                'date' => '2 hours ago',
-                'user' => 'Admin'
-            ],
-            [
-                'activity' => 'Fee payment received',
-                'date' => '4 hours ago',
-                'user' => 'Finance'
-            ],
-            [
-                'activity' => 'Exam results published',
-                'date' => '1 day ago',
-                'user' => 'Academic'
-            ],
-            [
-                'activity' => 'Teacher attendance recorded',
-                'date' => '1 day ago',
-                'user' => 'HR'
-            ],
-            [
-                'activity' => 'Library book issued',
-                'date' => '2 days ago',
-                'user' => 'Librarian'
-            ]
-        ];
-    }
-
-    private function getNotices()
-    {
-        // In a real application, you would fetch actual notices from your models
-        // For now, we'll return sample data but in a production environment, you would do something like:
-        // $notices = Notice::orderBy('priority', 'desc')->orderBy('created_at', 'desc')->limit(5)->get();
-        
-        return [
-            [
-                'title' => 'School Closure Notice',
-                'content' => 'School will be closed on Monday for maintenance.',
-                'priority' => 'High',
-                'posted_at' => '2 days ago'
-            ],
-            [
-                'title' => 'Parent-Teacher Meeting',
-                'content' => 'PTM scheduled for next Friday at 2 PM.',
-                'priority' => 'Medium',
-                'posted_at' => '3 days ago'
-            ],
-            [
-                'title' => 'Sports Day Announcement',
-                'content' => 'Annual sports day on 15th of this month.',
-                'priority' => 'Low',
-                'posted_at' => '1 week ago'
-            ]
-        ];
-    }
-
-    private function getSchedule()
-    {
-        // In a real application, you would fetch actual schedule from your models
-        // For now, we'll return sample data but in a production environment, you would do something like:
-        // $schedule = Schedule::whereDate('date', Carbon::today())->orderBy('start_time')->get();
-        
-        return [
-            [
-                'title' => 'Morning Assembly',
-                'time' => '8:00 AM - 8:30 AM',
-                'location' => 'Main Hall'
-            ],
-            [
-                'title' => 'Grade 1 Math Class',
-                'time' => '9:00 AM - 10:00 AM',
-                'location' => 'Room 101'
-            ],
-            [
-                'title' => 'Grade 2 Science',
-                'time' => '10:30 AM - 11:30 AM',
-                'location' => 'Lab 2'
-            ],
-            [
-                'title' => 'Lunch Break',
-                'time' => '12:00 PM - 1:00 PM',
-                'location' => 'Cafeteria'
-            ]
-        ];
+        $labels = [];
+        $data   = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month    = Carbon::today()->subMonths($i);
+            $labels[] = $month->format('M');
+            $data[]   = (float) FeePayment::whereYear('created_at', $month->year)
+                ->whereMonth('created_at', $month->month)
+                ->sum('amount');
+        }
+        return ['labels' => $labels, 'data' => $data];
     }
 }

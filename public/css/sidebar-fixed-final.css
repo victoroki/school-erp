@@ -33,12 +33,12 @@ body.sidebar-mini .main-header {
 
 body.sidebar-mini.sidebar-collapse .content-wrapper,
 body.sidebar-mini.sidebar-collapse .main-footer {
-    margin-left: var(--sidebar-collapsed-width) !important;
+    margin-left: 0 !important;
 }
 
 body.sidebar-mini.sidebar-collapse .main-header {
     margin-left: 0 !important;
-    left: var(--sidebar-collapsed-width) !important;
+    left: 0 !important;
 }
 
 /* On mobile, no margin */
@@ -62,6 +62,7 @@ body.sidebar-mini.sidebar-collapse .main-header {
     top: 0;
     left: 0;
     border-right: 1px solid var(--border-color);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3) !important;
     overflow: hidden !important;
     display: flex;
@@ -477,114 +478,29 @@ body.sidebar-mini.sidebar-collapse .main-header {
 }
 
 /* ===================================================================
-   COLLAPSED SIDEBAR - ICON ONLY MODE (Desktop)
+   COLLAPSED SIDEBAR - FULL HIDE MODE (Desktop)
    =================================================================== */
 
-/* Sidebar width collapses */
-.sidebar-mini.sidebar-collapse .main-sidebar,
-body.sidebar-collapse .main-sidebar {
-    width: var(--sidebar-collapsed-width) !important;
-}
+@media (min-width: 992px) {
+    /* Slide sidebar completely out of view */
+    .sidebar-mini.sidebar-collapse .main-sidebar,
+    body.sidebar-collapse .main-sidebar {
+        transform: translateX(-110%) !important;
+        width: var(--sidebar-width) !important;
+        box-shadow: none !important;
+    }
 
-/* Hide text elements */
-.sidebar-mini.sidebar-collapse .brand-info,
-body.sidebar-collapse .brand-info,
-.sidebar-mini.sidebar-collapse .nav-link p,
-body.sidebar-collapse .nav-link p,
-.sidebar-mini.sidebar-collapse .user-text-info,
-body.sidebar-collapse .user-text-info,
-.sidebar-mini.sidebar-collapse .logout-action,
-body.sidebar-collapse .logout-action,
-.sidebar-mini.sidebar-collapse .sidebar-search-container,
-body.sidebar-collapse .sidebar-search-container,
-.sidebar-mini.sidebar-collapse .nav-header,
-body.sidebar-collapse .nav-header,
-.sidebar-mini.sidebar-collapse .right,
-body.sidebar-collapse .right {
-    display: none !important;
-}
+    /* Expand the header to full width */
+    body.sidebar-collapse .main-header {
+        left: 0 !important;
+        margin-left: 0 !important;
+    }
 
-/* Center brand logo */
-.sidebar-mini.sidebar-collapse .brand-container,
-body.sidebar-collapse .brand-container {
-    justify-content: center;
-    padding: 1.25rem 0;
-    gap: 0;
-}
-
-/* Center user panel */
-.sidebar-mini.sidebar-collapse .sidebar-user-panel,
-body.sidebar-collapse .sidebar-user-panel {
-    justify-content: center;
-    padding: 0.625rem;
-    gap: 0;
-}
-
-/* Center nav icons */
-.sidebar-mini.sidebar-collapse .nav-sidebar .nav-link,
-body.sidebar-collapse .nav-sidebar .nav-link {
-    justify-content: center;
-    padding: 0.875rem !important;
-    border-radius: 12px;
-    transform: none !important;
-}
-
-.sidebar-mini.sidebar-collapse .nav-sidebar .nav-link:hover,
-body.sidebar-collapse .nav-sidebar .nav-link:hover {
-    transform: none !important;
-}
-
-/* Make icons bigger and centered when collapsed */
-.sidebar-mini.sidebar-collapse .nav-icon,
-body.sidebar-collapse .nav-icon {
-    margin-right: 0 !important;
-    font-size: 1.2rem !important;
-    width: 24px !important;
-}
-
-/* Tooltip for collapsed sidebar items */
-.sidebar-mini.sidebar-collapse .nav-sidebar .nav-item,
-body.sidebar-collapse .nav-sidebar .nav-item {
-    position: relative;
-}
-
-.sidebar-mini.sidebar-collapse .nav-sidebar .nav-item:hover::after,
-body.sidebar-collapse .nav-sidebar .nav-item:hover::after {
-    content: attr(data-tooltip);
-    position: absolute;
-    left: calc(100% + 12px);
-    top: 50%;
-    transform: translateY(-50%);
-    background: #1e293b;
-    color: var(--text-main);
-    font-size: 0.8rem;
-    font-weight: 500;
-    padding: 0.4rem 0.75rem;
-    border-radius: 8px;
-    white-space: nowrap;
-    z-index: 9999;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    pointer-events: none;
-}
-
-.sidebar-mini.sidebar-collapse .nav-sidebar .nav-item:hover::before,
-body.sidebar-collapse .nav-sidebar .nav-item:hover::before {
-    content: '';
-    position: absolute;
-    left: calc(100% + 6px);
-    top: 50%;
-    transform: translateY(-50%);
-    border: 6px solid transparent;
-    border-right-color: #1e293b;
-    z-index: 9999;
-    pointer-events: none;
-}
-
-/* Hide treeview submenus in collapsed mode */
-.sidebar-mini.sidebar-collapse .nav-treeview,
-body.sidebar-collapse .nav-treeview {
-    display: none !important;
+    /* Expand the content and footer to full width */
+    body.sidebar-collapse .content-wrapper,
+    body.sidebar-collapse .main-footer {
+        margin-left: 0 !important;
+    }
 }
 
 /* ===================================================================
@@ -657,55 +573,148 @@ body.sidebar-collapse .nav-treeview {
 
 @media (max-width: 991.98px) {
 
-    /* Sidebar hidden off-screen by default */
+    /* ── Sidebar hidden off-screen by default on mobile ── */
     .main-sidebar {
-        margin-left: calc(var(--sidebar-width) * -1) !important;
+        transform: translateX(-110%) !important;  /* use transform, not margin, for reliable hiding */
         position: fixed !important;
-        z-index: 1050;
-        width: var(--sidebar-width) !important;
-        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        top: 0 !important;
+        left: 0 !important;
+        height: 100vh !important;
+        z-index: 1060 !important;           /* above overlay (1055) and header (1030) */
+        width: min(var(--sidebar-width), 85vw) !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: none !important;
+        /* Never collapse to icon-only on mobile */
+        overflow: hidden !important;
     }
 
-    /* Show sidebar when opened */
-    .sidebar-open .main-sidebar {
+    /* ── Slide sidebar in when body.sidebar-open is set ── */
+    body.sidebar-open .main-sidebar {
+        transform: translateX(0) !important;
+        box-shadow: 8px 0 40px rgba(0, 0, 0, 0.65) !important;
+    }
+
+    /* ── Content & footer never shift on mobile ── */
+    body .content-wrapper,
+    body .main-footer,
+    body.sidebar-mini .content-wrapper,
+    body.sidebar-mini .main-footer,
+    body.sidebar-collapse .content-wrapper,
+    body.sidebar-collapse .main-footer,
+    body.sidebar-mini.sidebar-collapse .content-wrapper,
+    body.sidebar-mini.sidebar-collapse .main-footer {
         margin-left: 0 !important;
-        box-shadow: 10px 0 40px rgba(0, 0, 0, 0.6) !important;
     }
 
-    /* Fixed header on mobile - position zeroed out at top of file */
+    body .main-header,
+    body.sidebar-mini .main-header,
+    body.sidebar-collapse .main-header,
+    body.sidebar-mini.sidebar-collapse .main-header {
+        left: 0 !important;
+        margin-left: 0 !important;
+        z-index: 1040 !important;
+    }
 
-
-    /* Reduce padding on mobile */
+    /* ── Reduce content padding on mobile ── */
     .content-wrapper {
         padding: calc(57px + 1rem) 0.875rem 1rem !important;
     }
 
-    /* Ensure header stays above content */
-    .main-header {
-        z-index: 1030 !important;
-    }
-
-    /* Overlay when sidebar is open */
+    /* ── Overlay backdrop (sits between content and sidebar) ── */
     .sidebar-overlay {
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.55) !important;
-        backdrop-filter: blur(3px);
-        z-index: 1045 !important;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        z-index: 1055 !important;           /* above header(1040), below sidebar(1060) */
         display: none;
     }
 
-    .sidebar-open .sidebar-overlay {
-        display: block;
+    body.sidebar-open .sidebar-overlay {
+        display: block !important;
     }
 
-    /* Mobile width is fixed at top */
+    /* ── On mobile, always show full sidebar (never icon-only) - Crush AdminLTE overrides ── */
+    body.sidebar-collapse .main-sidebar,
+    .sidebar-mini.sidebar-collapse .main-sidebar {
+        width: min(var(--sidebar-width), 85vw) !important;
+    }
 
+    body.sidebar-collapse .brand-info,
+    body.sidebar-collapse .nav-link p,
+    body.sidebar-collapse .user-text-info,
+    body.sidebar-collapse .logout-action,
+    body.sidebar-collapse .sidebar-search-container,
+    body.sidebar-collapse .nav-header,
+    body.sidebar-collapse .right,
+    .sidebar-mini.sidebar-collapse .main-sidebar .nav-sidebar .nav-link p,
+    .sidebar-mini.sidebar-collapse .main-sidebar .user-panel > .info,
+    .sidebar-mini.sidebar-collapse .main-sidebar .sidebar-search-results,
+    .sidebar-mini.sidebar-collapse .main-sidebar .brand-text {
+        display: flex !important;           /* restore hidden text on mobile */
+    }
 
-    /* Hamburger stays perfectly at top-left */
+    body.sidebar-collapse .nav-link p,
+    body.sidebar-collapse .nav-header,
+    body.sidebar-collapse .brand-info,
+    body.sidebar-collapse .user-text-info,
+    .sidebar-mini.sidebar-collapse .main-sidebar .nav-sidebar .nav-link p,
+    .sidebar-mini.sidebar-collapse .main-sidebar .user-panel > .info,
+    .sidebar-mini.sidebar-collapse .main-sidebar .brand-text {
+        display: block !important;
+        width: auto !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        animation: none !important;
+    }
+
+    body.sidebar-collapse .logout-action,
+    body.sidebar-collapse .right {
+        display: inline-flex !important;
+    }
+
+    body.sidebar-collapse .sidebar-search-container,
+    .sidebar-mini.sidebar-collapse .main-sidebar .sidebar-search-results {
+        display: block !important;
+    }
+
+    body.sidebar-collapse .nav-sidebar .nav-link,
+    .sidebar-mini.sidebar-collapse .main-sidebar .nav-sidebar .nav-link {
+        justify-content: flex-start !important;
+        padding: 0.8rem 1rem !important;
+        width: 100% !important;
+    }
+
+    body.sidebar-collapse .nav-item.menu-open > .nav-treeview,
+    body.sidebar-collapse .nav-item.menu-is-opening > .nav-treeview,
+    .sidebar-mini.sidebar-collapse .main-sidebar .nav-item.menu-open > .nav-treeview,
+    .sidebar-mini.sidebar-collapse .main-sidebar .nav-item.menu-is-opening > .nav-treeview {
+        display: block !important;
+    }
+
+    body.sidebar-collapse .nav-icon,
+    .sidebar-mini.sidebar-collapse .main-sidebar .nav-sidebar .nav-icon {
+        margin-right: 0.875rem !important;
+        font-size: 1.05rem !important;
+        width: 22px !important;
+    }
+
+    body.sidebar-collapse .brand-container,
+    .sidebar-mini.sidebar-collapse .main-sidebar .brand-link {
+        justify-content: flex-start !important;
+        padding: 1.5rem 1.25rem 1.25rem !important;
+        gap: 0.875rem !important;
+    }
+
+    body.sidebar-collapse .sidebar-user-panel,
+    .sidebar-mini.sidebar-collapse .main-sidebar .user-panel {
+        justify-content: flex-start !important;
+        padding: 0.875rem !important;
+        gap: 0.75rem !important;
+    }
+
+    /* ── Hamburger positioning ── */
     .main-header .navbar-nav {
         align-items: center;
     }
@@ -717,7 +726,11 @@ body.sidebar-collapse .nav-treeview {
 
     .main-header .navbar-nav .nav-item:first-child .nav-link[data-widget="pushmenu"] {
         margin-left: 0 !important;
-        padding: 0 !important;
+    }
+
+    /* ── Prevent background page scroll when sidebar is open ── */
+    body.sidebar-open {
+        overflow: hidden !important;
     }
 }
 
@@ -726,17 +739,6 @@ body.sidebar-collapse .nav-treeview {
    =================================================================== */
 
 @media (max-width: 767.98px) {
-
-    /* Sidebar takes full width on very small screens */
-    .main-sidebar {
-        width: min(var(--sidebar-width), 85vw) !important;
-        margin-left: calc(min(var(--sidebar-width), 85vw) * -1) !important;
-    }
-
-    .sidebar-open .main-sidebar {
-        margin-left: 0 !important;
-    }
-
     .content-wrapper {
         padding: calc(57px + 0.75rem) 0.75rem 0.75rem !important;
     }

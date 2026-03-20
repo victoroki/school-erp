@@ -1,6 +1,6 @@
 <x-laravel-ui-adminlte::adminlte-layout>
 @push('page_css')
-    <link rel="stylesheet" href="{{ asset('css/sidebar-fixed-final.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/sidebar-fixed-final.css') }}?v={{ time() }}">
 @endpush
 
     <body class="hold-transition sidebar-mini layout-fixed">
@@ -73,7 +73,7 @@
 
         <!-- Sidebar Treeview JavaScript - MUST be loaded after jQuery and AdminLTE -->
         @push('page_scripts')
-        <script src="{{ asset('js/sidebar-treeview.js') }}"></script>
+        <script src="{{ asset('js/sidebar-treeview.js') }}?v={{ time() }}"></script>
         @endpush
     </body>
 </x-laravel-ui-adminlte::adminlte-layout>
