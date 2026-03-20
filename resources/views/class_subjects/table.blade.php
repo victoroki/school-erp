@@ -1,67 +1,71 @@
 @if($classSubjects->isEmpty())
-    <div class="alert alert-info text-center">
-        <i class="fas fa-info-circle mr-2"></i> No class subjects found. Assign some subjects to classes to get started.
+    <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+        <div class="card-body text-center p-5 text-muted">
+            <i class="fas fa-book-reader fa-3x mb-3 text-light"></i>
+            <p class="mb-0">No class subjects found. Assign some subjects to classes to get started.</p>
+        </div>
     </div>
 @else
     <div class="row" id="class-subjects-grid">
         @foreach($classSubjects as $className => $subjectsGroup)
-            <div class="col-lg-4 col-md-6 col-sm-12 class-group" data-group-name="{{ strtolower($className) }}">
-                <div class="card card-primary card-outline mb-4 h-100">
-                    <div class="card-header">
-                        <h3 class="card-title text-bold text-capitalize">
-                           <i class="fas fa-book-reader text-primary mr-2"></i> {{ $className }}
-                        </h3>
-                        <div class="card-tools">
-                             <span class="badge badge-primary mr-2">{{ $subjectsGroup->count() }} Subjects</span>
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
+            <div class="col-lg-4 col-md-6 col-sm-12 class-group mb-4" data-group-name="{{ strtolower($className) }}">
+                <div class="card h-100 shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
+                    <!-- Sleek Header -->
+                    <div class="card-header border-bottom-0 d-flex justify-content-between align-items-center" style="background-color: #f8fafc; padding: 1rem 1.25rem;">
+                        <div class="d-flex align-items-center">
+                            <div style="background-color: #e0f2fe; color: #0284c7; width: 32px; height: 32px; border-radius: 8px; display: flex; justify-content: center; align-items: center; margin-right: 12px;">
+                                <i class="fas fa-book-reader"></i>
+                            </div>
+                            <h3 class="card-title text-dark font-weight-bold mb-0" style="font-size: 1.1rem; line-height: 1;">
+                                {{ $className }}
+                            </h3>
+                        </div>
+                        <div class="d-flex align-items-center">
+                             <span class="badge" style="background-color: #fee2e2; color: #ef4444; font-size: 0.75rem; padding: 5px 8px; border-radius: 6px; margin-right: 10px;">
+                                 {{ $subjectsGroup->count() }} Subjects
+                             </span>
+                            <button type="button" class="btn btn-sm btn-tool text-secondary p-0" data-card-widget="collapse" style="box-shadow: none;">
                                 <i class="fas fa-minus"></i>
                             </button>
                         </div>
                     </div>
-                    <div class="card-body p-0" style="max-height: 350px; overflow-y: auto;">
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped mb-0 table-sm">
-                                <thead class="bg-light sticky-top">
-                                <tr>
-                                    <th style="width: 40%">Subject</th>
-                                    <th style="width: 30%">Academic Year</th>
-                                    <th style="width: 30%" class="text-center">Action</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @foreach($subjectsGroup as $classSubject)
-                                    <tr class="subject-row" data-subject-name="{{ strtolower($classSubject->subject->name) }}">
-                                        <td class="align-middle font-weight-bold">
-                                            {{ $classSubject->subject->name }}
-                                        </td>
-                                        <td class="align-middle">
-                                            <span class="badge badge-light border">{{ $classSubject->academicYear->name }}</span>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            {!! Form::open(['route' => ['class-subjects.destroy', $classSubject->class_subject_id], 'method' => 'delete']) !!}
-                                            <div class='btn-group'>
-                                                <a href="{{ route('class-subjects.show', [$classSubject->class_subject_id]) }}"
-                                                   class='btn btn-xs btn-default text-info shadow-sm' title="View">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="{{ route('class-subjects.edit', [$classSubject->class_subject_id]) }}"
-                                                   class='btn btn-xs btn-default text-primary shadow-sm' title="Edit">
-                                                    <i class="fas fa-pencil-alt"></i>
-                                                </a>
-                                                {!! Form::button('<i class="fas fa-trash text-danger"></i>', [
-                                                    'type' => 'submit',
-                                                    'class' => 'btn btn-xs btn-default shadow-sm',
-                                                    'onclick' => "return confirm('Are you sure you want to delete this?')",
-                                                    'title' => 'Delete'
-                                                ]) !!}
-                                            </div>
-                                            {!! Form::close() !!}
-                                        </td>
-                                    </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                    
+                    <!-- Clean List Body -->
+                    <div class="card-body p-0" style="max-height: 350px; overflow-y: auto; background-color: #ffffff;">
+                        <ul class="list-group list-group-flush">
+                            @foreach($subjectsGroup as $classSubject)
+                                <li class="list-group-item subject-row d-flex justify-content-between align-items-center text-dark" 
+                                    data-subject-name="{{ strtolower($classSubject->subject->name) }}"
+                                    style="padding: 0.85rem 1.25rem; border-color: #f1f5f9;">
+                                    
+                                    <div class="pr-2">
+                                        <p class="mb-0 font-weight-bold" style="font-size: 0.95rem;">{{ $classSubject->subject->name }}</p>
+                                        <div class="d-flex mt-1">
+                                            <span class="badge" style="background-color: #f1f5f9; color: #475569; font-size: 0.7rem; font-weight: 600;">{{ $classSubject->academicYear->name }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex" style="gap: 5px;">
+                                        {!! Form::open(['route' => ['class-subjects.destroy', $classSubject->class_subject_id], 'method' => 'delete', 'class' => 'm-0']) !!}
+                                        <div class="btn-group btn-group-sm rounded shadow-xs" style="overflow: hidden;">
+                                            <a href="{{ route('class-subjects.show', [$classSubject->class_subject_id]) }}" class="btn btn-light text-info" title="View" style="background-color: #f8fafc; border-color: #f1f5f9;">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ route('class-subjects.edit', [$classSubject->class_subject_id]) }}" class="btn btn-light text-primary" title="Edit" style="background-color: #f8fafc; border-color: #f1f5f9;">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {!! Form::button('<i class="fas fa-trash-alt"></i>', [
+                                                'type' => 'submit',
+                                                'class' => 'btn btn-light text-danger',
+                                                'style' => 'background-color: #f8fafc; border-color: #f1f5f9;',
+                                                'onclick' => "return confirm('Are you sure you want to delete this?')"
+                                            ]) !!}
+                                        </div>
+                                        {!! Form::close() !!}
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
                     </div>
                 </div>
             </div>

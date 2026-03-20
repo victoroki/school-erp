@@ -21,24 +21,22 @@
 
         @include('flash::message')
 
-        <div class="clearfix"></div>
-
-        <div class="clearfix"></div>
-
-        <div class="card mb-3">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <input type="text" id="classSectionSearch" class="form-control" placeholder="Search classes or sections...">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+            <h5 class="text-secondary font-weight-bold mb-3 mb-md-0">Manage Class Sections</h5>
+            <div class="d-flex flex-column flex-sm-row" style="gap: 10px;">
+                <div class="input-group input-group-sm mb-2 mb-sm-0" style="width: 100%; max-width: 250px;">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
                     </div>
-                    <div class="col-md-6 text-right">
-                        <button class="btn btn-default btn-sm" onclick="expandAll()">
-                            <i class="fas fa-expand-arrows-alt"></i> Expand All
-                        </button>
-                        <button class="btn btn-default btn-sm" onclick="collapseAll()">
-                            <i class="fas fa-compress-arrows-alt"></i> Collapse All
-                        </button>
-                    </div>
+                    <input type="text" id="classSectionSearch" class="form-control border-left-0 pl-0" placeholder="Search classes or sections..." style="box-shadow: none;">
+                </div>
+                <div class="d-flex" style="gap: 10px; width: 100%;">
+                    <button class="btn btn-sm flex-fill" onclick="expandAll()" style="background-color: #f1f5f9; color: #475569; font-weight: 600;">
+                        <i class="fas fa-expand-alt mr-1"></i> Expand
+                    </button>
+                    <button class="btn btn-sm flex-fill" onclick="collapseAll()" style="background-color: #f1f5f9; color: #475569; font-weight: 600;">
+                        <i class="fas fa-compress-alt mr-1"></i> Collapse
+                    </button>
                 </div>
             </div>
         </div>

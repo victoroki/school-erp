@@ -7,19 +7,13 @@
 <!-- Start Date Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('start_date', 'Start Date:') !!}
-    {!! Form::date('start_date', null, ['class' => 'form-control','id'=>'start_date']) !!}
+    {!! Form::date('start_date', isset($academicYear) && $academicYear->start_date ? $academicYear->start_date->format('Y-m-d') : null, ['class' => 'form-control','id'=>'start_date']) !!}
 </div>
-
-@push('page_scripts')
-    <script type="text/javascript">
-        $('#start_date').datepicker()
-    </script>
-@endpush
 
 <!-- End Date Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('end_date', 'End Date:') !!}
-    {!! Form::date('end_date', null, ['class' => 'form-control','id'=>'end_date']) !!}
+    {!! Form::date('end_date', isset($academicYear) && $academicYear->end_date ? $academicYear->end_date->format('Y-m-d') : null, ['class' => 'form-control','id'=>'end_date']) !!}
 </div>
 
 

@@ -12,6 +12,6 @@
 
 <!-- Hod Id Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('hod_id', 'Hod Id:') !!}
-    {!! Form::number('hod_id', null, ['class' => 'form-control']) !!}
+    {!! Form::label('hod_id', 'Head of Department (HOD):') !!}
+    {!! Form::select('hod_id', $staff, null, ['class' => 'form-control', 'placeholder' => 'Select HOD...']) !!}
 </div>

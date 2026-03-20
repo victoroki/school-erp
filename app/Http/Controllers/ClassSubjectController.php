@@ -94,6 +94,9 @@ class ClassSubjectController extends AppBaseController
             return redirect(route('class-subjects.index'));
         }
 
+        // Eager load relations for display
+        $classSubject->load(['class', 'subject', 'academicYear']);
+
         return view('class_subjects.show')->with('classSubject', $classSubject);
     }
 

@@ -60,3 +60,60 @@
         null,
         ['class' => 'form-control', 'required']) !!}
 </div>
+
+@push('page_scripts')
+    <script>
+        $(document).ready(function() {
+            function filterTeachers() {
+                var subjectId = $('#subject_id').val();
+                var classSectionId = $('#class_section_id').val();
+                var teacherSelect = $('#teacher_id');
+                var currentTeacherId = teacherSelect.val();
+
+                if (subjectId) {
+                    // Show a loading state if possible
+                    teacherSelect.prop('disabled', true);
+                    
+                    $.ajax({
+                        url: "{{ url('api/subjects') }}/" + subjectId + "/teachers",
+                        type: 'GET',
+                        data: { class_section_id: classSectionId },
+                        dataType: 'json',
+                        success: function(data) {
+                            teacherSelect.empty();
+                            teacherSelect.append('<option value="">Select Teacher</option>');
+                            
+                            var teacherFound = false;
+                            $.each(data, function(key, value) {
+                                var selected = (key == currentTeacherId) ? 'selected' : '';
+                                if(key == currentTeacherId) teacherFound = true;
+                                teacherSelect.append('<option value="' + key + '" ' + selected + '>' + value + '</option>');
+                            });
+                            
+                            // If the previously selected teacher is NOT in the new list, reset selection
+                            if(!teacherFound && currentTeacherId != "") {
+                                teacherSelect.val("");
+                            }
+
+                            teacherSelect.prop('disabled', false);
+                        },
+                        error: function() {
+                            teacherSelect.prop('disabled', false);
+                        }
+                    });
+                }
+            }
+
+            $('#subject_id, #class_section_id').on('change', function() {
+                filterTeachers();
+            });
+
+            // Initial filter if subject is already selected (e.g. on Edit)
+            if($('#subject_id').val()) {
+                // filterTeachers(); 
+                // We might not want to filter immediately if it removes the current valid teacher, 
+                // but our logic preserves it if found.
+            }
+        });
+    </script>
+@endpush

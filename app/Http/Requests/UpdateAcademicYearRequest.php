@@ -26,6 +26,16 @@ class UpdateAcademicYearRequest extends FormRequest
     {
         $rules = AcademicYear::$rules;
         
+        // Get the ID from the route. It might be the model instance or just the ID integer
+        $id = $this->route('academic_year');
+        if (is_object($id)) {
+            $id = $id->academic_year_id;
+        }
+
+        // Append the current record ID to ignore it during the unique check
+        // Syntax: unique:table,column,except,idColumn
+        $rules['name'] = 'required|string|max:50|unique:academic_years,name,' . $id . ',academic_year_id';
+        
         return $rules;
     }
 }

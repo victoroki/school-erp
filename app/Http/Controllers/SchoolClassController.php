@@ -66,17 +66,20 @@ class SchoolClassController extends AppBaseController
      */
     public function show($id)
     {
-        $schoolClass = $this->schoolClassRepository->with([
-            'classSections.section', 
-            'classSections.academicYear', 
-            'classSubjects.subject'
-        ])->find($id);
+        $schoolClass = $this->schoolClassRepository->find($id);
 
         if (empty($schoolClass)) {
             Flash::error('School Class not found');
 
             return redirect(route('school-classes.index'));
         }
+
+        // Eager load relations
+        $schoolClass->load([
+            'classSections.section', 
+            'classSections.academicYear', 
+            'classSubjects.subject'
+        ]);
 
         // Count students in this class across all sections
         $studentCount = \App\Models\StudentClassEnrollment::whereIn('class_section_id', $schoolClass->classSections->pluck('class_section_id'))->count();

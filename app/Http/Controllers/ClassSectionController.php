@@ -98,6 +98,9 @@ class ClassSectionController extends AppBaseController
             return redirect(route('class-sections.index'));
         }
 
+        // Eager load relations for display
+        $classSection->load(['academicYear', 'schoolClass', 'section', 'classroom', 'classTeacher']);
+
         return view('class_sections.show')->with('classSection', $classSection);
     }
 

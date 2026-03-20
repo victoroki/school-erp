@@ -24,10 +24,20 @@ class DepartmentController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $departments = $this->departmentRepository->paginate(10);
+        $departments = $this->departmentRepository->with(['hod'])->paginate(10);
 
         return view('departments.index')
             ->with('departments', $departments);
+    }
+
+    /**
+     * Get dropdown data for forms
+     */
+    private function getDropdownData()
+    {
+        return [
+            'staff' => \App\Models\Staff::get()->pluck('full_name', 'staff_id')->toArray()
+        ];
     }
 
     /**
@@ -35,7 +45,7 @@ class DepartmentController extends AppBaseController
      */
     public function create()
     {
-        return view('departments.create');
+        return view('departments.create', $this->getDropdownData());
     }
 
     /**
@@ -81,7 +91,10 @@ class DepartmentController extends AppBaseController
             return redirect(route('departments.index'));
         }
 
-        return view('departments.edit')->with('department', $department);
+        return view('departments.edit', array_merge(
+            ['department' => $department],
+            $this->getDropdownData()
+        ));
     }
 
     /**

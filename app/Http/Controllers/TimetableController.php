@@ -325,6 +325,30 @@ class TimetableController extends AppBaseController
     }
 
     /**
+     * Get teachers for a specific subject (AJAX)
+     */
+    public function getTeachersBySubject(Request $request, $subjectId)
+    {
+        $classSectionId = $request->get('class_section_id');
+
+        $query = \App\Models\TeacherSubject::with('staff')
+            ->where('subject_id', $subjectId);
+
+        if ($classSectionId) {
+            $query->where('class_section_id', $classSectionId);
+        }
+
+        $teachers = $query->get()->mapWithKeys(function ($item) {
+            $staff = $item->staff;
+            if (!$staff) return [];
+            $name = trim($staff->first_name . ' ' . ($staff->middle_name ? $staff->middle_name . ' ' : '') . $staff->last_name);
+            return [$staff->staff_id => $name];
+        });
+
+        return response()->json($teachers);
+    }
+
+    /**
      * Get data needed for create/edit forms
      */
     private function getFormData(): array

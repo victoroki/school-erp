@@ -229,6 +229,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('teacher-workload', [App\Http\Controllers\TeacherWorkloadController::class, 'index'])->name('teacher-workload.index');
     
     Route::resource('timetables', App\Http\Controllers\TimetableController::class);
+    Route::get('api/subjects/{subjectId}/teachers', [App\Http\Controllers\TimetableController::class, 'getTeachersBySubject'])->name('api.subjects.teachers');
+
     
     // Fee Management Revamped Routes
     Route::group(['prefix' => 'fees', 'as' => 'fees.'], function () {
