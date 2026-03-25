@@ -1,0 +1,22 @@
+﻿
+   INFO  Running migrations.  
+
+  2026_01_29_085423_create_requisitions_table ................................................ 12ms FAIL
+
+In Connection.php line 829:
+                                                                                                         
+  SQLSTATE[42S01]: Base table or view already exists: 1050 Table 'requisitions' already exists (Connect  
+  ion: mysql, SQL: create table `requisitions` (`requisition_id` int unsigned not null auto_increment p  
+  rimary key, `requisition_number` varchar(255) not null, `requested_by` int unsigned not null, `depart  
+  ment_id` int unsigned not null, `date_needed` date not null, `priority` varchar(255) not null, `total  
+  _cost` decimal(10, 2) not null default '0', `status` varchar(255) not null default 'Pending', `justif  
+  ication` text not null, `approved_by` int unsigned null, `approved_date` datetime null, `rejected_rea  
+  son` text null, `fulfilled_date` datetime null, `created_at` timestamp null, `updated_at` timestamp n  
+  ull) default character set utf8mb4 collate 'utf8mb4_unicode_ci')                                       
+                                                                                                         
+
+In Connection.php line 587:
+                                                                                                
+  SQLSTATE[42S01]: Base table or view already exists: 1050 Table 'requisitions' already exists  
+                                                                                                
+

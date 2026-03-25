@@ -117,8 +117,8 @@
 </li>
 
 <!-- Student Management -->
-<li class="nav-item has-treeview {{ Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') ? 'active' : '' }}">
+<li class="nav-item has-treeview {{ Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('emergency-contacts*') || Request::is('student-transfer*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('emergency-contacts*') || Request::is('student-transfer*') ? 'active' : '' }}">
         <i class="nav-icon fas fa-user-graduate text-warning"></i>
         <p>
             Student Management
@@ -144,16 +144,30 @@
                 <p>Parent Relationships</p>
             </a>
         </li>
+        {{--
         <li class="nav-item">
             <a href="{{ route('student-documents.index') }}" class="nav-link {{ Request::is('student-documents*') ? 'active' : '' }}">
                 <i class="far fa-file-alt nav-icon text-warning"></i>
                 <p>Student Documents</p>
             </a>
         </li>
+        --}}
+        <li class="nav-item">
+            <a href="{{ route('emergencyContacts.index') }}" class="nav-link {{ Request::is('emergency-contacts*') ? 'active' : '' }}">
+                <i class="fas fa-hospital-user nav-icon text-warning"></i>
+                <p>Emergency Contact</p>
+            </a>
+        </li>
         <li class="nav-item">
             <a href="{{ route('parents.index') }}" class="nav-link {{ Request::is('parents*') ? 'active' : '' }}">
                 <i class="far fa-user-friends nav-icon text-warning"></i>
                 <p>Parents</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('student-transfer.index') }}" class="nav-link {{ Request::is('student-transfer*') ? 'active' : '' }}">
+                <i class="fas fa-exchange-alt nav-icon text-warning"></i>
+                <p>Student Transfer</p>
             </a>
         </li>
     </ul>

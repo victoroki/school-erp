@@ -159,8 +159,8 @@
 @endcanany
 
 <!-- Student Management -->
-<li class="nav-item has-treeview {{ Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') ? 'active' : '' }}">
+<li class="nav-item has-treeview {{ Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('emergency-contacts*') || Request::is('student-transfer*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('emergency-contacts*') || Request::is('student-transfer*') ? 'active' : '' }}">
         <i class="nav-icon fas fa-user-graduate text-warning"></i>
         <p>
             Student Management
@@ -187,15 +187,29 @@
             </a>
         </li>
         <li class="nav-item">
+            <a href="{{ route('emergencyContacts.index') }}" class="nav-link {{ Request::is('emergency-contacts*') ? 'active' : '' }}">
+                <i class="fas fa-hospital-user nav-icon text-warning"></i>
+                <p>Emergency Contact</p>
+            </a>
+        </li>
+        {{--
+        <li class="nav-item">
             <a href="{{ route('student-documents.index') }}" class="nav-link {{ Request::is('student-documents*') ? 'active' : '' }}">
                 <i class="far fa-file-alt nav-icon text-warning"></i>
                 <p>Student Documents</p>
             </a>
         </li>
+        --}}
         <li class="nav-item">
             <a href="{{ route('parents.index') }}" class="nav-link {{ Request::is('parents*') ? 'active' : '' }}">
                 <i class="far fa-user-friends nav-icon text-warning"></i>
                 <p>Parents</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('student-transfer.index') }}" class="nav-link {{ Request::is('student-transfer*') ? 'active' : '' }}">
+                <i class="fas fa-exchange-alt nav-icon text-warning"></i>
+                <p>Student Transfer</p>
             </a>
         </li>
     </ul>
@@ -260,9 +274,15 @@
 
         <li class="nav-header small text-uppercase text-danger">Marks & Results</li>
         <li class="nav-item">
-            <a href="{{ route('exam-results.index') }}" class="nav-link {{ Request::is('exam-results*') ? 'active' : '' }}">
+            <a href="{{ route('exam-results.index') }}" class="nav-link {{ Request::is('exam-results*') && !Request::is('exam-results/bulk*') ? 'active' : '' }}">
                 <i class="fas fa-edit nav-icon text-danger"></i>
                 <p>Enter Marks</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('exam-results.bulk') }}" class="nav-link {{ Request::is('exam-results/bulk*') ? 'active' : '' }}">
+                <i class="fas fa-file-import nav-icon text-danger"></i>
+                <p>Bulk Import Marks</p>
             </a>
         </li>
         <li class="nav-item">
@@ -840,9 +860,9 @@
 
         <li class="nav-header small text-uppercase">Procurement</li>
         <li class="nav-item">
-            <a href="{{ route('inventory.requisitions.index') }}" class="nav-link {{ Request::is('inventory/requisitions*') ? 'active' : '' }}">
+            <a href="{{ route('inventory.requisitions.index') }}" class="nav-link {{ Request::is('inventory/requisitions*') ? 'active' : '' }}" data-tooltip="View My Requests">
                 <i class="fas fa-file-signature nav-icon text-info"></i>
-                <p>Requisitions</p>
+                <p>My Requisitions</p>
             </a>
         </li>
         <li class="nav-item">

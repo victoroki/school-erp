@@ -37,10 +37,10 @@
                                 <tbody>
                                     @foreach($requisition->items as $item)
                                         <tr>
-                                            <td class="pl-4 font-weight-bold">{{ $item->item->name }}</td>
-                                            <td>{{ $item->quantity_requested }} {{ $item->item->unit }}</td>
-                                            <td>KES {{ number_format($item->unit_price, 2) }}</td>
-                                            <td class="text-right pr-4 font-weight-bold">KES {{ number_format($item->total_price, 2) }}</td>
+                                            <td class="pl-4 font-weight-bold">{{ $item->item->name ?? $item->item_name }}</td>
+                                            <td>{{ $item->quantity_needed }} {{ $item->item->unit ?? 'Units' }}</td>
+                                            <td>KES {{ number_format($item->estimated_price, 2) }}</td>
+                                            <td class="text-right pr-4 font-weight-bold">KES {{ number_format($item->amount, 2) }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>

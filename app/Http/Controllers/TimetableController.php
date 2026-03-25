@@ -325,11 +325,46 @@ class TimetableController extends AppBaseController
     }
 
     /**
-     * Get teachers for a specific subject (AJAX)
+     * Get class sections for a specific academic year (AJAX)
+     */
+    public function getClassSectionsByYear(Request $request, $academicYearId)
+    {
+        if (!$academicYearId) {
+            return response()->json([]);
+        }
+
+        $classSections = ClassSection::with(['class', 'section'])
+            ->where('academic_year_id', $academicYearId)
+            ->orderBy('class_id')
+            ->orderBy('section_id')
+            ->get()
+            ->map(function ($item) {
+                $className   = $item->class->name ?? '';
+                $sectionName = $item->section->name ?? '';
+                $parts       = array_filter([$className, $sectionName]);
+                $label       = count($parts)
+                    ? implode(' - ', $parts)
+                    : 'Section ' . $item->class_section_id;
+
+                return [
+                    'id'    => $item->class_section_id,
+                    'label' => $label,
+                ];
+            });
+
+        return response()->json($classSections);
+    }
+
+
+    /**
+     * Get teachers for a specific subject (AJAX).
+     * Deduplicates staff across multiple class-section assignments for the same subject.
+     * Optionally narrows by class_section_id and/or academic_year_id query params.
      */
     public function getTeachersBySubject(Request $request, $subjectId)
     {
-        $classSectionId = $request->get('class_section_id');
+        $classSectionId  = $request->get('class_section_id');
+        $academicYearId  = $request->get('academic_year_id');
 
         $query = \App\Models\TeacherSubject::with('staff')
             ->where('subject_id', $subjectId);
@@ -338,12 +373,27 @@ class TimetableController extends AppBaseController
             $query->where('class_section_id', $classSectionId);
         }
 
-        $teachers = $query->get()->mapWithKeys(function ($item) {
-            $staff = $item->staff;
-            if (!$staff) return [];
-            $name = trim($staff->first_name . ' ' . ($staff->middle_name ? $staff->middle_name . ' ' : '') . $staff->last_name);
-            return [$staff->staff_id => $name];
-        });
+        if ($academicYearId) {
+            $query->where('academic_year_id', $academicYearId);
+        }
+
+        // Deduplicate by staff_id so one teacher appearing in multiple rows shows only once
+        $teachers = $query->get()
+            ->filter(fn($item) => $item->staff !== null)
+            ->unique('staff_id')
+            ->map(function ($item) {
+                $staff = $item->staff;
+                $name  = trim(
+                    $staff->first_name . ' ' .
+                    ($staff->middle_name ? $staff->middle_name . ' ' : '') .
+                    $staff->last_name
+                );
+                if ($staff->employee_id) {
+                    $name .= ' (' . $staff->employee_id . ')';
+                }
+                return ['id' => $staff->staff_id, 'name' => $name];
+            })
+            ->values(); // re-index to a clean JSON array
 
         return response()->json($teachers);
     }

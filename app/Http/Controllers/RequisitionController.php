@@ -13,13 +13,22 @@ class RequisitionController extends AppBaseController
 {
     public function index()
     {
-        $requisitions = Requisition::with(['requestedBy', 'department'])->latest()->paginate(15);
+        // For 'My Requisitions', we filter by the logged-in user
+        // If you want admins to see everything, you can add a check here
+        $query = Requisition::with(['requestedBy', 'department']);
+        
+        if (!auth()->user()->hasRole('Administrator')) {
+            $query->where('requested_by', auth()->id());
+        }
+
+        $requisitions = $query->latest()->paginate(15);
         return view('inventory.requisitions.index', compact('requisitions'));
     }
 
     public function create()
     {
-        $items = InventoryItem::where('quantity', '>', 0)->get();
+        // Allow requesting all items, even those currently out of stock
+        $items = InventoryItem::all();
         $departments = Department::pluck('name', 'department_id');
         return view('inventory.requisitions.create', compact('items', 'departments'));
     }
@@ -46,27 +55,29 @@ class RequisitionController extends AppBaseController
                 'priority' => $request->priority,
                 'justification' => $request->justification,
                 'status' => 'Pending',
-                'total_cost' => 0, // Calculated later
+                'total_cost' => 0,
             ]);
 
             $totalCost = 0;
             foreach ($request->items as $itemData) {
                 $item = InventoryItem::find($itemData['item_id']);
-                $cost = $item->cost_per_unit * $itemData['quantity'];
+                $cost = ($item->cost_per_unit ?? 0) * $itemData['quantity'];
                 $totalCost += $cost;
 
                 $requisition->items()->create([
                     'item_id' => $itemData['item_id'],
-                    'quantity_requested' => $itemData['quantity'],
-                    'unit_price' => $item->cost_per_unit,
-                    'total_price' => $cost,
+                    'item_name' => $item->name,
+                    'quantity_needed' => $itemData['quantity'],
+                    'estimated_price' => $item->cost_per_unit ?? 0,
+                    'purpose' => $request->justification, // Default to main justification
+                    'quantity_fulfilled' => 0,
                 ]);
             }
 
             $requisition->update(['total_cost' => $totalCost]);
 
             DB::commit();
-            Flash::success('Requisition submitted for approval.');
+            Flash::success('Requisition submitted successfully.');
             return redirect()->route('inventory.requisitions.index');
         } catch (\Exception $e) {
             DB::rollback();

@@ -19,21 +19,21 @@
         <!-- Filter Card -->
         <div class="card elevation-2 border-0 mb-4">
             <div class="card-body">
-                <form action="{{ route('exam-results.bulk') }}" method="GET">
+                <form action="{{ route('exam-results.bulk') }}" method="GET" id="filterForm">
                     <div class="row align-items-end">
                         <div class="col-md-3">
-                            <label class="small font-weight-bold text-uppercase">Exam Session</label>
-                            {!! Form::select('exam_id', $exams, request('exam_id'), ['class' => 'form-control select2', 'placeholder' => 'Select Exam', 'required']) !!}
+                            <label class="small font-weight-bold text-uppercase text-muted">Exam Session</label>
+                            {!! Form::select('exam_id', $exams, request('exam_id'), ['class' => 'form-control select2', 'placeholder' => 'Select Exam', 'required', 'id' => 'exam_id']) !!}
                         </div>
                         <div class="col-md-3">
-                            <label class="small font-weight-bold text-uppercase">Class & Section</label>
-                            {!! Form::select('class_section_id', $classSections, request('class_section_id'), ['class' => 'form-control select2', 'placeholder' => 'Select Class', 'required']) !!}
+                            <label class="small font-weight-bold text-uppercase text-muted">Class & Section</label>
+                            {!! Form::select('class_section_id', $classSections, request('class_section_id'), ['class' => 'form-control select2', 'placeholder' => 'Select Class', 'required', 'id' => 'class_section_id']) !!}
                         </div>
                         <div class="col-md-3">
-                            <label class="small font-weight-bold text-uppercase">Subject</label>
-                            {!! Form::select('subject_id', $subjects, request('subject_id'), ['class' => 'form-control select2', 'placeholder' => 'Select Subject', 'required']) !!}
+                            <label class="small font-weight-bold text-uppercase text-muted">Subject</label>
+                            {!! Form::select('subject_id', $subjects, request('subject_id'), ['class' => 'form-control select2', 'placeholder' => 'Select Subject', 'required', 'id' => 'subject_id']) !!}
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3 mt-2 mt-md-0">
                             <button type="submit" class="btn btn-danger btn-block shadow-sm">
                                 <i class="fas fa-search mr-1"></i> Retrieve Students
                             </button>
@@ -42,6 +42,52 @@
                 </form>
             </div>
         </div>
+
+        @if(request()->filled(['exam_id', 'class_section_id', 'subject_id']))
+        <!-- Excel Import Tools -->
+        <div class="row mb-4 animate__animated animate__fadeIn">
+            <div class="col-md-6">
+                <div class="card elevation-1 border-0 h-100 bg-light">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="icon-section mr-4">
+                            <div class="rounded-circle bg-white shadow-sm d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="fas fa-file-csv fa-2x text-success"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h5 class="font-weight-bold mb-1 text-dark">Step 1: Download Template</h5>
+                            <p class="small text-muted mb-2">Get the ready-to-use Excel template with student details.</p>
+                            <a href="{{ route('exam-results.import-template', request()->all()) }}" class="btn btn-outline-success btn-sm font-weight-bold">
+                                <i class="fas fa-download mr-1"></i> Download Template
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mt-3 mt-md-0">
+                <div class="card elevation-1 border-0 h-100 bg-white">
+                    <div class="card-body">
+                        <h5 class="font-weight-bold mb-2"><i class="fas fa-file-import text-primary mr-2"></i> Step 2: Upload Filled File</h5>
+                        <form action="{{ route('exam-results.import.store') }}" method="POST" enctype="multipart/form-data" class="form-inline">
+                            @csrf
+                            <input type="hidden" name="exam_id" value="{{ request('exam_id') }}">
+                            <input type="hidden" name="class_section_id" value="{{ request('class_section_id') }}">
+                            <input type="hidden" name="subject_id" value="{{ request('subject_id') }}">
+                            
+                            <div class="custom-file mb-2 mr-2" style="max-width: 250px;">
+                                <input type="file" name="excel_file" class="custom-file-input" id="excel_file" required accept=".csv">
+                                <label class="custom-file-label" for="excel_file">Choose CSV...</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary mb-2 shadow-sm font-weight-bold">
+                                <i class="fas fa-upload mr-1"></i> Import Marks
+                            </button>
+                        </form>
+                        <small class="text-danger">* Ensure you use the downloaded template for compatibility.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
 
         @if(count($students) > 0)
         <!-- Entry Card -->

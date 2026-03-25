@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Flash;
 use Auth;
 use DB;
+use App\Models\ExamResult;
 
 class ExamResultController extends AppBaseController
 {
@@ -58,8 +59,9 @@ class ExamResultController extends AppBaseController
         $class_section_id = $request->class_section_id;
         $subject_id = $request->subject_id;
         $marks = $request->marks; // array student_id => marks
+        $remarks_arr = $request->remarks ?? [];
 
-        DB::transaction(function () use ($exam_id, $class_section_id, $subject_id, $marks) {
+        DB::transaction(function () use ($exam_id, $class_section_id, $subject_id, $marks, $remarks_arr) {
             foreach ($marks as $student_id => $mark) {
                 if ($mark !== null && $mark !== '') {
                     ExamResult::updateOrCreate(
@@ -71,6 +73,7 @@ class ExamResultController extends AppBaseController
                         ],
                         [
                             'marks_obtained' => $mark,
+                            'remarks' => $remarks_arr[$student_id] ?? null,
                             'created_by' => Auth::id()
                         ]
                     );
@@ -79,6 +82,118 @@ class ExamResultController extends AppBaseController
         });
 
         Flash::success('Marks updated successfully.');
+        return redirect()->back()->withInput();
+    }
+
+    /**
+     * Generate and download a CSV template for bulk import.
+     */
+    public function importTemplate(Request $request)
+    {
+        $request->validate([
+            'exam_id' => 'required',
+            'class_section_id' => 'required',
+            'subject_id' => 'required',
+        ]);
+
+        $exam = Exam::findOrFail($request->exam_id);
+        $classSection = ClassSection::with(['schoolClass', 'section'])->findOrFail($request->class_section_id);
+        $subject = Subject::findOrFail($request->subject_id);
+
+        $students = Student::whereHas('studentClassEnrollments', function ($q) use ($request) {
+            $q->where('class_section_id', $request->class_section_id)
+              ->where('status', 'active');
+        })->orderBy('last_name')->get();
+
+        $filename = "marks_entry_" . str_replace(' ', '_', strtolower($exam->name)) . "_" . str_replace(' ', '_', strtolower($classSection->schoolClass->name)) . ".csv";
+        
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=$filename",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $callback = function() use ($students) {
+            $file = fopen('php://output', 'w');
+            // CSV Headers
+            fputcsv($file, ['STUDENT_ID', 'ADMISSION_NO', 'STUDENT_NAME', 'MARKS_OBTAINED', 'REMARKS']);
+
+            foreach ($students as $student) {
+                fputcsv($file, [
+                    $student->student_id,
+                    $student->admission_no,
+                    $student->full_name,
+                    '', // Empty marks for user to fill
+                    ''  // Empty remarks
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Handle bulk import from uploaded CSV.
+     */
+    public function importStore(Request $request)
+    {
+        $request->validate([
+            'exam_id' => 'required',
+            'class_section_id' => 'required',
+            'subject_id' => 'required',
+            'excel_file' => 'required|file|mimes:csv,txt'
+        ]);
+
+        $exam_id = $request->exam_id;
+        $class_section_id = $request->class_section_id;
+        $subject_id = $request->subject_id;
+        $file = $request->file('excel_file');
+
+        $importCount = 0;
+        $errorCount = 0;
+
+        if (($handle = fopen($file->getRealPath(), "r")) !== FALSE) {
+            fgetcsv($handle); // Skip header row
+            
+            DB::beginTransaction();
+            try {
+                while (($data = fgetcsv($handle)) !== FALSE) {
+                    if (count($data) < 4) continue;
+
+                    $student_id = $data[0];
+                    $marks = $data[3];
+                    $remarks = $data[4] ?? null;
+
+                    if ($student_id && ($marks !== '' && $marks !== null)) {
+                        ExamResult::updateOrCreate(
+                            [
+                                'exam_id' => $exam_id,
+                                'student_id' => $student_id,
+                                'class_section_id' => $class_section_id,
+                                'subject_id' => $subject_id
+                            ],
+                            [
+                                'marks_obtained' => $marks,
+                                'remarks' => $remarks,
+                                'created_by' => Auth::id()
+                            ]
+                        );
+                        $importCount++;
+                    }
+                }
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Flash::error('Error processing file: ' . $e->getMessage());
+                return redirect()->back();
+            }
+            fclose($handle);
+        }
+
+        Flash::success("Successfully imported $importCount results.");
         return redirect()->back()->withInput();
     }
     /** @var ExamResultRepository $examResultRepository*/

@@ -54,7 +54,9 @@
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 font-weight-bold"><i class="fas fa-child mr-2 text-info"></i> Siblings</h6>
-                <a href="#" class="btn btn-sm btn-outline-info"><i class="fas fa-plus"></i> Add Sibling</a>
+                <button type="button" class="btn btn-sm btn-outline-info" data-toggle="modal" data-target="#addSiblingModal">
+                    <i class="fas fa-plus"></i> Add Sibling
+                </button>
             </div>
             <div class="card-body">
                 @if($student->siblings->count() > 0)

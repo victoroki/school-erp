@@ -90,7 +90,7 @@ class ExamController extends AppBaseController
             'examType', 
             'academicYear', 
             'examSchedules.subject', 
-            'examSchedules.classSection.schoolClass'
+            'examSchedules.class'
         ])->find($id);
 
         if (empty($exam)) {

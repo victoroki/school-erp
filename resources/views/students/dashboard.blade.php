@@ -1,285 +1,262 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="content-header">
+    <div class="content-header py-4">
         <div class="container-fluid">
-            <div class="row mb-2">
+            <div class="row align-items-center">
                 <div class="col-sm-6">
-                    <h1 class="m-0 text-dark">
-                        <i class="fas fa-chart-line text-warning mr-2"></i>Student Management Dashboard
+                    <h1 class="font-weight-bold text-dark mb-0" style="font-size: 1.85rem;">
+                        <i class="fas fa-user-graduate mr-2 text-primary"></i>
+                        Student Intelligence
                     </h1>
+                    <p class="text-muted mb-0">Overview of enrollment, demographics and admission patterns</p>
                 </div>
-                <div class="col-sm-6">
-                    <div class="float-right">
-                        <a href="{{ route('students.create') }}" class="btn btn-warning shadow-sm">
-                            <i class="fas fa-user-plus mr-1"></i> Admit New Student
-                        </a>
-                    </div>
+                <div class="col-sm-6 text-right mt-3 mt-sm-0">
+                    <a href="{{ route('students.create') }}" class="btn btn-primary shadow-sm px-4 py-2" style="border-radius: 12px; font-weight: 600;">
+                        <i class="fas fa-user-plus mr-2"></i> Admitt Student
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="content px-3">
+    <div class="content px-4">
         @include('flash::message')
 
-        {{-- Key Metrics Cards --}}
-        <div class="row">
-            <div class="col-lg-3 col-md-6">
-                <div class="info-box shadow-sm border-left border-warning" style="border-left-width: 4px !important;">
-                    <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-users"></i></span>
-                    <div class="info-box-content">
-                        <span class="info-box-text text-uppercase x-small font-weight-bold">Total Students</span>
-                        <span class="info-box-number h3 mb-0">{{ number_format($totalStudents) }}</span>
+        <!-- Primary Metric Cards -->
+        <div class="row mb-5">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card border-0 shadow-sm overflow-hidden h-100 summary-card bg-primary-gradient">
+                    <div class="card-body p-4 position-relative text-white">
+                        <div class="summary-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="extra-small text-uppercase font-weight-bold mb-1" style="opacity: 0.85;">Total Students</div>
+                        <h2 class="font-weight-bold mb-1">{{ number_format($totalStudents) }}</h2>
                         @if($studentTrend != 0)
-                            <small class="text-{{ $studentTrend > 0 ? 'success' : 'danger' }}">
-                                <i class="fas fa-arrow-{{ $studentTrend > 0 ? 'up' : 'down' }}"></i>
-                                {{ number_format(abs($studentTrend), 1) }}% vs last month
-                            </small>
+                            <div class="mt-2 d-flex align-items-center">
+                                <span class="badge {{ $studentTrend > 0 ? 'bg-white-opacity' : 'bg-red-soft' }} x-small px-2 py-1">
+                                    <i class="fas fa-arrow-{{ $studentTrend > 0 ? 'up' : 'down' }} mr-1"></i>
+                                    {{ number_format(abs($studentTrend), 1) }}%
+                                </span>
+                                <span class="ml-2 extra-small opacity-75">vs last month</span>
+                            </div>
+                        @else
+                            <div class="mt-2 extra-small opacity-75">Steady enrollment</div>
                         @endif
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-3 col-md-6">
-                <div class="info-box shadow-sm border-left border-success" style="border-left-width: 4px !important;">
-                    <span class="info-box-icon bg-success elevation-1"><i class="fas fa-user-plus"></i></span>
-                    <div class="info-box-content">
-                        <span class="info-box-text text-uppercase x-small font-weight-bold">New This Month</span>
-                        <span class="info-box-number h3 mb-0">{{ number_format($newAdmissions) }}</span>
-                        <small class="text-muted">Recent admissions</small>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card border-0 shadow-sm overflow-hidden h-100 summary-card bg-emerald-gradient">
+                    <div class="card-body p-4 position-relative text-white">
+                        <div class="summary-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="extra-small text-uppercase font-weight-bold mb-1" style="opacity: 0.85;">Monthly Admissions</div>
+                        <h2 class="font-weight-bold mb-1">{{ number_format($newAdmissions) }}</h2>
+                        <div class="mt-2 extra-small opacity-75">Recent term enrollments</div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-3 col-md-6">
-                <div class="info-box shadow-sm border-left border-info" style="border-left-width: 4px !important;">
-                    <span class="info-box-icon bg-info elevation-1"><i class="fas fa-venus-mars"></i></span>
-                    <div class="info-box-content">
-                        <span class="info-box-text text-uppercase x-small font-weight-bold">Gender Ratio</span>
-                        <span class="info-box-number h3 mb-0">{{ $maleCount }}M / {{ $femaleCount }}F</span>
-                        <small class="text-muted">Male to Female</small>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card border-0 shadow-sm overflow-hidden h-100 summary-card bg-indigo-gradient">
+                    <div class="card-body p-4 position-relative text-white">
+                        <div class="summary-icon">
+                            <i class="fas fa-venus-mars"></i>
+                        </div>
+                        <div class="extra-small text-uppercase font-weight-bold mb-1" style="opacity: 0.85;">Gender Balance</div>
+                        <h2 class="font-weight-bold mb-1">{{ $maleCount }}M : {{ $femaleCount }}F</h2>
+                        <div class="mt-2 extra-small opacity-75">Ratio {{ $femaleCount > 0 ? number_format($maleCount/$femaleCount, 1) : $maleCount }}:1</div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-3 col-md-6">
-                <div class="info-box shadow-sm border-left border-danger" style="border-left-width: 4px !important;">
-                    <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-exclamation-triangle"></i></span>
-                    <div class="info-box-content">
-                        <span class="info-box-text text-uppercase x-small font-weight-bold">Fee Defaulters</span>
-                        <span class="info-box-number h3 mb-0">{{ number_format($feeDefaulters) }}</span>
-                        <small class="text-muted">Overdue payments</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Secondary Metrics --}}
-        <div class="row">
-            <div class="col-lg-3 col-md-6">
-                <div class="small-box bg-gradient-success shadow-sm">
-                    <div class="inner">
-                        <h3>{{ number_format($activeStudents) }}</h3>
-                        <p>Active Students</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6">
-                <div class="small-box bg-gradient-secondary shadow-sm">
-                    <div class="inner">
-                        <h3>{{ number_format($inactiveStudents) }}</h3>
-                        <p>Inactive Students</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-pause-circle"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6">
-                <div class="small-box bg-gradient-primary shadow-sm">
-                    <div class="inner">
-                        <h3>{{ number_format($graduatedStudents) }}</h3>
-                        <p>Graduated Students</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-graduation-cap"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6">
-                <div class="small-box bg-gradient-warning shadow-sm">
-                    <div class="inner">
-                        <h3>{{ number_format($studentsWithPendingDocs) }}</h3>
-                        <p>Pending Documents</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-file-alt"></i>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card border-0 shadow-sm overflow-hidden h-100 summary-card bg-rose-gradient">
+                    <div class="card-body p-4 position-relative text-white">
+                        <div class="summary-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="extra-small text-uppercase font-weight-bold mb-1" style="opacity: 0.85;">Fee Defaulters</div>
+                        <h2 class="font-weight-bold mb-1">{{ number_format($feeDefaulters) }}</h2>
+                        <div class="mt-2 extra-small opacity-75 text-white">Unpaid accounts</div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="row">
-            {{-- Students by Class Chart --}}
-            <div class="col-lg-6">
-                <div class="card card-outline card-warning elevation-2">
-                    <div class="card-header border-0">
-                        <h3 class="card-title font-weight-bold">
-                            <i class="fas fa-chart-bar mr-1"></i> Students by Class
-                        </h3>
+            <!-- Admission Chart Column -->
+            <div class="col-lg-8 mb-4">
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px;">
+                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between">
+                        <h5 class="font-weight-bold text-dark m-0">Admission Trends</h5>
+                        <div class="extra-small text-muted font-weight-bold pt-1 text-uppercase">Monthly Velocity</div>
                     </div>
-                    <div class="card-body">
-                        <canvas id="studentsByClassChart" height="250"></canvas>
+                    <div class="card-body p-4">
+                        <div style="height: 250px;">
+                            <canvas id="admissionTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Students By Class Chart -->
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px;">
+                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                        <h5 class="font-weight-bold text-dark m-0">Students by Class</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div style="height: 250px;">
+                            <canvas id="studentsByClassChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Admissions Table -->
+                <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between">
+                        <h5 class="font-weight-bold text-dark m-0">Recent Enrollments (Last 5)</h5>
+                        <a href="{{ route('students.index') }}" class="text-primary font-weight-bold extra-small text-uppercase">View Full Directory <i class="fas fa-chevron-right ml-1"></i></a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="bg-light-soft">
+                                    <tr>
+                                        <th class="border-0 px-4 py-3 extra-small font-weight-bold text-muted">STUDENT</th>
+                                        <th class="border-0 px-4 py-3 extra-small font-weight-bold text-muted text-center">CLASS</th>
+                                        <th class="border-0 px-4 py-3 extra-small font-weight-bold text-muted text-center">GENDER</th>
+                                        <th class="border-0 px-4 py-3 extra-small font-weight-bold text-muted text-right">PROFILE</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($recentAdmissions as $student)
+                                        @php $enroll = $student->studentClassEnrollments->where('is_current', true)->first(); @endphp
+                                        <tr>
+                                            <td class="px-4 py-3 align-middle">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-circle-sm bg-blue-soft text-blue mr-3 font-weight-bold small">
+                                                        {{ strtoupper(substr($student->first_name, 0, 1)) }}
+                                                    </div>
+                                                    <div>
+                                                        <div class="font-weight-bold text-dark small mb-0">{{ $student->first_name }} {{ $student->last_name }}</div>
+                                                        <div class="extra-small text-muted">{{ $student->admission_no }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 align-middle text-center small font-weight-bold text-muted">
+                                                {{ $enroll->classSection->schoolClass->name ?? '-' }}
+                                            </td>
+                                            <td class="px-4 py-3 align-middle text-center">
+                                                <span class="badge badge-{{ $student->gender == 'male' ? 'primary' : 'rose' }}-soft x-small px-2 py-1 font-weight-bold">
+                                                    {{ strtoupper($student->gender ?? 'N/A') }}
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 align-middle text-right">
+                                                <a href="{{ route('students.show', $student->student_id) }}" class="btn btn-white btn-sm shadow-xs border px-3 extra-small font-weight-bold text-primary" style="border-radius: 8px;">
+                                                    DETAILS
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="4" class="text-center py-5 text-muted small italic">No recent admissions to display.</td></tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Gender Distribution Pie Chart --}}
-            <div class="col-lg-6">
-                <div class="card card-outline card-info elevation-2">
-                    <div class="card-header border-0">
-                        <h3 class="card-title font-weight-bold">
-                            <i class="fas fa-chart-pie mr-1"></i> Gender Distribution
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="genderDistributionChart" height="250"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            {{-- Admission Trend --}}
-            <div class="col-lg-8">
-                <div class="card card-outline card-success elevation-2">
-                    <div class="card-header border-0">
-                        <h3 class="card-title font-weight-bold">
-                            <i class="fas fa-chart-line mr-1"></i> Admission Trend (Last 6 Months)
-                        </h3>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="admissionTrendChart" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Quick Actions --}}
+            <!-- Sidebar -->
             <div class="col-lg-4">
-                <div class="card card-outline card-warning elevation-2">
-                    <div class="card-header border-0">
-                        <h3 class="card-title font-weight-bold">
-                            <i class="fas fa-bolt mr-1"></i> Quick Actions
-                        </h3>
+                <!-- Gender Dist. Pie -->
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px;">
+                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0 text-center">
+                        <h5 class="font-weight-bold text-dark m-0">Gender Ratio</h5>
                     </div>
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <a href="{{ route('students.create') }}" class="btn btn-warning btn-block mb-2">
-                                <i class="fas fa-user-plus mr-2"></i> Admit New Student
-                            </a>
-                            <a href="{{ route('students.index') }}" class="btn btn-outline-warning btn-block mb-2">
-                                <i class="fas fa-users mr-2"></i> View All Students
-                            </a>
-                            <a href="{{ route('student-class-enrollments.index') }}" class="btn btn-outline-info btn-block mb-2">
-                                <i class="fas fa-clipboard-list mr-2"></i> Manage Enrollments
-                            </a>
-                            <a href="{{ route('student-documents.index') }}" class="btn btn-outline-secondary btn-block mb-2">
-                                <i class="fas fa-file-alt mr-2"></i> Student Documents
-                            </a>
-                            <a href="{{ route('parents.index') }}" class="btn btn-outline-primary btn-block mb-2">
-                                <i class="fas fa-user-friends mr-2"></i> Parents/Guardians
-                            </a>
-                            <button class="btn btn-outline-success btn-block" disabled>
-                                <i class="fas fa-file-pdf mr-2"></i> Generate Reports
-                            </button>
+                    <div class="card-body p-4 pt-0">
+                        <div style="height: 180px;">
+                            <canvas id="genderDistributionChart"></canvas>
+                        </div>
+                        <div class="d-flex justify-content-center mt-4 border-top pt-3">
+                            <div class="px-3 border-right text-center">
+                                <h6 class="font-weight-bold text-dark mb-0">{{ number_format($maleCount) }}</h6>
+                                <span class="extra-small text-muted">MALE</span>
+                            </div>
+                            <div class="px-3 text-center">
+                                <h6 class="font-weight-bold text-dark mb-0">{{ number_format($femaleCount) }}</h6>
+                                <span class="extra-small text-muted">FEMALE</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        {{-- Recent Admissions --}}
-        <div class="row">
-            <div class="col-12">
-                <div class="card card-outline card-primary elevation-2">
-                    <div class="card-header border-0">
-                        <h3 class="card-title font-weight-bold">
-                            <i class="fas fa-history mr-1"></i> Recent Admissions
-                        </h3>
-                        <div class="card-tools">
-                            <a href="{{ route('students.index') }}" class="btn btn-sm btn-primary">View All</a>
+                <!-- Status Summary -->
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px;">
+                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                        <h6 class="font-weight-bold text-dark text-uppercase extra-small">Enrollment Status</h6>
+                    </div>
+                    <div class="card-body p-4 pt-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small font-weight-bold text-dark">Active Students</span>
+                            <span class="small font-weight-bold text-success">{{ number_format($activeStudents) }}</span>
+                        </div>
+                        <div class="progress progress-sm rounded-pill mb-3" style="height: 6px;">
+                            <div class="progress-bar bg-success" style="width: 85%"></div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small font-weight-bold text-dark">Graduated</span>
+                            <span class="small font-weight-bold text-primary">{{ number_format($graduatedStudents) }}</span>
+                        </div>
+                        <div class="progress progress-sm rounded-pill mb-3" style="height: 6px;">
+                            <div class="progress-bar bg-primary" style="width: 12%"></div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small font-weight-bold text-dark">Pending Docs</span>
+                            <span class="small font-weight-bold text-warning">{{ number_format($studentsWithPendingDocs) }}</span>
+                        </div>
+                        <div class="progress progress-sm rounded-pill" style="height: 6px;">
+                            <div class="progress-bar bg-warning" style="width: 3%"></div>
                         </div>
                     </div>
-                    <div class="card-body p-0 table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th>Admission No.</th>
-                                    <th>Student Name</th>
-                                    <th>Gender</th>
-                                    <th>Class</th>
-                                    <th>Date Admitted</th>
-                                    <th>Status</th>
-                                    <th class="text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($recentAdmissions as $student)
-                                    @php
-                                        $currentEnrollment = $student->studentClassEnrollments->where('is_current', true)->first();
-                                    @endphp
-                                    <tr>
-                                        <td class="font-weight-bold">{{ $student->admission_no }}</td>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <img src="{{ $student->photo_url ?? asset('garikon-black.png') }}" 
-                                                     class="img-circle img-sm mr-2 border shadow-sm" 
-                                                     style="width: 32px; height: 32px; object-fit: cover;">
-                                                <span>{{ $student->first_name }} {{ $student->last_name }}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span class="badge badge-{{ $student->gender == 'male' ? 'info' : 'pink' }}">
-                                                {{ ucfirst($student->gender ?? 'N/A') }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            @if($currentEnrollment && $currentEnrollment->classSection)
-                                                {{ $currentEnrollment->classSection->schoolClass->name ?? 'N/A' }}
-                                                {{ $currentEnrollment->classSection->section->name ?? '' }}
-                                            @else
-                                                <span class="text-muted">Not Enrolled</span>
-                                            @endif
-                                        </td>
-                                        <td>{{ $student->created_at->format('M d, Y') }}</td>
-                                        <td>
-                                            <span class="badge badge-{{ $student->status == 'active' ? 'success' : 'secondary' }}">
-                                                {{ ucfirst($student->status) }}
-                                            </span>
-                                        </td>
-                                        <td class="text-right">
-                                            <a href="{{ route('students.show', $student->student_id) }}" 
-                                               class="btn btn-sm btn-outline-info">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="7" class="text-center py-4 text-muted">
-                                            No recent admissions found.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                </div>
+
+                <!-- Quick Actions Panel -->
+                <div class="card border-0 shadow-sm bg-primary-gradient" style="border-radius: 20px;">
+                    <div class="card-body p-4 text-white">
+                        <h6 class="font-weight-bold mb-4">Quick Control Panel</h6>
+                        <div class="row no-gutters">
+                            <div class="col-6 p-1">
+                                <a href="{{ route('students.index') }}" class="btn action-btn w-100 py-3">
+                                    <i class="fas fa-address-book mb-2 fa-lg d-block"></i>
+                                    <span class="x-small font-weight-bold">ENROLLMENT</span>
+                                </a>
+                            </div>
+                            <div class="col-6 p-1">
+                                <a href="{{ route('parents.index') }}" class="btn action-btn w-100 py-3">
+                                    <i class="fas fa-users-cog mb-2 fa-lg d-block"></i>
+                                    <span class="x-small font-weight-bold">PARENTS</span>
+                                </a>
+                            </div>
+                            <div class="col-6 p-1">
+                                <a href="{{ route('student-documents.index') }}" class="btn action-btn w-100 py-3">
+                                    <i class="fas fa-folder-open mb-2 fa-lg d-block"></i>
+                                    <span class="x-small font-weight-bold">DOSSIERS</span>
+                                </a>
+                            </div>
+                            <div class="col-6 p-1">
+                                <a href="{{ route('student-class-enrollments.index') }}" class="btn action-btn w-100 py-3">
+                                    <i class="fas fa-id-card-alt mb-2 fa-lg d-block"></i>
+                                    <span class="x-small font-weight-bold">IDS & CARDS</span>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -287,87 +264,131 @@
     </div>
 
     <style>
-        .x-small { font-size: 0.70rem; }
-        .badge-pink { background-color: #e83e8c; color: white; }
-        .bg-light-soft { background-color: rgba(0, 0, 0, 0.02); }
+        .extra-small { font-size: 0.7rem; letter-spacing: 0.4px; }
+        .x-small { font-size: 0.65rem; letter-spacing: 0.4px; }
+        .bg-light-soft { background-color: #f8fafc; }
+        
+        .bg-primary-gradient { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important; }
+        .bg-emerald-gradient { background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; }
+        .bg-indigo-gradient { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important; }
+        .bg-rose-gradient { background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important; }
+        
+        .summary-card { border: none !important; border-radius: 20px; color: white !important; }
+        .summary-card h2, .summary-card span, .summary-card div, .summary-card i { color: white !important; }
+        .summary-icon { position: absolute; right: -10px; bottom: -10px; font-size: 4.5rem; color: white !important; opacity: 0.2; }
+        
+        .avatar-circle-sm { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .bg-blue-soft { background-color: #f0f9ff; }
+        .text-blue { color: #3b82f6; }
+        
+        .badge-primary-soft { background-color: #dbeafe; color: #1e40af; }
+        .badge-rose-soft { background-color: #ffe4e6; color: #be123c; }
+
+        .action-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.1); color: white !important; border-radius: 12px; transition: all 0.2s; }
+        .action-btn:hover { background: rgba(255,255,255,0.25); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        
+        .shadow-xs { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
     </style>
 
     @push('page_scripts')
+    <!-- Robust Chart.js Implementation -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
-        // Students by Class Chart
-        const classCtx = document.getElementById('studentsByClassChart').getContext('2d');
-        new Chart(classCtx, {
-            type: 'bar',
-            data: {
-                labels: {!! json_encode($studentsByClass->pluck('class_name')) !!},
-                datasets: [{
-                    label: 'Number of Students',
-                    data: {!! json_encode($studentsByClass->pluck('total')) !!},
-                    backgroundColor: 'rgba(255, 193, 7, 0.7)',
-                    borderColor: 'rgba(255, 193, 7, 1)',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 10
+        // Make charts globally accessible to prevent re-declaration errors if layout pushes multiple times
+        window.studentDashCharts = window.studentDashCharts || {};
+
+        function initStudentDashboardCharts() {
+            try {
+                // 1. Admission Trend
+                const trendEl = document.getElementById('admissionTrendChart');
+                if (trendEl && !window.studentDashCharts.trend) {
+                    window.studentDashCharts.trend = new Chart(trendEl.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: {!! json_encode($admissionTrend->pluck('month')) !!},
+                            datasets: [{
+                                data: {!! json_encode($admissionTrend->pluck('total')) !!},
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.05)',
+                                borderWidth: 3,
+                                tension: 0.4,
+                                fill: true,
+                                pointRadius: 4,
+                                pointBackgroundColor: '#3b82f6'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { beginAtZero: true, grid: { borderDash: [2, 2], drawBorder: false } },
+                                x: { grid: { display: false } }
+                            }
                         }
-                    }
+                    });
                 }
-            }
-        });
 
-        // Gender Distribution Chart
-        const genderCtx = document.getElementById('genderDistributionChart').getContext('2d');
-        new Chart(genderCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Male', 'Female'],
-                datasets: [{
-                    data: [{{ $maleCount }}, {{ $femaleCount }}],
-                    backgroundColor: ['rgba(23, 162, 184, 0.7)', 'rgba(232, 62, 140, 0.7)'],
-                    borderColor: ['rgba(23, 162, 184, 1)', 'rgba(232, 62, 140, 1)'],
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-
-        // Admission Trend Chart
-        const trendCtx = document.getElementById('admissionTrendChart').getContext('2d');
-        new Chart(trendCtx, {
-            type: 'line',
-            data: {
-                labels: {!! json_encode($admissionTrend->pluck('month')) !!},
-                datasets: [{
-                    label: 'New Admissions',
-                    data: {!! json_encode($admissionTrend->pluck('total')) !!},
-                    backgroundColor: 'rgba(40, 167, 69, 0.2)',
-                    borderColor: 'rgba(40, 167, 69, 1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+                // 2. Students By Class (Horizontal Bar)
+                const classEl = document.getElementById('studentsByClassChart');
+                if (classEl && !window.studentDashCharts.class) {
+                    window.studentDashCharts.class = new Chart(classEl.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: {!! json_encode($studentsByClass->pluck('class_name')) !!},
+                            datasets: [{
+                                data: {!! json_encode($studentsByClass->pluck('total')) !!},
+                                backgroundColor: '#6366f1',
+                                borderRadius: 6,
+                                barThickness: 20
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { beginAtZero: true, grid: { display: false } },
+                                y: { grid: { display: false } }
+                            }
+                        }
+                    });
                 }
+
+                // 3. Gender Distribution
+                const genderEl = document.getElementById('genderDistributionChart');
+                if (genderEl && !window.studentDashCharts.gender) {
+                    window.studentDashCharts.gender = new Chart(genderEl.getContext('2d'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Male', 'Female'],
+                            datasets: [{
+                                data: [{{ $maleCount }}, {{ $femaleCount }}],
+                                backgroundColor: ['#3b82f6', '#f43f5e'],
+                                borderWidth: 0,
+                                hoverOffset: 10
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '72%',
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("Dashboard Chart Error:", error);
             }
-        });
+        }
+
+        // Run on load
+        if (typeof Chart !== 'undefined') {
+            initStudentDashboardCharts();
+        } else {
+            document.addEventListener('DOMContentLoaded', initStudentDashboardCharts);
+        }
     </script>
     @endpush
 @endsection

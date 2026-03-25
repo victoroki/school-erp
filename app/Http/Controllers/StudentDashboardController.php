@@ -69,7 +69,7 @@ class StudentDashboardController extends Controller
                 $q->where('is_current', true)->with('classSection.class', 'classSection.section');
             }])
             ->orderBy('created_at', 'desc')
-            ->limit(10)
+            ->limit(5)
             ->get();
 
         // Admission Trend (Last 6 months)

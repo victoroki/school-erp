@@ -77,7 +77,7 @@ class StudentController extends AppBaseController
             'studentClassEnrollments.classSection.section',
             'studentClassEnrollments.academicYear'
         ])
-        ->orderBy('admission_no', 'desc')
+        ->orderBy('created_at', 'desc')
         ->paginate(10)
         ->appends($request->all());
 
@@ -245,5 +245,45 @@ class StudentController extends AppBaseController
         Flash::success('Student deleted successfully.');
 
         return redirect(route('students.index'));
+    }
+
+    public function addSibling(Request $request, $id)
+    {
+        $student = $this->studentRepository->find($id);
+
+        if (empty($student)) {
+            Flash::error('Student not found');
+            return redirect(route('students.index'));
+        }
+
+        $request->validate([
+            'sibling_id' => 'required|exists:students,student_id|different:'.$id,
+            'relationship_type' => 'required|string|max:50',
+        ]);
+
+        $siblingId = $request->input('sibling_id');
+
+        // Check if relationship already exists
+        if (!$student->siblings->contains($siblingId)) {
+            $student->siblings()->attach($siblingId, [
+                'relationship_type' => $request->input('relationship_type'),
+                'is_twin' => $request->has('is_twin'),
+                'notes' => $request->input('notes')
+            ]);
+            
+            // Siblings are reciprocal
+            $sibling = Student::find($siblingId);
+            $sibling->siblings()->attach($id, [
+                'relationship_type' => $request->input('relationship_type') === 'brother' ? 'brother' : ($request->input('relationship_type') === 'sister' ? 'sister' : 'sibling'), 
+                'is_twin' => $request->has('is_twin'),
+                'notes' => $request->input('notes')
+            ]);
+
+            Flash::success('Sibling added successfully.');
+        } else {
+            Flash::warning('This student is already linked as a sibling.');
+        }
+
+        return redirect()->back()->with('active_tab', 'family');
     }
 }

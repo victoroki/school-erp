@@ -28,10 +28,18 @@ class ExamScheduleController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $examSchedules = $this->examScheduleRepository->paginate(10);
+        $examId = $request->get('exam_id');
+        $exams = Exam::pluck('name', 'exam_id');
+        $selectedExam = null;
 
-        return view('exam_schedules.index')
-            ->with('examSchedules', $examSchedules);
+        if ($examId) {
+            $selectedExam = Exam::with(['examSchedules.subject', 'examSchedules.class'])->find($examId);
+            $examSchedules = $selectedExam->examSchedules()->paginate(50);
+        } else {
+            $examSchedules = $this->examScheduleRepository->paginate(15);
+        }
+
+        return view('exam_schedules.index', compact('examSchedules', 'exams', 'selectedExam', 'examId'));
     }
 
     private function getDropdownData()

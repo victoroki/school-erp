@@ -28,7 +28,7 @@ class ExamRoomController extends Controller
             'name' => 'nullable|string|max:100',
         ]);
 
-        ExamRoom::create($request->all());
+        ExamRoom::create($request->except('_token'));
         Flash::success('Exam Room saved successfully.');
         return redirect(route('exam-rooms.index'));
     }
@@ -48,7 +48,7 @@ class ExamRoomController extends Controller
         ]);
 
         $examRoom = ExamRoom::findOrFail($id);
-        $examRoom->update($request->all());
+        $examRoom->update($request->except('_token'));
         Flash::success('Exam Room updated successfully.');
         return redirect(route('exam-rooms.index'));
     }

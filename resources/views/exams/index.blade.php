@@ -10,6 +10,9 @@
                     </h1>
                 </div>
                 <div class="col-sm-6 text-right">
+                    <a class="btn btn-success px-4 mr-2 elevation-2" href="{{ route('exam-results.bulk') }}">
+                        <i class="fas fa-file-import mr-1"></i> Bulk Import Results
+                    </a>
                     <a class="btn btn-danger elevation-2 px-4" href="{{ route('exams.create') }}">
                         <i class="fas fa-plus mr-1"></i> New Session
                     </a>

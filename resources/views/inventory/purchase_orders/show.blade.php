@@ -45,7 +45,7 @@
                                                 <div class="font-weight-bold text-dark">{{ $item->item->name }}</div>
                                                 <div class="small text-muted">{{ $item->item->item_code }}</div>
                                             </td>
-                                            <td class="text-center">{{ $item->quantity_ordered }} {{ $item->item->unit }}</td>
+                                            <td class="text-center">{{ $item->quantity }} {{ $item->item->unit }}</td>
                                             <td class="text-center">KES {{ number_format($item->unit_price, 2) }}</td>
                                             <td class="text-right pr-4 font-weight-bold text-dark">KES {{ number_format($item->total_price, 2) }}</td>
                                         </tr>

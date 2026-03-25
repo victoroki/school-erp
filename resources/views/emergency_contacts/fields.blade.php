@@ -4,36 +4,6 @@
     {!! Form::select('student_id', ['' => 'Select Student'] + $students, null, ['class' => 'form-control select2', 'required']) !!}
 </div>
 
-<!-- Class Section Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('class_section_id', 'Class Section:') !!}
-    {!! Form::select('class_section_id', ['' => 'Select Class Section'] + $classSections, null, ['class' => 'form-control select2', 'required']) !!}
-</div>
-
-<!-- Roll Number Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('roll_number', 'Roll Number:') !!}
-    {!! Form::text('roll_number', null, ['class' => 'form-control', 'maxlength' => 20, 'placeholder' => 'Enter roll number']) !!}
-</div>
-
-<!-- Academic Year Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('academic_year_id', 'Academic Year:') !!}
-    {!! Form::select('academic_year_id', ['' => 'Select Academic Year'] + $academicYears, null, ['class' => 'form-control', 'required']) !!}
-</div>
-
-<!-- Enrollment Date Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('enrollment_date', 'Enrollment Date:') !!}
-    {!! Form::date('enrollment_date', null, ['class' => 'form-control', 'required']) !!}
-</div>
-
-<!-- Status Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('status', 'Status:') !!}
-    {!! Form::select('status', ['' => 'Select Status'] + $statusOptions, 'active', ['class' => 'form-control', 'required']) !!}
-</div>
-
 @push('page_css')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
@@ -71,14 +41,65 @@
                         
                         // Force search box to show focus if needed
                         $(document).on('select2:open', () => {
-                            document.querySelector('.select2-search__field').focus();
+                            let searchField = document.querySelector('.select2-search__field');
+                            if(searchField) searchField.focus();
                         });
                     });
                 }
             }, 100);
             
-            // Fallback timeout to clear interval
             setTimeout(function() { clearInterval(select2InitInterval); }, 5000);
         });
     </script>
 @endpush
+
+<!-- Name Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('name', 'Name:') !!}
+    {!! Form::text('name', null, ['class' => 'form-control', 'required', 'maxlength' => 255]) !!}
+</div>
+
+<!-- Relationship Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('relationship', 'Relationship:') !!}
+    {!! Form::text('relationship', null, ['class' => 'form-control', 'required', 'maxlength' => 255]) !!}
+</div>
+
+<!-- Phone Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('phone', 'Phone:') !!}
+    {!! Form::text('phone', null, ['class' => 'form-control', 'required', 'maxlength' => 255]) !!}
+</div>
+
+<!-- Phone 2 Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('phone_2', 'Phone 2:') !!}
+    {!! Form::text('phone_2', null, ['class' => 'form-control', 'maxlength' => 255]) !!}
+</div>
+
+<!-- Email Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('email', 'Email:') !!}
+    {!! Form::email('email', null, ['class' => 'form-control', 'maxlength' => 255]) !!}
+</div>
+
+<!-- Address Field -->
+<div class="form-group col-sm-12 col-lg-12">
+    {!! Form::label('address', 'Address:') !!}
+    {!! Form::textarea('address', null, ['class' => 'form-control', 'maxlength' => 65535]) !!}
+</div>
+
+<!-- Priority Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('priority', 'Priority:') !!}
+    {!! Form::number('priority', null, ['class' => 'form-control', 'required']) !!}
+</div>
+
+<!-- Is Authorized Pickup Field -->
+<div class="form-group col-sm-6">
+    <div class="form-check">
+        {!! Form::hidden('is_authorized_pickup', 0, ['class' => 'form-check-input']) !!}
+        {!! Form::checkbox('is_authorized_pickup', '1', null, ['class' => 'form-check-input']) !!}
+        {!! Form::label('is_authorized_pickup', 'Is Authorized Pickup', ['class' => 'form-check-label']) !!}
+    </div>
+</div>

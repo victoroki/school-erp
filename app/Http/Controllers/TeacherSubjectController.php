@@ -32,15 +32,96 @@ class TeacherSubjectController extends AppBaseController
     }
 
     /**
-     * Display a listing of the TeacherSubject.
+     * Display a listing of TeacherSubjects grouped by Academic Year, paginated by teacher.
      */
     public function index(Request $request)
     {
-        $teacherSubjects = $this->teacherSubjectRepository->paginate(10);
+        // ── Academic Year ─────────────────────────────────────────────────
+        $academicYears  = AcademicYear::orderByDesc('start_date')->get();
+        $selectedYearId = $request->get('academic_year_id');
 
-        return view('teacher_subjects.index')
-            ->with('teacherSubjects', $teacherSubjects);
+        if (!$selectedYearId) {
+            $current        = $academicYears->firstWhere('is_current', true);
+            $selectedYearId = $current
+                ? $current->academic_year_id
+                : optional($academicYears->first())->academic_year_id;
+        }
+
+        // ── Optional teacher filter ───────────────────────────────────────
+        $selectedStaffId = $request->get('staff_id');
+
+        // ── Step 1: paginate distinct staff IDs for this year ─────────────
+        // We query the teacher_subjects table to get only IDs of teachers
+        // who actually have assignments in the selected year, then paginate
+        // that list 8 teachers per page.
+        $staffQuery = \App\Models\TeacherSubject::query()
+            ->select('staff_id')
+            ->where('academic_year_id', $selectedYearId)
+            ->when($selectedStaffId, fn($q) => $q->where('staff_id', $selectedStaffId))
+            ->distinct()
+            ->orderBy('staff_id');
+
+        // Use a simple manual paginator so the count reflects unique teachers
+        $perPage        = 8;
+        $currentPage    = (int) $request->get('page', 1);
+        $totalTeachers  = (clone $staffQuery)->count();
+
+        $staffIds = $staffQuery
+            ->offset(($currentPage - 1) * $perPage)
+            ->limit($perPage)
+            ->pluck('staff_id');
+
+        // Build paginator manually (preserves query string in links)
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $staffIds,
+            $totalTeachers,
+            $perPage,
+            $currentPage,
+            [
+                'path'  => $request->url(),
+                'query' => $request->query(),       // keeps year/staff filters in page links
+            ]
+        );
+
+        // ── Step 2: load all assignments for just this page's teachers ────
+        $assignments = \App\Models\TeacherSubject::with([
+                'staff',
+                'subject',
+                'classSection.class',
+                'classSection.section',
+            ])
+            ->where('academic_year_id', $selectedYearId)
+            ->whereIn('staff_id', $staffIds)
+            ->get();
+
+        // Group by staff_id preserving the paginated order
+        $grouped = $staffIds->mapWithKeys(
+            fn($id) => [$id => $assignments->where('staff_id', $id)]
+        );
+
+        // ── Staff filter dropdown (all teachers for this year) ────────────
+        $teacherOptions = \App\Models\TeacherSubject::with('staff')
+            ->where('academic_year_id', $selectedYearId)
+            ->get()
+            ->pluck('staff')
+            ->filter()
+            ->unique('staff_id')
+            ->mapWithKeys(fn($s) => [$s->staff_id => $s->full_name])
+            ->sort();
+
+        return view('teacher_subjects.index', [
+            'grouped'         => $grouped,
+            'paginator'       => $paginator,
+            'totalTeachers'   => $totalTeachers,
+            'totalAssignments'=> $assignments->count(),
+            'academicYears'   => $academicYears,
+            'selectedYearId'  => $selectedYearId,
+            'teacherOptions'  => $teacherOptions,
+            'selectedStaffId' => $selectedStaffId,
+        ]);
     }
+
+
 
     /**
      * Show the form for creating a new TeacherSubject.
@@ -49,6 +130,10 @@ class TeacherSubjectController extends AppBaseController
     {
         // Get dropdown data
         $dropdownData = $this->getDropdownData();
+        
+        // Find current year to pre-select it
+        $currentYear = AcademicYear::where('is_current', true)->first();
+        $dropdownData['currentYearId'] = $currentYear ? $currentYear->academic_year_id : null;
         
         return view('teacher_subjects.create', $dropdownData);
     }
@@ -64,7 +149,7 @@ class TeacherSubjectController extends AppBaseController
 
         Flash::success('Teacher Subject saved successfully.');
 
-        return redirect(route('teacher-subjects.index'));
+        return redirect(route('teacher-subjects.index', ['academic_year_id' => $input['academic_year_id'] ?? null]));
     }
 
     /**
@@ -99,6 +184,7 @@ class TeacherSubjectController extends AppBaseController
         // Get dropdown data for edit form
         $dropdownData = $this->getDropdownData();
         $dropdownData['teacherSubject'] = $teacherSubject;
+        $dropdownData['currentYearId'] = $teacherSubject->academic_year_id;
 
         return view('teacher_subjects.edit', $dropdownData);
     }
@@ -158,19 +244,20 @@ class TeacherSubjectController extends AppBaseController
             $staffList[$member->staff_id] = $fullName;
         }
 
-        // Class Section dropdown - you might want to show IDs or create a simple format
-        $classSections = ClassSection::all();
-        $classSectionList = collect(['Select Class Section']);
+        // Class Section dropdown with descriptive names
+        $classSections = ClassSection::with(['class', 'section'])->get();
+        $classSectionList = collect(['' => 'Select Class Section']);
         foreach ($classSections as $cs) {
-            // Simple format: "Class ID - Section ID" or just use the ID
-            $classSectionList[$cs->class_section_id] = "Class {$cs->class_id} - Section {$cs->section_id}";
+            $className = optional($cs->class)->name ?? 'Unknown Class';
+            $sectionName = optional($cs->section)->name ?? 'Unknown Section';
+            $classSectionList[$cs->class_section_id] = "{$className} - {$sectionName}";
         }
 
         return [
             'staffList' => $staffList,
             'subjectList' => Subject::pluck('name', 'subject_id')->prepend('Select Subject', ''),
             'classSectionList' => $classSectionList,
-            'academicYearList' => AcademicYear::pluck('name', 'academic_year_id')->prepend('Select Academic Year', '')
+            'academicYearList' => AcademicYear::orderByDesc('start_date')->pluck('name', 'academic_year_id')->prepend('Select Academic Year', '')
         ];
     }
 }

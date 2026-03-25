@@ -59,9 +59,13 @@ class PurchaseOrderController extends AppBaseController
             ]);
 
             foreach ($request->items as $itemData) {
+                // Fetch the item to get its name
+                $inventoryItem = \App\Models\InventoryItem::find($itemData['item_id']);
+                
                 $po->items()->create([
                     'item_id' => $itemData['item_id'],
-                    'quantity_ordered' => $itemData['quantity'],
+                    'item_name' => $inventoryItem ? $inventoryItem->name : 'Unknown Item',
+                    'quantity' => $itemData['quantity'],
                     'unit_price' => $itemData['unit_price'],
                     'total_price' => $itemData['quantity'] * $itemData['unit_price'],
                 ]);
@@ -98,14 +102,15 @@ class PurchaseOrderController extends AppBaseController
             // Update inventory quantities
             foreach ($po->items as $poItem) {
                 $item = $poItem->item;
-                $item->increment('quantity', $poItem->quantity_ordered);
+                $item->increment('quantity', $poItem->quantity); // FIXED: Use "quantity", not "quantity_ordered"
                 
                 // Record transaction
                 \App\Models\InventoryTransaction::create([
                     'item_id' => $item->item_id,
                     'transaction_type' => 'purchase',
-                    'quantity' => $poItem->quantity_ordered,
-                    'balance_after' => $item->quantity,
+                    'quantity' => $poItem->quantity, // FIXED: Use "quantity", not "quantity_ordered"
+                    'balance_after' => $item->refresh()->quantity, // Make sure balance_after reflects increment
+
                     'transaction_date' => now(),
                     'handled_by' => auth()->id(),
                     'remarks' => 'Received from PO #' . $po->po_number,

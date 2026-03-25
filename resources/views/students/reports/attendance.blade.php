@@ -82,38 +82,66 @@
 </div>
 
 @push('page_scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Using fixed Chart.js version for stability -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
     $(function () {
-        var ctx = document.getElementById('attendanceChart').getContext('2d');
-        var attendanceChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: {!! json_encode($data->pluck('status')->map(fn($s) => ucfirst(str_replace('_', ' ', $s)))) !!},
-                datasets: [{
-                    label: 'Number of Days',
-                    data: {!! json_encode($data->pluck('count')) !!},
-                    backgroundColor: [
-                        '#28a745', // present
-                        '#dc3545', // absent
-                        '#ffc107', // late
-                        '#17a2b8', // half_day
-                        '#6c757d'  // excused
-                    ],
-                    borderRadius: 5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true }
-                },
-                plugins: {
-                    legend: { display: false }
-                }
+        const renderAttendanceChart = () => {
+            const chartData = {!! json_encode($data->pluck('count')) !!};
+            if (!chartData || chartData.length === 0) {
+                console.warn("No attendance data available for charting.");
+                return;
             }
-        });
+
+            const ctx = document.getElementById('attendanceChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: {!! json_encode($data->pluck('status')->map(fn($s) => ucfirst(str_replace('_', ' ', (string)$s)))) !!},
+                    datasets: [{
+                        label: 'Total Instances',
+                        data: chartData,
+                        backgroundColor: [
+                            '#10b981', // Present (Emerald)
+                            '#f43f5e', // Absent (Rose)
+                            '#f59e0b', // Late (Amber)
+                            '#3b82f6', // Half Day (Blue)
+                            '#6b7280'  // Excused (Gray)
+                        ],
+                        borderRadius: 8,
+                        barThickness: 35
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { 
+                            beginAtZero: true,
+                            grid: { borderDash: [2, 2], drawBorder: false },
+                            ticks: { precision: 0 }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            padding: 12,
+                            cornerRadius: 8
+                        }
+                    }
+                }
+            });
+        };
+
+        if (typeof Chart !== 'undefined') {
+            renderAttendanceChart();
+        } else {
+            console.error("Chart.js library failed to load.");
+        }
     });
 </script>
 @endpush

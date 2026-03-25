@@ -163,8 +163,8 @@
 </li>
 
 <!-- Student Management -->
-<li class="nav-item has-treeview {{ Request::is('student-dashboard*') || Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('parents*') || Request::is('disciplinary-records*') || Request::is('medical-incidents*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('student-dashboard*') || Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('parents*') || Request::is('disciplinary-records*') || Request::is('medical-incidents*') ? 'active' : '' }}" data-tooltip="Student Management">
+<li class="nav-item has-treeview {{ Request::is('student-dashboard*') || Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('parents*') || Request::is('disciplinary-records*') || Request::is('medical-incidents*') || Request::is('emergency-contacts*') || Request::is('student-transfer*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('student-dashboard*') || Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('parents*') || Request::is('disciplinary-records*') || Request::is('medical-incidents*') || Request::is('emergency-contacts*') || Request::is('student-transfer*') ? 'active' : '' }}" data-tooltip="Student Management">
         <i class="nav-icon fas fa-user-graduate text-warning"></i>
         <p>
             Student Management
@@ -192,6 +192,7 @@
                 <p>Student Admission</p>
             </a>
         </li>
+        {{--
         <li class="nav-item">
             <a href="{{ route('student-documents.index') }}" class="nav-link {{ Request::is('student-documents*') ? 'active' : '' }}" data-tooltip="Student Documents">
                 <i class="fas fa-file-alt nav-icon text-warning"></i>
@@ -204,6 +205,7 @@
                 <p>Student ID Cards</p>
             </a>
         </li>
+        --}}
 
         <li class="nav-header small text-uppercase text-warning">Enrollment & Classes</li>
         <li class="nav-item">
@@ -225,9 +227,15 @@
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link" data-tooltip="Student Transfer">
+            <a href="{{ route('student-transfer.index') }}" class="nav-link {{ Request::is('student-transfer*') ? 'active' : '' }}" data-tooltip="Student Transfer">
                 <i class="fas fa-exchange-alt nav-icon text-warning"></i>
                 <p>Student Transfer</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('emergencyContacts.index') }}" class="nav-link {{ Request::is('emergency-contacts*') ? 'active' : '' }}" data-tooltip="Emergency Contact">
+                <i class="fas fa-hospital-user nav-icon text-warning"></i>
+                <p>Emergency Contact</p>
             </a>
         </li>
 
@@ -244,12 +252,7 @@
                 <p>Parent Relationships</p>
             </a>
         </li>
-        <li class="nav-item">
-            <a href="#" class="nav-link" data-tooltip="Emergency Contacts">
-                <i class="fas fa-phone-square nav-icon text-warning"></i>
-                <p>Emergency Contacts</p>
-            </a>
-        </li>
+
 
         <li class="nav-header small text-uppercase text-warning">Student Services</li>
         <li class="nav-item">
@@ -339,9 +342,15 @@
 
         <li class="nav-header small text-uppercase text-danger">Marks</li>
         <li class="nav-item">
-            <a href="{{ route('exam-results.index') }}" class="nav-link {{ Request::is('exam-results*') ? 'active' : '' }}" data-tooltip="Enter Exam Marks">
+            <a href="{{ route('exam-results.index') }}" class="nav-link {{ Request::is('exam-results*') && !Request::is('exam-results/bulk*') ? 'active' : '' }}" data-tooltip="Enter Exam Marks">
                 <i class="fas fa-edit nav-icon text-danger"></i>
                 <p>Enter Marks</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('exam-results.bulk') }}" class="nav-link {{ Request::is('exam-results/bulk*') ? 'active' : '' }}" data-tooltip="Bulk Import Exam Results">
+                <i class="fas fa-file-import nav-icon text-danger"></i>
+                <p>Bulk Import Marks</p>
             </a>
         </li>
         <li class="nav-item">
@@ -418,9 +427,9 @@
 
         <li class="nav-header small text-uppercase">Operations</li>
         <li class="nav-item">
-            <a href="{{ route('inventory.requisitions.index') }}" class="nav-link {{ Request::is('inventory/requisitions*') ? 'active' : '' }}" data-tooltip="Request Items">
+            <a href="{{ route('inventory.requisitions.index') }}" class="nav-link {{ Request::is('inventory/requisitions*') ? 'active' : '' }}" data-tooltip="View My Requests">
                 <i class="fas fa-file-signature nav-icon text-info"></i>
-                <p>Requisitions</p>
+                <p>My Requisitions</p>
             </a>
         </li>
         <li class="nav-item">

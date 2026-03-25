@@ -12,8 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('requisition_items', function (Blueprint $table) {
-            $table->id();
+            $table->increments('requisition_item_id');
+            $table->unsignedInteger('requisition_id');
+            $table->unsignedInteger('item_id')->nullable();
+            $table->string('item_name');
+            $table->integer('quantity_needed');
+            $table->decimal('estimated_price', 10, 2)->default(0);
+            $table->text('purpose')->nullable();
+            $table->integer('quantity_fulfilled')->default(0);
+            $table->datetime('fulfilled_at')->nullable();
             $table->timestamps();
+
         });
     }
 

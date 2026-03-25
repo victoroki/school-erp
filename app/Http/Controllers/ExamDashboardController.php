@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\ExamSchedule;
+use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\Subject;
 use Illuminate\Http\Request;
@@ -59,6 +60,23 @@ class ExamDashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Class-wise performance for diversity
+        $classPerformance = SchoolClass::with(['classSections.examResults'])
+            ->get()
+            ->map(function($class) {
+                $results = $class->classSections->flatMap->examResults;
+                $avg = $results->avg('marks_obtained');
+                $count = $results->count();
+                return (object)[
+                    'name' => $class->name,
+                    'avg_marks' => $avg ? round($avg, 1) : 0,
+                    'total_results' => $count,
+                    'pass_rate' => $count > 0 ? round(($results->where('marks_obtained', '>=', 40)->count() / $count) * 100, 1) : 0
+                ];
+            })->filter(fn($c) => $c->total_results > 0)
+            ->sortByDesc('avg_marks')
+            ->values();
+
         return view('exam_dashboard.index', compact(
             'upcomingExamsCount',
             'ongoingExamsCount',
@@ -69,7 +87,8 @@ class ExamDashboardController extends Controller
             'nextExam',
             'performanceTrends',
             'gradeDistribution',
-            'recentResults'
+            'recentResults',
+            'classPerformance'
         ));
     }
 }

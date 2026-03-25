@@ -1,251 +1,175 @@
-<div class="row">
+<style>
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+    .card-detail {
+        background: #fff; border-radius: 16px; padding: 24px; border: none;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); height: 100%;
+    }
+    .card-header-icon {
+        width: 40px; height: 40px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center;
+        margin-right: 12px; color: white; margin-bottom: 20px;
+    }
+    .card-header-icon.blue { background: #0369a1; }
+    .card-header-icon.green { background: #15803d; }
+    .card-title-text { font-size: 1.1rem; font-weight: 700; color: var(--text-color); margin: 0; display: inline-block; vertical-align: super; }
+    
+    .detail-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .detail-item { display: flex; flex-direction: column; }
+    .detail-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; color: var(--muted-color); margin-bottom: 4px; }
+    .detail-value { font-size: 0.95rem; font-weight: 600; color: var(--text-color); }
+
+    .snapshot-card {            
+        background: #fff; border-radius: 16px; padding: 24px; border: none;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; overflow: hidden;
+    }
+    .snapshot-title { font-size: 1.1rem; font-weight: 700; color: #0369a1; margin-bottom: 12px; }
+    .snapshot-text { color: var(--text-color); font-size: 0.95rem; line-height: 1.6; max-width: 70%; margin-bottom: 16px; }
+    .snapshot-badge { display: inline-flex; align-items: center; padding: 6px 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 50px; font-weight: 700; font-size: 0.85rem; color: var(--text-color); margin-right: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .snapshot-icon-bg {
+        position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
+        width: 180px; height: 100px; background: #e0f2fe; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .snapshot-icon-bg i { font-size: 40px; color: #7dd3fc; }
+
+    @media (max-width: 991px) {
+        .info-grid { grid-template-columns: 1fr; }
+        .snapshot-text { max-width: 100%; }
+        .snapshot-icon-bg { display: none; }
+    }
+</style>
+
+<div class="info-grid">
     <!-- Personal Information -->
-    <div class="col-md-6">
-        <div class="card info-card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white">
-                <h6 class="mb-0 font-weight-bold"><i class="fas fa-user-circle text-primary mr-2"></i> Personal Information</h6>
+    <div class="card-detail">
+        <div>
+            <div class="card-header-icon blue"><i class="fas fa-id-card-alt"></i></div>
+            <h3 class="card-title-text">Personal Information</h3>
+        </div>
+        <div class="detail-row">
+            <div class="detail-item">
+                <span class="detail-label">FULL NAME</span>
+                <span class="detail-value">{{ $student->full_name }}</span>
             </div>
-            <div class="card-body">
-                <table class="table table-sm table-borderless mb-0">
-                    <tr>
-                        <td class="text-muted" width="40%"><i class="fas fa-user mr-2"></i> Full Name:</td>
-                        <td class="font-weight-bold">{{ $student->full_name }}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-birthday-cake mr-2"></i> Date of Birth:</td>
-                        <td class="font-weight-bold">{{ $student->kenyan_dob }} ({{ $student->age }} years)</td>
-                    </tr>
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-venus-mars mr-2"></i> Gender:</td>
-                        <td class="font-weight-bold text-capitalize">{{ $student->gender }}</td>
-                    </tr>
-                    @if($student->nationality)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-flag mr-2"></i> Nationality:</td>
-                        <td class="font-weight-bold">{{ $student->nationality }}</td>
-                    </tr>
-                    @endif
-                    @if($student->religion)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-pray mr-2"></i> Religion:</td>
-                        <td class="font-weight-bold">{{ $student->religion }}</td>
-                    </tr>
-                    @endif
-                    @if($student->blood_group)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-tint mr-2"></i> Blood Group:</td>
-                        <td><span class="badge badge-danger">{{ $student->blood_group }}</span></td>
-                    </tr>
-                    @endif
-                    @if($student->student_category)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-tag mr-2"></i> Category:</td>
-                        <td><span class="badge badge-info">{{ $student->student_category }}</span></td>
-                    </tr>
-                    @endif
-                </table>
+            <div class="detail-item">
+                <span class="detail-label">DATE OF BIRTH</span>
+                <span class="detail-value">{{ $student->kenyan_dob }}</span>
+            </div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-item">
+                <span class="detail-label">GENDER</span>
+                <span class="detail-value text-capitalize">{{ $student->gender }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">BLOOD GROUP</span>
+                <span class="detail-value">{{ $student->blood_group ?? 'Unknown' }}</span>
+            </div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-item" style="grid-column: span 2;">
+                <span class="detail-label">NATIONALITY</span>
+                <span class="detail-value">{{ $student->nationality ?? 'Kenyan' }}</span>
             </div>
         </div>
     </div>
 
     <!-- Contact Information -->
-    <div class="col-md-6">
-        <div class="card info-card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white">
-                <h6 class="mb-0 font-weight-bold"><i class="fas fa-address-book text-success mr-2"></i> Contact Information</h6>
+    <div class="card-detail">
+        <div>
+            <div class="card-header-icon green"><i class="fas fa-at"></i></div>
+            <h3 class="card-title-text">Contact Information</h3>
+        </div>
+        <div class="detail-row">
+            <div class="detail-item">
+                <span class="detail-label">PHONE NUMBER</span>
+                <span class="detail-value">{{ $student->formatted_phone ?: 'N/A' }}</span>
             </div>
-            <div class="card-body">
-                <table class="table table-sm table-borderless mb-0">
-                    @if($student->address)
-                    <tr>
-                        <td class="text-muted" width="40%"><i class="fas fa-map-marker-alt mr-2"></i> Address:</td>
-                        <td class="font-weight-bold">{{ $student->address }}</td>
-                    </tr>
+            <div class="detail-item">
+                <span class="detail-label">CITY</span>
+                <span class="detail-value">{{ $student->city ?? 'N/A' }}</span>
+            </div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-item">
+                <span class="detail-label">COUNTRY</span>
+                <span class="detail-value">{{ $student->country ?? 'Kenya' }}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">POSTAL ADDRESS</span>
+                <span class="detail-value">{{ $student->address ?? 'N/A' }}{{ $student->postal_code ? ' - ' . $student->postal_code : '' }}</span>
+            </div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-item" style="grid-column: span 2;">
+                <span class="detail-label">GUARDIAN PRIMARY CONTACT</span>
+                <span class="detail-value">
+                    @if($student->parents && $student->parents->count() > 0)
+                        {{ $student->parents->first()->email ?? $student->parents->first()->phone ?? $student->emergency_contact }}
+                    @else
+                        {{ $student->emergency_contact ?? 'N/A' }}
                     @endif
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-city mr-2"></i> City:</td>
-                        <td class="font-weight-bold">{{ $student->city }}</td>
-                    </tr>
-                    @if($student->county)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-map mr-2"></i> County:</td>
-                        <td class="font-weight-bold">{{ $student->county }}</td>
-                    </tr>
-                    @endif
-                    @if($student->sub_county)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-map-marked mr-2"></i> Sub-County:</td>
-                        <td class="font-weight-bold">{{ $student->sub_county }}</td>
-                    </tr>
-                    @endif
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-globe mr-2"></i> Country:</td>
-                        <td class="font-weight-bold">{{ $student->country }}</td>
-                    </tr>
-                    @if($student->postal_code)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-mail-bulk mr-2"></i> Postal Code:</td>
-                        <td class="font-weight-bold">{{ $student->postal_code }}</td>
-                    </tr>
-                    @endif
-                    @if($student->phone)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-phone mr-2"></i> Phone:</td>
-                        <td class="font-weight-bold">{{ $student->formatted_phone }}</td>
-                    </tr>
-                    @endif
-                </table>
+                </span>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Emergency Contact -->
-    <div class="col-md-6">
-        <div class="card info-card border-0 shadow-sm mb-4" style="border-left-color: #dc3545 !important;">
-            <div class="card-header bg-white">
-                <h6 class="mb-0 font-weight-bold"><i class="fas fa-exclamation-triangle text-danger mr-2"></i> Emergency Contact</h6>
-            </div>
-            <div class="card-body">
-                <table class="table table-sm table-borderless mb-0">
-                    @if($student->emergency_contact_name)
+<!-- Academic Results Snapshot -->
+<div class="snapshot-card pb-2">
+    <h3 class="snapshot-title"><i class="fas fa-chart-line mr-2"></i> Recent Academic Results</h3>
+    @php
+        $recentResults = \App\Models\ExamResult::with(['subject', 'exam', 'grade'])
+            ->where('student_id', $student->student_id)
+            ->orderBy('created_at', 'desc')
+            ->take(4)
+            ->get();
+    @endphp
+    
+    @if($recentResults->count() > 0)
+        <div class="table-responsive" style="position: relative; z-index: 10;">
+            <table class="table table-sm table-borderless mb-0">
+                <thead>
                     <tr>
-                        <td class="text-muted" width="40%"><i class="fas fa-user mr-2"></i> Name:</td>
-                        <td class="font-weight-bold">{{ $student->emergency_contact_name }}</td>
+                        <th class="text-muted" style="font-size:0.75rem; letter-spacing:0.5px;">EXAM</th>
+                        <th class="text-muted" style="font-size:0.75rem; letter-spacing:0.5px;">SUBJECT</th>
+                        <th class="text-muted" style="font-size:0.75rem; letter-spacing:0.5px;">SCORE</th>
+                        <th class="text-muted" style="font-size:0.75rem; letter-spacing:0.5px;">GRADE</th>
                     </tr>
-                    @endif
-                    @if($student->emergency_contact_relationship)
+                </thead>
+                <tbody>
+                    @foreach($recentResults as $result)
                     <tr>
-                        <td class="text-muted"><i class="fas fa-link mr-2"></i> Relationship:</td>
-                        <td class="font-weight-bold">{{ $student->emergency_contact_relationship }}</td>
+                        <td class="font-weight-bold align-middle">{{ $result->exam->name ?? 'N/A' }}</td>
+                        <td class="align-middle">{{ $result->subject->name ?? 'N/A' }}</td>
+                        <td class="align-middle font-weight-bold" style="color: #0369a1;">{{ number_format((float)$result->marks_obtained, 1) }}%</td>
+                        <td class="align-middle">
+                            @if($result->grade)
+                                <span class="badge badge-light border">{{ $result->grade->grade_name }}</span>
+                            @else
+                                <span class="badge badge-light border">N/A</span>
+                            @endif
+                        </td>
                     </tr>
-                    @endif
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-phone-alt mr-2"></i> Primary Phone:</td>
-                        <td class="font-weight-bold text-danger">{{ $student->formatted_emergency_phone }}</td>
-                    </tr>
-                    @if($student->emergency_contact_phone_2)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-phone mr-2"></i> Secondary Phone:</td>
-                        <td class="font-weight-bold">{{ $student->formatted_emergency_phone_2 }}</td>
-                    </tr>
-                    @endif
-                </table>
-            </div>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
-    </div>
-
-    <!-- Admission Information -->
-    <div class="col-md-6">
-        <div class="card info-card border-0 shadow-sm mb-4" style="border-left-color: #ffc107 !important;">
-            <div class="card-header bg-white">
-                <h6 class="mb-0 font-weight-bold"><i class="fas fa-door-open text-warning mr-2"></i> Admission Information</h6>
-            </div>
-            <div class="card-body">
-                <table class="table table-sm table-borderless mb-0">
-                    <tr>
-                        <td class="text-muted" width="40%"><i class="fas fa-id-badge mr-2"></i> Admission No:</td>
-                        <td class="font-weight-bold">{{ $student->admission_no }}</td>
-                    </tr>
-                    @if($student->nemis_number)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-fingerprint mr-2"></i> NEMIS ID:</td>
-                        <td class="font-weight-bold">{{ $student->nemis_number }}</td>
-                    </tr>
-                    @endif
-                    @if($student->upi_number)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-id-card-alt mr-2"></i> UPI Number:</td>
-                        <td class="font-weight-bold">{{ $student->upi_number }}</td>
-                    </tr>
-                    @endif
-                    @if($student->birth_certificate_no)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-file-contract mr-2"></i> Birth Cert No:</td>
-                        <td class="font-weight-bold">{{ $student->birth_certificate_no }}</td>
-                    </tr>
-                    @endif
-                    @if($student->education_system)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-school mr-2"></i> System:</td>
-                        <td><span class="badge badge-primary">{{ $student->education_system }}</span></td>
-                    </tr>
-                    @endif
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-info-circle mr-2"></i> Status:</td>
-                        <td>{!! $student->enrollment_status_badge !!}</td>
-                    </tr>
-                </table>
-            </div>
+        <div class="mt-3" style="position: relative; z-index: 10;">
+            <a href="#" class="btn btn-sm btn-outline-primary rounded-pill px-4 font-weight-bold" onclick="document.getElementById('active_tab_input').value='academic'; $('.nav-tabs a[href=\'#academic\']').tab('show'); return false;" style="font-family: var(--font-main);">
+                View Full Record
+            </a>
         </div>
-    </div>
-
-    <!-- Transport & Hostel -->
-    @if($student->uses_transport || $student->is_hosteller)
-    <div class="col-md-6">
-        <div class="card info-card border-0 shadow-sm mb-4" style="border-left-color: #17a2b8 !important;">
-            <div class="card-header bg-white">
-                <h6 class="mb-0 font-weight-bold"><i class="fas fa-bus text-info mr-2"></i> Transport & Hostel</h6>
+    @else
+        <div class="text-center py-4 relative z-10" style="position: relative; z-index: 10;">
+            <div style="background: #f1f5f9; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px;">
+                <i class="fas fa-file-alt text-muted" style="font-size: 24px;"></i>
             </div>
-            <div class="card-body">
-                <table class="table table-sm table-borderless mb-0">
-                    @if($student->uses_transport)
-                    <tr>
-                        <td class="text-muted" width="40%"><i class="fas fa-bus mr-2"></i> Uses Transport:</td>
-                        <td><span class="badge badge-success">Yes</span></td>
-                    </tr>
-                    @if($student->pickup_point)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-map-pin mr-2"></i> Pickup Point:</td>
-                        <td class="font-weight-bold">{{ $student->pickup_point }}</td>
-                    </tr>
-                    @endif
-                    @endif
-                    @if($student->is_hosteller)
-                    <tr>
-                        <td class="text-muted"><i class="fas fa-home mr-2"></i> Hosteller:</td>
-                        <td><span class="badge badge-primary">Yes</span></td>
-                    </tr>
-                    @endif
-                </table>
-            </div>
+            <h6 class="font-weight-bold text-dark">No Results Found</h6>
+            <p class="text-muted mb-0" style="font-size: 0.95rem;">This student does not have any recorded exam results yet.</p>
         </div>
-    </div>
     @endif
-
-    <!-- Previous School -->
-    @if($student->previous_school)
-    <div class="col-md-12">
-        <div class="card info-card border-0 shadow-sm mb-4" style="border-left-color: #6c757d !important;">
-            <div class="card-header bg-white">
-                <h6 class="mb-0 font-weight-bold"><i class="fas fa-school text-secondary mr-2"></i> Previous School Information</h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4">
-                        <p class="text-muted mb-1"><i class="fas fa-building mr-2"></i> School Name:</p>
-                        <p class="font-weight-bold">{{ $student->previous_school }}</p>
-                    </div>
-                    @if($student->previous_class)
-                    <div class="col-md-3">
-                        <p class="text-muted mb-1"><i class="fas fa-chalkboard mr-2"></i> Last Class:</p>
-                        <p class="font-weight-bold">{{ $student->previous_class }}</p>
-                    </div>
-                    @endif
-                    @if($student->transfer_date)
-                    <div class="col-md-3">
-                        <p class="text-muted mb-1"><i class="fas fa-calendar mr-2"></i> Transfer Date:</p>
-                        <p class="font-weight-bold">{{ $student->transfer_date->format('d/m/Y') }}</p>
-                    </div>
-                    @endif
-                    @if($student->transfer_reason)
-                    <div class="col-md-12 mt-2">
-                        <p class="text-muted mb-1"><i class="fas fa-comment mr-2"></i> Transfer Reason:</p>
-                        <p class="font-weight-bold">{{ $student->transfer_reason }}</p>
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
+    
+    <div class="snapshot-icon-bg" style="opacity: 0.3; z-index: 0;">
+        <i class="fas fa-graduation-cap"></i>
     </div>
-    @endif
 </div>

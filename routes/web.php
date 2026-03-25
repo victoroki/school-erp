@@ -70,6 +70,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('exam-schedules', App\Http\Controllers\ExamScheduleController::class);
     Route::get('exam-results/bulk', [App\Http\Controllers\ExamResultController::class, 'bulk'])->name('exam-results.bulk');
     Route::post('exam-results/bulk', [App\Http\Controllers\ExamResultController::class, 'postBulk'])->name('exam-results.bulk.store');
+    Route::get('exam-results/import-template', [App\Http\Controllers\ExamResultController::class, 'importTemplate'])->name('exam-results.import-template');
+    Route::post('exam-results/import', [App\Http\Controllers\ExamResultController::class, 'importStore'])->name('exam-results.import.store');
     Route::resource('exam-results', App\Http\Controllers\ExamResultController::class);
     Route::resource('fee-structures', App\Http\Controllers\FeeStructureController::class);
     Route::resource('student-fee-discounts', App\Http\Controllers\StudentFeeDiscountController::class);
@@ -163,7 +165,19 @@ Route::middleware(['auth'])->group(function () {
     Route::post('students/bulk-id-cards', [App\Http\Controllers\StudentIdCardController::class, 'bulk'])->name('students.bulk-id-cards');
 
     Route::resource('students', App\Http\Controllers\StudentController::class);
+    Route::post('students/{id}/siblings', [App\Http\Controllers\StudentController::class, 'addSibling'])->name('students.add-sibling');
+    Route::get('student-transfer', [App\Http\Controllers\StudentTransferController::class, 'index'])->name('student-transfer.index');
+    Route::post('student-transfer', [App\Http\Controllers\StudentTransferController::class, 'store'])->name('student-transfer.store');
     Route::resource('student-class-enrollments', App\Http\Controllers\StudentClassEnrollmentController::class);
+    Route::resource('emergency-contacts', App\Http\Controllers\EmergencyContactController::class)->names([
+        'index' => 'emergencyContacts.index',
+        'create' => 'emergencyContacts.create',
+        'store' => 'emergencyContacts.store',
+        'show' => 'emergencyContacts.show',
+        'edit' => 'emergencyContacts.edit',
+        'update' => 'emergencyContacts.update',
+        'destroy' => 'emergencyContacts.destroy',
+    ]);
     Route::resource('staff', App\Http\Controllers\StaffController::class);
 
     // Financial Management Routes
@@ -230,6 +244,8 @@ Route::middleware(['auth'])->group(function () {
     
     Route::resource('timetables', App\Http\Controllers\TimetableController::class);
     Route::get('api/subjects/{subjectId}/teachers', [App\Http\Controllers\TimetableController::class, 'getTeachersBySubject'])->name('api.subjects.teachers');
+    Route::get('api/academic-years/{academicYearId}/class-sections', [App\Http\Controllers\TimetableController::class, 'getClassSectionsByYear'])->name('api.academic-years.class-sections');
+
 
     
     // Fee Management Revamped Routes
@@ -322,4 +338,4 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/finalize/{payroll}', [App\Http\Controllers\PayrollProcessingController::class, 'finalize'])->name('finalize');
     });
 
-});
+});

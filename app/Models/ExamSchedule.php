@@ -24,6 +24,8 @@ class ExamSchedule extends Model
 
     protected $casts = [
         'exam_date' => 'date',
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
         'max_marks' => 'decimal:2',
         'passing_marks' => 'decimal:2'
     ];
