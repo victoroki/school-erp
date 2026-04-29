@@ -19,3 +19,20 @@ yarn-error.log
 vendor.zip
 bootstrap.zip
 *.zip
+
+# Laravel specific
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*
+!.gitignore
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build artifacts
+/public/build
+/public/mix-manifest.json

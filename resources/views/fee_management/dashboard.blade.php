@@ -1,343 +1,480 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="content-header py-4">
-        <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col-sm-6">
-                    <h1 class="font-weight-bold text-dark mb-0" style="font-size: 1.85rem;">
-                        <i class="fas fa-chart-line mr-2 text-primary"></i>
-                        Financial Insights
-                    </h1>
-                    <p class="text-muted mb-0">Overview of student fees and revenue streams</p>
+<style>
+/* ── Design System Variables ── */
+:root {
+    --blue:    #2563eb;
+    --green:   #16a34a;
+    --yellow:  #d97706;
+    --red:     #dc2626;
+    --surface: #ffffff;
+    --bg:      #f8fafc;
+    --text:    #0f172a;
+    --muted:   #64748b;
+    --border:  #e2e8f0;
+    --radius:  12px;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    
+    /* Emil's easing curves — custom beats browser defaults */
+    --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* ── Layout ── */
+.fee-dash-wrap { padding: 1.5rem; }
+.fee-heading { font-size: 1.5rem; font-weight: 800; color: var(--text); letter-spacing: -.025em; margin: 0; }
+.fee-sub { color: var(--muted); font-size: .875rem; margin-top: .25rem; }
+
+/* ── Buttons ── */
+.fee-btn { 
+    display: inline-flex; align-items: center; gap: .5rem; border: none; border-radius: 8px; padding: .5rem 1rem; 
+    font-size: .875rem; font-weight: 600; cursor: pointer; text-decoration: none !important; white-space: nowrap;
+    transition: transform 150ms var(--ease-out), filter 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
+    outline: none;
+}
+.fee-btn:focus-visible { 
+    box-shadow: 0 0 0 3px rgba(37,99,235,.3); 
+}
+@media (hover: hover) and (pointer: fine) {
+    .fee-btn:hover { filter: brightness(.95); transform: translateY(-1px); }
+}
+.fee-btn:active { transform: scale(0.97); }
+.fee-btn-ghost { background: #f1f5f9; color: #475569; }
+.fee-btn-primary { background: var(--blue); color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,.2); }
+
+/* ── Alert banners ── */
+.fee-alert { 
+    display: flex; align-items: center; gap: 1rem; border-radius: var(--radius); padding: .75rem 1rem; 
+    border: 1px solid transparent; margin-bottom: 1rem; transition: transform 200ms var(--ease-out);
+}
+.fee-alert-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1rem; }
+.fee-alert-body { flex: 1; }
+.fee-alert-title { font-weight: 700; font-size: .875rem; margin: 0 0 .125rem; }
+.fee-alert-desc { font-size: .75rem; margin: 0; opacity: .8; }
+.fee-alert-action { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; border-radius: 6px; padding: .25rem .75rem; text-decoration: none !important; border: 1px solid transparent; transition: background 150ms var(--ease-out); }
+
+.fee-alert-warning { background: #fffbeb; border-color: #fef3c7; }
+.fee-alert-warning .fee-alert-icon { background: #fef3c7; color: var(--yellow); }
+.fee-alert-warning .fee-alert-title { color: #92400e; }
+.fee-alert-warning .fee-alert-desc { color: #a16207; }
+.fee-alert-warning .fee-alert-action { color: var(--yellow); border-color: #fde68a; background: #fff; }
+.fee-alert-warning .fee-alert-action:hover { background: #fef3c7; }
+
+/* ── Summary Cards with Gradients ── */
+.summary-card { 
+    border-radius: var(--radius); padding: 1.5rem; color: #fff; position: relative; overflow: hidden;
+    transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+    opacity: 0; transform: translateY(8px); animation: cardIn 0.4s var(--ease-out) forwards;
+    outline: none; cursor: pointer;
+}
+.summary-card:focus-visible { 
+    box-shadow: 0 0 0 3px rgba(255,255,255,.5), 0 0 0 6px rgba(37,99,235,.3); 
+}
+@keyframes cardIn { to { opacity: 1; transform: translateY(0); } }
+
+@media (hover: hover) and (pointer: fine) {
+    .summary-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+}
+.summary-card:active { transform: scale(0.98); }
+
+.summary-card-bg { position: absolute; right: -15px; bottom: -15px; font-size: 6rem; opacity: 0.15; pointer-events: none; }
+.summary-card-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: 0.85; margin-bottom: .25rem; }
+.summary-card-value { font-size: 1.75rem; font-weight: 800; line-height: 1; margin-bottom: .75rem; }
+.summary-card-progress { height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; margin-bottom: .75rem; }
+.summary-card-progress-bar { height: 100%; background: #fff; border-radius: 2px; transition: width 1s var(--ease-out); }
+.summary-card-footer { display: flex; justify-content: space-between; align-items: center; font-size: .75rem; }
+.summary-card-link { color: #fff; font-weight: 700; text-decoration: none !important; transition: opacity 150ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) {
+    .summary-card-link:hover { opacity: 0.8; }
+}
+
+/* Gradient variants */
+.grad-blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+.grad-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+.grad-yellow { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+.grad-red { background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); }
+
+/* ── Panel ── */
+.fee-panel { 
+    background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); 
+    box-shadow: var(--shadow-sm); overflow: hidden; height: 100%;
+    opacity: 0; transform: translateY(8px); animation: cardIn 0.4s var(--ease-out) forwards;
+    animation-delay: 200ms;
+}
+.fee-panel-head { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); }
+.fee-panel-title { font-size: 1rem; font-weight: 700; color: var(--text); margin: 0; }
+.fee-panel-sub { font-size: .75rem; color: var(--muted); margin: .125rem 0 0; }
+.fee-panel-body { padding: 1.25rem; }
+.fee-panel-badge { 
+    font-size: .65rem; font-weight: 700; padding: .25rem .75rem; border-radius: 20px; 
+    background: #eff6ff; color: var(--blue); text-transform: uppercase; letter-spacing: .05em;
+}
+
+/* ── Progress Ring ── */
+.progress-ring { transform: rotate(-90deg); }
+.progress-ring__bg { stroke: #f1f5f9; }
+.progress-ring__circle { 
+    stroke: var(--blue); 
+    transition: stroke-dashoffset 1s var(--ease-out); 
+}
+
+/* ── Table ── */
+.fee-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.fee-table thead th { 
+    font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; 
+    color: var(--muted); padding: .75rem 1rem; background: #f8fafc; border-bottom: 1px solid var(--border);
+}
+.fee-table thead th:first-child { border-radius: 8px 0 0 0; }
+.fee-table thead th:last-child { border-radius: 0 8px 0 0; }
+.fee-table tbody tr { 
+    transition: background 150ms var(--ease-out); 
+}
+@media (hover: hover) and (pointer: fine) {
+    .fee-table tbody tr:hover { background: #f8fafc; }
+}
+.fee-table tbody td { padding: 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.fee-table tbody tr:last-child td { border-bottom: none; }
+
+.fee-class-icon { 
+    width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; font-weight: 800; background: #eff6ff; color: var(--blue); flex-shrink: 0;
+}
+
+.fee-progress { height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; }
+.fee-progress-bar { height: 100%; background: var(--blue); border-radius: 3px; transition: width 1s var(--ease-out); }
+
+/* ── Action Cards ── */
+.action-card { 
+    display: block; text-decoration: none !important; color: var(--text);
+    transition: transform 200ms var(--ease-out);
+    outline: none;
+}
+.action-card:focus-visible { 
+    box-shadow: 0 0 0 3px rgba(37,99,235,.3); 
+    border-radius: var(--radius);
+}
+@media (hover: hover) and (pointer: fine) {
+    .action-card:hover { transform: translateY(-3px); }
+}
+.action-card:active { transform: scale(0.98); }
+
+.action-card-inner { 
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); 
+    padding: 1.5rem; text-align: center; transition: border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+    .action-card:hover .action-card-inner { 
+        border-color: var(--blue); 
+        box-shadow: var(--shadow); 
+    }
+}
+
+.action-card-icon { 
+    width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    margin: 0 auto .75rem; font-size: 1.25rem; transition: transform 200ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+    .action-card:hover .action-card-icon { transform: scale(1.1); }
+}
+
+.action-card-icon.blue { background: #eff6ff; color: var(--blue); }
+.action-card-icon.green { background: #f0fdf4; color: var(--green); }
+.action-card-icon.yellow { background: #fffbeb; color: var(--yellow); }
+.action-card-icon.red { background: #fef2f2; color: var(--red); }
+
+.action-card-title { font-size: .875rem; font-weight: 700; color: var(--text); margin: 0 0 .25rem; }
+.action-card-desc { font-size: .75rem; color: var(--muted); margin: 0; }
+
+/* ── Section Labels ── */
+.section-label { font-size: .688rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 1.5rem 0 .75rem; }
+
+/* ── Staggered animation delays ── */
+.summary-card:nth-child(1) { animation-delay: 0ms; }
+.summary-card:nth-child(2) { animation-delay: 50ms; }
+.summary-card:nth-child(3) { animation-delay: 100ms; }
+.summary-card:nth-child(4) { animation-delay: 150ms; }
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+    .summary-card, .fee-panel, .action-card { animation: none; opacity: 1; transform: none; transition: none; }
+    .fee-btn { transition: none; }
+    .summary-card:hover, .action-card:hover { transform: none; }
+    .progress-ring__circle, .summary-card-progress-bar, .fee-progress-bar { transition: none; }
+}
+</style>
+
+<div class="fee-dash-wrap">
+    {{-- ① HEADER --}}
+    <div class="row align-items-center mb-4">
+        <div class="col-md-7">
+            <h1 class="fee-heading">Financial Insights</h1>
+            <p class="fee-sub">Revenue performance & fee distribution overview</p>
+        </div>
+        <div class="col-md-5 text-md-end mt-2 mt-md-0">
+            @if($currentYear)
+            <div class="d-inline-flex align-items-center bg-white border px-3 py-2 rounded-lg shadow-sm">
+                <i class="fas fa-calendar-alt text-primary mr-2"></i>
+                <span class="text-dark font-weight-bold small">{{ $currentYear->name }}</span>
+                @if($currentYear->is_current)
+                    <span class="badge bg-success bg-opacity-10 text-success ms-2" style="font-size: .6rem; font-weight: 700;">CURRENT</span>
+                @endif
+            </div>
+            @endif
+        </div>
+    </div>
+
+    @include('flash::message')
+    
+    @if(!$currentYear)
+        <div class="fee-alert fee-alert-warning mb-4">
+            <div class="fee-alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="fee-alert-body">
+                <p class="fee-alert-title">Action Required</p>
+                <p class="fee-alert-desc">Please configure an active academic year to see current financial data.</p>
+            </div>
+            <a href="{{ route('academic-years.index') }}" class="fee-alert-action">Configure</a>
+        </div>
+    @endif
+
+    {{-- ② SUMMARY METRICS --}}
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="summary-card grad-blue" onclick="window.location='{{ route('fees.reports.expected-revenue') }}'" tabindex="0">
+                <i class="fas fa-money-check-alt summary-card-bg"></i>
+                <div class="summary-card-label">Expected Revenue</div>
+                <div class="summary-card-value">KES {{ number_format($expectedRevenue) }}</div>
+                <div class="summary-card-progress">
+                    <div class="summary-card-progress-bar" style="width: 75%"></div>
                 </div>
-                <div class="col-sm-6 text-right mt-3 mt-sm-0">
-                    <div class="d-inline-flex align-items-center bg-white border px-3 py-2 rounded-lg shadow-xs">
-                        <i class="fas fa-calendar-alt text-primary mr-2"></i>
-                        <span class="text-dark font-weight-bold small">{{ $currentYear->name ?? 'Select Academic Year' }}</span>
-                        @if($currentYear && $currentYear->is_current)
-                            <span class="badge badge-success-soft ml-2 x-small">CURRENT</span>
-                        @endif
-                    </div>
+                <div class="summary-card-footer">
+                    <span>Assigned Fees</span>
+                    <a href="{{ route('fees.reports.expected-revenue') }}" class="summary-card-link">View Report <i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-sm-6">
+            <div class="summary-card grad-green" onclick="window.location='{{ route('fee-structures.index') }}'" tabindex="0">
+                <i class="fas fa-file-invoice summary-card-bg"></i>
+                <div class="summary-card-label">Active Structures</div>
+                <div class="summary-card-value">{{ $totalFeeStructures }}</div>
+                <div class="summary-card-progress">
+                    <div class="summary-card-progress-bar" style="width: 100%"></div>
+                </div>
+                <div class="summary-card-footer">
+                    <span>Fee Templates</span>
+                    <a href="{{ route('fee-structures.index') }}" class="summary-card-link">Manage <i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-sm-6">
+            <div class="summary-card grad-yellow" onclick="window.location='{{ route('fees.reports.discount-summary') }}'" tabindex="0">
+                <i class="fas fa-tags summary-card-bg"></i>
+                <div class="summary-card-label">Total Discounts</div>
+                <div class="summary-card-value">KES {{ number_format($totalDiscounts) }}</div>
+                <div class="summary-card-progress">
+                    <div class="summary-card-progress-bar" style="width: 45%"></div>
+                </div>
+                <div class="summary-card-footer">
+                    <span>Fee Reductions</span>
+                    <a href="{{ route('fees.reports.discount-summary') }}" class="summary-card-link">Details <i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-sm-6">
+            <div class="summary-card grad-red" onclick="window.location='{{ route('fees.assignments.unassigned') }}'" tabindex="0">
+                <i class="fas fa-user-clock summary-card-bg"></i>
+                <div class="summary-card-label">Pending Setup</div>
+                <div class="summary-card-value">{{ $notAssignedCount }}</div>
+                @php
+                    $totalStd = ($studentsWithFees ?? 0) + $notAssignedCount;
+                    $assignedPercent = $totalStd > 0 ? ( ($studentsWithFees ?? 0) / $totalStd) * 100 : 0;
+                    $unassignedPercent = 100 - $assignedPercent;
+                @endphp
+                <div class="summary-card-progress">
+                    <div class="summary-card-progress-bar" style="width: {{ $unassignedPercent }}%"></div>
+                </div>
+                <div class="summary-card-footer">
+                    <span>Unassigned Students</span>
+                    <a href="{{ route('fees.assignments.unassigned') }}" class="summary-card-link">Fix Now <i class="fas fa-arrow-right ms-1"></i></a>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="content px-4">
-        @include('flash::message')
-        
-        @if(!$currentYear)
-            <div class="alert bg-amber-soft border-amber text-amber-dark mb-4 p-3 rounded-lg d-flex align-items-center">
-                <i class="fas fa-exclamation-triangle mr-3 fa-lg"></i>
-                <div>
-                    <strong>Action Required:</strong> Please configure an active academic year to see current financial data.
-                    <a href="{{ route('academic-years.index') }}" class="ml-2 font-weight-bold text-decoration-underline">Set Up Now</a>
-                </div>
-            </div>
-        @endif
-
-        <!-- Premium Summary Section -->
-        <div class="row mb-5">
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="card border-0 shadow-sm overflow-hidden h-100 summary-card bg-primary-gradient">
-                    <div class="card-body p-4 position-relative text-white">
-                        <div class="summary-icon">
-                            <i class="fas fa-money-check-alt opacity-25"></i>
-                        </div>
-                        <div class="extra-small text-uppercase font-weight-bold mb-1" style="opacity: 0.85;">Expected Revenue</div>
-                        <h2 class="font-weight-bold mb-1">KES {{ number_format($expectedRevenue) }}</h2>
-                        <div class="progress progress-xxs bg-white-opacity mt-3" style="height: 4px;">
-                            <div class="progress-bar bg-white" style="width: 75%"></div>
-                        </div>
-                        <div class="mt-3 d-flex justify-content-between align-items-center">
-                            <span class="extra-small" style="opacity: 0.85;">Assigned Fees</span>
-                            <a href="{{ route('fees.reports.expected-revenue') }}" class="text-white extra-small font-weight-bold">View Report <i class="fas fa-arrow-right ml-1"></i></a>
-                        </div>
+    {{-- ③ MAIN GRIDS --}}
+    <div class="row g-4">
+        {{-- Assignment Progress Card --}}
+        <div class="col-lg-5">
+            <div class="fee-panel">
+                <div class="fee-panel-head">
+                    <div>
+                        <h3 class="fee-panel-title">Enrollment & Fees</h3>
+                        <p class="fee-panel-sub">Tracking student fee assignments</p>
                     </div>
                 </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="card border-0 shadow-sm overflow-hidden h-100 summary-card bg-emerald-gradient">
-                    <div class="card-body p-4 position-relative text-white">
-                        <div class="summary-icon">
-                            <i class="fas fa-file-invoice opacity-25"></i>
-                        </div>
-                        <div class="extra-small text-uppercase font-weight-bold mb-1" style="opacity: 0.85;">Active Structures</div>
-                        <h2 class="font-weight-bold mb-1">{{ $totalFeeStructures }}</h2>
-                        <div class="progress progress-xxs bg-white-opacity mt-3" style="height: 4px;">
-                            <div class="progress-bar bg-white" style="width: 100%"></div>
-                        </div>
-                        <div class="mt-3 d-flex justify-content-between align-items-center">
-                            <span class="extra-small" style="opacity: 0.85;">Fee Templates</span>
-                            <a href="{{ route('fee-structures.index') }}" class="text-white extra-small font-weight-bold">Manage <i class="fas fa-arrow-right ml-1"></i></a>
+                <div class="fee-panel-body text-center">
+                    <div class="position-relative d-inline-block mb-4">
+                        <svg class="progress-ring" width="140" height="140">
+                            <circle class="progress-ring__bg" stroke-width="10" fill="transparent" r="64" cx="70" cy="70" />
+                            <circle class="progress-ring__circle" stroke-width="10" 
+                                stroke-dasharray="{{ 2 * pi() * 64 }}" 
+                                stroke-dashoffset="{{ (1 - ($assignedPercent/100)) * (2 * pi() * 64) }}" 
+                                stroke-linecap="round" 
+                                fill="transparent" r="64" cx="70" cy="70" />
+                        </svg>
+                        <div class="position-absolute" style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                            <h2 class="fw-bold mb-0" style="font-size: 1.5rem;">{{ round($assignedPercent) }}%</h2>
+                            <span class="small text-muted fw-bold">ASSIGNED</span>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="card border-0 shadow-sm overflow-hidden h-100 summary-card bg-amber-gradient">
-                    <div class="card-body p-4 position-relative text-white">
-                        <div class="summary-icon">
-                            <i class="fas fa-tags opacity-25"></i>
+                    
+                    <div class="row g-2 text-start px-2">
+                        <div class="col-12">
+                            <div class="p-3 rounded border d-flex align-items-center justify-content-between" style="background: #f8fafc;">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle me-2" style="width: 10px; height: 10px; background: var(--blue);"></div>
+                                    <span class="small fw-bold">Assigned</span>
+                                </div>
+                                <span class="fw-bold">{{ $studentsWithFees ?? 0 }} Students</span>
+                            </div>
                         </div>
-                        <div class="extra-small text-uppercase font-weight-bold mb-1" style="opacity: 0.85;">Total Discounts</div>
-                        <h2 class="font-weight-bold mb-1">KES {{ number_format($totalDiscounts) }}</h2>
-                        <div class="progress progress-xxs bg-white-opacity mt-3" style="height: 4px;">
-                            <div class="progress-bar bg-white" style="width: 45%"></div>
-                        </div>
-                        <div class="mt-3 d-flex justify-content-between align-items-center">
-                            <span class="extra-small" style="opacity: 0.85;">Fee Reductions</span>
-                            <a href="{{ route('fees.reports.discount-summary') }}" class="text-white extra-small font-weight-bold">Details <i class="fas fa-arrow-right ml-1"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="card border-0 shadow-sm overflow-hidden h-100 summary-card bg-rose-gradient">
-                    <div class="card-body p-4 position-relative text-white">
-                        <div class="summary-icon">
-                            <i class="fas fa-user-clock opacity-25"></i>
-                        </div>
-                        <div class="extra-small text-uppercase font-weight-bold mb-1" style="opacity: 0.85;">Pending Setup</div>
-                        <h2 class="font-weight-bold mb-1">{{ $notAssignedCount }}</h2>
-                        <div class="progress progress-xxs bg-white-opacity mt-3" style="height: 4px;">
-                            @php
-                                $totalStd = ($studentsWithFees ?? 0) + $notAssignedCount;
-                                $assignedPercent = $totalStd > 0 ? ( ($studentsWithFees ?? 0) / $totalStd) * 100 : 0;
-                                $unassignedPercent = 100 - $assignedPercent;
-                            @endphp
-                            <div class="progress-bar bg-white" style="width: {{ $unassignedPercent }}%"></div>
-                        </div>
-                        <div class="mt-3 d-flex justify-content-between align-items-center">
-                            <span class="extra-small" style="opacity: 0.85;">Unassigned Students</span>
-                            <a href="{{ route('fees.assignments.unassigned') }}" class="text-white extra-small font-weight-bold">Fix Now <i class="fas fa-arrow-right ml-1"></i></a>
+                        <div class="col-12">
+                            <div class="p-3 rounded border d-flex align-items-center justify-content-between" style="background: #f8fafc;">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle me-2" style="width: 10px; height: 10px; background: var(--red);"></div>
+                                    <span class="small fw-bold">Remaining</span>
+                                </div>
+                                <span class="fw-bold">{{ $notAssignedCount }} Students</span>
+                            </div>
                         </div>
                     </div>
+
+                    <a href="{{ route('fees.assignments.create') }}" class="fee-btn fee-btn-primary w-100 mt-4 py-3 justify-content-center">
+                        <i class="fas fa-plus-circle me-1"></i> Start Bulk Assignment
+                    </a>
                 </div>
             </div>
         </div>
 
-        <div class="row">
-            <!-- Assignment Progress Card -->
-            <div class="col-lg-5 mb-4">
-                <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
-                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
-                        <h5 class="font-weight-bold text-dark">Enrollment & Fees</h5>
-                        <p class="text-muted small">Tracking student fee assignments</p>
+        {{-- Revenue Ranking Card --}}
+        <div class="col-lg-7">
+            <div class="fee-panel">
+                <div class="fee-panel-head">
+                    <div>
+                        <h3 class="fee-panel-title">Revenue by Class</h3>
+                        <p class="fee-panel-sub">Top classes by expected revenue</p>
                     </div>
-                    <div class="card-body p-4 text-center">
-                        <div class="position-relative d-inline-block mb-4">
-                            <svg class="progress-ring" width="160" height="160">
-                                <circle class="progress-ring__circle_bg" stroke="#f1f5f9" stroke-width="12" fill="transparent" r="70" cx="80" cy="80"/>
-                                <circle class="progress-ring__circle" stroke="#3b82f6" stroke-width="12" stroke-dasharray="{{ 2 * pi() * 70 }}" stroke-dashoffset="{{ (1 - ($assignedPercent/100)) * (2 * pi() * 70) }}" stroke-linecap="round" fill="transparent" r="70" cx="80" cy="80"/>
-                            </svg>
-                            <div class="position-absolute" style="top: 50%; left: 50%; transform: translate(-50%, -50%);">
-                                <h2 class="font-weight-bold mb-0">{{ round($assignedPercent) }}%</h2>
-                                <span class="extra-small text-muted font-weight-bold">ASSIGNED</span>
-                            </div>
-                        </div>
-                        
-                        <div class="row text-left px-3">
-                            <div class="col-12 mb-3">
-                                <div class="p-3 rounded-lg border bg-light-soft d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center">
-                                        <div class="bg-primary rounded-circle mr-2" style="width: 10px; height: 10px;"></div>
-                                        <span class="small font-weight-bold">Assigned</span>
-                                    </div>
-                                    <span class="font-weight-bold">{{ $studentsWithFees ?? 0 }} Students</span>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="p-3 rounded-lg border bg-light-soft d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center">
-                                        <div class="bg-rose rounded-circle mr-2" style="width: 10px; height: 10px;"></div>
-                                        <span class="small font-weight-bold">Remaining</span>
-                                    </div>
-                                    <span class="font-weight-bold">{{ $notAssignedCount }} Students</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <a href="{{ route('fees.assignments.create') }}" class="btn btn-primary btn-block mt-4 py-3 font-weight-bold shadow-sm" style="border-radius: 12px;">
-                            <i class="fas fa-plus-circle mr-2"></i> Start Bulk Assignment
-                        </a>
-                    </div>
+                    <span class="fee-panel-badge">TOP PERFORMERS</span>
                 </div>
-            </div>
-
-            <!-- Revenue Ranking Card -->
-            <div class="col-lg-7 mb-4">
-                <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
-                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="font-weight-bold text-dark">Revenue by Class</h5>
-                            <p class="text-muted small">Top 5 classes by expected revenue</p>
-                        </div>
-                        <div class="bg-blue-light text-blue rounded-pill px-3 py-1 extra-small font-weight-bold">
-                            TOP PERFORMERS
-                        </div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="bg-light-soft">
+                <div class="fee-panel-body p-0">
+                    <div class="table-responsive">
+                        <table class="fee-table">
+                            <thead>
+                                <tr>
+                                    <th>CLASS</th>
+                                    <th style="width: 200px;">PROGRESS</th>
+                                    <th class="text-end">EXPECTED</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php
+                                    $maxRev = count($revenueByClass) > 0 ? $revenueByClass->max('total') : 1;
+                                @endphp
+                                @forelse($revenueByClass as $row)
                                     <tr>
-                                        <th class="border-0 px-4 py-3 small font-weight-bold text-muted">CLASS</th>
-                                        <th class="border-0 px-4 py-3 small font-weight-bold text-muted">PROGRESS</th>
-                                        <th class="border-0 px-4 py-3 small font-weight-bold text-muted text-right">EXPECTED</th>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="fee-class-icon me-3">
+                                                    {{ substr($row->class_name, 0, 2) }}
+                                                </div>
+                                                <span class="fw-bold">{{ $row->class_name }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @php $classPercent = ($row->total / $maxRev) * 100; @endphp
+                                            <div class="fee-progress">
+                                                <div class="fee-progress-bar" style="width: {{ $classPercent }}%"></div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end fw-bold">
+                                            KES {{ number_format($row->total) }}
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    @php
-                                        $maxRev = count($revenueByClass) > 0 ? $revenueByClass->max('total') : 1;
-                                    @endphp
-                                    @foreach($revenueByClass as $row)
-                                        <tr>
-                                            <td class="px-4 py-4 align-middle">
-                                                <div class="d-flex align-items-center">
-                                                    <div class="bg-blue-light text-blue rounded p-2 mr-3 font-weight-bold small" style="width: 40px; text-align: center;">
-                                                        {{ substr($row->class_name, 0, 2) }}
-                                                    </div>
-                                                    <span class="font-weight-bold text-dark">{{ $row->class_name }}</span>
-                                                </div>
-                                            </td>
-                                            <td class="px-4 py-4 align-middle" style="width: 200px;">
-                                                @php $classPercent = ($row->total / $maxRev) * 100; @endphp
-                                                <div class="progress progress-sm" style="height: 6px; border-radius: 3px;">
-                                                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $classPercent }}%"></div>
-                                                </div>
-                                            </td>
-                                            <td class="px-4 py-4 align-middle text-right font-weight-bold text-dark">
-                                                KES {{ number_format($row->total) }}
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-white border-0 py-3 text-center">
-                        <a href="{{ route('fees.reports.expected-revenue') }}" class="text-primary font-weight-bold small">View Full Distribution <i class="fas fa-chevron-right ml-1"></i></a>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="text-center py-4 text-muted">
+                                            <i class="fas fa-chart-bar mb-2" style="font-size: 2rem;"></i>
+                                            <p class="mb-0 small">No revenue data available yet</p>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Action Grid -->
-        <div class="mt-4 mb-5">
-            <h5 class="font-weight-bold text-dark mb-4">Control Panel</h5>
-            <div class="row">
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <a href="{{ route('fees.assignments.create') }}" class="action-card text-decoration-none h-100">
-                        <div class="card border-0 shadow-sm h-100 transition-all card-hover-primary" style="border-radius: 16px;">
-                            <div class="card-body p-4 text-center">
-                                <div class="icon-circle bg-blue-light text-blue mb-3 mx-auto">
-                                    <i class="fas fa-users-cog fa-lg"></i>
-                                </div>
-                                <h6 class="font-weight-bold text-dark mb-1">Bulk Assign</h6>
-                                <p class="text-muted extra-small mb-0">Assign fees by class or group</p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <a href="{{ route('fee-structures.create') }}" class="action-card text-decoration-none h-100">
-                        <div class="card border-0 shadow-sm h-100 transition-all card-hover-emerald" style="border-radius: 16px;">
-                            <div class="card-body p-4 text-center">
-                                <div class="icon-circle bg-green-light text-green mb-3 mx-auto">
-                                    <i class="fas fa-file-invoice-dollar fa-lg"></i>
-                                </div>
-                                <h6 class="font-weight-bold text-dark mb-1">Structure Setup</h6>
-                                <p class="text-muted extra-small mb-0">Define new billing templates</p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <a href="{{ route('fees.discounts.create') }}" class="action-card text-decoration-none h-100">
-                        <div class="card border-0 shadow-sm h-100 transition-all card-hover-amber" style="border-radius: 16px;">
-                            <div class="card-body p-4 text-center">
-                                <div class="icon-circle bg-orange-light text-orange mb-3 mx-auto">
-                                    <i class="fas fa-percentage fa-lg"></i>
-                                </div>
-                                <h6 class="font-weight-bold text-dark mb-1">Fee Reliefs</h6>
-                                <p class="text-muted extra-small mb-0">Manage scholarships & discounts</p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-lg-3 col-md-6 mb-4">
-                    <a href="{{ route('fee-management.index') }}" class="action-card text-decoration-none h-100">
-                        <div class="card border-0 shadow-sm h-100 transition-all card-hover-rose" style="border-radius: 16px;">
-                            <div class="card-body p-4 text-center">
-                                <div class="icon-circle bg-red-light text-red mb-3 mx-auto">
-                                    <i class="fas fa-cash-register fa-lg"></i>
-                                </div>
-                                <h6 class="font-weight-bold text-dark mb-1">Collection</h6>
-                                <p class="text-muted extra-small mb-0">Record and verify payments</p>
-                            </div>
-                        </div>
-                    </a>
+                <div class="text-center py-3 border-top">
+                    <a href="{{ route('fees.reports.expected-revenue') }}" class="text-primary fw-bold small text-decoration-none">View Full Distribution <i class="fas fa-chevron-right ms-1"></i></a>
                 </div>
             </div>
         </div>
     </div>
 
-    <style>
-        /* Typography & Utility */
-        .extra-small { font-size: 0.7rem; letter-spacing: 0.5px; }
-        .x-small { font-size: 0.6rem; }
-        .bg-light-soft { background-color: #f8fafc; }
+    {{-- ④ ACTION GRID --}}
+    <p class="section-label mt-5">Control Panel</p>
+    <div class="row g-3">
+        <div class="col-lg-3 col-md-6">
+            <a href="{{ route('fees.assignments.create') }}" class="action-card">
+                <div class="action-card-inner">
+                    <div class="action-card-icon blue">
+                        <i class="fas fa-users-cog"></i>
+                    </div>
+                    <h6 class="action-card-title">Bulk Assign</h6>
+                    <p class="action-card-desc">Assign fees by class or group</p>
+                </div>
+            </a>
+        </div>
         
-        /* Badges */
-        .badge-success-soft { background-color: #dcfce7; color: #166534; font-weight: 700; border-radius: 4px; }
+        <div class="col-lg-3 col-md-6">
+            <a href="{{ route('fee-structures.create') }}" class="action-card">
+                <div class="action-card-inner">
+                    <div class="action-card-icon green">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <h6 class="action-card-title">Structure Setup</h6>
+                    <p class="action-card-desc">Define new billing templates</p>
+                </div>
+            </a>
+        </div>
         
-        /* Gradients */
-        .bg-primary-gradient { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important; color: white !important; }
-        .bg-emerald-gradient { background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; color: white !important; }
-        .bg-amber-gradient { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; color: white !important; }
-        .bg-rose-gradient { background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important; color: white !important; }
+        <div class="col-lg-3 col-md-6">
+            <a href="{{ route('fees.discounts.create') }}" class="action-card">
+                <div class="action-card-inner">
+                    <div class="action-card-icon yellow">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <h6 class="action-card-title">Fee Reliefs</h6>
+                    <p class="action-card-desc">Manage scholarships & discounts</p>
+                </div>
+            </a>
+        </div>
         
-        .bg-white-opacity { background-color: rgba(255, 255, 255, 0.2); }
-        
-        /* Cards */
-        .summary-card { border-radius: 18px; position: relative; border: none !important; }
-        .summary-card h2, .summary-card span, .summary-card a, .summary-card div { color: white !important; }
-        .summary-icon { position: absolute; right: -10px; bottom: -10px; font-size: 5rem; color: white !important; opacity: 0.25; }
-        
-        /* Progress Circle */
-        .progress-ring__circle { transition: stroke-dashoffset 1s ease-in-out; }
-        
-        /* Icon Circles */
-        .icon-circle { width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
-        
-        /* Action Cards Hover */
-        .transition-all { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .action-card:hover .card { transform: translateY(-8px); box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.1) !important; }
-        
-        .card-hover-primary:hover { border-bottom: 4px solid #3b82f6 !important; }
-        .card-hover-emerald:hover { border-bottom: 4px solid #10b981 !important; }
-        .card-hover-amber:hover { border-bottom: 4px solid #f59e0b !important; }
-        .card-hover-rose:hover { border-bottom: 4px solid #f43f5e !important; }
-
-        /* Generic Colors */
-        .bg-blue-light { background-color: #eff6ff; }
-        .text-blue { color: #3b82f6; }
-        .bg-green-light { background-color: #ecfdf5; }
-        .text-green { color: #10b981; }
-        .bg-orange-light { background-color: #fffbeb; }
-        .text-orange { color: #f59e0b; }
-        .bg-red-light { background-color: #fef2f2; }
-        .text-red { color: #ef4444; }
-        .bg-rose { background-color: #f43f5e; }
-        .bg-amber-soft { background-color: #fffbeb; }
-        .border-amber { border: 1px solid #fcd34d !important; }
-        .text-amber-dark { color: #92400e; }
-        
-        .shadow-xs { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
-    </style>
+        <div class="col-lg-3 col-md-6">
+            <a href="{{ route('fee-management.index') }}" class="action-card">
+                <div class="action-card-inner">
+                    <div class="action-card-icon red">
+                        <i class="fas fa-cash-register"></i>
+                    </div>
+                    <h6 class="action-card-title">Collection</h6>
+                    <p class="action-card-desc">Record and verify payments</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
 @endsection

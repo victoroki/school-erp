@@ -21,11 +21,7 @@ Route::get('/clear-all-cache', function() {
     return "<h1>All Cache Cleared Successfully</h1>";
 });
 
-// Redirect root to login if not authenticated, otherwise to dashboard
 Route::get('/', function () {
-    if (Auth::check()) {
-        return redirect()->route('dashboard');
-    }
     return redirect()->route('login');
 });
 
@@ -338,4 +334,5 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/finalize/{payroll}', [App\Http\Controllers\PayrollProcessingController::class, 'finalize'])->name('finalize');
     });
 
-});
+});
+

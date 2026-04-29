@@ -1,361 +1,365 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="dashboard-wrapper p-4" style="background: #fdfdfd; min-height: 100vh; font-family: 'Inter', sans-serif;">
-        <!-- Header Section -->
-        <div class="row mb-4 align-items-center">
-            <div class="col-md-6">
-                <!-- Search removed as requested -->
-            </div>
-            <div class="col-md-6 text-right d-flex align-items-center justify-content-end">
-                <h4 class="font-weight-bold mb-0 text-dark" style="letter-spacing: -0.5px;">Examination Dashboard</h4>
+<div class="dash-wrap">
+    {{-- ① HEADER --}}
+    <div class="row align-items-center mb-4">
+        <div class="col-md-7">
+            <h1 class="dash-heading">Examination Dashboard</h1>
+            <p class="dash-sub">Monitor student performance, manage assessments, and track grading progress</p>
+        </div>
+        <div class="col-md-5 text-md-end mt-2 mt-md-0">
+            <div class="d-flex gap-2 justify-content-md-end">
+                <a href="{{ route('exam-results.bulk') }}" class="btn-dash btn-emerald-dash">
+                    <i class="fas fa-file-import me-1"></i> Bulk Import
+                </a>
+                <a href="{{ route('exams.create') }}" class="btn-dash btn-indigo-dash">
+                    <i class="fas fa-plus me-1"></i> New Session
+                </a>
             </div>
         </div>
+    </div>
 
-        <!-- Stat Cards Row -->
-        <div class="row mb-4">
-            <div class="col-lg-3 col-md-6 mb-3">
-                <div class="stat-card p-4 rounded-xl shadow-sm bg-white h-100 border-0">
-                    <p class="text-muted font-weight-bold small text-uppercase mb-2" style="letter-spacing: 0.5px;">Upcoming Exams</p>
-                    <div class="d-flex align-items-end">
-                        <h1 class="mb-0 font-weight-bold mr-3" style="color: #0c1e35;">{{ $upcomingExamsCount }}</h1>
-                        <span class="badge badge-soft-success px-2 py-1 rounded-pill mb-2 small" style="background: #e6f4ea; color: #1e7e34;">Active</span>
-                    </div>
+    {{-- ② STAT CARDS --}}
+    <div class="row g-3 mb-4">
+        <div class="col-xl-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-indigo-light text-indigo">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Upcoming Exams</span>
+                    <h2 class="stat-value">{{ $upcomingExamsCount }}</h2>
+                    <span class="stat-trend text-emerald">
+                        <i class="fas fa-arrow-up"></i> {{ $ongoingExamsCount }} Live Now
+                    </span>
                 </div>
             </div>
-            <div class="col-lg-3 col-md-6 mb-3">
-                <div class="stat-card p-4 rounded-xl shadow-sm bg-white h-100 border-0">
-                    <p class="text-muted font-weight-bold small text-uppercase mb-2" style="letter-spacing: 0.5px;">Ongoing Exams</p>
-                    <div class="d-flex align-items-end">
-                        <h1 class="mb-0 font-weight-bold mr-3" style="color: #0c1e35;">{{ str_pad($ongoingExamsCount, 2, '0', STR_PAD_LEFT) }}</h1>
-                        <span class="badge badge-soft-primary px-2 py-1 rounded-pill mb-2 small" style="background: #e8f0fe; color: #1a73e8;">Live</span>
-                    </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-emerald-light text-emerald">
+                    <i class="fas fa-pen-nib"></i>
                 </div>
-            </div>
-            <div class="col-lg-3 col-md-6 mb-3">
-                <div class="stat-card p-4 rounded-xl shadow-sm bg-white h-100 border-0">
-                    <p class="text-muted font-weight-bold small text-uppercase mb-2" style="letter-spacing: 0.5px;">Marks Entry Progress</p>
-                    <div class="d-flex align-items-center">
-                        <h1 class="mb-0 font-weight-bold mr-3" style="color: #0c1e35;">{{ $marksEntryProgress }}%</h1>
-                        <div class="progress-container flex-grow-1">
-                            <div class="progress rounded-pill shadow-inner" style="height: 10px; background: #f0f2f5;">
-                                <div class="progress-bar bg-primary rounded-pill" role="progressbar" style="width: {{ $marksEntryProgress }}%" aria-valuenow="{{ $marksEntryProgress }}" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6 mb-3">
-                <div class="stat-card p-4 rounded-xl shadow-lg h-100 border-0 text-white position-relative overflow-hidden" style="background: linear-gradient(135deg, #0047b3 0%, #003366 100%);">
-                    <p class="text-white-50 font-weight-bold small text-uppercase mb-2" style="letter-spacing: 0.5px;">Overall Pass Rate</p>
-                    <div class="d-flex align-items-center justify-content-between">
-                        <h1 class="mb-0 font-weight-bold" style="font-size: 2.5rem;">{{ $overallPassRate }}%</h1>
-                        <i class="fas fa-chart-line fa-2x opacity-50"></i>
-                    </div>
-                    <div class="position-absolute" style="bottom: -10px; right: -10px; opacity: 0.1;">
-                        <i class="fas fa-award fa-5x"></i>
+                <div class="stat-content">
+                    <span class="stat-label">Grading Progress</span>
+                    <h2 class="stat-value">{{ $marksEntryProgress }}%</h2>
+                    <div class="progress mt-2" style="height: 4px; background: #f1f5f9;">
+                        <div class="progress-bar bg-emerald" style="width: {{ $marksEntryProgress }}%"></div>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="stat-card">
+                <div class="stat-icon bg-amber-light text-amber">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Pending Approval</span>
+                    <h2 class="stat-value">{{ $pendingApprovalsCount }}</h2>
+                    <span class="stat-trend text-muted">Sessions to Publish</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="stat-card bg-indigo text-white">
+                <div class="stat-icon bg-white-transparent text-white">
+                    <i class="fas fa-award"></i>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label text-white-50">Overall Pass Rate</span>
+                    <h2 class="stat-value text-white">{{ $overallPassRate }}%</h2>
+                    <span class="stat-trend text-white-50">School Average</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <div class="row">
-            <!-- Left Column: Quick Actions & Performance Trends -->
-            <div class="col-lg-8">
-                <!-- NEW FEATURE ALERT -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <a href="{{ route('exam-results.bulk') }}" class="btn btn-success btn-lg btn-block shadow elevation-2 rounded-xl py-3 border-0" style="background: linear-gradient(135deg, #1e7e34 0%, #28a745 100%);">
-                            <div class="d-flex align-items-center justify-content-center">
-                                <div class="icon-circle bg-white text-success rounded-circle d-flex align-items-center justify-content-center mr-3" style="width: 45px; height: 45px;">
-                                    <i class="fas fa-file-excel fs-3"></i>
-                                </div>
-                                <div class="text-left">
-                                    <h5 class="mb-0 font-weight-bold text-white">Bulk Results Import Tool</h5>
-                                    <p class="mb-0 small text-white-50">Upload spreadsheet results in one click</p>
-                                </div>
-                            </div>
-                        </a>
+    {{-- ③ MAIN CONTENT --}}
+    <div class="row g-4">
+        {{-- Left: Performance Trends --}}
+        <div class="col-lg-8">
+            <div class="dash-panel h-100">
+                <div class="dash-panel-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="icon-wrap bg-indigo-light text-indigo">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 class="dash-panel-title">Academic Performance Trends</h3>
                     </div>
                 </div>
-
-                <!-- Quick Command Center -->
-                <div class="premium-card p-4 rounded-xl shadow-sm bg-white border-0 mb-4 h-auto">
-                    <div class="d-flex align-items-center mb-4 pt-2">
-                        <i class="fas fa-bolt text-primary mr-3 fs-3"></i>
-                        <h5 class="mb-0 font-weight-bold text-dark">Quick Command Center</h5>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-3 col-sm-6 mb-3">
-                            <a href="{{ route('exams.create') }}" class="btn command-btn w-100 rounded-xl p-4 shadow-sm h-100 transition-all active-command" style="background: #002d72; color: white;">
-                                <div class="command-content text-center">
-                                    <div class="icon-circle bg-white text-dark rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow-sm" style="width: 48px; height: 48px;">
-                                        <i class="fas fa-plus"></i>
-                                    </div>
-                                    <p class="mb-0 font-weight-bold small">New Session</p>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-3 col-sm-6 mb-3">
-                            <a href="{{ route('exam-results.index') }}" class="btn command-btn w-100 rounded-xl p-4 h-100 transition-all border-0" style="background: #dae7ff; color: #002d72;">
-                                <div class="command-content text-center">
-                                    <div class="icon-circle text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
-                                        <i class="fas fa-pen-nib fs-3"></i>
-                                    </div>
-                                    <p class="mb-0 font-weight-bold small">Enter Marks</p>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-3 col-sm-6 mb-3">
-                            <a href="{{ route('exam-schedules.index') }}" class="btn command-btn w-100 rounded-xl p-4 h-100 transition-all border-0 bg-white shadow-sm" style="color: #002d72;">
-                                <div class="command-content text-center">
-                                    <div class="icon-circle text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
-                                        <i class="far fa-calendar-alt fs-3"></i>
-                                    </div>
-                                    <p class="mb-0 font-weight-bold small">Timetable</p>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-3 col-sm-6 mb-3">
-                            <a href="{{ route('exam-reports.generate') }}" class="btn command-btn w-100 rounded-xl p-4 h-100 transition-all border-0 bg-white shadow-sm" style="color: #002d72;">
-                                <div class="command-content text-center">
-                                    <div class="icon-circle text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 48px; height: 48px;">
-                                        <i class="far fa-file-alt fs-3"></i>
-                                    </div>
-                                    <p class="mb-0 font-weight-bold small">Report Cards</p>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Historical Performance Trends -->
-                <div class="premium-card p-4 rounded-xl shadow-sm bg-white border-0 mb-4 h-auto">
-                    <div class="d-flex align-items-center justify-content-between mb-4">
-                        <div class="title-group">
-                            <h5 class="mb-1 font-weight-bold text-dark">Historical Performance Trends</h5>
-                            <p class="text-muted small mb-0">Trending analytics for {{ $performanceTrends->first()->name ?? '' }} - {{ $performanceTrends->last()->name ?? '' }}</p>
-                        </div>
-                    </div>
-                    <div class="chart-container" style="height: 350px;">
+                <div class="dash-panel-body">
+                    <div style="height: 350px;">
                         <canvas id="performanceChart"></canvas>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Class Diversity: Performance Rankings -->
-                <div class="premium-card p-4 rounded-xl shadow-sm bg-white border-0 mb-4 h-auto">
-                    <div class="d-flex align-items-center justify-content-between mb-4 pt-2">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-layer-group text-primary mr-3 fs-3"></i>
-                            <h5 class="mb-0 font-weight-bold text-dark">Class Performance Diversity</h5>
+        {{-- Right: Grade Distribution --}}
+        <div class="col-lg-4">
+            <div class="dash-panel h-100">
+                <div class="dash-panel-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="icon-wrap bg-amber-light text-amber">
+                            <i class="fas fa-pie-chart"></i>
                         </div>
-                        <span class="badge badge-soft-info px-3 py-2 rounded-pill small" style="background: #e0f2fe; color: #0369a1;">{{ count($classPerformance) }} Classes</span>
+                        <h3 class="dash-panel-title">Grade Distribution</h3>
                     </div>
-                    <div class="row">
-                        @foreach($classPerformance->take(4) as $class)
-                        <div class="col-md-6 mb-3">
-                            <div class="p-3 rounded-lg border" style="background: #fcfdfe; border-color: #eef2f7 !important;">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="font-weight-bold text-dark mb-0">{{ $class->name }}</h6>
-                                    <span class="font-weight-bold" style="color: #003399;">{{ $class->avg_marks }}%</span>
-                                </div>
-                                <div class="progress rounded-pill mb-2" style="height: 6px; background: #eef2f7;">
-                                    <div class="progress-bar rounded-pill" style="width: {{ $class->avg_marks }}%; background: #003399;"></div>
-                                </div>
-                                <div class="d-flex justify-content-between small">
-                                    <span class="text-muted">Pass Rate: <span class="text-success font-weight-bold">{{ $class->pass_rate }}%</span></span>
-                                    <span class="text-muted">{{ $class->total_results }} Entries</span>
-                                </div>
+                </div>
+                <div class="dash-panel-body d-flex flex-column">
+                    <div class="position-relative mb-4" style="height: 200px;">
+                        <canvas id="gradeChart"></canvas>
+                        <div class="chart-center text-center">
+                            @php $topGrade = $gradeDistribution->sortByDesc('count')->first(); @endphp
+                            <h4 class="mb-0 fw-bold">{{ $topGrade->name ?? 'N/A' }}</h4>
+                            <small class="text-muted text-uppercase fw-bold" style="font-size: 0.6rem;">Dominant</small>
+                        </div>
+                    </div>
+                    
+                    <div class="grade-list mt-auto">
+                        @php
+                            $colors = ['#4f46e5', '#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#8b5cf6'];
+                            $totalGrades = $gradeDistribution->sum('count');
+                        @endphp
+                        @foreach($gradeDistribution->take(5) as $index => $grade)
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="dot" style="background: {{ $colors[$index % count($colors)] }}"></span>
+                                <span class="text-muted fw-500 small">{{ $grade->name }}</span>
                             </div>
+                            <span class="fw-bold small">{{ $totalGrades > 0 ? round(($grade->count / $totalGrades) * 100) : 0 }}%</span>
                         </div>
                         @endforeach
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Right Column: Grade Distribution & Recent Results -->
-            <div class="col-lg-4">
-                <!-- Grade Distribution -->
-                <div class="premium-card p-4 rounded-xl shadow-sm bg-white border-0 mb-4 h-auto">
-                    <h5 class="mb-4 font-weight-bold text-dark">Grade Distribution</h5>
-                    @php
-                        $topGrade = $gradeDistribution->sortByDesc('count')->first();
-                        $totalGrades = $gradeDistribution->sum('count');
-                    @endphp
-                    <div class="position-relative mb-4" style="height: 250px;">
-                        <canvas id="gradeChart"></canvas>
-                        <div class="chart-center position-absolute d-flex flex-column align-items-center justify-content-center w-100 h-100" style="top: 0; pointer-events: none;">
-                            <h2 class="mb-0 font-weight-bold" style="color: #0c1e35;">{{ $topGrade->name ?? 'N/A' }}</h2>
-                            <span class="text-muted font-weight-bold small text-uppercase">Dominant</span>
+        {{-- Bottom Left: Class Performance --}}
+        <div class="col-lg-7">
+            <div class="dash-panel">
+                <div class="dash-panel-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="icon-wrap bg-indigo-light text-indigo">
+                            <i class="fas fa-users"></i>
                         </div>
-                    </div>
-                    <div class="grade-legend">
-                        @php
-                            $colors = ['#003399', '#c2d1f0', '#0c1e35', '#f0f2f5', '#dae7ff', '#0047b3'];
-                        @endphp
-                        @foreach($gradeDistribution as $index => $grade)
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div class="d-flex align-items-center">
-                                <span class="rounded-circle mr-2" style="width: 10px; height: 10px; background: {{ $colors[$index % count($colors)] }};"></span>
-                                <span class="text-muted font-weight-bold small">{{ $grade->name }}</span>
-                            </div>
-                            <span class="font-weight-bold text-dark small">{{ $totalGrades > 0 ? round(($grade->count / $totalGrades) * 100) : 0 }}%</span>
-                        </div>
-                        @endforeach
+                        <h3 class="dash-panel-title">Top Performing Classes</h3>
                     </div>
                 </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Class</th>
+                                <th>Avg Marks</th>
+                                <th>Pass Rate</th>
+                                <th class="text-end pe-4">Entries</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($classPerformance->take(5) as $class)
+                            <tr>
+                                <td class="ps-4">
+                                    <span class="fw-bold text-dark small">{{ $class->name }}</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="fw-600 small">{{ $class->avg_marks }}%</span>
+                                        <div class="progress flex-grow-1" style="height: 4px; width: 60px;">
+                                            <div class="progress-bar bg-indigo" style="width: {{ $class->avg_marks }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-emerald-light text-emerald rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                                        {{ $class->pass_rate }}% Pass
+                                    </span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <span class="text-muted small fw-500">{{ $class->total_results }}</span>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
-                <!-- Recent Results -->
-                <div class="premium-card p-4 rounded-xl shadow-sm bg-white border-0 h-auto">
-                    <div class="d-flex align-items-center justify-content-between mb-4">
-                        <h5 class="mb-0 font-weight-bold text-dark">Recent Results</h5>
-                        <div class="d-flex">
-                            <a href="{{ route('exam-results.bulk') }}" class="text-success font-weight-bold small mr-3">
-                                <i class="fas fa-file-import mr-1"></i> Bulk Import
-                            </a>
-                            <a href="{{ route('exam-results.index') }}" class="text-primary font-weight-bold small">View All</a>
+        {{-- Bottom Right: Recent Results --}}
+        <div class="col-lg-5">
+            <div class="dash-panel">
+                <div class="dash-panel-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="icon-wrap bg-emerald-light text-emerald">
+                            <i class="fas fa-history"></i>
                         </div>
+                        <h3 class="dash-panel-title">Recent Results</h3>
                     </div>
-                    <div class="results-list">
+                    <a href="{{ route('exam-results.index') }}" class="btn-dash btn-ghost py-1 px-2">
+                        View All
+                    </a>
+                </div>
+                <div class="dash-panel-body p-0">
+                    <div class="list-group list-group-flush">
                         @forelse($recentResults as $res)
-                        @php
-                            $initials = collect(explode(' ', $res->student->full_name))->map(fn($n) => $n[0])->take(2)->join('');
-                            $isPass = $res->marks_obtained >= 40; // Assuming 40 as pass mark
-                        @endphp
-                        <div class="result-item d-flex align-items-center justify-content-between mb-4">
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-circle rounded-lg d-flex align-items-center justify-content-center font-weight-bold mr-3" style="width: 44px; height: 44px; background: #f0f2f5; color: #44566c;">
-                                    {{ $initials }}
+                        @php $isPass = $res->marks_obtained >= 40; @endphp
+                        <div class="list-group-item border-0 border-bottom px-4 py-3">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="avatar bg-slate-light text-slate fw-bold">
+                                        {{ substr($res->student->full_name, 0, 1) }}
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold text-dark small">{{ $res->student->full_name }}</h6>
+                                        <p class="mb-0 text-muted" style="font-size: 0.7rem;">{{ $res->subject->name }} ({{ $res->exam->name }})</p>
+                                    </div>
                                 </div>
-                                <div class="student-info">
-                                    <h6 class="mb-0 font-weight-bold text-dark">{{ $res->student->full_name }}</h6>
-                                    <p class="mb-0 text-muted small">{{ $res->subject->name }} + {{ $res->exam->name }}</p>
+                                <div class="text-end">
+                                    <span class="d-block fw-bold {{ $isPass ? 'text-indigo' : 'text-rose' }} small">{{ $res->marks_obtained }}/100</span>
+                                    <span class="text-muted text-uppercase fw-bold" style="font-size: 0.6rem;">{{ $isPass ? 'Pass' : 'Fail' }}</span>
                                 </div>
-                            </div>
-                            <div class="score-info text-right">
-                                <h6 class="mb-0 font-weight-bold" style="color: #003399;">{{ $res->marks_obtained }}/100</h6>
-                                <span class="{{ $isPass ? 'text-success' : 'text-danger' }}" style="font-size: 10px; font-weight: 700; text-transform: uppercase;">{{ $isPass ? 'Pass' : 'Fail' }}</span>
                             </div>
                         </div>
                         @empty
-                        <div class="text-center py-5 text-muted small">No recent results found</div>
+                        <div class="text-center py-5">
+                            <p class="text-muted small mb-0">No recent results found</p>
+                        </div>
                         @endforelse
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
-        .fs-3 { font-size: 1.5rem; }
-        .fs-5 { font-size: 1.25rem; }
-        .rounded-xl { border-radius: 16px !important; }
-        .transition-all { transition: all 0.3s ease; }
-        .pointer { cursor: pointer; }
-        
-        .stat-card { border-radius: 16px; border: 0; }
-        .premium-card { border-radius: 16px !important; border: 0; outline: none; }
-        
-        .command-btn { border: 0 !important; cursor: pointer; }
-        .command-btn:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important; }
-        .active-command { box-shadow: 0 10px 20px rgba(0, 45, 114, 0.2) !important; }
-        
-        .result-item:last-child { mb: 0; }
-        
-        .shadow-inner { box-shadow: inset 0 2px 4px rgba(0,0,0,0.06); }
-        .btn-light { background: #f8f9fa; color: #6c757d; }
-        
-        input::placeholder { font-weight: 500; color: #adb5bd; }
-        
-        /* Nav Icons animation removed as icons were deleted */
-        
-        /* Custom Scrollbar for list if needed */
-        .results-list::-webkit-scrollbar { width: 5px; }
-        .results-list::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 10px; }
-    </style>
+<style>
+/* ── Emil Kowalski Utility Suite ── */
+:root {
+    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --emerald: #10b981; --emerald-light: #ecfdf5;
+    --amber: #f59e0b; --amber-light: #fffbeb;
+    --rose: #f43f5e; --rose-light: #fff1f2;
+    --slate: #64748b; --slate-light: #f1f5f9;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dash-wrap { padding: 1.5rem; background: #fafafa; min-height: 100vh; }
+.dash-heading { font-size: 1.5rem; font-weight: 800; color: var(--text); letter-spacing: -0.03em; margin-bottom: 0.25rem; }
+.dash-sub { font-size: 0.875rem; color: var(--muted); font-weight: 500; margin-bottom: 0; }
+
+/* Stat Cards */
+.stat-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; display: flex; align-items: center; gap: 1rem; position: relative; overflow: hidden; transition: all 200ms var(--ease-out); }
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.stat-card.bg-indigo { background: var(--indigo); border-color: var(--indigo); }
+.stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.125rem; flex-shrink: 0; }
+.bg-indigo-light { background: var(--indigo-light); color: var(--indigo); }
+.bg-emerald-light { background: var(--emerald-light); color: var(--emerald); }
+.bg-amber-light { background: var(--amber-light); color: var(--amber); }
+.bg-white-transparent { background: rgba(255,255,255,0.2); }
+.stat-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); display: block; margin-bottom: 0.25rem; }
+.stat-value { font-size: 1.5rem; font-weight: 800; color: var(--text); margin: 0; line-height: 1; }
+.stat-trend { font-size: 0.688rem; font-weight: 600; display: block; margin-top: 0.5rem; }
+
+/* Panels */
+.dash-panel { background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+.dash-panel-header { padding: 1rem 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: space-between; }
+.dash-panel-title { font-size: 0.875rem; font-weight: 700; color: var(--text); margin: 0; }
+.dash-panel-body { padding: 1.5rem; flex-grow: 1; }
+
+.icon-wrap { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; }
+
+/* Buttons */
+.btn-dash { display: inline-flex; align-items: center; justify-content: center; padding: .625rem 1.25rem; border-radius: 8px; font-size: .813rem; font-weight: 600; transition: all 150ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; }
+.btn-indigo-dash { background: var(--indigo); color: #fff; box-shadow: 0 1px 2px rgba(79, 70, 229, 0.2); }
+.btn-indigo-dash:hover { background: #4338ca; transform: translateY(-1px); color: #fff; }
+.btn-emerald-dash { background: var(--emerald); color: #fff; box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2); }
+.btn-emerald-dash:hover { background: #059669; transform: translateY(-1px); color: #fff; }
+.btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
+.btn-ghost:hover { background: var(--slate-light); color: var(--text); }
+
+/* Table */
+.table thead th { background: #f8fafc; border-bottom: 1px solid var(--border); border-top: 0; font-size: .688rem; font-weight: 700; text-transform: uppercase; color: var(--slate); letter-spacing: 0.05em; padding: .75rem 1.5rem; }
+.table tbody td { padding: .75rem 1.5rem; vertical-align: middle; border-bottom: 1px solid #f8fafc; border-top: 0; }
+
+/* Misc */
+.avatar { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; }
+.chart-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.fw-500 { font-weight: 500; }
+.fw-600 { font-weight: 600; }
+.bg-emerald { background: var(--emerald); }
+.bg-indigo { background: var(--indigo); }
+</style>
 @endsection
 
 @push('page_scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Performance Trend Chart - Polished Version
-        var perfCtx = document.getElementById('performanceChart').getContext('2d');
-        var grad = perfCtx.createLinearGradient(0, 0, 0, 400);
-        grad.addColorStop(0, 'rgba(0, 51, 153, 0.15)');
+        // Line Chart Performance
+        const perfCtx = document.getElementById('performanceChart').getContext('2d');
+        const grad = perfCtx.createLinearGradient(0, 0, 0, 400);
+        grad.addColorStop(0, 'rgba(79, 70, 229, 0.1)');
         grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
-        var performanceChart = new Chart(perfCtx, {
+        new Chart(perfCtx, {
             type: 'line',
             data: {
                 labels: {!! json_encode($performanceTrends->pluck('name')) !!},
                 datasets: [{
-                    label: 'Mean Score',
+                    label: 'Average Score',
                     data: {!! json_encode($performanceTrends->pluck('exam_results_avg_marks_obtained')) !!},
-                    borderColor: '#003399',
+                    borderColor: '#4f46e5',
                     backgroundColor: grad,
-                    borderWidth: 4,
+                    borderWidth: 3,
                     tension: 0.4,
                     fill: true,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#003399',
-                    pointBorderWidth: 2,
-                    pointRadius: 6,
-                    pointHoverRadius: 8
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#4f46e5',
+                    pointHoverBorderWidth: 3,
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
                     y: {
                         beginAtZero: true,
                         max: 100,
-                        grid: { 
-                            display: true,
-                            color: '#f0f2f5',
-                            drawBorder: false
-                        },
-                        ticks: {
-                            font: { family: "'Inter', sans-serif", weight: 500 },
-                            color: '#9ba4b4'
-                        }
+                        grid: { color: '#f1f5f9', drawBorder: false },
+                        ticks: { font: { size: 11, weight: '500' }, color: '#94a3b8' }
                     },
-                    x: { 
-                        grid: { display: false },
-                        ticks: {
-                            font: { family: "'Inter', sans-serif", weight: 600 },
-                            color: '#1a1a1a'
-                        }
-                    }
+                    x: { grid: { display: false }, ticks: { font: { size: 11, weight: '600' }, color: '#64748b' } }
                 }
             }
         });
 
-        // Grade Distribution Chart - Doughnut Version
-        var gradeCtx = document.getElementById('gradeChart').getContext('2d');
-        var gradeChart = new Chart(gradeCtx, {
+        // Doughnut Grade Chart
+        const gradeCtx = document.getElementById('gradeChart').getContext('2d');
+        new Chart(gradeCtx, {
             type: 'doughnut',
             data: {
                 labels: {!! json_encode($gradeDistribution->pluck('name')) !!},
                 datasets: [{
                     data: {!! json_encode($gradeDistribution->pluck('count')) !!},
-                    backgroundColor: ['#003399', '#c2d1f0', '#0c1e35', '#f0f2f5', '#dae7ff', '#0047b3'],
+                    backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#8b5cf6'],
                     borderWidth: 0,
-                    cutout: '75%'
+                    cutout: '80%'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                }
+                plugins: { legend: { display: false } }
             }
         });
     });

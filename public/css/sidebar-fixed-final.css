@@ -14,7 +14,7 @@
     --text-muted: #94a3b8;
     --text-header: #475569;
     --border-color: rgba(255, 255, 255, 0.05);
-    --search-bg: rgba(255, 255, 255, 0.03);
+    --search-bg: rgba(0, 0, 0, 0.2);
     --panel-bg: rgba(255, 255, 255, 0.03);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -86,25 +86,15 @@ body.sidebar-mini.sidebar-collapse .main-header {
 .brand-logo-hex {
     width: 44px;
     height: 44px;
-    background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-    border-radius: 12px;
+    background: transparent;
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 16px rgba(56, 189, 248, 0.2);
+    box-shadow: none;
     position: relative;
     overflow: hidden;
     flex-shrink: 0;
-}
-
-.brand-logo-hex::after {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
 }
 
 .brand-logo-hex img {
@@ -178,14 +168,15 @@ body.sidebar-mini.sidebar-collapse .main-header {
 .search-input {
     background: transparent;
     border: none;
-    color: var(--text-main);
+    color: var(--text-muted);
     font-size: 0.875rem;
     width: 100%;
     outline: none;
+    -webkit-font-smoothing: antialiased;
 }
 
 .search-input::placeholder {
-    color: #475569;
+    color: #334155;
 }
 
 /* ===== Navigation Container ===== */
@@ -507,12 +498,28 @@ body.sidebar-mini.sidebar-collapse .main-header {
    CONTENT WRAPPER & LAYOUT
    =================================================================== */
 
+html, body {
+    min-height: 100vh;
+}
+
+.wrapper {
+    min-height: 100vh;
+    position: relative;
+}
+
 .content-wrapper {
     background-color: #f4f6f9 !important;
     /* margin-left handled by body-level override at top of file */
     padding: calc(57px + 1.5rem) 2rem 2rem !important;
     transition: margin-left 0.2s ease;
-    min-height: 100vh;
+    min-height: calc(100vh - 57px - 52px) !important;
+}
+
+.main-footer {
+    /* margin-left handled by body-level override at top of file */
+    transition: margin-left 0.2s ease;
+    position: relative;
+    z-index: 1;
 }
 
 .main-header {

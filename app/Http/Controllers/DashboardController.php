@@ -9,6 +9,16 @@ use App\Models\FeePayment;
 use App\Models\StudentFee;
 use App\Models\AuditTrail;
 use App\Models\LeaveApplication;
+use App\Models\InventoryItem;
+use App\Models\Requisition;
+use App\Models\Book;
+use App\Models\BookIssue;
+use App\Models\Hostel;
+use App\Models\HostelAllocation;
+use App\Models\Route as TransportRoute;
+use App\Models\Vehicle;
+use App\Models\Exam;
+use App\Models\Subject;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -47,12 +57,67 @@ class DashboardController extends Controller
         $pendingFeeCount   = $pendingFeeQuery->count();
         $pendingFeeAmount  = $pendingFeeQuery->get()->sum(fn($fee) => $fee->balance);
         $pendingLeaveCount = LeaveApplication::where('application_status', 'pending')->count();
+        
+        // New Alerts
+        $pendingRequisitionsCount = Requisition::where('status', 'Pending')->count();
+        $lowStockCount = InventoryItem::whereRaw('quantity <= minimum_quantity')->count();
+        
+        // Module Health Data
+        $moduleHealth = [
+            'academic' => [
+                'status' => SchoolClass::count() > 0 ? 'good' : 'warning',
+                'count' => SchoolClass::count(),
+                'label' => 'Classes Active'
+            ],
+            'students' => [
+                'status' => Student::where('is_active', true)->count() > 0 ? 'good' : 'danger',
+                'count' => Student::where('is_active', true)->count(),
+                'label' => 'Active Students'
+            ],
+            'exams' => [
+                'status' => Exam::where('end_date', '>=', now()->toDateString())->count() > 0 ? 'good' : 'info',
+                'count' => Exam::where('end_date', '>=', now()->toDateString())->count(),
+                'label' => 'Active Exams'
+            ],
+            'inventory' => [
+                'status' => $lowStockCount > 0 ? 'warning' : 'good',
+                'count' => $pendingRequisitionsCount,
+                'label' => 'Pending Reqs'
+            ],
+            'library' => [
+                'status' => 'good',
+                'count' => BookIssue::whereNull('return_date')->where('due_date', '<', now())->count(),
+                'label' => 'Overdue Books'
+            ],
+            'hr' => [
+                'status' => $pendingLeaveCount > 0 ? 'warning' : 'good',
+                'count' => User::whereHas('roles')->count(),
+                'label' => 'Total Staff'
+            ],
+            'fees' => [
+                'status' => $pendingFeeCount > 10 ? 'danger' : 'good',
+                'count' => number_format(FeePayment::whereMonth('created_at', now()->month)->sum('amount') / 1000, 1) . 'k',
+                'label' => 'Monthly Rev'
+            ],
+            'hostel' => [
+                'status' => 'good',
+                'count' => HostelAllocation::where('status', 'active')->count(),
+                'label' => 'Occupants'
+            ],
+            'transport' => [
+                'status' => 'good',
+                'count' => Vehicle::where('status', 'active')->count(),
+                'label' => 'Active Vehicles'
+            ]
+        ];
 
         return view('dashboard', compact(
             'user', 'roleName', 'stats',
             'enrollmentTrend', 'feeTrend',
             'recentActivity',
-            'pendingFeeCount', 'pendingFeeAmount', 'pendingLeaveCount'
+            'pendingFeeCount', 'pendingFeeAmount', 'pendingLeaveCount',
+            'pendingRequisitionsCount', 'lowStockCount',
+            'moduleHealth'
         ));
     }
 
@@ -106,12 +171,19 @@ class DashboardController extends Controller
 
         // Admin / principal / default: full overview
         $pendingQuery = StudentFee::whereIn('status', ['unpaid', 'partially_paid']);
+        $monthRevenueCollected = FeePayment::whereMonth('created_at', now()->month)->sum('amount');
+        $monthRevenuePending = StudentFee::whereMonth('due_date', now()->month)
+            ->whereIn('status', ['unpaid', 'partially_paid'])
+            ->get()
+            ->sum(fn($fee) => $fee->balance);
+
         return [
             'totalStudents'  => Student::count(),
             'activeStudents' => Student::where('is_active', true)->count(),
             'totalStaff'     => User::whereHas('roles')->count(),
             'totalClasses'   => SchoolClass::count(),
-            'monthRevenue'   => FeePayment::whereMonth('created_at', now()->month)->sum('amount'),
+            'monthRevenue'   => $monthRevenueCollected,
+            'monthRevenuePending' => $monthRevenuePending,
             'pendingFees'    => $pendingQuery->get()->sum(fn($fee) => $fee->balance),
         ];
     }

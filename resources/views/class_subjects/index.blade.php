@@ -1,49 +1,136 @@
 @extends('layouts.app')
 
 @section('content')
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Class Subjects</h1>
-                </div>
-                <div class="col-sm-6">
-                    <a class="btn btn-primary float-right"
-                       href="{{ route('class-subjects.create') }}">
-                        Add New
-                    </a>
-                </div>
-            </div>
+<div class="dash-wrap">
+    {{-- ① HEADER --}}
+    <div class="row align-items-center mb-4">
+        <div class="col-md-7">
+            <h1 class="dash-heading">Class Subjects</h1>
+            <p class="dash-sub">Manage subject assignments across different classes</p>
         </div>
-    </section>
-
-    <div class="content px-3">
-
-        @include('flash::message')
-
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 text-dark">
-            <h5 class="text-secondary font-weight-bold mb-3 mb-md-0">Manage Class Subjects</h5>
-            <div class="d-flex flex-column flex-sm-row" style="gap: 10px;">
-                <div class="input-group input-group-sm mb-2 mb-sm-0" style="width: 100%; max-width: 250px;">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
-                    </div>
-                    <input type="text" id="classSubjectSearch" class="form-control border-left-0 pl-0" placeholder="Search subjects or classes..." style="box-shadow: none;">
-                </div>
-                <div class="d-flex" style="gap: 10px; width: 100%;">
-                    <button class="btn btn-sm flex-fill" onclick="expandAll()" style="background-color: #f1f5f9; color: #475569; font-weight: 600;">
-                        <i class="fas fa-expand-alt mr-1"></i> Expand
-                    </button>
-                    <button class="btn btn-sm flex-fill" onclick="collapseAll()" style="background-color: #f1f5f9; color: #475569; font-weight: 600;">
-                        <i class="fas fa-compress-alt mr-1"></i> Collapse
-                    </button>
-                </div>
-            </div>
+        <div class="col-md-5 text-md-end mt-2 mt-md-0">
+            <a class="btn-dash btn-primary-dash" href="{{ route('class-subjects.create') }}">
+                <i class="fas fa-plus me-1"></i> Add Class Subject
+            </a>
         </div>
-
-        @include('class_subjects.table')
     </div>
 
+    @include('flash::message')
+
+    {{-- ② CONTROL BAR --}}
+    <div class="dash-panel mb-4">
+        <div class="dash-panel-body py-3">
+            <div class="row align-items-center">
+                <div class="col-md-8 mb-3 mb-md-0">
+                    <div class="search-wrap">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="classSubjectSearch" class="search-input" placeholder="Search by class or subject name...">
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="btn-group gap-1">
+                        <button type="button" id="btnExpandAll" class="btn-dash btn-ghost py-1 x-small fw-bold">
+                            <i class="fas fa-expand-arrows-alt me-1"></i> Expand All
+                        </button>
+                        <button type="button" id="btnCollapseAll" class="btn-dash btn-ghost py-1 x-small fw-bold">
+                            <i class="fas fa-compress-arrows-alt me-1"></i> Collapse All
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ③ CLASS SUBJECTS GRID --}}
+    @include('class_subjects.table')
+</div>
+
+<style>
+/* ── Emil Kowalski Utility Suite ── */
+:root {
+    --blue: #3b82f6;
+    --indigo: #4f46e5;
+    --emerald: #10b981;
+    --slate: #64748b;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dash-wrap { padding: 1rem; }
+.dash-heading { font-size: 1.375rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; margin-bottom: 0.125rem; }
+.dash-sub { font-size: 0.813rem; color: var(--muted); font-weight: 500; margin-bottom: 0; }
+
+.dash-panel { background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+.dash-panel-body { padding: 1rem; }
+
+/* Buttons */
+.btn-dash { 
+    display: inline-flex; align-items: center; justify-content: center; padding: .4rem .875rem; border-radius: 8px; font-size: .813rem; font-weight: 600; 
+    transition: all 150ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; cursor: pointer;
+}
+.btn-primary-dash { background: var(--indigo); color: #fff; border-color: var(--indigo); }
+.btn-primary-dash:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+.btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
+.btn-ghost:hover { background: #f8fafc; color: var(--text); border-color: #cbd5e1; }
+
+.search-wrap { position: relative; width: 100%; }
+.search-icon { position: absolute; left: .875rem; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .813rem; }
+.search-input { 
+    width: 100%; padding: .5rem .875rem .5rem 2.25rem; border-radius: 10px; border: 1px solid #e2e8f0; 
+    background: #f8fafc; font-size: .813rem; transition: all 150ms var(--ease-out);
+}
+.search-input:focus { background: #fff; border-color: var(--blue); outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+
+/* Card Styling */
+.cs-card { 
+    background: #fff; border: 1px solid #f1f5f9; border-radius: 14px; overflow: hidden; 
+    transition: all 200ms var(--ease-out); box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+.cs-card:hover { border-color: #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+.cs-header { 
+    padding: .625rem .875rem; background: #fff; border-bottom: 1px solid #f8fafc; 
+    display: flex; align-items: center; justify-content: space-between;
+}
+.cs-title { font-size: .813rem; font-weight: 700; color: #1e293b; text-transform: capitalize; display: flex; align-items: center; gap: .5rem; }
+.cs-title i { color: var(--blue); opacity: .8; }
+
+.cs-body { max-height: 400px; overflow-y: auto; padding: .375rem; }
+.cs-body::-webkit-scrollbar { width: 4px; }
+.cs-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+
+.cs-item { 
+    display: flex; align-items: center; justify-content: space-between; padding: .5rem .75rem; border-radius: 8px; 
+    margin-bottom: .125rem; transition: all 150ms ease; cursor: default;
+}
+.cs-item:hover { background: #f8fafc; }
+.cs-name { font-size: .75rem; font-weight: 600; color: #334155; line-height: 1.2; }
+.cs-desc { font-size: .625rem; color: var(--muted); margin-top: .125rem; }
+
+.badge-count { background: #eff6ff; color: #3b82f6; font-size: .625rem; font-weight: 800; padding: .15rem .45rem; border-radius: 6px; }
+
+/* Collapsed state */
+.cs-card.collapsed .cs-body { display: none; }
+.cs-card.collapsed { height: auto !important; }
+
+/* Action Buttons */
+.action-btn { 
+    width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; 
+    border-radius: 6px; color: var(--muted); transition: all 150ms ease; border: 1px solid transparent; background: transparent; font-size: .75rem;
+}
+.action-btn:hover { background: #f1f5f9; color: var(--text); border-color: #e2e8f0; }
+.btn-delete:hover { background: #fee2e2; color: #ef4444; border-color: #fecaca; }
+
+/* Empty state */
+.dash-alert { display: flex; gap: 1rem; padding: 1.25rem; border-radius: 12px; background: #fff; border: 1px solid var(--border); margin-bottom: 1.5rem; align-items: center; }
+.alert-info { border-left: 4px solid var(--blue); }
+.da-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: #eff6ff; color: var(--blue); border-radius: 10px; font-size: 1.25rem; }
+.da-body { flex: 1; }
+.da-title { font-size: .938rem; font-weight: 700; color: var(--text); margin: 0; }
+.da-desc { font-size: .813rem; color: var(--muted); margin: .125rem 0 0; }
+</style>
 @endsection
 
 @push('page_scripts')
@@ -59,7 +146,7 @@
                 var groupMatches = groupName.indexOf(value) > -1;
                 var hasVisibleRows = false;
 
-                var rows = group.find('.subject-row');
+                var rows = group.find('.cs-item');
                 
                 if (groupMatches) {
                     rows.show();
@@ -67,7 +154,7 @@
                 } else {
                     rows.each(function() {
                         var row = $(this);
-                        var text = row.text().toLowerCase();
+                        var text = row.find('.cs-name').text().toLowerCase();
                         if (text.indexOf(value) > -1) {
                             row.show();
                             hasVisibleRows = true;
@@ -85,18 +172,32 @@
             });
         });
 
-        // Expand/Collapse All
-        window.expandAll = function() {
-            $('.class-group .card').removeClass('collapsed-card');
-            $('.class-group .card-body').show();
-            $('.class-group .btn-tool i').removeClass('fa-plus').addClass('fa-minus');
-        };
+        // Expand/Collapse Toggle
+        $(document).on('click', '.cs-toggle', function(e) {
+            e.preventDefault();
+            var card = $(this).closest('.cs-card');
+            var icon = $(this).find('i');
+            
+            if (card.hasClass('collapsed')) {
+                card.removeClass('collapsed');
+                icon.removeClass('fa-plus').addClass('fa-minus');
+            } else {
+                card.addClass('collapsed');
+                icon.removeClass('fa-minus').addClass('fa-plus');
+            }
+        });
 
-        window.collapseAll = function() {
-            $('.class-group .card').addClass('collapsed-card');
-            $('.class-group .card-body').hide();
-            $('.class-group .btn-tool i').removeClass('fa-minus').addClass('fa-plus');
-        };
+        // Expand All
+        $('#btnExpandAll').on('click', function() {
+            $('.cs-card').removeClass('collapsed');
+            $('.cs-toggle i').removeClass('fa-plus').addClass('fa-minus');
+        });
+
+        // Collapse All
+        $('#btnCollapseAll').on('click', function() {
+            $('.cs-card').addClass('collapsed');
+            $('.cs-toggle i').removeClass('fa-minus').addClass('fa-plus');
+        });
     });
 </script>
 @endpush

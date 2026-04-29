@@ -144,11 +144,11 @@ function initSidebarHandler() {
         });
 
         // ─── 8. Restore desktop collapsed state from localStorage ─────────────
-        try {
-            if (!isMobile() && localStorage.getItem('sidebarCollapsed') === '1') {
-                $('body').addClass('sidebar-collapse');
-            }
-        } catch (_) {}
+        // try {
+        //     if (!isMobile() && localStorage.getItem('sidebarCollapsed') === '1') {
+        //         $('body').addClass('sidebar-collapse');
+        //     }
+        // } catch (_) {}
 
         // ─── 9. Handle window resize ──────────────────────────────────────────
         $(window).on('resize.sidebar', function () {

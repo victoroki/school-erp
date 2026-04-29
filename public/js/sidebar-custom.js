@@ -17,7 +17,7 @@
 
         // Initialize
         init: function() {
-            this.loadSidebarState();
+            // this.loadSidebarState();
             this.setupToggleButton();
             this.setupTooltips();
             this.setupSearch();
@@ -28,10 +28,10 @@
 
         // Load sidebar state from localStorage
         loadSidebarState: function() {
-            const isCollapsed = localStorage.getItem(this.config.storageKey) === 'true';
-            if (isCollapsed) {
-                document.body.classList.add(this.config.collapsedClass);
-            }
+            // const isCollapsed = localStorage.getItem(this.config.storageKey) === 'true';
+            // if (isCollapsed) {
+            //     document.body.classList.add(this.config.collapsedClass);
+            // }
         },
 
         // Save sidebar state to localStorage

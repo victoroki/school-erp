@@ -1,7 +1,7 @@
 <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <div class="brand-container">
-        <div class="brand-logo-hex" style="background: white; padding: 4px;">
-            <img src="{{ asset('garikon-white-bg.png') }}" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">
+        <div class="brand-logo-hex">
+            <img src="{{ asset('garikon-white.png') }}" alt="Logo" style="width: 32px; height: 32px; object-fit: contain;">
         </div>
         <div class="brand-info">
             <span class="brand-title">Garikon School</span>

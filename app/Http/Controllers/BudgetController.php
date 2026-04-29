@@ -31,8 +31,8 @@ class BudgetController extends AppBaseController
     public function create()
     {
         $financialYears = FinancialYear::where('status', 'open')->pluck('name', 'id');
-        $expenseCategories = ExpenseCategory::pluck('name', 'id');
-        $incomeCategories = IncomeCategory::pluck('name', 'id');
+        $expenseCategories = ExpenseCategory::pluck('name', 'category_id');
+        $incomeCategories = IncomeCategory::pluck('name', 'category_id');
 
         return view('budgets.create', compact('financialYears', 'expenseCategories', 'incomeCategories'));
     }
@@ -74,8 +74,8 @@ class BudgetController extends AppBaseController
         }
 
         $financialYears = FinancialYear::where('status', 'open')->pluck('name', 'id');
-        $expenseCategories = ExpenseCategory::pluck('name', 'id');
-        $incomeCategories = IncomeCategory::pluck('name', 'id');
+        $expenseCategories = ExpenseCategory::pluck('name', 'category_id');
+        $incomeCategories = IncomeCategory::pluck('name', 'category_id');
 
         return view('budgets.edit', compact('budget', 'financialYears', 'expenseCategories', 'incomeCategories'));
     }
