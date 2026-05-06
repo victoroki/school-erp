@@ -279,7 +279,7 @@ class Staff extends Model
 
     // Validation Rules
     public static array $rules = [
-        'employee_number' => 'required|string|max:20|unique:staff,employee_number',
+        'employee_number' => 'nullable|string|max:20|unique:staff,employee_number',
         'first_name' => 'required|string|max:50',
         'last_name' => 'required|string|max:50',
         'date_of_birth' => 'required|date|before:18 years ago',
@@ -287,9 +287,10 @@ class Staff extends Model
         'phone_primary' => 'required|string|max:20',
         'work_email' => 'required|email|unique:staff,work_email',
         'department_id' => 'required|exists:departments,department_id',
-        'job_position_id' => 'required|exists:job_positions,job_position_id',
-        'date_of_joining' => 'required|date',
-        'basic_salary' => 'required|numeric|min:0',
+        'job_position_id' => 'nullable|exists:job_positions,job_position_id',
+        'designation' => 'nullable|string|max:100',
+        'date_of_joining' => 'nullable|date',
+        'basic_salary' => 'nullable|numeric|min:0',
         'employment_type' => 'required|in:full_time,part_time,contract,casual,intern',
         'employment_status' => 'required|in:active,on_leave,suspended,terminated,resigned,retired',
     ];

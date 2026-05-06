@@ -18,6 +18,10 @@ class FeeDashboardController extends Controller
         $currentYear = AcademicYear::where('is_current', true)->first();
         $yearId = $currentYear ? $currentYear->academic_year_id : null;
 
+        // Finance Service metrics
+        $financeService = new \App\Services\FinanceService();
+        $metrics = $financeService->getMetrics();
+
         // 1. Summary Cards
         $totalFeeStructures = FeeStructure::where('status', 'active')
             ->when($yearId, function($q) use ($yearId) {
@@ -43,10 +47,8 @@ class FeeDashboardController extends Controller
             })->count();
 
         // 2. Statistics
-        // Assignments
-        $totalStudents = \App\Models\Student::where('status', 'active')->count(); // Assuming active students
+        $totalStudents = \App\Models\Student::where('status', 'active')->count();
         
-        // Count students with at least one active assignment in current year
         $studentsWithFees = StudentFeeAssignment::where('status', 'active')
             ->when($yearId, function($q) use ($yearId) {
                 return $q->where('academic_year_id', $yearId);
@@ -72,8 +74,6 @@ class FeeDashboardController extends Controller
             ->take(5)
             ->get();
 
-        // 4. Quick Actions (Just Links in View)
-
         // 5. Recent Activity (Approvals)
         $recentApprovals = StudentDiscount::with(['student', 'discountScheme', 'requester'])
             ->whereIn('approval_status', ['approved', 'rejected'])
@@ -83,6 +83,7 @@ class FeeDashboardController extends Controller
 
         return view('fee_management.dashboard', compact(
             'currentYear',
+            'metrics',
             'totalFeeStructures',
             'expectedRevenue',
             'totalDiscounts',

@@ -6,6 +6,7 @@ use App\Http\Requests\CreateFeeCategoryRequest;
 use App\Http\Requests\UpdateFeeCategoryRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\FeeCategoryRepository;
+use App\Models\FeeCategory;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -49,7 +50,7 @@ class FeeCategoryController extends AppBaseController
 
         Flash::success('Fee Category saved successfully.');
 
-        return redirect(route('feeCategories.index'));
+        return redirect(route('fee-categories.index'));
     }
 
     /**
@@ -62,7 +63,7 @@ class FeeCategoryController extends AppBaseController
         if (empty($feeCategory)) {
             Flash::error('Fee Category not found');
 
-            return redirect(route('feeCategories.index'));
+            return redirect(route('fee-categories.index'));
         }
 
         return view('fee_categories.show')->with('feeCategory', $feeCategory);
@@ -78,7 +79,7 @@ class FeeCategoryController extends AppBaseController
         if (empty($feeCategory)) {
             Flash::error('Fee Category not found');
 
-            return redirect(route('feeCategories.index'));
+            return redirect(route('fee-categories.index'));
         }
 
         return view('fee_categories.edit')->with('feeCategory', $feeCategory);
@@ -94,7 +95,7 @@ class FeeCategoryController extends AppBaseController
         if (empty($feeCategory)) {
             Flash::error('Fee Category not found');
 
-            return redirect(route('feeCategories.index'));
+            return redirect(route('fee-categories.index'));
         }
 
         $feeCategory = $this->feeCategoryRepository->update($request->all(), $id);
@@ -102,6 +103,32 @@ class FeeCategoryController extends AppBaseController
         Flash::success('Fee Category updated successfully.');
 
         return redirect(route('feeCategories.index'));
+    }
+
+    /**
+     * Generate auto code for fee category.
+     */
+    public function generateAutoCode(Request $request)
+    {
+        $name = $request->input('name');
+        
+        if (empty($name)) {
+            return response()->json(['error' => 'Name is required to generate code'], 400);
+        }
+
+        // Generate base code from name (uppercase, no spaces, max 8 chars)
+        $baseCode = strtoupper(substr(preg_replace('/[^a-zA-Z0-9]/', '', $name), 0, 8));
+        
+        // Check if base code exists, if so, append number
+        $code = $baseCode;
+        $counter = 1;
+        
+        while (FeeCategory::where('code', $code)->exists()) {
+            $code = $baseCode . $counter;
+            $counter++;
+        }
+
+        return response()->json(['code' => $code]);
     }
 
     /**
@@ -116,7 +143,7 @@ class FeeCategoryController extends AppBaseController
         if (empty($feeCategory)) {
             Flash::error('Fee Category not found');
 
-            return redirect(route('feeCategories.index'));
+            return redirect(route('fee-categories.index'));
         }
 
         $this->feeCategoryRepository->delete($id);

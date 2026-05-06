@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\StudentFee;
+use App\Models\StudentFeeAssignment;
 use App\Models\FeePayment;
 use App\Models\Student;
 use App\Models\FeeStructure;
@@ -14,42 +14,59 @@ class FinanceService
     /**
      * Assign a fee structure to a student
      */
-    public function assignFeeToStudent($studentId, $feeStructureId, $discountAmount = 0)
+    public function assignFeeToStudent($studentId, $feeStructureId, $discountAmount = 0, $academicYearId = null, $term = null)
     {
         $feeStructure = FeeStructure::findOrFail($feeStructureId);
-        
-        return StudentFee::create([
+
+        return StudentFeeAssignment::create([
             'student_id' => $studentId,
             'fee_structure_id' => $feeStructureId,
+            'academic_year_id' => $academicYearId ?? $feeStructure->academic_year_id,
+            'term' => $term ?? $feeStructure->term,
             'amount' => $feeStructure->amount,
             'discount_amount' => $discountAmount,
             'final_amount' => $feeStructure->amount - $discountAmount,
-            'due_date' => $feeStructure->due_date,
-            'status' => 'unpaid'
+            'assigned_by' => auth()->id(),
+            'assigned_date' => now(),
+            'status' => 'active'
         ]);
     }
 
     /**
      * Batch assign fee structure to all students in a class
      */
-    public function batchAssignFee($feeStructureId, $classId)
+    public function batchAssignFee($feeStructureId, $classId, $academicYearId = null, $term = null)
     {
         $feeStructure = FeeStructure::findOrFail($feeStructureId);
-        $students = Student::whereHas('studentClassEnrollments.classSection.schoolClass', function($q) use ($classId) {
-            $q->where('class_id', $classId);
+
+        // Get all class_section_ids for this class
+        $classSectionIds = \App\Models\ClassSection::where('class_id', $classId)->pluck('class_section_id');
+
+        if ($classSectionIds->isEmpty()) {
+            return 0;
+        }
+
+        // Get students enrolled in ANY section of this class
+        $students = Student::whereHas('studentClassEnrollments', function($q) use ($classSectionIds) {
+            $q->whereIn('class_section_id', $classSectionIds)
+              ->where('is_current', true);
         })->get();
+
+        if ($students->isEmpty()) {
+            return 0;
+        }
 
         $count = 0;
         DB::beginTransaction();
         try {
             foreach ($students as $student) {
                 // Check if already assigned
-                $exists = StudentFee::where('student_id', $student->student_id)
+                $exists = StudentFeeAssignment::where('student_id', $student->student_id)
                     ->where('fee_structure_id', $feeStructureId)
                     ->exists();
 
                 if (!$exists) {
-                    $this->assignFeeToStudent($student->student_id, $feeStructureId);
+                    $this->assignFeeToStudent($student->student_id, $feeStructureId, 0, $academicYearId, $term);
                     $count++;
                 }
             }
@@ -68,10 +85,10 @@ class FinanceService
     {
         DB::beginTransaction();
         try {
-            $studentFee = StudentFee::findOrFail($data['student_fee_id']);
+            $assignment = StudentFeeAssignment::findOrFail($data['student_fee_assignment_id']);
             
             $payment = FeePayment::create([
-                'student_fee_id' => $data['student_fee_id'],
+                'student_fee_assignment_id' => $data['student_fee_assignment_id'],
                 'amount' => $data['amount'],
                 'payment_date' => $data['payment_date'] ?? now(),
                 'payment_method' => $data['payment_method'],
@@ -81,7 +98,7 @@ class FinanceService
                 'collected_by' => auth()->id(),
             ]);
 
-            $this->updateStudentFeeStatus($studentFee);
+            $this->updateAssignmentPaymentStatus($assignment);
 
             DB::commit();
             return $payment;
@@ -92,21 +109,15 @@ class FinanceService
     }
 
     /**
-     * Update Student Fee status based on paid amount
+     * Update Student Fee Assignment payment status based on paid amount
      */
-    public function updateStudentFeeStatus(StudentFee $studentFee)
+    public function updateAssignmentPaymentStatus(StudentFeeAssignment $assignment)
     {
-        $paidAmount = $studentFee->payments()->sum('amount');
+        $paidAmount = $assignment->payments()->sum('amount');
         
-        if ($paidAmount >= $studentFee->final_amount) {
-            $studentFee->status = 'paid';
-        } elseif ($paidAmount > 0) {
-            $studentFee->status = 'partially_paid';
-        } else {
-            $studentFee->status = 'unpaid';
-        }
-
-        $studentFee->save();
+        $assignment->update([
+            'paid_amount' => $paidAmount,
+        ]);
     }
 
     private function generateReceiptNumber()
@@ -120,16 +131,21 @@ class FinanceService
     public function getMetrics()
     {
         return [
-            'total_receivable' => StudentFee::sum('final_amount'),
+            'total_receivable' => StudentFeeAssignment::where('status', 'active')->sum('final_amount'),
             'total_collected' => FeePayment::sum('amount'),
-            'total_pending' => StudentFee::where('status', '!=', 'paid')->get()->sum('balance'),
+            'total_pending' => StudentFeeAssignment::where('status', 'active')
+                ->whereRaw('COALESCE(paid_amount, 0) < final_amount')
+                ->get()
+                ->sum(function ($assignment) {
+                    return $assignment->final_amount - $assignment->paid_amount;
+                }),
             'collection_rate' => $this->getCollectionRate()
         ];
     }
 
     private function getCollectionRate()
     {
-        $receivable = StudentFee::sum('final_amount');
+        $receivable = StudentFeeAssignment::where('status', 'active')->sum('final_amount');
         if ($receivable == 0) return 0;
         $collected = FeePayment::sum('amount');
         return round(($collected / $receivable) * 100, 2);

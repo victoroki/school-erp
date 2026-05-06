@@ -46,6 +46,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('exam-types', App\Http\Controllers\ExamTypeController::class);
     Route::resource('grading-scales', App\Http\Controllers\GradingScaleController::class);
     Route::resource('fee-categories', App\Http\Controllers\FeeCategoryController::class);
+    Route::post('fee-categories/generate-code', [App\Http\Controllers\FeeCategoryController::class, 'generateAutoCode'])->name('fee-categories.generate-code');
     Route::resource('book-categories', App\Http\Controllers\BookCategoryController::class);
     Route::resource('inventory-categories', App\Http\Controllers\InventoryCategoryController::class);
     Route::resource('suppliers', App\Http\Controllers\SupplierController::class);
@@ -60,6 +61,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('student-documents/{id}/download', [App\Http\Controllers\StudentDocumentController::class, 'download'])->name('student-documents.download');
     Route::resource('staff-documents', App\Http\Controllers\StaffDocumentController::class);
     Route::resource('class-sections', App\Http\Controllers\ClassSectionController::class);
+    Route::post('class-subjects/bulk-delete', [App\Http\Controllers\ClassSubjectController::class, 'bulkDestroy'])->name('class-subjects.bulk-delete');
     Route::resource('class-subjects', App\Http\Controllers\ClassSubjectController::class);
     Route::resource('teacher-subjects', App\Http\Controllers\TeacherSubjectController::class);
     Route::resource('exams', App\Http\Controllers\ExamController::class);
@@ -70,7 +72,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('exam-results/import', [App\Http\Controllers\ExamResultController::class, 'importStore'])->name('exam-results.import.store');
     Route::resource('exam-results', App\Http\Controllers\ExamResultController::class);
     Route::resource('fee-structures', App\Http\Controllers\FeeStructureController::class);
-    Route::resource('student-fee-discounts', App\Http\Controllers\StudentFeeDiscountController::class);
     Route::resource('books', App\Http\Controllers\BookController::class);
     Route::resource('book-issues', App\Http\Controllers\BookIssueController::class);
     Route::get('library/book-issues/{id}/return', [App\Http\Controllers\BookIssueController::class, 'returnModal'])->name('book-issues.return-modal');
@@ -161,6 +162,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('students/bulk-id-cards', [App\Http\Controllers\StudentIdCardController::class, 'bulk'])->name('students.bulk-id-cards');
 
     Route::resource('students', App\Http\Controllers\StudentController::class);
+    Route::get('students/ajax/search', [App\Http\Controllers\StudentController::class, 'ajaxSearch'])->name('students.ajax.search');
     Route::post('students/{id}/siblings', [App\Http\Controllers\StudentController::class, 'addSibling'])->name('students.add-sibling');
     Route::get('student-transfer', [App\Http\Controllers\StudentTransferController::class, 'index'])->name('student-transfer.index');
     Route::post('student-transfer', [App\Http\Controllers\StudentTransferController::class, 'store'])->name('student-transfer.store');
@@ -256,6 +258,31 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/assignments/student/{id}', [App\Http\Controllers\StudentFeeAssignmentController::class, 'studentSummary'])->name('assignments.student-summary');
         Route::get('/assignments/unassigned', [App\Http\Controllers\StudentFeeAssignmentController::class, 'unassigned'])->name('assignments.unassigned');
         Route::get('/assignments/ajax/class-fees', [App\Http\Controllers\StudentFeeAssignmentController::class, 'getFeesByClass'])->name('assignments.ajax.class-fees');
+        Route::get('/assignments/ajax/classes-fees', [App\Http\Controllers\StudentFeeAssignmentController::class, 'getFeesByClasses'])->name('assignments.ajax.classes-fees');
+        Route::get('/assignments/ajax/auto-preview', [App\Http\Controllers\StudentFeeAssignmentController::class, 'getAutoAssignmentPreview'])->name('assignments.ajax.auto-preview');
+        Route::get('/assignments/ajax/all-fees', [App\Http\Controllers\StudentFeeAssignmentController::class, 'getAllFeeStructures'])->name('assignments.ajax.all-fees');
+
+        // Fee Adjustments
+        Route::get('/adjustments', [App\Http\Controllers\FeeAdjustmentController::class, 'index'])->name('adjustments.index');
+        Route::get('/adjustments/create', [App\Http\Controllers\FeeAdjustmentController::class, 'create'])->name('adjustments.create');
+        Route::post('/adjustments', [App\Http\Controllers\FeeAdjustmentController::class, 'store'])->name('adjustments.store');
+        Route::get('/adjustments/{id}', [App\Http\Controllers\FeeAdjustmentController::class, 'show'])->name('adjustments.show');
+        Route::post('/adjustments/{id}/approve', [App\Http\Controllers\FeeAdjustmentController::class, 'approve'])->name('adjustments.approve');
+        Route::post('/adjustments/{id}/reject', [App\Http\Controllers\FeeAdjustmentController::class, 'reject'])->name('adjustments.reject');
+        Route::get('/adjustments/pending', [App\Http\Controllers\FeeAdjustmentController::class, 'pendingApprovals'])->name('adjustments.pending');
+        Route::get('/adjustments/student/{studentId}', [App\Http\Controllers\FeeAdjustmentController::class, 'studentAdjustments'])->name('adjustments.student-adjustments');
+        Route::get('/adjustments/{id}/audit-log', [App\Http\Controllers\FeeAdjustmentController::class, 'auditLog'])->name('adjustments.audit-log');
+        Route::get('/adjustments/ajax/student-fees', [App\Http\Controllers\FeeAdjustmentController::class, 'getFeeAssignmentsForStudent'])->name('adjustments.ajax.student-fees');
+
+        // Terms
+        Route::get('/terms', [App\Http\Controllers\TermController::class, 'index'])->name('terms.index');
+        Route::get('/terms/create', [App\Http\Controllers\TermController::class, 'create'])->name('terms.create');
+        Route::post('/terms', [App\Http\Controllers\TermController::class, 'store'])->name('terms.store');
+        Route::get('/terms/{id}', [App\Http\Controllers\TermController::class, 'show'])->name('terms.show');
+        Route::get('/terms/{id}/edit', [App\Http\Controllers\TermController::class, 'edit'])->name('terms.edit');
+        Route::put('/terms/{id}', [App\Http\Controllers\TermController::class, 'update'])->name('terms.update');
+        Route::delete('/terms/{id}', [App\Http\Controllers\TermController::class, 'destroy'])->name('terms.destroy');
+        Route::post('/terms/{id}/activate', [App\Http\Controllers\TermController::class, 'activate'])->name('terms.activate');
 
         // Discount Schemes
         Route::resource('discounts', App\Http\Controllers\DiscountSchemeController::class);
@@ -264,6 +291,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reports/expected-revenue', [App\Http\Controllers\FeeReportsController::class, 'expectedRevenue'])->name('reports.expected-revenue');
         Route::get('/reports/assignment-status', [App\Http\Controllers\FeeReportsController::class, 'assignmentStatus'])->name('reports.assignment-status');
         Route::get('/reports/discount-summary', [App\Http\Controllers\FeeReportsController::class, 'discountSummary'])->name('reports.discount-summary');
+        Route::get('/reports/export/expected-revenue/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportExpectedRevenuePdf'])->name('reports.export.expected-revenue.pdf');
+        Route::get('/reports/export/assignment-status/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportAssignmentStatusPdf'])->name('reports.export.assignment-status.pdf');
+        Route::get('/reports/export/discount-summary/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportDiscountSummaryPdf'])->name('reports.export.discount-summary.pdf');
     });
 
     // Legacy Fee Management (Collection) - Kept/Modified for integration
@@ -272,6 +302,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('fee-management/{id}/collect-payment', [App\Http\Controllers\FeeManagementController::class, 'collectPayment'])->name('fee-management.collect-payment');
     Route::post('fee-management/{id}/store-payment', [App\Http\Controllers\FeeManagementController::class, 'storePayment'])->name('fee-management.store-payment');
     Route::get('fee-management/{id}/print', [App\Http\Controllers\FeeManagementController::class, 'print'])->name('fee-management.print');
+    Route::get('fee-management/export/pdf', [App\Http\Controllers\FeeManagementController::class, 'exportPdf'])->name('fee-management.export-pdf');
+    Route::get('fee-management/export/excel', [App\Http\Controllers\FeeManagementController::class, 'exportExcel'])->name('fee-management.export-excel');
 
     // Examination Management Enhanced Routes
     Route::get('exam-dashboard', [App\Http\Controllers\ExamDashboardController::class, 'index'])->name('exam-dashboard.index');

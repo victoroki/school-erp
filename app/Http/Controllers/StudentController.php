@@ -158,7 +158,7 @@ class StudentController extends AppBaseController
             'studentClassEnrollments.academicYear',
             'parents',
             'siblings',
-            'studentFees',
+            'feeStructures',
             'payments.collectedBy',
             'studentAttendances',
             'transportRegistrations',
@@ -285,5 +285,21 @@ class StudentController extends AppBaseController
         }
 
         return redirect()->back()->with('active_tab', 'family');
+    }
+
+    public function ajaxSearch(Request $request)
+    {
+        $term = $request->input('q', '');
+
+        $students = Student::where('status', 'active')
+            ->where(function($q) use ($term) {
+                $q->where('first_name', 'like', "%{$term}%")
+                  ->orWhere('last_name', 'like', "%{$term}%")
+                  ->orWhere('admission_no', 'like', "%{$term}%");
+            })
+            ->limit(20)
+            ->get(['student_id', 'first_name', 'last_name', 'admission_no']);
+
+        return response()->json($students);
     }
 }

@@ -68,11 +68,6 @@ class AcademicYear extends Model
         return $this->hasMany(\App\Models\StudentClassEnrollment::class, 'academic_year_id');
     }
 
-    public function studentFeeDiscounts(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(\App\Models\StudentFeeDiscount::class, 'academic_year_id');
-    }
-
     public function teacherSubjects(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(\App\Models\TeacherSubject::class, 'academic_year_id');
@@ -86,5 +81,25 @@ class AcademicYear extends Model
     public function transportRegistrations(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(\App\Models\TransportRegistration::class, 'academic_year_id');
+    }
+
+    public function terms(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\Term::class, 'academic_year_id');
+    }
+
+    public function feeAssignments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\StudentFeeAssignment::class, 'academic_year_id');
+    }
+
+    public function feeInvoices(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\FeeInvoice::class, 'academic_year_id');
+    }
+
+    public function studentDiscounts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\StudentDiscount::class, 'academic_year_id');
     }
 }

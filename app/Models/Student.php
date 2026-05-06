@@ -143,22 +143,12 @@ class Student extends Model
 
     public function feeStructures(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
-        return $this->belongsToMany(\App\Models\FeeStructure::class, 'student_fees', 'student_id', 'fee_structure_id');
-    }
-
-    public function studentFees(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(\App\Models\StudentFee::class, 'student_id');
+        return $this->belongsToMany(\App\Models\FeeStructure::class, 'student_fee_assignments', 'student_id', 'fee_structure_id');
     }
 
     public function payments()
     {
-        return $this->hasManyThrough(\App\Models\FeePayment::class, \App\Models\StudentFee::class, 'student_id', 'student_fee_id');
-    }
-
-    public function getStudentFeeDiscountsAttribute()
-    {
-        return $this->hasMany(\App\Models\StudentFeeDiscount::class, 'student_id');
+        return $this->hasManyThrough(\App\Models\FeePayment::class, \App\Models\StudentFeeAssignment::class, 'student_id', 'student_fee_assignment_id');
     }
 
     public function parents(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
@@ -189,12 +179,12 @@ class Student extends Model
     // Helper Attributes for Fee Management
     public function getTotalFeeAttribute()
     {
-        return $this->studentFees->sum('final_amount');
+        return $this->feeAssignments()->where('status', 'active')->sum('final_amount');
     }
 
     public function getPaidFeeAttribute()
     {
-        return $this->payments->sum('amount');
+        return $this->payments()->sum('fee_payments.amount');
     }
 
     public function getBalanceFeeAttribute()
@@ -315,7 +305,7 @@ class Student extends Model
     }
 
     // Check if student has any pending fees
-    public function hasPendingFeesAttribute()
+    public function getHasPendingFeesAttribute()
     {
         return $this->balance_fee > 0;
     }
@@ -383,5 +373,37 @@ class Student extends Model
     public function getFormattedFeeBalanceAttribute()
     {
         return 'KES ' . number_format($this->balance_fee, 2);
+    }
+
+    public function feeAssignments()
+    {
+        return $this->hasMany(\App\Models\StudentFeeAssignment::class, 'student_id');
+    }
+
+    public function feeAdjustments()
+    {
+        return $this->hasMany(\App\Models\FeeAdjustment::class, 'student_id');
+    }
+
+    public function feeInvoices()
+    {
+        return $this->hasMany(\App\Models\FeeInvoice::class, 'student_id');
+    }
+
+    public function studentDiscounts()
+    {
+        return $this->hasMany(\App\Models\StudentDiscount::class, 'student_id');
+    }
+
+    public function getFeeSummaryAttribute()
+    {
+        $totalAssigned = $this->feeAssignments()->where('status', 'active')->sum('final_amount');
+        $totalPaid = $this->payments()->sum('amount');
+
+        return [
+            'total_assigned' => $totalAssigned,
+            'total_paid' => $totalPaid,
+            'balance' => $totalAssigned - $totalPaid,
+        ];
     }
 }

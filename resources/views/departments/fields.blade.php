@@ -1,17 +1,17 @@
 <!-- Name Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('name', 'Name:') !!}
-    {!! Form::text('name', null, ['class' => 'form-control', 'required', 'maxlength' => 100, 'maxlength' => 100]) !!}
+<div class="form-group col-sm-6 mb-3">
+    {!! Form::label('name', 'Department Name', ['class' => 'dash-label']) !!}
+    {!! Form::text('name', null, ['class' => 'form-control dash-control', 'required', 'placeholder' => 'e.g. Science, Administration, Finance', 'maxlength' => 100]) !!}
+</div>
+
+<!-- HOD Id Field -->
+<div class="form-group col-sm-6 mb-3">
+    {!! Form::label('hod_id', 'Head of Department (HOD)', ['class' => 'dash-label']) !!}
+    {!! Form::select('hod_id', $staff, null, ['class' => 'form-control dash-control', 'placeholder' => 'Select an HOD Staff Member']) !!}
 </div>
 
 <!-- Description Field -->
-<div class="form-group col-sm-12 col-lg-12">
-    {!! Form::label('description', 'Description:') !!}
-    {!! Form::textarea('description', null, ['class' => 'form-control', 'maxlength' => 65535, 'maxlength' => 65535]) !!}
-</div>
-
-<!-- Hod Id Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('hod_id', 'Head of Department (HOD):') !!}
-    {!! Form::select('hod_id', $staff, null, ['class' => 'form-control', 'placeholder' => 'Select HOD...']) !!}
+<div class="form-group col-sm-12 mb-3">
+    {!! Form::label('description', 'Department Description', ['class' => 'dash-label']) !!}
+    {!! Form::textarea('description', null, ['class' => 'form-control dash-control', 'placeholder' => 'Define the scope and responsibilities of this unit...', 'rows' => 3]) !!}
 </div>

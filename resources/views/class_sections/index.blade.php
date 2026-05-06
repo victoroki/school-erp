@@ -1,104 +1,82 @@
 @extends('layouts.app')
 
 @section('content')
-    <section class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1>Class Sections</h1>
+<div class="dash-wrap pb-5">
+    {{-- ① HEADER --}}
+    <div class="row align-items-center mb-5">
+        <div class="col-md-7">
+            <h1 class="dash-heading">Academic Structure</h1>
+            <p class="dash-sub text-muted">Organization of classes, sections, and teaching resources</p>
+        </div>
+        <div class="col-md-5 text-md-end mt-3 mt-md-0">
+            <div class="d-flex gap-3 justify-content-md-end align-items-center">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="classSectionSearch" placeholder="Filter architecture...">
                 </div>
-                <div class="col-sm-6">
-                    <a class="btn btn-primary float-right"
-                       href="{{ route('class-sections.create') }}">
-                        Add New
-                    </a>
-                </div>
+                <a class="btn-dash btn-primary-dash" href="{{ route('class-sections.create') }}">
+                    <i class="fas fa-plus me-2"></i> New Section
+                </a>
             </div>
         </div>
-    </section>
-
-    <div class="content px-3">
-
-        @include('flash::message')
-
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
-            <h5 class="text-secondary font-weight-bold mb-3 mb-md-0">Manage Class Sections</h5>
-            <div class="d-flex flex-column flex-sm-row" style="gap: 10px;">
-                <div class="input-group input-group-sm mb-2 mb-sm-0" style="width: 100%; max-width: 250px;">
-                    <div class="input-group-prepend">
-                        <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
-                    </div>
-                    <input type="text" id="classSectionSearch" class="form-control border-left-0 pl-0" placeholder="Search classes or sections..." style="box-shadow: none;">
-                </div>
-                <div class="d-flex" style="gap: 10px; width: 100%;">
-                    <button class="btn btn-sm flex-fill" onclick="expandAll()" style="background-color: #f1f5f9; color: #475569; font-weight: 600;">
-                        <i class="fas fa-expand-alt mr-1"></i> Expand
-                    </button>
-                    <button class="btn btn-sm flex-fill" onclick="collapseAll()" style="background-color: #f1f5f9; color: #475569; font-weight: 600;">
-                        <i class="fas fa-compress-alt mr-1"></i> Collapse
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        @include('class_sections.table')
     </div>
 
+    @include('flash::message')
+
+    {{-- ② GRID CONTENT --}}
+    <div class="dash-content">
+        @include('class_sections.table')
+    </div>
+</div>
+
+<style>
+/* ── Emil Kowalski Utility Suite ── */
+:root {
+    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --emerald: #10b981; --emerald-light: #ecfdf5;
+    --amber: #f59e0b; --amber-light: #fffbeb;
+    --rose: #f43f5e; --rose-light: #fff1f2;
+    --slate: #64748b; --slate-light: #f1f5f9;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dash-wrap { padding: 2.5rem; background: #fafafa; min-height: 100vh; }
+.dash-heading { font-size: 1.75rem; font-weight: 800; color: var(--text); letter-spacing: -0.04em; margin-bottom: 0.25rem; }
+.dash-sub { font-size: 0.938rem; font-weight: 500; }
+
+/* Search Box */
+.search-box { position: relative; width: 260px; }
+.search-box i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--slate); font-size: 0.813rem; }
+.search-box input { width: 100%; padding: 0.625rem 1rem 0.625rem 2.5rem; border-radius: 12px; border: 1px solid var(--border); font-size: 0.813rem; transition: all 200ms var(--ease-out); background: #fff; }
+.search-box input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); outline: none; }
+
+/* Buttons */
+.btn-dash { display: inline-flex; align-items: center; justify-content: center; padding: .75rem 1.5rem; border-radius: 12px; font-size: .813rem; font-weight: 700; transition: all 150ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; cursor: pointer; }
+.btn-primary-dash { background: var(--indigo); color: #fff; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+.btn-primary-dash:hover { background: #4338ca; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3); color: #fff; }
+
+.gap-3 { gap: 1rem; }
+</style>
 @endsection
 
 @push('page_scripts')
 <script>
     $(document).ready(function() {
-        // Search Functionality
         $('#classSectionSearch').on('keyup', function() {
             var value = $(this).val().toLowerCase();
-
             $('.class-group').each(function() {
                 var group = $(this);
                 var groupName = group.data('group-name');
-                var groupMatches = groupName.indexOf(value) > -1;
-                var hasVisibleRows = false;
-
-                var rows = group.find('.section-row');
-                
-                if (groupMatches) {
-                    // If group matches, show all rows and the group
-                    rows.show();
-                    hasVisibleRows = true;
-                } else {
-                    // Otherwise, filter rows
-                    rows.each(function() {
-                        var row = $(this);
-                        var text = row.text().toLowerCase();
-                        if (text.indexOf(value) > -1) {
-                            row.show();
-                            hasVisibleRows = true;
-                        } else {
-                            row.hide();
-                        }
-                    });
-                }
-
-                if (hasVisibleRows) {
+                if (groupName.indexOf(value) > -1) {
                     group.show();
                 } else {
                     group.hide();
                 }
             });
         });
-
-        // Expand/Collapse All
-        window.expandAll = function() {
-            $('.class-group .card').removeClass('collapsed-card');
-            $('.class-group .card-body').show();
-            $('.class-group .btn-tool i').removeClass('fa-plus').addClass('fa-minus');
-        };
-
-        window.collapseAll = function() {
-            $('.class-group .card').addClass('collapsed-card');
-            $('.class-group .card-body').hide();
-            $('.class-group .btn-tool i').removeClass('fa-minus').addClass('fa-plus');
-        };
     });
 </script>
 @endpush

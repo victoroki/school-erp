@@ -35,7 +35,12 @@ class DiscountSchemeController extends AppBaseController
      */
     public function create()
     {
-        return view('discount_schemes.create');
+        $academicYears = \App\Models\AcademicYear::pluck('name', 'academic_year_id');
+        $feeCategories = \App\Models\FeeCategory::pluck('name', 'category_id');
+        
+        return view('discount_schemes.create')
+            ->with('academicYears', $academicYears)
+            ->with('feeCategories', $feeCategories);
     }
 
     /**
@@ -81,7 +86,13 @@ class DiscountSchemeController extends AppBaseController
             return redirect(route('fees.discounts.index'));
         }
 
-        return view('discount_schemes.edit')->with('discountScheme', $discountScheme);
+        $academicYears = \App\Models\AcademicYear::pluck('name', 'academic_year_id');
+        $feeCategories = \App\Models\FeeCategory::pluck('name', 'category_id');
+
+        return view('discount_schemes.edit')
+            ->with('discountScheme', $discountScheme)
+            ->with('academicYears', $academicYears)
+            ->with('feeCategories', $feeCategories);
     }
 
     /**

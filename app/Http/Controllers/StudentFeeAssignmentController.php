@@ -9,11 +9,20 @@ use App\Models\Student;
 use App\Models\SchoolClass;
 use App\Models\AcademicYear;
 use App\Models\DiscountScheme;
+use App\Models\Term;
+use App\Services\FeeAssignmentService;
 use DB;
 use Flash;
 
 class StudentFeeAssignmentController extends Controller
 {
+    protected $feeAssignmentService;
+
+    public function __construct(FeeAssignmentService $feeAssignmentService)
+    {
+        $this->feeAssignmentService = $feeAssignmentService;
+    }
+
     public function index(Request $request)
     {
         $query = StudentFeeAssignment::with(['student.studentClassEnrollments.classSection.schoolClass', 'feeStructure.category', 'academicYear']);
@@ -43,22 +52,22 @@ class StudentFeeAssignmentController extends Controller
         $classes = SchoolClass::pluck('name', 'class_id');
         $currentYear = AcademicYear::where('is_current', true)->first();
         $feeCategories = \App\Models\FeeCategory::pluck('name', 'category_id');
+        $terms = Term::forCurrentAcademicYear()->active()->get();
         
-        return view('fee_management.assignments.create', compact('classes', 'currentYear', 'feeCategories'));
+        return view('fee_management.assignments.create', compact('classes', 'currentYear', 'feeCategories', 'terms'));
     }
 
     public function store(Request $request)
     {
-        // Handle Bulk and Individual assignments
         $request->validate([
-            'assignment_type' => 'required|in:bulk_class,individual',
+            'assignment_type' => 'required|in:bulk_class,bulk_all,auto_all_classes,individual',
             'academic_year_id' => 'required',
             'term' => 'required',
         ]);
 
         try {
             DB::beginTransaction();
-            
+
             $count = 0;
             $academicYearId = $request->academic_year_id;
             $term = $request->term;
@@ -72,51 +81,50 @@ class StudentFeeAssignmentController extends Controller
                 $students = Student::whereHas('studentClassEnrollments.classSection', function($q) use ($request) {
                     $q->where('class_id', $request->class_id)
                       ->where('is_current', true);
-                })->where('status', 'active')->get();
-                
+                })->where('is_active', true)->get();
+
                 $fees = FeeStructure::whereIn('fee_structure_id', $request->fees)->get();
 
-                foreach ($students as $student) {
-                    foreach ($fees as $fee) {
-                        // Check duplicate
-                        $exists = StudentFeeAssignment::where('student_id', $student->student_id)
-                            ->where('fee_structure_id', $fee->fee_structure_id)
-                            ->where('academic_year_id', $academicYearId)
-                            ->where('term', $term)
-                            ->exists();
+                $count = $this->assignFeesToStudents($students, $fees, $academicYearId, $term, $count);
 
-                        if (!$exists) {
-                            $assignment = StudentFeeAssignment::create([
-                                'student_id' => $student->student_id,
-                                'fee_structure_id' => $fee->fee_structure_id,
-                                'academic_year_id' => $academicYearId,
-                                'term' => $term,
-                                'amount' => $fee->amount,
-                                'final_amount' => $fee->amount, // No discount initially in bulk
-                                'assigned_by' => auth()->id(),
-                                'status' => 'active'
-                            ]);
-                            
-                            // Sync with student_fees (Collection Table)
-                            \App\Models\StudentFee::updateOrCreate(
-                                [
-                                    'student_id' => $student->student_id,
-                                    'fee_structure_id' => $fee->fee_structure_id,
-                                ],
-                                [
-                                    'amount' => $fee->amount,
-                                    'final_amount' => $fee->amount,
-                                    'status' => 'unpaid',
-                                    'due_date' => $fee->due_date
-                                ]
-                            );
-                            
-                            $count++;
-                        }
-                    }
+            } elseif ($request->assignment_type == 'bulk_all') {
+                $request->validate([
+                    'class_ids' => 'required|array|min:1',
+                    'fees' => 'required|array'
+                ]);
+
+                $classIds = $request->class_ids;
+
+                $students = Student::whereHas('studentClassEnrollments.classSection', function($q) use ($classIds) {
+                    $q->whereIn('class_id', $classIds)
+                      ->where('is_current', true);
+                })->where('is_active', true)->get();
+
+                $fees = FeeStructure::whereIn('fee_structure_id', $request->fees)->get();
+
+                $count = $this->assignFeesToStudents($students, $fees, $academicYearId, $term, $count, true);
+
+            } elseif ($request->assignment_type == 'auto_all_classes') {
+                $feeStructureIds = $request->filled('fees') ? $request->fees : null;
+
+                $result = $this->feeAssignmentService->autoAssignFeesToAllStudents(
+                    $academicYearId,
+                    $term,
+                    $feeStructureIds
+                );
+
+                DB::commit();
+
+                if ($result['success']) {
+                    Flash::success($result['message']);
+                } else {
+                    Flash::error($result['message']);
                 }
+
+                return redirect()->route('fees.assignments.index');
+
             } elseif ($request->assignment_type == 'individual') {
-                 $request->validate([
+                $request->validate([
                     'student_id' => 'required',
                     'fees' => 'required|array'
                 ]);
@@ -124,42 +132,7 @@ class StudentFeeAssignmentController extends Controller
                 $student = Student::find($request->student_id);
                 $fees = FeeStructure::whereIn('fee_structure_id', $request->fees)->get();
 
-                 foreach ($fees as $fee) {
-                        $exists = StudentFeeAssignment::where('student_id', $student->student_id)
-                            ->where('fee_structure_id', $fee->fee_structure_id)
-                            ->where('academic_year_id', $academicYearId)
-                            ->where('term', $term)
-                            ->exists();
-
-                        if (!$exists) {
-                            $assignment = StudentFeeAssignment::create([
-                                'student_id' => $student->student_id,
-                                'fee_structure_id' => $fee->fee_structure_id,
-                                'academic_year_id' => $academicYearId,
-                                'term' => $term,
-                                'amount' => $fee->amount,
-                                'final_amount' => $fee->amount,
-                                'assigned_by' => auth()->id(),
-                                'status' => 'active'
-                            ]);
-                            
-                            // Sync with student_fees (Collection Table)
-                            \App\Models\StudentFee::updateOrCreate(
-                                [
-                                    'student_id' => $student->student_id,
-                                    'fee_structure_id' => $fee->fee_structure_id,
-                                ],
-                                [
-                                    'amount' => $fee->amount,
-                                    'final_amount' => $fee->amount,
-                                    'status' => 'unpaid',
-                                    'due_date' => $fee->due_date
-                                ]
-                            );
-                            
-                            $count++;
-                        }
-                 }
+                $count = $this->assignFeesToStudents(collect([$student]), $fees, $academicYearId, $term, $count);
             }
 
             DB::commit();
@@ -179,9 +152,76 @@ class StudentFeeAssignmentController extends Controller
         $fees = FeeStructure::with('category')
             ->where('class_id', $request->class_id)
             ->where('academic_year_id', $request->academic_year_id)
+            ->where(function ($query) use ($request) {
+                if ($request->filled('term')) {
+                    $query->where('term', $request->term)
+                          ->orWhereNull('term');
+                }
+            })
             ->where('status', 'active')
             ->get();
-            
+
+        return response()->json($fees);
+    }
+
+    // Ajax method to get fees for multiple classes
+    public function getFeesByClasses(Request $request)
+    {
+        $classIds = $request->input('class_ids', []);
+
+        $query = FeeStructure::with(['category', 'schoolClass'])
+            ->where('academic_year_id', $request->academic_year_id)
+            ->where(function ($q) use ($request) {
+                if ($request->filled('term')) {
+                    $q->where('term', $request->term)
+                      ->orWhereNull('term');
+                }
+            })
+            ->where('status', 'active');
+
+        if (!empty($classIds)) {
+            $query->whereIn('class_id', $classIds);
+        }
+
+        $fees = $query->get();
+
+        return response()->json($fees);
+    }
+
+    // Ajax method to get auto-assignment preview
+    public function getAutoAssignmentPreview(Request $request)
+    {
+        $request->validate([
+            'academic_year_id' => 'required',
+            'term' => 'required',
+        ]);
+
+        $feeStructureIds = $request->filled('fees') ? $request->fees : null;
+
+        $preview = $this->feeAssignmentService->getAutoAssignmentPreview(
+            $request->academic_year_id,
+            $request->term,
+            $feeStructureIds
+        );
+
+        return response()->json($preview);
+    }
+
+    // Ajax method to get all fee structures for auto-assignment
+    public function getAllFeeStructures(Request $request)
+    {
+        $query = FeeStructure::with(['category', 'schoolClass'])
+            ->where('academic_year_id', $request->academic_year_id)
+            ->where(function ($q) use ($request) {
+                if ($request->filled('term')) {
+                    $q->where('term', $request->term)
+                      ->orWhereNull('term');
+                }
+            })
+            ->where('status', 'active');
+
+        $fees = $query->get();
+
         return response()->json($fees);
     }
 
@@ -197,9 +237,13 @@ class StudentFeeAssignmentController extends Controller
         $totalDiscount = $assignments->sum('discount_amount');
         $netPayable = $assignments->sum('final_amount');
         
-        // Mock payment data until integration provided
-        // In real scenario, we calculate payments from 'income' table
-        $totalPaid = \App\Models\Income::where('student_id', $id)->sum('amount');
+        // Calculate payments directly from fee_payments table via assignments
+        $totalPaid = StudentFeeAssignment::where('student_id', $id)
+            ->with('payments')
+            ->get()
+            ->sum(function ($assignment) {
+                return $assignment->payments->sum('amount');
+            });
         $balance = $netPayable - $totalPaid;
 
         return view('fee_management.assignments.student_summary', compact('student', 'assignments', 'totalAmount', 'totalDiscount', 'netPayable', 'totalPaid', 'balance'));
@@ -229,15 +273,56 @@ class StudentFeeAssignmentController extends Controller
     public function destroy($id)
     {
         $assignment = StudentFeeAssignment::findOrFail($id);
-        
-        // Sync with student_fees (Collection Table)
-        \App\Models\StudentFee::where('student_id', $assignment->student_id)
-            ->where('fee_structure_id', $assignment->fee_structure_id)
-            ->delete();
 
-        $assignment->delete(); // Or update status
-        
+        $assignment->delete();
+
         Flash::success('Fee assignment removed successfully.');
         return redirect()->back();
+    }
+
+    protected function assignFeesToStudents($students, $fees, $academicYearId, $term, $count = 0, $isBulkAll = false)
+    {
+        $studentChunks = $students->chunk(100);
+
+        foreach ($studentChunks as $chunk) {
+            foreach ($chunk as $student) {
+                foreach ($fees as $fee) {
+                    if ($isBulkAll && $fee->class_id) {
+                        $studentClassIds = $student->studentClassEnrollments()
+                            ->where('is_current', true)
+                            ->pluck('class_id')
+                            ->toArray();
+
+                        if (!in_array($fee->class_id, $studentClassIds)) {
+                            continue;
+                        }
+                    }
+
+                    $exists = StudentFeeAssignment::where('student_id', $student->student_id)
+                        ->where('fee_structure_id', $fee->fee_structure_id)
+                        ->where('academic_year_id', $academicYearId)
+                        ->where('term', $term)
+                        ->exists();
+
+                    if (!$exists) {
+                        StudentFeeAssignment::create([
+                            'student_id' => $student->student_id,
+                            'fee_structure_id' => $fee->fee_structure_id,
+                            'academic_year_id' => $academicYearId,
+                            'term' => $term,
+                            'amount' => $fee->amount,
+                            'final_amount' => $fee->amount,
+                            'assigned_by' => auth()->id(),
+                            'assigned_date' => now(),
+                            'status' => 'active'
+                        ]);
+
+                        $count++;
+                    }
+                }
+            }
+        }
+
+        return $count;
     }
 }

@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use Tests\TestCase;
 use App\Models\Student;
-use App\Models\StudentFee;
+use App\Models\StudentFeeAssignment;
 use App\Models\FeePayment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -22,14 +22,17 @@ class FeeCalculationTest extends TestCase
         $discount = 100;
         $finalAmount = $feeAmount - $discount;
 
-        $studentFee = StudentFee::create([
+        $assignment = StudentFeeAssignment::create([
             'student_id' => $student->student_id,
-            'fee_structure_id' => 1, // Assuming ID 1 exists or doesn't matter for this unit test if not checking relations
+            'fee_structure_id' => 1,
+            'academic_year_id' => 1,
+            'term' => 'Term 1',
             'amount' => $feeAmount,
             'discount_amount' => $discount,
             'final_amount' => $finalAmount,
-            'due_date' => now(),
-            'status' => 'unpaid',
+            'assigned_by' => 1,
+            'assigned_date' => now(),
+            'status' => 'active',
         ]);
 
         // Verify initial totals
@@ -41,7 +44,7 @@ class FeeCalculationTest extends TestCase
         // Make a partial payment
         $paymentAmount = 400;
         FeePayment::create([
-            'student_fee_id' => $studentFee->student_fee_id,
+            'student_fee_assignment_id' => $assignment->student_fee_assignment_id,
             'amount' => $paymentAmount,
             'payment_date' => now(),
             'payment_method' => 'cash',
@@ -60,7 +63,7 @@ class FeeCalculationTest extends TestCase
         // Make remaining payment
         $remainingAmount = $finalAmount - $paymentAmount;
         FeePayment::create([
-            'student_fee_id' => $studentFee->student_fee_id,
+            'student_fee_assignment_id' => $assignment->student_fee_assignment_id,
             'amount' => $remainingAmount,
             'payment_date' => now(),
             'payment_method' => 'cash',

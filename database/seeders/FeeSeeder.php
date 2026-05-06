@@ -6,7 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Models\Student;
 use App\Models\FeeCategory;
 use App\Models\FeeStructure;
-use App\Models\StudentFee;
+use App\Models\StudentFeeAssignment;
 use App\Models\FeePayment;
 use App\Models\AcademicYear;
 use App\Models\SchoolClass;
@@ -19,7 +19,7 @@ class FeeSeeder extends Seeder
         // Clear existing data to ensure clean demo state
         \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         FeePayment::truncate();
-        StudentFee::truncate();
+        StudentFeeAssignment::truncate();
         FeeStructure::truncate();
         FeeCategory::truncate();
         \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
@@ -95,14 +95,17 @@ class FeeSeeder extends Seeder
 
                 $finalAmount = $structure->amount - $discount;
 
-                $studentFee = StudentFee::create([
+                $assignment = StudentFeeAssignment::create([
                     'student_id' => $student->student_id,
                     'fee_structure_id' => $structure->fee_structure_id,
+                    'academic_year_id' => $academicYear->academic_year_id,
+                    'term' => 'Term 1',
                     'amount' => $structure->amount,
                     'discount_amount' => $discount,
                     'final_amount' => $finalAmount,
-                    'due_date' => $structure->due_date,
-                    'status' => 'unpaid',
+                    'assigned_by' => 1,
+                    'assigned_date' => now(),
+                    'status' => 'active',
                 ]);
 
                 // 4. Create realistic Payments
@@ -111,20 +114,19 @@ class FeeSeeder extends Seeder
                 if ($paymentStatusChance <= 4) {
                     // Paid (40% chance)
                     FeePayment::create([
-                        'student_fee_id' => $studentFee->student_fee_id,
+                        'student_fee_assignment_id' => $assignment->student_fee_assignment_id,
                         'amount' => $finalAmount,
-                        'payment_date' => Carbon::parse($studentFee->due_date)->subDays(rand(1, 15)),
+                        'payment_date' => Carbon::now()->subDays(rand(1, 15)),
                         'payment_method' => collect(['cash', 'bank_transfer', 'online'])->random(),
                         'receipt_number' => 'RCP-' . strtoupper(uniqid()),
                         'remarks' => 'Full payment received.',
                         'collected_by' => 1, // SuperAdmin
                     ]);
-                    $studentFee->update(['status' => 'paid']);
                 } elseif ($paymentStatusChance <= 7) {
                     // Partial (30% chance)
                     $partialAmount = round($finalAmount * (rand(30, 70) / 100), 2);
                     FeePayment::create([
-                        'student_fee_id' => $studentFee->student_fee_id,
+                        'student_fee_assignment_id' => $assignment->student_fee_assignment_id,
                         'amount' => $partialAmount,
                         'payment_date' => Carbon::now()->subDays(rand(1, 5)),
                         'payment_method' => collect(['cash', 'bank_transfer'])->random(),
@@ -132,7 +134,6 @@ class FeeSeeder extends Seeder
                         'remarks' => 'Partial payment.',
                         'collected_by' => 1,
                     ]);
-                    $studentFee->update(['status' => 'partially_paid']);
                 }
                 // Else: Unpaid (30% chance)
             }

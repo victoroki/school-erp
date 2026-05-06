@@ -7,7 +7,15 @@
 <!-- Code Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('code', 'Code:') !!}
-    {!! Form::text('code', null, ['class' => 'form-control', 'maxlength' => 20]) !!}
+    <div class="input-group">
+        {!! Form::text('code', null, ['class' => 'form-control', 'maxlength' => 20, 'id' => 'code-field']) !!}
+        <div class="input-group-append">
+            <button type="button" class="btn btn-info" id="auto-code-btn" title="Generate auto code">
+                <i class="fas fa-magic"></i> Auto
+            </button>
+        </div>
+    </div>
+    <small class="form-text text-muted">Click "Auto" to generate code from name</small>
 </div>
 
 <!-- Type Field -->

@@ -10,7 +10,7 @@
     </div>
 
     <div class="sidebar-search-container">
-        <div class="search-wrapper" data-widget="sidebar-search">
+        <div class="search-wrapper"> {{-- Removed data-widget to fix crash --}}
             <i class="fas fa-search"></i>
             <input class="search-input" type="search" placeholder="Quick find..." aria-label="Search">
         </div>

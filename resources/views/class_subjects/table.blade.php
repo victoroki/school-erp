@@ -20,7 +20,18 @@
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <span class="badge-count">{{ $subjectsGroup->count() }} Subjects</span>
-                            <a href="#" class="cs-toggle text-muted"><i class="fas fa-minus"></i></a>
+                            <div class="header-actions d-flex align-items-center gap-1">
+                                {!! Form::open(['route' => 'class-subjects.bulk-delete', 'method' => 'post', 'class' => 'm-0']) !!}
+                                    {!! Form::hidden('class_id', $subjectsGroup->first()->class_id) !!}
+                                    {!! Form::button('<i class="far fa-trash-alt"></i>', [
+                                        'type' => 'submit',
+                                        'class' => 'action-btn btn-delete x-small',
+                                        'title' => 'Clear All Subjects for this Class',
+                                        'onclick' => "return confirm('Are you sure you want to remove ALL subjects from " . $className . "? This action cannot be undone.')"
+                                    ]) !!}
+                                {!! Form::close() !!}
+                                <a href="#" class="cs-toggle text-muted action-btn"><i class="fas fa-minus"></i></a>
+                            </div>
                         </div>
                     </div>
                     

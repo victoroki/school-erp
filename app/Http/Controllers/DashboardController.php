@@ -6,7 +6,7 @@ use App\Models\Student;
 use App\Models\User;
 use App\Models\SchoolClass;
 use App\Models\FeePayment;
-use App\Models\StudentFee;
+use App\Models\StudentFeeAssignment;
 use App\Models\AuditTrail;
 use App\Models\LeaveApplication;
 use App\Models\InventoryItem;
@@ -53,7 +53,8 @@ class DashboardController extends Controller
             ]);
 
         // Alert counts from real data
-        $pendingFeeQuery   = StudentFee::whereIn('status', ['unpaid', 'partially_paid']);
+        $pendingFeeQuery   = StudentFeeAssignment::where('status', 'active')
+            ->whereRaw('COALESCE(paid_amount, 0) < final_amount');
         $pendingFeeCount   = $pendingFeeQuery->count();
         $pendingFeeAmount  = $pendingFeeQuery->get()->sum(fn($fee) => $fee->balance);
         $pendingLeaveCount = LeaveApplication::where('application_status', 'pending')->count();
@@ -153,7 +154,8 @@ class DashboardController extends Controller
         $isHR      = in_array($role, ['hr', 'human resources', 'hr manager']);
 
         if ($isFinance) {
-            $pendingQuery = StudentFee::whereIn('status', ['unpaid', 'partially_paid']);
+            $pendingQuery = StudentFeeAssignment::where('status', 'active')
+                ->whereRaw('COALESCE(paid_amount, 0) < final_amount');
             return [
                 'todayRevenue'    => FeePayment::whereDate('created_at', today())->sum('amount'),
                 'monthRevenue'    => FeePayment::whereMonth('created_at', now()->month)->sum('amount'),
@@ -170,10 +172,11 @@ class DashboardController extends Controller
         }
 
         // Admin / principal / default: full overview
-        $pendingQuery = StudentFee::whereIn('status', ['unpaid', 'partially_paid']);
+        $pendingQuery = StudentFeeAssignment::where('status', 'active')
+            ->whereRaw('COALESCE(paid_amount, 0) < final_amount');
         $monthRevenueCollected = FeePayment::whereMonth('created_at', now()->month)->sum('amount');
-        $monthRevenuePending = StudentFee::whereMonth('due_date', now()->month)
-            ->whereIn('status', ['unpaid', 'partially_paid'])
+        $monthRevenuePending = StudentFeeAssignment::where('status', 'active')
+            ->whereRaw('COALESCE(paid_amount, 0) < final_amount')
             ->get()
             ->sum(fn($fee) => $fee->balance);
 

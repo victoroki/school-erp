@@ -41,7 +41,7 @@
                                                 <div class="progress mt-2" style="height: 20px;">
                                                     @php
                                                         $total = $staff->onboardingChecklist->count();
-                                                        $completed = $staff->onboardingChecklist->where('status', 'completed')->count();
+                                                        $completed = $staff->onboardingChecklist->where('is_completed', true)->count();
                                                         $percentage = $total > 0 ? round(($completed / $total) * 100) : 0;
                                                     @endphp
                                                     <div class="progress-bar bg-success" style="width: {{ $percentage }}%">

@@ -74,9 +74,20 @@ class ClassSubjectController extends AppBaseController
     {
         $input = $request->all();
 
-        $classSubject = $this->classSubjectRepository->create($input);
-
-        Flash::success('Class Subject saved successfully.');
+        // Check if subject_id is an array (multi-select)
+        if (isset($input['subject_id']) && is_array($input['subject_id'])) {
+            foreach ($input['subject_id'] as $subjectId) {
+                $this->classSubjectRepository->create([
+                    'class_id' => $input['class_id'],
+                    'subject_id' => $subjectId,
+                    'academic_year_id' => $input['academic_year_id']
+                ]);
+            }
+            Flash::success('Subjects assigned to class successfully.');
+        } else {
+            $this->classSubjectRepository->create($input);
+            Flash::success('Class Subject saved successfully.');
+        }
 
         return redirect(route('class-subjects.index'));
     }
@@ -159,6 +170,26 @@ class ClassSubjectController extends AppBaseController
         $this->classSubjectRepository->delete($id);
 
         Flash::success('Class Subject deleted successfully.');
+
+        return redirect(route('class-subjects.index'));
+    }
+
+    /**
+     * Remove all subjects assigned to a specific class.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $classId = $request->input('class_id');
+        
+        if (empty($classId)) {
+            Flash::error('Class selection is required for bulk deletion.');
+            return redirect(route('class-subjects.index'));
+        }
+
+        // Delete all class subjects for this class
+        $deletedCount = \App\Models\ClassSubject::where('class_id', $classId)->delete();
+
+        Flash::success("Successfully cleared all ($deletedCount) subjects from the class.");
 
         return redirect(route('class-subjects.index'));
     }

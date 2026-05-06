@@ -11,15 +11,15 @@ class StaffOnboardingChecklist extends Model
 
     protected $fillable = [
         'staff_id',
-        'item_name',
-        'item_order',
-        'status',
+        'checklist_item',
+        'is_completed',
+        'completed_by',
         'completed_date',
         'notes',
     ];
 
     protected $casts = [
-        'item_order' => 'integer',
+        'is_completed' => 'boolean',
         'completed_date' => 'datetime',
     ];
 

@@ -3,23 +3,23 @@
 @section('content')
 <div class="dash-wrap">
     {{-- ① HEADER --}}
-    <div class="row align-items-center mb-4">
-        <div class="col-md-7">
+    <div class="row align-items-center mb-4 text-center">
+        <div class="col-12">
             <h1 class="dash-heading">User Roles</h1>
             <p class="dash-sub">Define responsibility groups and access blueprints</p>
-        </div>
-        <div class="col-md-5 text-md-end mt-2 mt-md-0">
-            <a class="btn-dash btn-primary-dash" href="{{ route('roles.create') }}">
-                <i class="fas fa-plus me-1"></i> Create New Role
-            </a>
+            <div class="mt-3">
+                <a class="btn-dash btn-primary-dash" href="{{ route('roles.create') }}">
+                    <i class="fas fa-plus me-1"></i> Create New Role
+                </a>
+            </div>
         </div>
     </div>
 
     @include('flash::message')
 
     {{-- ② ROLES LIST --}}
-    <div class="row">
-        <div class="col-lg-8">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
             <div class="dash-panel">
                 @include('roles.table')
             </div>

@@ -13,6 +13,13 @@
         <small class="text-muted">Students in this class will be eligible for this fee.</small>
     </div>
 
+    <!-- Term Field -->
+    <div class="form-group col-sm-6">
+        {!! Form::label('term', 'Applicable Term') !!}
+        {!! Form::select('term', ['Term 1' => 'Term 1', 'Term 2' => 'Term 2', 'Term 3' => 'Term 3'], null, ['class' => 'form-control', 'placeholder' => 'Select Term', 'required']) !!}
+        <small class="text-muted">Select which term this fee applies to.</small>
+    </div>
+
     <!-- Category Id Field -->
     <div class="form-group col-sm-6">
         {!! Form::label('category_id', 'Fee Category') !!}
@@ -53,10 +60,12 @@
     <!-- Auto Assign Field (Only on Create) -->
     <div class="form-group col-sm-12">
         <div class="custom-control custom-checkbox mt-2">
-            {!! Form::checkbox('auto_assign', 1, true, ['class' => 'custom-control-input', 'id' => 'auto_assign']) !!}
-            {!! Form::label('auto_assign', 'Automatically assign this fee to ALL current students in the selected class', ['class' => 'custom-control-label font-weight-bold text-primary']) !!}
+            <input type="checkbox" name="auto_assign" value="1" class="custom-control-input" id="auto_assign" {{ old('auto_assign', '1') == '1' ? 'checked' : '' }}>
+            <label class="custom-control-label font-weight-bold text-primary" for="auto_assign">
+                Automatically assign this fee to ALL currently enrolled students in the selected class
+            </label>
         </div>
-        <p class="text-muted small ml-4">If checked, the system will immediately create student fee records for all currently enrolled students in this class.</p>
+        <p class="text-muted small ml-4">If checked, the system will immediately create student fee records for all students currently enrolled in the selected class.</p>
     </div>
     @endif
 </div>

@@ -39,3 +39,25 @@
         </div>
     </div>
 @endsection
+
+@push('page_scripts')
+<script>
+    // Polling strategy to ensure jQuery and Select2 are loaded before initialization
+    function initializeFeeForm() {
+        if (typeof window.jQuery !== 'undefined' && typeof window.jQuery.fn.select2 !== 'undefined') {
+            // Initialize Select2
+            window.jQuery('.select2').select2({
+                theme: 'bootstrap-5'
+            });
+        } else {
+            // Poll every 50ms until dependencies are ready
+            setTimeout(initializeFeeForm, 50);
+        }
+    }
+
+    // Start initialization after DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(initializeFeeForm, 100);
+    });
+</script>
+@endpush

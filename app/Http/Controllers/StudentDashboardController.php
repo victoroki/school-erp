@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\StudentClassEnrollment;
 use App\Models\StudentDocument;
-use App\Models\StudentFee;
+use App\Models\StudentFeeAssignment;
 use App\Models\AcademicYear;
 use App\Models\SchoolClass;
 use Illuminate\Http\Request;
@@ -50,8 +50,8 @@ class StudentDashboardController extends Controller
         })->count();
 
         // Fee Defaulters
-        $feeDefaulters = StudentFee::where('status', 'unpaid')
-            ->where('due_date', '<', Carbon::now())
+        $feeDefaulters = StudentFeeAssignment::where('status', 'active')
+            ->whereRaw('COALESCE(paid_amount, 0) < final_amount')
             ->distinct('student_id')
             ->count('student_id');
 

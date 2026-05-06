@@ -94,10 +94,6 @@
                     {!! Form::label('religion', 'Religion:') !!}
                     {!! Form::text('religion', null, ['class' => 'form-control', 'maxlength' => 50]) !!}
                 </div>
-                <div class="form-group col-sm-4">
-                    {!! Form::label('student_category', 'Category:') !!}
-                    {!! Form::text('student_category', null, ['class' => 'form-control', 'placeholder' => 'e.g., General, SC, ST']) !!}
-                </div>
             </div>
         </div>
     </div>
@@ -109,10 +105,6 @@
         </div>
         <div class="card-body">
             <div class="row">
-                <div class="form-group col-sm-12">
-                    {!! Form::label('address', 'Permanent Address:') !!}
-                    {!! Form::textarea('address', null, ['class' => 'form-control', 'rows' => 2]) !!}
-                </div>
             </div>
             <div class="row">
                 <div class="form-group col-sm-3">
@@ -170,14 +162,6 @@
                 <div class="form-group col-sm-6">
                     {!! Form::label('medications', 'Active Medications:') !!}
                     {!! Form::textarea('medications', null, ['class' => 'form-control', 'rows' => 2]) !!}
-                </div>
-                <div class="form-group col-sm-3">
-                    {!! Form::label('doctor_name', 'Family Doctor:') !!}
-                    {!! Form::text('doctor_name', null, ['class' => 'form-control']) !!}
-                </div>
-                <div class="form-group col-sm-3">
-                    {!! Form::label('doctor_phone', 'Doctor Phone:') !!}
-                    {!! Form::text('doctor_phone', null, ['class' => 'form-control']) !!}
                 </div>
             </div>
         </div>

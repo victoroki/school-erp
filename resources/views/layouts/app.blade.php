@@ -1,6 +1,8 @@
 <x-laravel-ui-adminlte::adminlte-layout>
 @push('page_css')
     <link rel="stylesheet" href="{{ asset('css/sidebar-fixed-final.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
 @endpush
 
     <body class="hold-transition sidebar-mini layout-fixed">
@@ -71,9 +73,30 @@
             </footer>
         </div>
 
-        <!-- Sidebar Treeview JavaScript - MUST be loaded after jQuery and AdminLTE -->
+        <!-- AdminLTE and Sidebar JavaScript - MUST be loaded after jQuery -->
         @push('page_scripts')
-        <script src="{{ asset('js/sidebar-treeview.js') }}"></script>
+        {{-- Load Select2 JS with defer so it waits for jQuery in app.js --}}
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
+
+        {{-- AdminLTE initialization with polling strategy to ensure jQuery is ready --}}
+        <script>
+            // Wait for jQuery and AdminLTE to be fully loaded before initializing widgets
+            function initializeAdminLTE() {
+                if (typeof window.jQuery !== 'undefined' && typeof window.jQuery.fn.PushMenu !== 'undefined') {
+                    // Initialize AdminLTE widgets including pushmenu (sidebar collapse)
+                    window.jQuery('[data-widget="pushmenu"]').PushMenu();
+                    window.jQuery('[data-widget="treeview"]').Treeview();
+                } else {
+                    // Poll every 50ms until dependencies are ready
+                    setTimeout(initializeAdminLTE, 50);
+                }
+            }
+
+            // Start initialization after DOM is ready
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(initializeAdminLTE, 100);
+            });
+        </script>
         @endpush
     </body>
 </x-laravel-ui-adminlte::adminlte-layout>

@@ -247,26 +247,26 @@
                 <div class="summary-card-label">Expected Revenue</div>
                 <div class="summary-card-value">KES {{ number_format($expectedRevenue) }}</div>
                 <div class="summary-card-progress">
-                    <div class="summary-card-progress-bar" style="width: 75%"></div>
+                    <div class="summary-card-progress-bar" style="width: {{ $expectedRevenue > 0 ? ($metrics['total_collected'] / $expectedRevenue) * 100 : 0 }}%"></div>
                 </div>
                 <div class="summary-card-footer">
-                    <span>Assigned Fees</span>
+                    <span>Collected: KES {{ number_format($metrics['total_collected'], 0) }}</span>
                     <a href="{{ route('fees.reports.expected-revenue') }}" class="summary-card-link">View Report <i class="fas fa-arrow-right ms-1"></i></a>
                 </div>
             </div>
         </div>
         
         <div class="col-xl-3 col-sm-6">
-            <div class="summary-card grad-green" onclick="window.location='{{ route('fee-structures.index') }}'" tabindex="0">
-                <i class="fas fa-file-invoice summary-card-bg"></i>
-                <div class="summary-card-label">Active Structures</div>
-                <div class="summary-card-value">{{ $totalFeeStructures }}</div>
+            <div class="summary-card grad-green" onclick="window.location='{{ route('fee-management.index') }}'" tabindex="0">
+                <i class="fas fa-check-circle summary-card-bg"></i>
+                <div class="summary-card-label">Collection Rate</div>
+                <div class="summary-card-value">{{ $metrics['collection_rate'] }}%</div>
                 <div class="summary-card-progress">
-                    <div class="summary-card-progress-bar" style="width: 100%"></div>
+                    <div class="summary-card-progress-bar" style="width: {{ $metrics['collection_rate'] }}%"></div>
                 </div>
                 <div class="summary-card-footer">
-                    <span>Fee Templates</span>
-                    <a href="{{ route('fee-structures.index') }}" class="summary-card-link">Manage <i class="fas fa-arrow-right ms-1"></i></a>
+                    <span>KES {{ number_format($metrics['total_collected'], 0) }} collected</span>
+                    <a href="{{ route('fee-management.index') }}" class="summary-card-link">Collect <i class="fas fa-arrow-right ms-1"></i></a>
                 </div>
             </div>
         </div>
@@ -277,7 +277,7 @@
                 <div class="summary-card-label">Total Discounts</div>
                 <div class="summary-card-value">KES {{ number_format($totalDiscounts) }}</div>
                 <div class="summary-card-progress">
-                    <div class="summary-card-progress-bar" style="width: 45%"></div>
+                    <div class="summary-card-progress-bar" style="width: {{ $expectedRevenue > 0 ? ($totalDiscounts / $expectedRevenue) * 100 : 0 }}%"></div>
                 </div>
                 <div class="summary-card-footer">
                     <span>Fee Reductions</span>

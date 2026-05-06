@@ -41,7 +41,9 @@ class DiscountScheme extends Model
         'name' => 'required|string|max:255',
         'type' => 'required|in:percentage,fixed,full_waiver',
         'value' => 'nullable|numeric|min:0',
-        'status' => 'required|in:active,inactive'
+        'status' => 'required|in:active,inactive',
+        'applies_to' => 'required|in:all_fees,specific_categories,exclude_categories',
+        'eligibility_criteria' => 'required|in:staff_child,sibling,merit,financial_aid,custom'
     ];
 
     public function academicYear()

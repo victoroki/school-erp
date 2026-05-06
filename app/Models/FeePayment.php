@@ -13,7 +13,7 @@ class FeePayment extends Model
     protected $primaryKey = 'payment_id';
 
     protected $fillable = [
-        'student_fee_id',
+        'student_fee_assignment_id',
         'amount',
         'payment_date',
         'payment_method',
@@ -28,9 +28,9 @@ class FeePayment extends Model
         'amount' => 'decimal:2',
     ];
 
-    public function studentFee()
+    public function studentFeeAssignment()
     {
-        return $this->belongsTo(StudentFee::class, 'student_fee_id');
+        return $this->belongsTo(StudentFeeAssignment::class, 'student_fee_assignment_id');
     }
 
     public function collectedBy()
