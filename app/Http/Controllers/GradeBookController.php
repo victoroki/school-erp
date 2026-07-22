@@ -11,6 +11,11 @@ use Illuminate\Http\Request;
 
 class GradeBookController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:academics.view');
+    }
+
     public function index(Request $request)
     {
         $exams = Exam::pluck('name', 'exam_id');

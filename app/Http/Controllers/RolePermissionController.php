@@ -19,6 +19,7 @@ class RolePermissionController extends AppBaseController
     public function __construct(RolePermissionRepository $rolePermissionRepo)
     {
         $this->rolePermissionRepository = $rolePermissionRepo;
+        $this->middleware('can:users.manage');
     }
 
     /**

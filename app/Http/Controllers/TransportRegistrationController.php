@@ -23,6 +23,8 @@ class TransportRegistrationController extends AppBaseController
     public function __construct(TransportRegistrationRepository $transportRegistrationRepo)
     {
         $this->transportRegistrationRepository = $transportRegistrationRepo;
+        $this->middleware('can:transport.view')->only(['index', 'show']);
+        $this->middleware('can:transport.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getDropdownData()

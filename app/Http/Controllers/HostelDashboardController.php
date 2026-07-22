@@ -12,6 +12,11 @@ use App\Models\Student;
 
 class HostelDashboardController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:hostel.view');
+    }
+
     public function index()
     {
         $stats = [

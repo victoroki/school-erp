@@ -11,6 +11,12 @@ use Flash;
 
 class TermController extends AppBaseController
 {
+    public function __construct()
+    {
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
+
     public function index(Request $request)
     {
         $query = Term::with('academicYear')->orderBy('display_order')->orderBy('start_date');

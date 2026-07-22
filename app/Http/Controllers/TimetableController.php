@@ -25,10 +25,8 @@ class TimetableController extends AppBaseController
         $this->timetableRepository = $timetableRepo;
 
         $this->middleware('auth');
-        $this->middleware('can:timetables.index')->only(['index', 'show']);
-        $this->middleware('can:timetables.create')->only(['create', 'store']);
-        $this->middleware('can:timetables.edit')->only(['edit', 'update']);
-        $this->middleware('can:timetables.delete')->only('destroy');
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -229,7 +227,7 @@ class TimetableController extends AppBaseController
         $allTeachers = collect();
 
         // Check permissions
-        $isAdmin = $user->user_type === 'admin' || $user->hasRole('admin'); // Fallback for role-based systems
+        $isAdmin = $user->hasAnyRole(['Super Admin', 'Admin']);
 
         if ($isAdmin) {
             $allTeachers = Staff::where('staff_type', 'teaching')

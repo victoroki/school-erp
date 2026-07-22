@@ -17,6 +17,8 @@ class ExamTypeController extends AppBaseController
     public function __construct(ExamTypeRepository $examTypeRepo)
     {
         $this->examTypeRepository = $examTypeRepo;
+        $this->middleware('can:exams.view')->only(['index', 'show']);
+        $this->middleware('can:exams.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

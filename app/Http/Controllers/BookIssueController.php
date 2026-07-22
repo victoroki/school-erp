@@ -17,6 +17,8 @@ class BookIssueController extends Controller
     public function __construct(\App\Services\LibraryService $libraryService)
     {
         $this->libraryService = $libraryService;
+        $this->middleware('can:library.view')->only(['index', 'show']);
+        $this->middleware('can:library.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

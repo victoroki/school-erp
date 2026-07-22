@@ -17,6 +17,8 @@ class DepartmentController extends AppBaseController
     public function __construct(DepartmentRepository $departmentRepo)
     {
         $this->departmentRepository = $departmentRepo;
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

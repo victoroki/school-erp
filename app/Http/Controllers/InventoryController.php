@@ -21,6 +21,8 @@ class InventoryController extends AppBaseController
     public function __construct(InventoryService $inventoryService)
     {
         $this->inventoryService = $inventoryService;
+        $this->middleware('can:inventory.view')->only(['dashboard', 'show']);
+        $this->middleware('can:inventory.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

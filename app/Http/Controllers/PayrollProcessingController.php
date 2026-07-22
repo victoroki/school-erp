@@ -11,6 +11,12 @@ use Laracasts\Flash\Flash;
 
 class PayrollProcessingController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['create', 'calculate', 'store']);
+    }
+
     public function index()
     {
         // Show list of payroll runs (placeholder - would come from Payroll model)

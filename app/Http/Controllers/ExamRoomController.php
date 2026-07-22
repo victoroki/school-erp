@@ -9,6 +9,12 @@ use Flash;
 
 class ExamRoomController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:exams.view')->only(['index', 'show']);
+        $this->middleware('can:exams.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
+
     public function index()
     {
         $examRooms = ExamRoom::paginate(10);

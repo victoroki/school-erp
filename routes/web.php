@@ -366,5 +366,24 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/finalize/{payroll}', [App\Http\Controllers\PayrollProcessingController::class, 'finalize'])->name('finalize');
     });
 
+    // ─── PARENT/STUDENT PORTAL ────────────────────────────────────
+    Route::prefix('portal')->name('portal.')->middleware(['auth'])->group(function () {
+        // Profile
+        Route::get('/profile', [App\Http\Controllers\Portal\PortalProfileController::class, 'index'])->name('profile');
+        Route::put('/profile', [App\Http\Controllers\Portal\PortalProfileController::class, 'update'])->name('profile.update');
+
+        // Fees (Parent + Student)
+        Route::get('/fees', [App\Http\Controllers\Portal\PortalFeeController::class, 'index'])->name('fees');
+        Route::get('/fees/{studentFeeAssignment}', [App\Http\Controllers\Portal\PortalFeeController::class, 'show'])->name('fees.show');
+        Route::get('/fees/{studentFeeAssignment}/receipt', [App\Http\Controllers\Portal\PortalFeeController::class, 'receipt'])->name('fees.receipt');
+
+        // Report Cards (Parent + Student)
+        Route::get('/report-cards', [App\Http\Controllers\Portal\PortalReportCardController::class, 'index'])->name('report-cards');
+        Route::get('/report-cards/{exam}', [App\Http\Controllers\Portal\PortalReportCardController::class, 'show'])->name('report-cards.show');
+
+        // Attendance (Parent + Student)
+        Route::get('/attendance', [App\Http\Controllers\Portal\PortalAttendanceController::class, 'index'])->name('attendance');
+    });
+
 });
 

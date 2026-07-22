@@ -18,10 +18,8 @@ class RoleController extends AppBaseController
     public function __construct(RoleRepository $roleRepo)
     {
         $this->roleRepository = $roleRepo;
-        $this->middleware('can:roles.index')->only('index');
-        $this->middleware('can:roles.create')->only(['create', 'store']);
-        $this->middleware('can:roles.edit')->only(['edit', 'update']);
-        $this->middleware('can:roles.delete')->only('destroy');
+        $this->middleware('can:users.view')->only(['index', 'show']);
+        $this->middleware('can:users.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

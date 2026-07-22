@@ -21,6 +21,8 @@ class FeeReportsController extends Controller
     public function __construct(FinanceService $financeService)
     {
         $this->financeService = $financeService;
+        $this->middleware('can:fees.view');
+        $this->middleware('can:fees.export')->only(['expectedRevenue', 'collectionReport']);
     }
 
     public function expectedRevenue(Request $request)

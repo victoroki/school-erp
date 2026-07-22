@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -39,7 +38,6 @@ class DatabaseSeeder extends Seeder
             ExamSchedulesSeeder::class,
             SimpleExamResultsSeeder::class,
             FeeSeeder::class,
-            LibrarySeeder::class,
             InventorySeeder::class,
             HostelSeeder::class,
             TransportSeeder::class,

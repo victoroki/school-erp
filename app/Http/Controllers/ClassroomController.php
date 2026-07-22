@@ -19,10 +19,8 @@ class ClassroomController extends AppBaseController
         $this->classroomRepository = $classroomRepo;
 
         $this->middleware('auth');
-        $this->middleware('can:classrooms.index')->only(['index', 'show']);
-        $this->middleware('can:classrooms.create')->only(['create', 'store']);
-        $this->middleware('can:classrooms.edit')->only(['edit', 'update']);
-        $this->middleware('can:classrooms.delete')->only('destroy');
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

@@ -13,6 +13,11 @@ use Carbon\Carbon;
 
 class FinanceDashboardController extends AppBaseController
 {
+    public function __construct()
+    {
+        $this->middleware('can:finance.view');
+    }
+
     public function index()
     {
         $thisMonth = Carbon::now()->month;

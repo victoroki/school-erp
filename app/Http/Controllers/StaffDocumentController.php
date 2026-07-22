@@ -18,6 +18,8 @@ class StaffDocumentController extends AppBaseController
     public function __construct(StaffDocumentRepository $staffDocumentRepo)
     {
         $this->staffDocumentRepository = $staffDocumentRepo;
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
         private function getDropdownData()

@@ -10,6 +10,11 @@ use Illuminate\Http\Request;
 
 class MarkSheetController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:exams.view');
+    }
+
     public function index(Request $request)
     {
         $exams = Exam::pluck('name', 'exam_id');

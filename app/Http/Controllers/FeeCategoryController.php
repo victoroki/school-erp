@@ -18,6 +18,8 @@ class FeeCategoryController extends AppBaseController
     public function __construct(FeeCategoryRepository $feeCategoryRepo)
     {
         $this->feeCategoryRepository = $feeCategoryRepo;
+        $this->middleware('can:fees.view')->only(['index', 'show']);
+        $this->middleware('can:fees.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

@@ -13,6 +13,12 @@ use DB;
 
 class CompetencyAssessmentController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.manage')->only(['store', 'update']);
+    }
+
     public function index(Request $request)
     {
         $learningAreas = CbcLearningArea::where('status', true)->pluck('name', 'id');

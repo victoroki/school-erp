@@ -1,3 +1,4 @@
+{{-- DEPRECATED: This file is no longer used. Replaced by MenuService + menu-tooltip-fix.blade.php. --}}
 <!-- Dashboard -->
 <li class="nav-item">
     <a href="{{ route('home') }}" class="nav-link {{ Request::is('home') ? 'active' : '' }}">

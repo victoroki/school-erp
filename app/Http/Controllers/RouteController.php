@@ -18,6 +18,8 @@ class RouteController extends AppBaseController
     public function __construct(RouteRepository $routeRepo)
     {
         $this->routeRepository = $routeRepo;
+        $this->middleware('can:transport.view')->only(['index', 'show']);
+        $this->middleware('can:transport.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

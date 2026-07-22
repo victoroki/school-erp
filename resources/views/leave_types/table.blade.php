@@ -18,13 +18,13 @@
                     <td>{{ $leaveType->description }}</td>
                     <td>{{ $leaveType->is_paid }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['leaveTypes.destroy', $leaveType->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['leave-types.destroy', $leaveType->id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('leaveTypes.show', [$leaveType->id]) }}"
+                            <a href="{{ route('leave-types.show', [$leaveType->id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('leaveTypes.edit', [$leaveType->id]) }}"
+                            <a href="{{ route('leave-types.edit', [$leaveType->id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

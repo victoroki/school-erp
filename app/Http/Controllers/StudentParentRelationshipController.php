@@ -21,6 +21,8 @@ class StudentParentRelationshipController extends AppBaseController
     public function __construct(StudentParentRelationshipRepository $studentParentRelationshipRepo)
     {
         $this->studentParentRelationshipRepository = $studentParentRelationshipRepo;
+        $this->middleware('can:students.view')->only(['index', 'show']);
+        $this->middleware('can:students.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

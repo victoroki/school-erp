@@ -19,10 +19,8 @@ class SubjectController extends AppBaseController
         $this->subjectRepository = $subjectRepo;
 
         $this->middleware('auth');
-        $this->middleware('can:subjects.index')->only(['index', 'show']);
-        $this->middleware('can:subjects.create')->only(['create', 'store']);
-        $this->middleware('can:subjects.edit')->only(['edit', 'update']);
-        $this->middleware('can:subjects.delete')->only('destroy');
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

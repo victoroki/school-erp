@@ -13,10 +13,8 @@ class UserController extends AppBaseController
 {
     public function __construct()
     {
-        $this->middleware('can:users.index')->only('index');
-        $this->middleware('can:users.create')->only(['create', 'store']);
-        $this->middleware('can:users.edit')->only(['edit', 'update']);
-        $this->middleware('can:users.delete')->only('destroy');
+        $this->middleware('can:users.view')->only(['index', 'show']);
+        $this->middleware('can:users.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
     /**
      * Display a listing of the User.

@@ -11,6 +11,11 @@ use DB;
 
 class StudentReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:students.view');
+    }
+
     public function index()
     {
         return view('students.reports.index');

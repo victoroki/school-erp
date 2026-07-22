@@ -17,6 +17,8 @@ class DiscountSchemeController extends AppBaseController
     public function __construct(DiscountSchemeRepository $discountSchemeRepo)
     {
         $this->discountSchemeRepository = $discountSchemeRepo;
+        $this->middleware('can:fees.view')->only(['index', 'show']);
+        $this->middleware('can:fees.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

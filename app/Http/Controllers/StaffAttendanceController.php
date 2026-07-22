@@ -12,6 +12,12 @@ use Laracasts\Flash\Flash;
 
 class StaffAttendanceController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['store', 'update']);
+    }
+
     public function index(Request $request)
     {
         $date = $request->input('date', today()->format('Y-m-d'));

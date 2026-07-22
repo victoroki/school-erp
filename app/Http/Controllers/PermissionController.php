@@ -17,10 +17,8 @@ class PermissionController extends AppBaseController
     public function __construct(PermissionRepository $permissionRepo)
     {
         $this->permissionRepository = $permissionRepo;
-        $this->middleware('can:permissions.index')->only('index');
-        $this->middleware('can:permissions.create')->only(['create', 'store']);
-        $this->middleware('can:permissions.edit')->only(['edit', 'update']);
-        $this->middleware('can:permissions.delete')->only('destroy');
+        $this->middleware('can:users.view')->only(['index', 'show']);
+        $this->middleware('can:users.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

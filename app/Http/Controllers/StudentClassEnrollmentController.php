@@ -21,6 +21,8 @@ class StudentClassEnrollmentController extends AppBaseController
     public function __construct(StudentClassEnrollmentRepository $studentClassEnrollmentRepo)
     {
         $this->studentClassEnrollmentRepository = $studentClassEnrollmentRepo;
+        $this->middleware('can:students.view')->only(['index', 'show']);
+        $this->middleware('can:students.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getDropdownData(){

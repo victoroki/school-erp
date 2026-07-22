@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\DB;
 
 class HRReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:hr.view');
+    }
+
     public function headcount(Request $request)
     {
         // Staff by Department

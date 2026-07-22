@@ -18,6 +18,8 @@ class SupplierController extends AppBaseController
     public function __construct(SupplierRepository $supplierRepo)
     {
         $this->supplierRepository = $supplierRepo;
+        $this->middleware('can:inventory.view')->only(['index', 'show']);
+        $this->middleware('can:inventory.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

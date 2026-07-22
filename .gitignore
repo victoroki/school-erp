@@ -36,3 +36,6 @@ desktop.ini
 # Build artifacts
 /public/build
 /public/mix-manifest.json
+
+# AI context file (paste into new chat sessions)
+CONTEXT1.md

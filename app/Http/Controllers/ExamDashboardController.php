@@ -15,6 +15,11 @@ use Illuminate\Support\Facades\DB;
 
 class ExamDashboardController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:exams.view');
+    }
+
     public function index()
     {
         $now = Carbon::now();

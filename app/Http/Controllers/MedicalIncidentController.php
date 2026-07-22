@@ -10,6 +10,12 @@ use Auth;
 
 class MedicalIncidentController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:students.view')->only(['index', 'show']);
+        $this->middleware('can:students.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
+
     public function index()
     {
         $medicalIncidents = MedicalIncident::with(['student', 'marker'])

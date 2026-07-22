@@ -19,6 +19,8 @@ class PayrollController extends AppBaseController
     public function __construct(PayrollRepository $payrollRepo)
     {
         $this->payrollRepository = $payrollRepo;
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

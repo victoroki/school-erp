@@ -17,6 +17,8 @@ class GradingScaleController extends AppBaseController
     public function __construct(GradingScaleRepository $gradingScaleRepo)
     {
         $this->gradingScaleRepository = $gradingScaleRepo;
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

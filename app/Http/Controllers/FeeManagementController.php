@@ -15,6 +15,8 @@ class FeeManagementController extends Controller
     public function __construct(\App\Services\FinanceService $financeService)
     {
         $this->financeService = $financeService;
+        $this->middleware('can:fees.view')->only(['index', 'show']);
+        $this->middleware('can:fees.collect')->only(['collect', 'receipt']);
     }
 
     public function index(Request $request)

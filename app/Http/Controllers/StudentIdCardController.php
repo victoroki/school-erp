@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 
 class StudentIdCardController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:students.view');
+    }
+
     public function generate($id)
     {
         $student = Student::with(['studentClassEnrollments.classSection.schoolClass', 'studentClassEnrollments.classSection.section', 'studentClassEnrollments.academicYear'])->findOrFail($id);

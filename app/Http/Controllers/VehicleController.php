@@ -18,6 +18,8 @@ class VehicleController extends AppBaseController
     public function __construct(VehicleRepository $vehicleRepo)
     {
         $this->vehicleRepository = $vehicleRepo;
+        $this->middleware('can:transport.view')->only(['index', 'show']);
+        $this->middleware('can:transport.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getDropdownData()

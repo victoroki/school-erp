@@ -10,6 +10,12 @@ use Laracasts\Flash\Flash;
 
 class StaffOnboardingController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['update']);
+    }
+
     public function index()
     {
         $onboardingStaff = Staff::whereHas('onboardingChecklist', function($q) {

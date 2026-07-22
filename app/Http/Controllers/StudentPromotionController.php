@@ -13,6 +13,11 @@ use DB;
 
 class StudentPromotionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:students.manage');
+    }
+
     public function index(Request $request)
     {
         $classes = SchoolClass::all();

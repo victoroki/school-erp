@@ -17,6 +17,7 @@ class LibraryDashboardController extends Controller
     public function __construct(LibraryService $libraryService)
     {
         $this->libraryService = $libraryService;
+        $this->middleware('can:library.view');
     }
 
     public function index()

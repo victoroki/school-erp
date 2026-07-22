@@ -1,3 +1,4 @@
+{{-- NOTE: UserRoleController has no resource routes. These views are orphaned. --}}
 <div class="card-body p-0">
     <div class="table-responsive">
         <table class="table" id="user-roles-table">

@@ -11,6 +11,12 @@ use Carbon\Carbon;
 
 class FinancialReportController extends AppBaseController
 {
+    public function __construct()
+    {
+        $this->middleware('can:finance.view');
+        $this->middleware('can:finance.export')->only(['cashflow']);
+    }
+
     public function index()
     {
         return view('financial_reports.index');

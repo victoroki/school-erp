@@ -10,6 +10,12 @@ use Auth;
 
 class DisciplinaryController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:discipline.view')->only(['index', 'show']);
+        $this->middleware('can:discipline.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
+
     public function index()
     {
         $disciplinaryRecords = DisciplinaryRecord::with(['student', 'reporter'])

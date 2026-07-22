@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 
 class AuditTrailController extends AppBaseController
 {
+    public function __construct()
+    {
+        $this->middleware('can:users.view');
+    }
+
     public function index(Request $request)
     {
         $logs = AuditTrail::with('user')->latest()->paginate(50);

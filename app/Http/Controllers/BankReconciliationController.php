@@ -9,6 +9,11 @@ use App\Models\BankTransaction;
 
 class BankReconciliationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:finance.view');
+    }
+
     public function index()
     {
         $bankAccounts = BankAccount::all();

@@ -17,6 +17,8 @@ class LibraryMemberController extends AppBaseController
     public function __construct(LibraryMemberRepository $libraryMemberRepo)
     {
         $this->libraryMemberRepository = $libraryMemberRepo;
+        $this->middleware('can:library.view')->only(['index', 'show']);
+        $this->middleware('can:library.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

@@ -11,6 +11,11 @@ use DB;
 
 class ExamAnalysisController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:exams.view');
+    }
+
     public function performance(Request $request)
     {
         $exams = Exam::pluck('name', 'exam_id');

@@ -9,6 +9,11 @@ use Flash;
 
 class StudentTransferController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:students.manage');
+    }
+
     /**
      * Show the form for transferring a student.
      */

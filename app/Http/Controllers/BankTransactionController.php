@@ -10,6 +10,12 @@ use DB;
 
 class BankTransactionController extends AppBaseController
 {
+    public function __construct()
+    {
+        $this->middleware('can:finance.view')->only(['index', 'show']);
+        $this->middleware('can:finance.manage')->only(['create', 'store']);
+    }
+
     public function index(Request $request)
     {
         $query = BankTransaction::with(['bankAccount', 'sourceAccount', 'targetAccount']);

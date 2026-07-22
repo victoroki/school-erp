@@ -11,13 +11,20 @@ use DB;
 
 class RequisitionController extends AppBaseController
 {
+    public function __construct()
+    {
+        $this->middleware('can:inventory.view')->only(['index', 'show']);
+        $this->middleware('can:inventory.manage')->only(['create', 'store']);
+        $this->middleware('can:inventory.approve')->only(['approve']);
+    }
+
     public function index()
     {
         // For 'My Requisitions', we filter by the logged-in user
         // If you want admins to see everything, you can add a check here
         $query = Requisition::with(['requestedBy', 'department']);
         
-        if (!auth()->user()->hasRole('Administrator')) {
+        if (!auth()->user()->hasPermission('inventory.manage')) {
             $query->where('requested_by', auth()->id());
         }
 

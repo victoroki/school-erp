@@ -19,6 +19,7 @@ class UserRoleController extends AppBaseController
     public function __construct(UserRoleRepository $userRoleRepo)
     {
         $this->userRoleRepository = $userRoleRepo;
+        $this->middleware('can:users.manage');
     }
 
     /**

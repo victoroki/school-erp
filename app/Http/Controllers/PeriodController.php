@@ -19,10 +19,8 @@ class PeriodController extends AppBaseController
         $this->periodRepository = $periodRepo;
 
         $this->middleware('auth');
-        $this->middleware('can:periods.index')->only(['index', 'show']);
-        $this->middleware('can:periods.create')->only(['create', 'store']);
-        $this->middleware('can:periods.edit')->only(['edit', 'update']);
-        $this->middleware('can:periods.delete')->only('destroy');
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

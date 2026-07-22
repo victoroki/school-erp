@@ -18,6 +18,8 @@ class BookController extends AppBaseController
     public function __construct(BookRepository $bookRepo)
     {
         $this->bookRepository = $bookRepo;
+        $this->middleware('can:library.view')->only(['index', 'show']);
+        $this->middleware('can:library.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getDropdownData(){

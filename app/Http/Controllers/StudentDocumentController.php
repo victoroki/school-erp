@@ -19,6 +19,8 @@ class StudentDocumentController extends AppBaseController
     public function __construct(StudentDocumentRepository $studentDocumentRepo)
     {
         $this->studentDocumentRepository = $studentDocumentRepo;
+        $this->middleware('can:students.view')->only(['index', 'show']);
+        $this->middleware('can:students.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

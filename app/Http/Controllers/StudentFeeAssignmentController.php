@@ -21,6 +21,8 @@ class StudentFeeAssignmentController extends Controller
     public function __construct(FeeAssignmentService $feeAssignmentService)
     {
         $this->feeAssignmentService = $feeAssignmentService;
+        $this->middleware('can:fees.view')->only(['index', 'show']);
+        $this->middleware('can:fees.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     public function index(Request $request)

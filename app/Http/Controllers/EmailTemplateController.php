@@ -19,6 +19,8 @@ class EmailTemplateController extends AppBaseController
     public function __construct(EmailTemplateRepository $emailTemplateRepo)
     {
         $this->emailTemplateRepository = $emailTemplateRepo;
+        $this->middleware('can:communication.view')->only(['index', 'show']);
+        $this->middleware('can:communication.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getDropdownData()

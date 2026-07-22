@@ -11,6 +11,12 @@ use Laracasts\Flash\Flash;
 
 class StaffExitController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['create', 'store', 'update']);
+    }
+
     public function index()
     {
         $exitingStaff = Staff::whereIn('employment_status', ['resigned', 'terminated'])

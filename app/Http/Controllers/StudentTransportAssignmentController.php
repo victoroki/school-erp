@@ -12,6 +12,12 @@ use Flash;
 
 class StudentTransportAssignmentController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:transport.view')->only(['index', 'show']);
+        $this->middleware('can:transport.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
+
     public function index(Request $request)
     {
         $query = StudentTransportAssignment::with(['student', 'route', 'pickupStop', 'dropStop']);

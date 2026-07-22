@@ -19,6 +19,8 @@ class MessageController extends AppBaseController
     public function __construct(MessageRepository $messageRepo)
     {
         $this->messageRepository = $messageRepo;
+        $this->middleware('can:communication.view')->only(['index', 'show']);
+        $this->middleware('can:communication.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getDropdownData()

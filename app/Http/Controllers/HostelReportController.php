@@ -11,6 +11,11 @@ use App\Models\HostelAllocation;
 
 class HostelReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:hostel.view');
+    }
+
     public function index()
     {
         return view('hostels.reports');

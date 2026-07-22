@@ -11,6 +11,12 @@ use Flash;
 
 class IncomeController extends AppBaseController
 {
+    public function __construct()
+    {
+        $this->middleware('can:finance.view')->only(['index', 'show']);
+        $this->middleware('can:finance.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
+
     public function index(Request $request)
     {
         $query = Income::with(['category', 'bankAccount']);

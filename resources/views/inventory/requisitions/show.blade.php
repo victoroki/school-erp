@@ -96,7 +96,7 @@
                     </div>
                 </div>
 
-                @if($requisition->status == 'Pending' && auth()->user()->hasRole('Admin'))
+                @if($requisition->status == 'Pending' && auth()->user()->hasPermission('inventory.approve'))
                     <div class="card border-0 shadow-sm bg-light">
                         <div class="card-header bg-light border-bottom-0">
                             <h6 class="font-weight-bold mb-0">Approval Actions</h6>

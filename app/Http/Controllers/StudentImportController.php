@@ -10,6 +10,11 @@ use DB;
 
 class StudentImportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:students.import');
+    }
+
     public function index()
     {
         return view('students.import');

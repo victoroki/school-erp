@@ -17,6 +17,8 @@ class HostelController extends AppBaseController
     public function __construct(HostelRepository $hostelRepo)
     {
         $this->hostelRepository = $hostelRepo;
+        $this->middleware('can:hostel.view')->only(['index', 'show']);
+        $this->middleware('can:hostel.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getDropdownData()

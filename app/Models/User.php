@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -12,60 +13,90 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
 
-    public function roles(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function roles(): BelongsToMany
     {
-        return $this->belongsToMany(\App\Models\Role::class, 'user_roles', 'user_id', 'role_id');
+        return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id');
     }
 
-    public function hasRole($role)
+    /**
+     * The user's staff record (if any). Used by HR policies for
+     * HOD/department scoping and by teacher scoping.
+     */
+    public function staff(): HasOne
     {
-        if (is_string($role)) {
-            return $this->roles->contains('role_name', $role);
-        }
-        return $role->intersect($this->roles)->count() > 0;
+        return $this->hasOne(Staff::class, 'user_id');
     }
 
-    public function assignRole($role)
+    /**
+     * Check if the user has a role with the given name.
+     * Operates on the already-loaded roles collection (no extra query).
+     */
+    public function hasRole(string $role): bool
+    {
+        return $this->roles->contains('role_name', $role);
+    }
+
+    /**
+     * Check if the user holds any of the given role names.
+     */
+    public function hasAnyRole(array $roles): bool
+    {
+        return $this->roles->whereIn('role_name', $roles)->isNotEmpty();
+    }
+
+    public function assignRole($role): void
     {
         if (is_string($role)) {
-            $role = \App\Models\Role::where('role_name', $role)->firstOrFail();
+            $role = Role::where('role_name', $role)->firstOrFail();
         }
         $this->roles()->syncWithoutDetaching($role);
     }
 
-    public function hasPermission($permission)
+    /**
+     * Check if the user has a specific permission.
+     *
+     * IMPORTANT: roles.permissions must be eager-loaded before this is called
+     * (done by Authenticate middleware). If not loaded, falls back to loading
+     * them now (slower path, for safety).
+     */
+    public function hasPermission(string $permission): bool
     {
-        return $this->roles->flatMap->permissions->pluck('permission_name')->contains($permission);
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles.permissions');
+        }
+
+        return $this->roles->flatMap->permissions
+            ->pluck('permission_name')
+            ->contains($permission);
+    }
+
+    /**
+     * Get all permission names the user holds (flattened from all roles).
+     */
+    public function getAllPermissions(): \Illuminate\Support\Collection
+    {
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles.permissions');
+        }
+
+        return $this->roles->flatMap->permissions
+            ->pluck('permission_name')
+            ->unique();
     }
 }

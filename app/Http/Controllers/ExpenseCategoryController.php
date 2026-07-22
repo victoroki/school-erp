@@ -17,6 +17,8 @@ class ExpenseCategoryController extends AppBaseController
     public function __construct(ExpenseCategoryRepository $expenseCategoryRepo)
     {
         $this->expenseCategoryRepository = $expenseCategoryRepo;
+        $this->middleware('can:finance.view')->only(['index', 'show']);
+        $this->middleware('can:finance.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

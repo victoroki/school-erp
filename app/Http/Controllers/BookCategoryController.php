@@ -17,6 +17,8 @@ class BookCategoryController extends AppBaseController
     public function __construct(BookCategoryRepository $bookCategoryRepo)
     {
         $this->bookCategoryRepository = $bookCategoryRepo;
+        $this->middleware('can:library.view')->only(['index', 'show']);
+        $this->middleware('can:library.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

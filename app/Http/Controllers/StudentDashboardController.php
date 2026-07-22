@@ -17,6 +17,7 @@ class StudentDashboardController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('can:students.view');
     }
 
     public function index()

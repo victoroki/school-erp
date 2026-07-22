@@ -14,6 +14,13 @@ use Laracasts\Flash\Flash;
 
 class LeaveApplicationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['create', 'store']);
+        $this->middleware('can:hr.approve')->only(['approve']);
+    }
+
     public function index(Request $request)
     {
         $query = LeaveApplication::with(['staff', 'leaveType', 'reliefStaff']);
@@ -142,7 +149,7 @@ class LeaveApplicationController extends Controller
         // Determine approval level
         $isHOD = $currentStaff && $leave->staff->department_id == $currentStaff->department_id 
                  && $leave->staff->department->hod_id == $currentStaff->staff_id;
-        $isHR = $user->hasRole('HR Manager') || $user->hasRole('Admin');
+        $isHR = $user->hasPermission('hr.approve');
 
         DB::beginTransaction();
         try {

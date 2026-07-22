@@ -1,3 +1,4 @@
+{{-- NOTE: UserRoleController has no resource routes. These views are orphaned. --}}
 @extends('layouts.app')
 
 @section('content')

@@ -15,6 +15,13 @@ use Flash;
 
 class ExpensesController extends AppBaseController
 {
+    public function __construct()
+    {
+        $this->middleware('can:finance.view')->only(['index', 'show']);
+        $this->middleware('can:finance.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+        $this->middleware('can:finance.approve')->only(['approve']);
+    }
+
     public function index(Request $request)
     {
         $query = Expenses::with(['category', 'bankAccount', 'requestedBy', 'approvedBy']);

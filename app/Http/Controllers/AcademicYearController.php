@@ -19,10 +19,8 @@ class AcademicYearController extends AppBaseController
         $this->academicYearRepository = $academicYearRepo;
 
         $this->middleware('auth');
-        $this->middleware('can:academic-years.index')->only(['index', 'show']);
-        $this->middleware('can:academic-years.create')->only(['create', 'store']);
-        $this->middleware('can:academic-years.edit')->only(['edit', 'update']);
-        $this->middleware('can:academic-years.delete')->only('destroy');
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

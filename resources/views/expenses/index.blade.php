@@ -98,13 +98,13 @@
                                             <a href="{{ route('expenses.show', [$expense->expense_id]) }}" class="btn btn-sm btn-outline-info rounded-circle mr-1" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            @if($expense->status == 'pending' && Auth::user()->hasRole('admin'))
+                                            @if($expense->status == 'pending' && Auth::user()->hasPermission('finance.approve'))
                                                 {!! Form::open(['route' => ['expenses.approve', $expense->expense_id], 'method' => 'post', 'class' => 'd-inline']) !!}
                                                 {!! Form::button('<i class="fas fa-check"></i>', ['type' => 'submit', 'class' => 'btn btn-sm btn-outline-success rounded-circle mr-1', 'title' => 'Approve']) !!}
                                                 {!! Form::close() !!}
                                             @endif
                                             
-                                            @if($expense->status == 'approved' && Auth::user()->hasRole('admin'))
+                                            @if($expense->status == 'approved' && Auth::user()->hasPermission('finance.manage'))
                                                 {!! Form::open(['route' => ['expenses.pay', $expense->expense_id], 'method' => 'post', 'class' => 'd-inline']) !!}
                                                 {!! Form::button('<i class="fas fa-hand-holding-usd"></i>', ['type' => 'submit', 'class' => 'btn btn-sm btn-outline-primary rounded-circle mr-1', 'title' => 'Mark as Paid']) !!}
                                                 {!! Form::close() !!}

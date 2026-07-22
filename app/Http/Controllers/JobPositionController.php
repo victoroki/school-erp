@@ -19,6 +19,8 @@ class JobPositionController extends AppBaseController
     public function __construct(JobPositionRepository $jobPositionRepo)
     {
         $this->jobPositionRepository = $jobPositionRepo;
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

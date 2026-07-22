@@ -9,6 +9,11 @@ use Illuminate\Http\Request;
 
 class CommunicationDashboardController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:communication.view');
+    }
+
     public function index()
     {
         $stats = [

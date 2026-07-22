@@ -39,8 +39,8 @@ class StaffController extends AppBaseController
         $this->userRepository = $userRepo;
         $this->departmentRepository = $departmentRepo;
 
-        // Apply middleware for authentication
-        $this->middleware('auth');
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

@@ -11,6 +11,12 @@ use DB;
 
 class PurchaseOrderController extends AppBaseController
 {
+    public function __construct()
+    {
+        $this->middleware('can:inventory.view')->only(['index', 'show']);
+        $this->middleware('can:inventory.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
+
     public function index()
     {
         $purchaseOrders = PurchaseOrder::with(['supplier'])->latest()->paginate(15);

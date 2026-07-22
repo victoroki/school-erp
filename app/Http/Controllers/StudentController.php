@@ -21,6 +21,8 @@ class StudentController extends AppBaseController
     public function __construct(StudentRepository $studentRepo)
     {
         $this->studentRepository = $studentRepo;
+        $this->middleware('can:students.view')->only(['index', 'show']);
+        $this->middleware('can:students.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

@@ -19,6 +19,16 @@ use App\Models\ExamResult;
 
 class ExamResultController extends AppBaseController
 {
+    /** @var ExamResultRepository */
+    private $examResultRepository;
+
+    public function __construct(ExamResultRepository $examResultRepo)
+    {
+        $this->examResultRepository = $examResultRepo;
+        $this->middleware('can:exams.view')->only(['index', 'show']);
+        $this->middleware('can:exams.manage')->only(['bulk', 'store', 'update', 'destroy']);
+    }
+
     public function bulk(Request $request)
     {
         $exams = Exam::pluck('name', 'exam_id');
@@ -195,13 +205,6 @@ class ExamResultController extends AppBaseController
 
         Flash::success("Successfully imported $importCount results.");
         return redirect()->back()->withInput();
-    }
-    /** @var ExamResultRepository $examResultRepository*/
-    private $examResultRepository;
-
-    public function __construct(ExamResultRepository $examResultRepo)
-    {
-        $this->examResultRepository = $examResultRepo;
     }
 
     private function getDropdownData()

@@ -21,6 +21,8 @@ class ExamScheduleController extends AppBaseController
     public function __construct(ExamScheduleRepository $examScheduleRepo)
     {
         $this->examScheduleRepository = $examScheduleRepo;
+        $this->middleware('can:exams.view')->only(['index', 'show']);
+        $this->middleware('can:exams.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

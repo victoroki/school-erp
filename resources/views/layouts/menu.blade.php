@@ -383,7 +383,8 @@
         </p>
     </a>
     <ul class="nav nav-treeview">
-        <!-- Dashboard -->
+{{-- DEPRECATED: This file is no longer used. Replaced by MenuService + menu-tooltip-fix.blade.php. --}}
+<!-- Dashboard -->
         <li class="nav-item">
             <a href="{{ route('hr.dashboard') }}" class="nav-link {{ Request::is('hr/dashboard') ? 'active' : '' }}">
                 <i class="fas fa-tachometer-alt nav-icon text-secondary"></i>

@@ -13,6 +13,11 @@ use DB;
 
 class FeeDashboardController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:fees.view');
+    }
+
     public function index()
     {
         $currentYear = AcademicYear::where('is_current', true)->first();

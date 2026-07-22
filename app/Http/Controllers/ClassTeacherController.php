@@ -13,6 +13,8 @@ class ClassTeacherController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('can:academics.view')->only(['index']);
+        $this->middleware('can:academics.manage')->only(['assign', 'store']);
     }
 
     public function index(Request $request)

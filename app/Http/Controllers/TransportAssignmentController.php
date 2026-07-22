@@ -21,6 +21,8 @@ class TransportAssignmentController extends AppBaseController
     public function __construct(TransportAssignmentRepository $transportAssignmentRepo)
     {
         $this->transportAssignmentRepository = $transportAssignmentRepo;
+        $this->middleware('can:transport.view')->only(['index', 'show']);
+        $this->middleware('can:transport.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getDropdownData()

@@ -11,6 +11,12 @@ use Illuminate\Http\Request;
 
 class ExamReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:exams.view');
+        $this->middleware('can:exams.export')->only(['bulk']);
+    }
+
     public function generate(Request $request)
     {
         $exams = Exam::pluck('name', 'exam_id');

@@ -24,6 +24,8 @@ class FeeStructureController extends AppBaseController
     {
         $this->feeStructureRepository = $feeStructureRepo;
         $this->financeService = $financeService;
+        $this->middleware('can:fees.view')->only(['index', 'show']);
+        $this->middleware('can:fees.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

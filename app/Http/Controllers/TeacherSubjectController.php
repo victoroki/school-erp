@@ -25,10 +25,8 @@ class TeacherSubjectController extends AppBaseController
         $this->teacherSubjectRepository = $teacherSubjectRepo;
 
         $this->middleware('auth');
-        $this->middleware('can:teacher-subjects.index')->only(['index', 'show']);
-        $this->middleware('can:teacher-subjects.create')->only(['create', 'store']);
-        $this->middleware('can:teacher-subjects.edit')->only(['edit', 'update']);
-        $this->middleware('can:teacher-subjects.delete')->only('destroy');
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

@@ -15,6 +15,8 @@ class StudentAttendanceController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.manage')->only(['store', 'update']);
     }
 
     public function index(Request $request)

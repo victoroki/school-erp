@@ -8,6 +8,12 @@ use Flash;
 
 class LearningAreaController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
+
     public function index()
     {
         $learningAreas = CbcLearningArea::paginate(10);

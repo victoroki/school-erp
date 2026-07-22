@@ -17,6 +17,8 @@ class LeaveTypeController extends AppBaseController
     public function __construct(LeaveTypeRepository $leaveTypeRepo)
     {
         $this->leaveTypeRepository = $leaveTypeRepo;
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

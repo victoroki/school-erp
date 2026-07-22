@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::model($leaveType, ['route' => ['leaveTypes.update', $leaveType->id], 'method' => 'patch']) !!}
+            {!! Form::model($leaveType, ['route' => ['leave-types.update', $leaveType->id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">
@@ -29,7 +29,7 @@
 
             <div class="card-footer">
                 {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('leaveTypes.index') }}" class="btn btn-default"> Cancel </a>
+                <a href="{{ route('leave-types.index') }}" class="btn btn-default"> Cancel </a>
             </div>
 
             {!! Form::close() !!}

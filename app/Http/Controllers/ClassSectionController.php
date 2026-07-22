@@ -19,10 +19,8 @@ class ClassSectionController extends AppBaseController
         $this->classSectionRepository = $classSectionRepo;
 
         $this->middleware('auth');
-        $this->middleware('can:class-sections.index')->only(['index', 'show']);
-        $this->middleware('can:class-sections.create')->only(['create', 'store']);
-        $this->middleware('can:class-sections.edit')->only(['edit', 'update']);
-        $this->middleware('can:class-sections.delete')->only('destroy');
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

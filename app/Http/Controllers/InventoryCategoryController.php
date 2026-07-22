@@ -17,6 +17,8 @@ class InventoryCategoryController extends AppBaseController
     public function __construct(InventoryCategoryRepository $inventoryCategoryRepo)
     {
         $this->inventoryCategoryRepository = $inventoryCategoryRepo;
+        $this->middleware('can:inventory.view')->only(['index', 'show']);
+        $this->middleware('can:inventory.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

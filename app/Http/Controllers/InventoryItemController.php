@@ -20,6 +20,8 @@ class InventoryItemController extends AppBaseController
     public function __construct(InventoryItemRepository $inventoryItemRepo)
     {
         $this->inventoryItemRepository = $inventoryItemRepo;
+        $this->middleware('can:inventory.view')->only(['index', 'show']);
+        $this->middleware('can:inventory.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getdropdownData(){

@@ -11,6 +11,11 @@ use Auth;
 
 class MarksApprovalController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:exams.approve');
+    }
+
     public function index(Request $request)
     {
         $exams = Exam::pluck('name', 'exam_id');

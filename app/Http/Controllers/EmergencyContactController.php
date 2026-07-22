@@ -18,6 +18,8 @@ class EmergencyContactController extends AppBaseController
     public function __construct(EmergencyContactRepository $emergencyContactRepo)
     {
         $this->emergencyContactRepository = $emergencyContactRepo;
+        $this->middleware('can:students.view')->only(['index', 'show']);
+        $this->middleware('can:students.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

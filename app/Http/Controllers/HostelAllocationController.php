@@ -22,6 +22,8 @@ class HostelAllocationController extends AppBaseController
     public function __construct(HostelAllocationRepository $hostelAllocationRepo)
     {
         $this->hostelAllocationRepository = $hostelAllocationRepo;
+        $this->middleware('can:hostel.view')->only(['index', 'show']);
+        $this->middleware('can:hostel.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
         private function getDropdownData()

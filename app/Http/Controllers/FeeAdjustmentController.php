@@ -13,6 +13,13 @@ use DB;
 
 class FeeAdjustmentController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:fees.view')->only(['index', 'show']);
+        $this->middleware('can:fees.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+        $this->middleware('can:fees.approve')->only(['approve']);
+    }
+
     public function index(Request $request)
     {
         $query = FeeAdjustment::with(['student', 'studentFeeAssignment.feeStructure.category', 'requestedBy', 'approvedBy'])

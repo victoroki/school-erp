@@ -17,6 +17,12 @@ use App\Jobs\SendBulkMessage;
 
 class CommunicationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:communication.view')->only(['index', 'show', 'sentMessages']);
+        $this->middleware('can:communication.manage')->only(['compose', 'send', 'store']);
+    }
+
     public function compose(Request $request)
     {
         $smsTemplates = SmsTemplate::where('status', 'active')->get();

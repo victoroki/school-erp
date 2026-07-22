@@ -9,6 +9,12 @@ use Flash;
 
 class StrandController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
+
     public function index()
     {
         $strands = CbcStrand::with('learningArea')->paginate(15);
