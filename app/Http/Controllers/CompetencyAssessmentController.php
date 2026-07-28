@@ -16,7 +16,7 @@ class CompetencyAssessmentController extends Controller
     public function __construct()
     {
         $this->middleware('can:academics.view')->only(['index', 'show']);
-        $this->middleware('can:academics.manage')->only(['store', 'update']);
+        $this->middleware('can:academics.settings.manage')->only(['store', 'update']);
     }
 
     public function index(Request $request)

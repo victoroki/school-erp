@@ -11,7 +11,7 @@ Bank Account Details
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right"
-                       href="{{ route('bank-accounts.index') }}">
+                       href="{{ route('bankAccounts.index') }}">
                                                     Back
                                             </a>
                 </div>

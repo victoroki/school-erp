@@ -11,6 +11,7 @@ use App\Models\ClassSection;
 use App\Models\Subject;
 use App\Models\GradingScale;
 use App\Repositories\ExamResultRepository;
+use App\Services\TeacherScopeService;
 use Illuminate\Http\Request;
 use Flash;
 use Auth;
@@ -22,25 +23,61 @@ class ExamResultController extends AppBaseController
     /** @var ExamResultRepository */
     private $examResultRepository;
 
-    public function __construct(ExamResultRepository $examResultRepo)
+    private TeacherScopeService $teacherScope;
+
+    public function __construct(ExamResultRepository $examResultRepo, TeacherScopeService $teacherScope)
     {
         $this->examResultRepository = $examResultRepo;
-        $this->middleware('can:exams.view')->only(['index', 'show']);
-        $this->middleware('can:exams.manage')->only(['bulk', 'store', 'update', 'destroy']);
+        $this->teacherScope = $teacherScope;
+        $this->middleware('can:exams.results.view-own')->only(['index', 'show']);
+        $this->middleware('can:exams.marks.enter-own')->only(['bulk', 'postBulk']);
+        $this->middleware('can:exams.import')->only(['importTemplate', 'importStore']);
+        $this->middleware('can:exams.marks.enter-own')->only(['store', 'update', 'destroy', 'create', 'edit']);
     }
 
     public function bulk(Request $request)
     {
-        $exams = Exam::pluck('name', 'exam_id');
-        $classSections = ClassSection::with(['schoolClass', 'section'])->get()->mapWithKeys(function ($cs) {
-            return [$cs->class_section_id => ($cs->schoolClass->name ?? '') . ' - ' . ($cs->section->name ?? '')];
-        });
-        $subjects = Subject::pluck('name', 'subject_id');
+        $user = auth()->user();
+        $viewAll = $user->hasPermission('exams.results.view-all');
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if ($viewAll || $hasSettings) {
+            $exams = Exam::pluck('name', 'exam_id');
+            $classSections = ClassSection::with(['schoolClass', 'section'])->get()->mapWithKeys(function ($cs) {
+                return [$cs->class_section_id => ($cs->schoolClass->name ?? '') . ' - ' . ($cs->section->name ?? '')];
+            });
+            $subjects = Subject::pluck('name', 'subject_id');
+        } else {
+            $classSectionIds = $this->teacherScope->getClassSectionIds($user);
+            $subjectIds = $this->teacherScope->getSubjectIds($user);
+
+            $exams = Exam::whereHas('examSchedules', function ($q) use ($classSectionIds) {
+                $q->whereIn('class_section_id', $classSectionIds);
+            })->orWhereDoesntHave('examSchedules')->pluck('name', 'exam_id');
+
+            $classSections = ClassSection::with(['schoolClass', 'section'])
+                ->whereIn('class_section_id', $classSectionIds)
+                ->get()
+                ->mapWithKeys(function ($cs) {
+                    return [$cs->class_section_id => ($cs->schoolClass->name ?? '') . ' - ' . ($cs->section->name ?? '')];
+                });
+
+            $subjects = Subject::whereIn('subject_id', $subjectIds)->pluck('name', 'subject_id');
+        }
 
         $students = [];
         $existingResults = [];
 
         if ($request->filled(['exam_id', 'class_section_id', 'subject_id'])) {
+            if (!$viewAll && !$hasSettings) {
+                $allowedIds = $this->teacherScope->getClassSectionIds($user);
+                $allowedSubjectIds = $this->teacherScope->getSubjectIds($user);
+                if (!$allowedIds->contains((int) $request->class_section_id) || !$allowedSubjectIds->contains((int) $request->subject_id)) {
+                    Flash::error('You are not authorized to enter marks for this class or subject.');
+                    return redirect()->route('exam-results.bulk');
+                }
+            }
+
             $students = Student::whereHas('studentClassEnrollments', function ($q) use ($request) {
                 $q->where('class_section_id', $request->class_section_id)
                   ->where('status', 'active');
@@ -65,10 +102,23 @@ class ExamResultController extends AppBaseController
             'marks' => 'required|array'
         ]);
 
+        $user = auth()->user();
+        $viewAll = $user->hasPermission('exams.results.view-all');
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if (!$viewAll && !$hasSettings) {
+            $allowedIds = $this->teacherScope->getClassSectionIds($user);
+            $allowedSubjectIds = $this->teacherScope->getSubjectIds($user);
+            if (!$allowedIds->contains((int) $request->class_section_id) || !$allowedSubjectIds->contains((int) $request->subject_id)) {
+                Flash::error('You are not authorized to enter marks for this class or subject.');
+                return redirect()->back();
+            }
+        }
+
         $exam_id = $request->exam_id;
         $class_section_id = $request->class_section_id;
         $subject_id = $request->subject_id;
-        $marks = $request->marks; // array student_id => marks
+        $marks = $request->marks;
         $remarks_arr = $request->remarks ?? [];
 
         DB::transaction(function () use ($exam_id, $class_section_id, $subject_id, $marks, $remarks_arr) {
@@ -95,9 +145,6 @@ class ExamResultController extends AppBaseController
         return redirect()->back()->withInput();
     }
 
-    /**
-     * Generate and download a CSV template for bulk import.
-     */
     public function importTemplate(Request $request)
     {
         $request->validate([
@@ -105,6 +152,19 @@ class ExamResultController extends AppBaseController
             'class_section_id' => 'required',
             'subject_id' => 'required',
         ]);
+
+        $user = auth()->user();
+        $viewAll = $user->hasPermission('exams.results.view-all');
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if (!$viewAll && !$hasSettings) {
+            $allowedIds = $this->teacherScope->getClassSectionIds($user);
+            $allowedSubjectIds = $this->teacherScope->getSubjectIds($user);
+            if (!$allowedIds->contains((int) $request->class_section_id) || !$allowedSubjectIds->contains((int) $request->subject_id)) {
+                Flash::error('You are not authorized to export marks template for this class or subject.');
+                return redirect()->back();
+            }
+        }
 
         $exam = Exam::findOrFail($request->exam_id);
         $classSection = ClassSection::with(['schoolClass', 'section'])->findOrFail($request->class_section_id);
@@ -127,7 +187,6 @@ class ExamResultController extends AppBaseController
 
         $callback = function() use ($students) {
             $file = fopen('php://output', 'w');
-            // CSV Headers
             fputcsv($file, ['STUDENT_ID', 'ADMISSION_NO', 'STUDENT_NAME', 'MARKS_OBTAINED', 'REMARKS']);
 
             foreach ($students as $student) {
@@ -135,8 +194,8 @@ class ExamResultController extends AppBaseController
                     $student->student_id,
                     $student->admission_no,
                     $student->full_name,
-                    '', // Empty marks for user to fill
-                    ''  // Empty remarks
+                    '',
+                    ''
                 ]);
             }
             fclose($file);
@@ -145,9 +204,6 @@ class ExamResultController extends AppBaseController
         return response()->stream($callback, 200, $headers);
     }
 
-    /**
-     * Handle bulk import from uploaded CSV.
-     */
     public function importStore(Request $request)
     {
         $request->validate([
@@ -157,16 +213,28 @@ class ExamResultController extends AppBaseController
             'excel_file' => 'required|file|mimes:csv,txt'
         ]);
 
+        $user = auth()->user();
+        $viewAll = $user->hasPermission('exams.results.view-all');
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if (!$viewAll && !$hasSettings) {
+            $allowedIds = $this->teacherScope->getClassSectionIds($user);
+            $allowedSubjectIds = $this->teacherScope->getSubjectIds($user);
+            if (!$allowedIds->contains((int) $request->class_section_id) || !$allowedSubjectIds->contains((int) $request->subject_id)) {
+                Flash::error('You are not authorized to import marks for this class or subject.');
+                return redirect()->back();
+            }
+        }
+
         $exam_id = $request->exam_id;
         $class_section_id = $request->class_section_id;
         $subject_id = $request->subject_id;
         $file = $request->file('excel_file');
 
         $importCount = 0;
-        $errorCount = 0;
 
         if (($handle = fopen($file->getRealPath(), "r")) !== FALSE) {
-            fgetcsv($handle); // Skip header row
+            fgetcsv($handle);
             
             DB::beginTransaction();
             try {
@@ -209,39 +277,74 @@ class ExamResultController extends AppBaseController
 
     private function getDropdownData()
     {
-        // Get students with full name and ID
-        $students = Student::all()->mapWithKeys(function ($student) {
+        $user = auth()->user();
+        $viewAll = $user->hasPermission('exams.results.view-all');
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if ($viewAll || $hasSettings) {
+            $students = Student::all()->mapWithKeys(function ($student) {
+                return [$student->student_id => $student->first_name . ' ' . $student->last_name . ' (' . $student->admission_no . ')'];
+            });
+
+            $classSections = ClassSection::with(['class', 'section'])->get()->mapWithKeys(function ($cs) {
+                $name = ($cs->class->name ?? 'N/A') . ' - ' . ($cs->section->name ?? 'N/A');
+                return [$cs->class_section_id => $name];
+            });
+
+            return [
+                'exams' => Exam::pluck('name', 'exam_id'),
+                'students' => $students,
+                'classSections' => $classSections,
+                'subjects' => Subject::pluck('name', 'subject_id'),
+            ];
+        }
+
+        $classSectionIds = $this->teacherScope->getClassSectionIds($user);
+        $subjectIds = $this->teacherScope->getSubjectIds($user);
+
+        $students = Student::whereHas('studentClassEnrollments', function ($q) use ($classSectionIds) {
+            $q->whereIn('class_section_id', $classSectionIds);
+        })->get()->mapWithKeys(function ($student) {
             return [$student->student_id => $student->first_name . ' ' . $student->last_name . ' (' . $student->admission_no . ')'];
         });
 
-        // Get class sections with class name and section name
-        $classSections = ClassSection::with(['class', 'section'])->get()->mapWithKeys(function ($cs) {
-            $name = ($cs->class->name ?? 'N/A') . ' - ' . ($cs->section->name ?? 'N/A');
-            return [$cs->class_section_id => $name];
-        });
+        $classSections = ClassSection::with(['class', 'section'])
+            ->whereIn('class_section_id', $classSectionIds)
+            ->get()
+            ->mapWithKeys(function ($cs) {
+                $name = ($cs->class->name ?? 'N/A') . ' - ' . ($cs->section->name ?? 'N/A');
+                return [$cs->class_section_id => $name];
+            });
 
         return [
-            'exams' => Exam::pluck('name', 'exam_id'),
+            'exams' => Exam::whereHas('examSchedules', function ($q) use ($classSectionIds) {
+                $q->whereIn('class_section_id', $classSectionIds);
+            })->orWhereDoesntHave('examSchedules')->pluck('name', 'exam_id'),
             'students' => $students,
             'classSections' => $classSections,
-            'subjects' => Subject::pluck('name', 'subject_id'),
+            'subjects' => Subject::whereIn('subject_id', $subjectIds)->pluck('name', 'subject_id'),
         ];
     }
 
-    /**
-     * Display a listing of the ExamResult.
-     */
     public function index(Request $request)
     {
-        $examResults = $this->examResultRepository->paginate(10);
+        $user = auth()->user();
+        $viewAll = $user->hasPermission('exams.results.view-all');
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if ($viewAll || $hasSettings) {
+            $examResults = $this->examResultRepository->paginate(10);
+        } else {
+            $classSectionIds = $this->teacherScope->getClassSectionIds($user);
+            $examResults = ExamResult::whereIn('class_section_id', $classSectionIds)
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+        }
 
         return view('exam_results.index')
             ->with('examResults', $examResults);
     }
 
-    /**
-     * Show the form for creating a new ExamResult.
-     */
     public function create()
     {
         $dropdownData = $this->getDropdownData();
@@ -249,11 +352,25 @@ class ExamResultController extends AppBaseController
         return view('exam_results.create', $dropdownData);
     }
 
-    /**
-     * Store a newly created ExamResult in storage.
-     */
     public function store(CreateExamResultRequest $request)
     {
+        $user = auth()->user();
+        $viewAll = $user->hasPermission('exams.results.view-all');
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if (!$viewAll && !$hasSettings) {
+            $allowedIds = $this->teacherScope->getClassSectionIds($user);
+            $allowedSubjectIds = $this->teacherScope->getSubjectIds($user);
+            if (!empty($request->class_section_id) && !$allowedIds->contains((int) $request->class_section_id)) {
+                Flash::error('You are not authorized to add results for this class.');
+                return redirect()->back();
+            }
+            if (!empty($request->subject_id) && !$allowedSubjectIds->contains((int) $request->subject_id)) {
+                Flash::error('You are not authorized to add results for this subject.');
+                return redirect()->back();
+            }
+        }
+
         $input = $request->all();
         $input['created_by'] = Auth::id();
 
@@ -264,9 +381,6 @@ class ExamResultController extends AppBaseController
         return redirect(route('exam-results.index'));
     }
 
-    /**
-     * Display the specified ExamResult.
-     */
     public function show($id)
     {
         $examResult = $this->examResultRepository->find($id);
@@ -276,12 +390,21 @@ class ExamResultController extends AppBaseController
             return redirect(route('exam-results.index'));
         }
 
+        $user = auth()->user();
+        $viewAll = $user->hasPermission('exams.results.view-all');
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if (!$viewAll && !$hasSettings) {
+            $allowedIds = $this->teacherScope->getClassSectionIds($user);
+            if (!$allowedIds->contains((int) $examResult->class_section_id)) {
+                Flash::error('You are not authorized to view this result.');
+                return redirect(route('exam-results.index'));
+            }
+        }
+
         return view('exam_results.show')->with('examResult', $examResult);
     }
 
-    /**
-     * Show the form for editing the specified ExamResult.
-     */
     public function edit($id)
     {
         $examResult = $this->examResultRepository->find($id);
@@ -291,14 +414,28 @@ class ExamResultController extends AppBaseController
             return redirect(route('exam-results.index'));
         }
 
+        $user = auth()->user();
+        $viewAll = $user->hasPermission('exams.results.view-all');
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if (!$viewAll && !$hasSettings) {
+            $allowedIds = $this->teacherScope->getClassSectionIds($user);
+            $allowedSubjectIds = $this->teacherScope->getSubjectIds($user);
+            if (!$allowedIds->contains((int) $examResult->class_section_id)) {
+                Flash::error('You are not authorized to edit this result.');
+                return redirect(route('exam-results.index'));
+            }
+            if (!$allowedSubjectIds->contains((int) $examResult->subject_id)) {
+                Flash::error('You are not authorized to edit results for this subject.');
+                return redirect(route('exam-results.index'));
+            }
+        }
+
         $dropdownData = $this->getDropdownData();
 
         return view('exam_results.edit', array_merge(['examResult' => $examResult], $dropdownData));
     }
 
-    /**
-     * Update the specified ExamResult in storage.
-     */
     public function update($id, UpdateExamResultRequest $request)
     {
         $examResult = $this->examResultRepository->find($id);
@@ -308,6 +445,23 @@ class ExamResultController extends AppBaseController
             return redirect(route('exam-results.index'));
         }
 
+        $user = auth()->user();
+        $viewAll = $user->hasPermission('exams.results.view-all');
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if (!$viewAll && !$hasSettings) {
+            $allowedIds = $this->teacherScope->getClassSectionIds($user);
+            $allowedSubjectIds = $this->teacherScope->getSubjectIds($user);
+            if (!$allowedIds->contains((int) $examResult->class_section_id)) {
+                Flash::error('You are not authorized to update this result.');
+                return redirect(route('exam-results.index'));
+            }
+            if (!$allowedSubjectIds->contains((int) $examResult->subject_id)) {
+                Flash::error('You are not authorized to update results for this subject.');
+                return redirect(route('exam-results.index'));
+            }
+        }
+
         $this->examResultRepository->update($request->all(), $id);
 
         Flash::success('Exam Result updated successfully.');
@@ -315,11 +469,6 @@ class ExamResultController extends AppBaseController
         return redirect(route('exam-results.index'));
     }
 
-    /**
-     * Remove the specified ExamResult from storage.
-     *
-     * @throws \Exception
-     */
     public function destroy($id)
     {
         $examResult = $this->examResultRepository->find($id);
@@ -327,6 +476,23 @@ class ExamResultController extends AppBaseController
         if (empty($examResult)) {
             Flash::error('Exam Result not found');
             return redirect(route('exam-results.index'));
+        }
+
+        $user = auth()->user();
+        $viewAll = $user->hasPermission('exams.results.view-all');
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if (!$viewAll && !$hasSettings) {
+            $allowedIds = $this->teacherScope->getClassSectionIds($user);
+            $allowedSubjectIds = $this->teacherScope->getSubjectIds($user);
+            if (!$allowedIds->contains((int) $examResult->class_section_id)) {
+                Flash::error('You are not authorized to delete this result.');
+                return redirect(route('exam-results.index'));
+            }
+            if (!$allowedSubjectIds->contains((int) $examResult->subject_id)) {
+                Flash::error('You are not authorized to delete results for this subject.');
+                return redirect(route('exam-results.index'));
+            }
         }
 
         $this->examResultRepository->delete($id);

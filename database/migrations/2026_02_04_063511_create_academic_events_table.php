@@ -21,7 +21,9 @@ return new class extends Migration
                 $table->date('end_date')->nullable();
                 $table->string('event_color')->default('#17a2b8');
                 $table->boolean('is_public')->default(true);
-                $table->unsignedInteger('academic_year_id');
+                // Must match academic_years.academic_year_id (signed INT) or the
+                // FK fails with errno 150 on a fresh migrate.
+                $table->integer('academic_year_id');
                 $table->foreign('academic_year_id')->references('academic_year_id')->on('academic_years')->onDelete('cascade');
                 $table->timestamps();
             });

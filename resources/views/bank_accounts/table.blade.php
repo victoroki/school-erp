@@ -1,6 +1,6 @@
 <div class="card-body p-0">
     <div class="table-responsive">
-        <table class="table" id="bank-accounts-table">
+        <table class="table" id="bankAccounts-table">
             <thead>
             <tr>
                 <th>Account Name</th>
@@ -26,13 +26,13 @@
                     <td>{{ $bankAccount->current_balance }}</td>
                     <td>{{ $bankAccount->account_type }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['bank-accounts.destroy', $bankAccount->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['bankAccounts.destroy', $bankAccount->id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('bank-accounts.show', [$bankAccount->id]) }}"
+                            <a href="{{ route('bankAccounts.show', [$bankAccount->id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('bank-accounts.edit', [$bankAccount->id]) }}"
+                            <a href="{{ route('bankAccounts.edit', [$bankAccount->id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

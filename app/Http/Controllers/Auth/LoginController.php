@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
@@ -36,5 +37,21 @@ class LoginController extends Controller
     {
         $this->middleware('guest')->except('logout');
         $this->middleware('auth')->only('logout');
+    }
+
+    /**
+     * Determine the proper redirect destination based on user role.
+     * Parent and Student roles go to /portal, everyone else to /home.
+     *
+     * The RedirectsUsers trait calls this with zero arguments.
+     * Must not accept parameters to match the trait's contract.
+     */
+    protected function redirectTo()
+    {
+        $user = Auth::user();
+        if ($user && $user->hasAnyRole(['Parent', 'Student'])) {
+            return '/portal';
+        }
+        return '/home';
     }
 }

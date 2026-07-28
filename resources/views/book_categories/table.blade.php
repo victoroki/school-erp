@@ -26,11 +26,11 @@
                     <td class="text-center align-middle" style="width: 120px">
                         {!! Form::open(['route' => ['book-categories.destroy', $bookCategory->category_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('book-categories.show', [$bookCategory->category_id]) }}"
+                            <a href="{{ route('bookCategories.show', [$bookCategory->category_id]) }}"
                                class='btn btn-default btn-sm shadow-sm' title="View">
                                 <i class="far fa-eye text-primary"></i>
                             </a>
-                            <a href="{{ route('book-categories.edit', [$bookCategory->category_id]) }}"
+                            <a href="{{ route('bookCategories.edit', [$bookCategory->category_id]) }}"
                                class='btn btn-default btn-sm shadow-sm' title="Edit">
                                 <i class="far fa-edit text-warning"></i>
                             </a>

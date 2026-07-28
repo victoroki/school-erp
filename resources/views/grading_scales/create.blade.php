@@ -31,7 +31,7 @@
 
             <div class="card-footer">
                 {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('grading-scales.index') }}" class="btn btn-default"> Cancel </a>
+                <a href="{{ route('gradingScales.index') }}" class="btn btn-default"> Cancel </a>
             </div>
 
             {!! Form::close() !!}

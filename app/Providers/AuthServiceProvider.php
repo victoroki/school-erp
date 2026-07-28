@@ -53,19 +53,39 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Dynamic Gate definitions — created for every permission_name in the DB.
-        // This allows `@can('users.manage')` in blades and
-        // `$this->authorize('users.manage')` in controllers to work.
+        // Before any Gate check, test whether the ability name IS a permission
+        // name that the user actually holds. This replaces the per-permission
+        // Gate definitions (which broke under tests where seeder data arrived
+        // after the provider booted) with a single before-hook that handles
+        // ALL permission-based abilities.
+        // Before-hook: if the ability looks like a dotted permission name and
+        // the user holds it, allow immediately.  If the user does NOT hold it
+        // we return null (not false) so that policy-based Gates can still
+        // grant access for ownership-scoped checks (e.g. portal controllers).
+        Gate::before(function (User $user, string $ability) {
+            if (str_contains($ability, '.')) {
+                if ($user->hasPermission($ability)) {
+                    return true;
+                }
+                return null; // fall through to individual Gate / policy
+            }
+            return null;
+        });
+
+        // Per-permission Gates — these are still registered so that blade
+        // directives like @can('exams.view') work correctly.
         try {
             if (\Illuminate\Support\Facades\Schema::hasTable('permissions')) {
                 foreach (\App\Models\Permission::pluck('permission_name') as $permission) {
-                    Gate::define($permission, function (User $user) use ($permission) {
-                        return $user->hasPermission($permission);
-                    });
+                    if (!Gate::has($permission)) {
+                        Gate::define($permission, function (User $user) use ($permission) {
+                            return $user->hasPermission($permission);
+                        });
+                    }
                 }
             }
         } catch (\Exception $e) {
-            // Gracefully skip if permissions table doesn't exist yet (e.g. during migrations)
+            // Gracefully skip if permissions table doesn't exist yet
         }
     }
 }

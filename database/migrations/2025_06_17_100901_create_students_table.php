@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('city', 50);
             $table->string('country', 50);
             $table->string('phone', 20)->nullable();
-            $table->string('emergency_contact', 20);
+            $table->string('emergency_contact', 20)->nullable();
             $table->date('admission_date');
             $table->string('photo_url')->nullable();
             $table->enum('status', ['active', 'inactive', 'alumni', 'transferred'])->nullable()->default('active');

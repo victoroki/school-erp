@@ -1,6 +1,6 @@
 <div class="card-body p-0">
     <div class="table-responsive">
-        <table class="table" id="staff-documents-table">
+        <table class="table" id="staffDocuments-table">
             <thead>
             <tr>
                 <th>Staff </th>
@@ -20,13 +20,13 @@
                     <td>{{ $staffDocument->file_path }}</td>
                     <td>{{ $staffDocument->uploaded_at }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['staff-documents.destroy', $staffDocument->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['staffDocuments.destroy', $staffDocument->id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('staff-documents.show', [$staffDocument->id]) }}"
+                            <a href="{{ route('staffDocuments.show', [$staffDocument->id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('staff-documents.edit', [$staffDocument->id]) }}"
+                            <a href="{{ route('staffDocuments.edit', [$staffDocument->id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

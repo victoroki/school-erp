@@ -46,16 +46,6 @@ class FeePolicy
         return $user->hasPermission('fees.approve');
     }
 
-    public function import(User $user): bool
-    {
-        return $user->hasPermission('fees.import');
-    }
-
-    public function export(User $user): bool
-    {
-        return $user->hasPermission('fees.export');
-    }
-
     /**
      * A parent can view a fee payment if the student linked to the payment
      * is their child.

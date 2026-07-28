@@ -19,15 +19,15 @@ class ExamController extends AppBaseController
     public function __construct(ExamRepository $examRepo)
     {
         $this->examRepository = $examRepo;
-        $this->middleware('can:exams.view')->only(['index', 'show']);
-        $this->middleware('can:exams.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+        $this->middleware('can:exams.schedule.view')->only(['index', 'show']);
+        $this->middleware('can:academics.settings.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getDropdownData()
     {
         return [
             'examtypes' => ExamType::pluck('name', 'exam_type_id'),
-            'academicYears' => AcademicYear::where('status', 1)->pluck('name', 'academic_year_id')
+            'academicYears' => AcademicYear::orderBy('start_date', 'desc')->pluck('name', 'academic_year_id')
         ];
     }
     /**

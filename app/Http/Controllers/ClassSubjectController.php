@@ -24,7 +24,7 @@ class ClassSubjectController extends AppBaseController
 
         $this->middleware('auth');
         $this->middleware('can:academics.view')->only(['index', 'show']);
-        $this->middleware('can:academics.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+        $this->middleware('can:academics.settings.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**

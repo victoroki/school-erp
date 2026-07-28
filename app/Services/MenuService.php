@@ -18,7 +18,14 @@ class MenuService
     /**
      * Get the filtered menu sections for the current user.
      * Returns only items the user has permission to see.
-     * Parent items auto-hide when ALL children are hidden.
+     *
+     * Heading visibility is DERIVED from children, never hardcoded:
+     *   - A top-level section header (OPERATIONS, GOVERNANCE, ...) renders
+     *     only when at least one visible item follows it before the next header.
+     *   - A sub-header inside a parent's children renders only when at least
+     *     one visible child follows it before the next sub-header.
+     *   - A parent item renders only when it has at least one visible
+     *     non-header child.
      */
     public function getVisibleMenu(): array
     {
@@ -28,38 +35,35 @@ class MenuService
         }
 
         $visible = [];
+        $pendingHeader = null;
+
         foreach ($this->config as $item) {
-            // Section headers — always include
+            // Buffer section headers — only flushed when a visible item follows.
             if (isset($item['header'])) {
-                $visible[] = $item;
+                $pendingHeader = $item;
                 continue;
             }
 
-            // Leaf item (no children)
             if (empty($item['children'])) {
-                if ($this->canSee($item)) {
+                if (self::canSee($this->user, $item['permission'] ?? [])) {
+                    if ($pendingHeader !== null) {
+                        $visible[] = $pendingHeader;
+                        $pendingHeader = null;
+                    }
                     $visible[] = $item;
                 }
                 continue;
             }
 
-            // Parent with children — filter children first
-            $visibleChildren = [];
-            foreach ($item['children'] as $child) {
-                // Sub-section headers — include if parent is visible
-                if (isset($child['header'])) {
-                    $visibleChildren[] = $child;
-                    continue;
-                }
+            $visibleChildren = $this->filterChildren($item['children']);
 
-                if ($this->canSee($child)) {
-                    $visibleChildren[] = $child;
-                }
-            }
-
-            // Only show parent if it has visible children or is itself visible
-            if (!empty($visibleChildren) || $this->canSee($item)) {
+            $nonHeaderChildren = array_filter($visibleChildren, fn($c) => !isset($c['header']));
+            if (!empty($nonHeaderChildren)) {
                 $item['children'] = $visibleChildren;
+                if ($pendingHeader !== null) {
+                    $visible[] = $pendingHeader;
+                    $pendingHeader = null;
+                }
                 $visible[] = $item;
             }
         }
@@ -68,33 +72,66 @@ class MenuService
     }
 
     /**
-     * Check if the current user can see a menu item.
-     * Returns true if no permission is required (always visible)
-     * or if the user holds ANY of the listed permissions.
+     * Filter a parent's children by permission, keeping a sub-header only
+     * when at least one visible child follows it (no orphaned headings).
      */
-    protected function canSee(array $item): bool
+    protected function filterChildren(array $children): array
     {
-        $required = $item['permission'] ?? [];
+        $visible = [];
+        $pendingHeader = null;
 
-        // No permission required — always visible
-        if (empty($required)) {
+        foreach ($children as $child) {
+            if (isset($child['header'])) {
+                $pendingHeader = $child;
+                continue;
+            }
+
+            if (self::canSee($this->user, $child['permission'] ?? [])) {
+                if ($pendingHeader !== null) {
+                    $visible[] = $pendingHeader;
+                    $pendingHeader = null;
+                }
+                $visible[] = $child;
+            }
+        }
+
+        return $visible;
+    }
+
+    /**
+     * Check if a user can see a menu item based on required permissions.
+     * Shared static method — called by MenuService and DashboardController.
+     *
+     * Returns true if:
+     *   - No permission is required (always visible)
+     *   - User is Super Admin (sees everything)
+     *   - User holds ANY of the listed permissions
+     */
+    public static function canSee(?User $user, array|string|null $permissions): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        if (empty($permissions)) {
             return true;
         }
 
-        $required = (array) $required;
+        $required = (array) $permissions;
 
-        return $this->user->hasAnyRole(['Super Admin'])
-            || $this->user->getAllPermissions()->intersect($required)->isNotEmpty();
+        if ($user->hasAnyRole(['Super Admin'])) {
+            return true;
+        }
+
+        return $user->getAllPermissions()->intersect($required)->isNotEmpty();
     }
 
     /**
      * Check if a given route pattern matches the current request.
-     * Used by the blade to determine active state.
      */
     public static function isActive(string $pattern): bool
     {
         $path = request()->path();
-        // Convert route pattern to regex: * matches anything
         $regex = '#^' . str_replace('*', '.*', $pattern) . '$#';
         return (bool) preg_match($regex, $path);
     }

@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::table('subjects', function (Blueprint $table) {
             if (!Schema::hasColumn('subjects', 'department_id')) {
-                $table->unsignedBigInteger('department_id')->nullable()->after('subject_id');
+                // Must match departments.department_id (signed INT) or FK errno 150
+                $table->integer('department_id')->nullable()->after('subject_id');
                 $table->foreign('department_id')->references('department_id')->on('departments')->onDelete('set null');
             }
         });

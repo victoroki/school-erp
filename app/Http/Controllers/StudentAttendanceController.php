@@ -6,27 +6,46 @@ use App\Models\Student;
 use App\Models\StudentAttendance;
 use App\Models\ClassSection;
 use App\Models\AcademicYear;
+use App\Services\TeacherScopeService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Flash;
 
 class StudentAttendanceController extends Controller
 {
-    public function __construct()
+    private TeacherScopeService $teacherScope;
+
+    public function __construct(TeacherScopeService $teacherScope)
     {
+        $this->teacherScope = $teacherScope;
         $this->middleware('auth');
         $this->middleware('can:academics.view')->only(['index', 'show']);
-        $this->middleware('can:academics.manage')->only(['store', 'update']);
+        $this->middleware('can:academics.attendance.manage')->only(['store', 'update']);
     }
 
     public function index(Request $request)
     {
-        $classSections = ClassSection::with(['schoolClass', 'section'])->get();
+        $user = auth()->user();
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if ($hasSettings) {
+            $classSections = ClassSection::with(['schoolClass', 'section'])->get();
+        } else {
+            $classSectionIds = $this->teacherScope->getClassSectionIds($user);
+            $classSections = ClassSection::with(['schoolClass', 'section'])
+                ->whereIn('class_section_id', $classSectionIds)
+                ->get();
+        }
+
         $date = $request->get('date', date('Y-m-d'));
         $classSectionId = $request->get('class_section_id');
 
-        $attendanceSummary = [];
         if ($classSectionId) {
+            if (!$hasSettings && !$this->teacherScope->getClassSectionIds($user)->contains((int) $classSectionId)) {
+                Flash::error('You are not authorized to view attendance for this class.');
+                return redirect()->route('student-attendance.index');
+            }
+
             $students = Student::whereHas('studentClassEnrollments', function ($query) use ($classSectionId) {
                 $query->where('class_section_id', $classSectionId)->where('is_current', true);
             })->get();
@@ -49,6 +68,17 @@ class StudentAttendanceController extends Controller
             'date' => 'required|date',
             'attendance' => 'required|array',
         ]);
+
+        $user = auth()->user();
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if (!$hasSettings) {
+            $allowedIds = $this->teacherScope->getClassSectionIds($user);
+            if (!$allowedIds->contains((int) $request->class_section_id)) {
+                Flash::error('You are not authorized to mark attendance for this class.');
+                return redirect()->back();
+            }
+        }
 
         $classSectionId = $request->class_section_id;
         $date = $request->date;
@@ -75,12 +105,28 @@ class StudentAttendanceController extends Controller
 
     public function report(Request $request)
     {
-        $classSections = ClassSection::with(['schoolClass', 'section'])->get();
+        $user = auth()->user();
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if ($hasSettings) {
+            $classSections = ClassSection::with(['schoolClass', 'section'])->get();
+        } else {
+            $classSectionIds = $this->teacherScope->getClassSectionIds($user);
+            $classSections = ClassSection::with(['schoolClass', 'section'])
+                ->whereIn('class_section_id', $classSectionIds)
+                ->get();
+        }
+
         $classSectionId = $request->get('class_section_id');
         $month = $request->get('month', date('m'));
         $year = $request->get('year', date('Y'));
 
         if ($classSectionId) {
+            if (!$hasSettings && !$this->teacherScope->getClassSectionIds($user)->contains((int) $classSectionId)) {
+                Flash::error('You are not authorized to view attendance for this class.');
+                return redirect()->route('student-attendance.report');
+            }
+
             $students = Student::whereHas('studentClassEnrollments', function ($query) use ($classSectionId) {
                 $query->where('class_section_id', $classSectionId)->where('is_current', true);
             })->with(['studentAttendances' => function($q) use ($month, $year) {

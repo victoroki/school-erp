@@ -89,7 +89,7 @@
 
             <div class="card-footer bg-light py-4 text-center">
                 {!! Form::submit('Save Bank Account', ['class' => 'btn btn-primary rounded-pill px-5 py-2 font-weight-bold shadow-sm']) !!}
-                <a href="{{ route('bank-accounts.index') }}" class="btn btn-outline-secondary rounded-pill px-5 py-2 ml-2">Cancel</a>
+                <a href="{{ route('bankAccounts.index') }}" class="btn btn-outline-secondary rounded-pill px-5 py-2 ml-2">Cancel</a>
             </div>
             {!! Form::close() !!}
         </div>

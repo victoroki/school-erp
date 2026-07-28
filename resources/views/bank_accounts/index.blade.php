@@ -8,7 +8,7 @@
                     <h1 class="text-dark font-weight-bold"><i class="fas fa-university text-primary mr-2"></i>Bank Accounts</h1>
                 </div>
                 <div class="col-sm-6 text-right">
-                    <a href="{{ route('bank-accounts.create') }}" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                    <a href="{{ route('bankAccounts.create') }}" class="btn btn-primary rounded-pill px-4 shadow-sm">
                         <i class="fas fa-plus mr-1"></i> Add Account
                     </a>
                 </div>
@@ -31,10 +31,10 @@
                                         <i class="fas fa-ellipsis-v"></i>
                                     </button>
                                     <div class="dropdown-menu dropdown-menu-right shadow-sm border-0">
-                                        <a class="dropdown-item" href="{{ route('bank-accounts.show', [$account->account_id]) }}"><i class="fas fa-eye mr-2"></i> Details</a>
-                                        <a class="dropdown-item" href="{{ route('bank-accounts.edit', [$account->account_id]) }}"><i class="fas fa-edit mr-2"></i> Edit</a>
+                                        <a class="dropdown-item" href="{{ route('bankAccounts.show', [$account->account_id]) }}"><i class="fas fa-eye mr-2"></i> Details</a>
+                                        <a class="dropdown-item" href="{{ route('bankAccounts.edit', [$account->account_id]) }}"><i class="fas fa-edit mr-2"></i> Edit</a>
                                         <div class="dropdown-divider"></div>
-                                        {!! Form::open(['route' => ['bank-accounts.destroy', $account->account_id], 'method' => 'delete']) !!}
+                                        {!! Form::open(['route' => ['bankAccounts.destroy', $account->account_id], 'method' => 'delete']) !!}
                                             {!! Form::button('<i class="fas fa-trash mr-2"></i> Delete', ['type' => 'submit', 'class' => 'dropdown-item text-danger', 'onclick' => "return confirm('Are you sure?')"]) !!}
                                         {!! Form::close() !!}
                                     </div>
@@ -84,7 +84,7 @@
             <div class="text-center py-5">
                 <i class="fas fa-university fa-4x text-muted opacity-20 mb-3"></i>
                 <h4 class="text-muted">No bank accounts found</h4>
-                <a href="{{ route('bank-accounts.create') }}" class="btn btn-primary rounded-pill px-4 mt-3">Add your first account</a>
+                <a href="{{ route('bankAccounts.create') }}" class="btn btn-primary rounded-pill px-4 mt-3">Add your first account</a>
             </div>
         @endif
     </div>

@@ -26,16 +26,22 @@ class PermissionSeeder extends Seeder
         'students.import'     => 'Bulk import / enroll students',
         'students.export'     => 'Export student data and generate ID cards',
 
-        // Academics (2)
+        // Academics (3)
         'academics.view'      => 'View academic structure, schedules, calendars, dashboards',
-        'academics.manage'    => 'Manage academic years, classes, sections, subjects, timetables, departments',
+        'academics.settings.manage' => 'Manage academic years, classes, sections, subjects, timetables, departments, terms — admin only',
+        'academics.attendance.manage' => 'Mark and manage student attendance for own assigned classes',
 
-        // Exams (5)
-        'exams.view'          => 'View exams, schedules, results, grade books, CBC data',
-        'exams.manage'        => 'Manage exam types, schedules, results, grading scales, templates',
-        'exams.approve'       => 'Approve marks and exam results',
-        'exams.import'        => 'Bulk import exam marks',
-        'exams.export'        => 'Generate and export report cards',
+        // Exams (10)
+        'exams.marks.enter-own'    => 'Enter marks for own assigned classes and subjects',
+        'exams.schedule.view'      => 'View exam schedules for own classes',
+        'exams.results.view-own'   => 'View exam results for own students',
+        'exams.publish'            => 'Publish and lock exam results',
+        'exams.grading.manage'     => 'Manage grading scales and weighting schemes',
+        'exams.results.view-all'   => 'View exam results across all classes (bypasses scoping)',
+        'exams.analysis.view'      => 'View exam analysis, rankings, and performance reports',
+        'exams.report-cards.export' => 'Generate and export report cards',
+        'exams.approve'            => 'Approve marks and exam results',
+        'exams.import'             => 'Bulk import exam marks',
 
         // Fees (5)
         'fees.view'           => 'View fee dashboards, assignments, adjustments, terms, discounts, reports',

@@ -24,8 +24,8 @@ class HostelController extends AppBaseController
     private function getDropdownData()
     {
         return [
-            'staff' => \App\Models\Staff::selectRaw("id, CONCAT(first_name, ' ', last_name) as name")
-                ->pluck('name', 'id')
+            'staff' => \App\Models\Staff::selectRaw("staff_id, CONCAT(first_name, ' ', last_name) as name")
+                ->pluck('name', 'staff_id')
                 ->toArray()
         ];
     }

@@ -13,7 +13,7 @@
                 <p class="page-subtitle mb-0">Define billing categories and types</p>
             </div>
         </div>
-        <a href="{{ route('fee-categories.create') }}" class="btn-primary-custom">
+        <a href="{{ route('feeCategories.create') }}" class="btn-primary-custom">
             <i class="fas fa-plus me-1"></i> New Category
         </a>
     </div>
@@ -55,15 +55,15 @@
                         </div>
 
                         <div class="card-footer bg-light-soft border-top d-flex justify-content-end gap-2">
-                            <a href="{{ route('fee-categories.show', $feeCategory->category_id) }}" 
+                            <a href="{{ route('feeCategories.show', $feeCategory->category_id) }}" 
                                class="action-btn" title="View">
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('fee-categories.edit', $feeCategory->category_id) }}" 
+                            <a href="{{ route('feeCategories.edit', $feeCategory->category_id) }}" 
                                class="action-btn" title="Edit">
                                 <i class="far fa-edit"></i>
                             </a>
-                            {!! Form::open(['route' => ['fee-categories.destroy', $feeCategory->category_id], 'method' => 'delete', 'class' => 'd-inline']) !!}
+                            {!! Form::open(['route' => ['feeCategories.destroy', $feeCategory->category_id], 'method' => 'delete', 'class' => 'd-inline']) !!}
                                 <button type="submit" class="action-btn delete-btn" 
                                         onclick="return confirm('Are you sure?')" title="Delete">
                                     <i class="far fa-trash-alt"></i>
@@ -83,7 +83,7 @@
             <i class="fas fa-tags text-muted opacity-25 mb-3" style="font-size: 3rem;"></i>
             <h6 class="fw-bold">No Categories Found</h6>
             <p class="text-muted small mb-3">Create your first fee category to start building fee structures.</p>
-            <a href="{{ route('fee-categories.create') }}" class="btn-primary-custom">Create New Category</a>
+            <a href="{{ route('feeCategories.create') }}" class="btn-primary-custom">Create New Category</a>
         </div>
     @endif
 </div>

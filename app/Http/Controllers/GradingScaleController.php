@@ -18,7 +18,7 @@ class GradingScaleController extends AppBaseController
     {
         $this->gradingScaleRepository = $gradingScaleRepo;
         $this->middleware('can:academics.view')->only(['index', 'show']);
-        $this->middleware('can:academics.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+        $this->middleware('can:academics.settings.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -51,7 +51,7 @@ class GradingScaleController extends AppBaseController
 
         Flash::success('Grading Scale saved successfully.');
 
-        return redirect(route('grading-scales.index'));
+        return redirect(route('gradingScales.index'));
     }
 
     /**
@@ -64,7 +64,7 @@ class GradingScaleController extends AppBaseController
         if (empty($gradingScale)) {
             Flash::error('Grading Scale not found');
 
-            return redirect(route('grading-scales.index'));
+            return redirect(route('gradingScales.index'));
         }
 
         return view('grading_scales.show')->with('gradingScale', $gradingScale);
@@ -80,7 +80,7 @@ class GradingScaleController extends AppBaseController
         if (empty($gradingScale)) {
             Flash::error('Grading Scale not found');
 
-            return redirect(route('grading-scales.index'));
+            return redirect(route('gradingScales.index'));
         }
 
         return view('grading_scales.edit')->with('gradingScale', $gradingScale);
@@ -103,7 +103,7 @@ class GradingScaleController extends AppBaseController
 
         Flash::success('Grading Scale updated successfully.');
 
-        return redirect(route('grading-scales.index'));
+        return redirect(route('gradingScales.index'));
     }
 
     /**
@@ -125,6 +125,6 @@ class GradingScaleController extends AppBaseController
 
         Flash::success('Grading Scale deleted successfully.');
 
-        return redirect(route('grading-scales.index'));
+        return redirect(route('gradingScales.index'));
     }
 }

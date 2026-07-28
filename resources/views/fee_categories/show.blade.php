@@ -11,7 +11,7 @@ Fee Category Details
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right"
-                       href="{{ route('fee-categories.index') }}">
+                       href="{{ route('feeCategories.index') }}">
                                                     Back
                                             </a>
                 </div>

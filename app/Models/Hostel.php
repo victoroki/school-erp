@@ -27,7 +27,7 @@ class Hostel extends Model
         'name' => 'required|string|max:100',
         'type' => 'required|in:boys,girls,co-ed',
         'address' => 'required|string|max:65535',
-        'warden_id' => 'nullable|exists:staff,id',
+        'warden_id' => 'nullable|exists:staff,staff_id',
         'capacity' => 'required|integer|min:1',
         'created_at' => 'nullable',
         'updated_at' => 'nullable'

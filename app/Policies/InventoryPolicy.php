@@ -20,14 +20,4 @@ class InventoryPolicy
     {
         return $user->hasPermission('inventory.approve');
     }
-
-    public function import(User $user): bool
-    {
-        return $user->hasPermission('inventory.import');
-    }
-
-    public function export(User $user): bool
-    {
-        return $user->hasPermission('inventory.export');
-    }
 }

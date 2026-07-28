@@ -532,9 +532,11 @@ return new class extends Migration
             // Drop old permissions that have been consolidated
             // (Only those that appear as KEYS in the mapping — values stay)
             $oldNames = array_keys($this->mapping);
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
             DB::table('permissions')
                 ->whereIn('permission_name', $oldNames)
                 ->delete();
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
         });
     }
 

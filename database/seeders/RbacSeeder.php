@@ -12,11 +12,11 @@ use App\Models\UserRole;
 class RbacSeeder extends Seeder
 {
     /**
-     * Role -> permission name mappings per the Phase 1 design matrix.
+     * Role -> permission name mappings.
      *
-     * Super Admin: all 43 permissions
-     * Admin:       all except users.*/roles.*/permissions.* (37 permissions)
-     * Teacher:     academics.view, academics.manage, exams.view, exams.manage (4 permissions)
+     * Super Admin: all permissions (53)
+     * Admin:       all except users.*, roles.*, permissions.*
+     * Teacher:     5 scoped/basic permissions (academics.view + attendance + marks enter + schedule view + own results)
      * Accountant:  finance.* + fees.* (8 permissions)
      * Parent:      0 (portal, ownership-scoped via Policy)
      * Student:     0 (portal, ownership-scoped via Policy)
@@ -27,8 +27,10 @@ class RbacSeeder extends Seeder
             'roles.view', 'roles.manage',
             'permissions.view', 'permissions.manage',
             'students.view', 'students.manage', 'students.import', 'students.export',
-            'academics.view', 'academics.manage',
-            'exams.view', 'exams.manage', 'exams.approve', 'exams.import', 'exams.export',
+            'academics.view', 'academics.settings.manage', 'academics.attendance.manage',
+            'exams.marks.enter-own', 'exams.schedule.view', 'exams.results.view-own',
+            'exams.publish', 'exams.grading.manage', 'exams.results.view-all',
+            'exams.analysis.view', 'exams.report-cards.export', 'exams.approve', 'exams.import',
             'fees.view', 'fees.manage', 'fees.approve', 'fees.collect', 'fees.print',
             'finance.view', 'finance.manage', 'finance.approve',
             'hr.view', 'hr.manage', 'hr.approve',
@@ -42,8 +44,10 @@ class RbacSeeder extends Seeder
         ],
         'Admin' => [
             'students.view', 'students.manage', 'students.import', 'students.export',
-            'academics.view', 'academics.manage',
-            'exams.view', 'exams.manage', 'exams.approve', 'exams.import', 'exams.export',
+            'academics.view', 'academics.settings.manage', 'academics.attendance.manage',
+            'exams.marks.enter-own', 'exams.schedule.view', 'exams.results.view-own',
+            'exams.publish', 'exams.grading.manage', 'exams.results.view-all',
+            'exams.analysis.view', 'exams.report-cards.export', 'exams.approve', 'exams.import',
             'fees.view', 'fees.manage', 'fees.approve', 'fees.collect', 'fees.print',
             'finance.view', 'finance.manage', 'finance.approve',
             'hr.view', 'hr.manage', 'hr.approve',
@@ -57,9 +61,10 @@ class RbacSeeder extends Seeder
         ],
         'Teacher' => [
             'academics.view',
-            'academics.manage',
-            'exams.view',
-            'exams.manage',
+            'academics.attendance.manage',
+            'exams.marks.enter-own',
+            'exams.schedule.view',
+            'exams.results.view-own',
         ],
         'Accountant' => [
             'finance.view',
@@ -94,23 +99,34 @@ class RbacSeeder extends Seeder
             );
         }
 
-        // 2. Assign permissions to each role
+        // 2. Reconcile permissions for each role (removes old, adds new)
         foreach ($this->rolePermissions as $roleName => $permissionNames) {
             $role = Role::where('role_name', $roleName)->first();
             if (!$role) {
                 continue;
             }
 
-            if (empty($permissionNames)) {
-                continue;
-            }
+            $newIds = empty($permissionNames)
+                ? []
+                : Permission::whereIn('permission_name', $permissionNames)
+                    ->pluck('permission_id')
+                    ->all();
 
-            $permissionIds = Permission::whereIn('permission_name', $permissionNames)
+            $currentIds = RolePermission::where('role_id', $role->role_id)
                 ->pluck('permission_id')
                 ->all();
 
-            foreach ($permissionIds as $permissionId) {
-                RolePermission::firstOrCreate([
+            $toRemove = array_diff($currentIds, $newIds);
+            $toAdd    = array_diff($newIds, $currentIds);
+
+            if (!empty($toRemove)) {
+                RolePermission::where('role_id', $role->role_id)
+                    ->whereIn('permission_id', $toRemove)
+                    ->delete();
+            }
+
+            foreach ($toAdd as $permissionId) {
+                RolePermission::create([
                     'role_id'       => $role->role_id,
                     'permission_id' => $permissionId,
                 ]);

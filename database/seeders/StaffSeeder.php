@@ -126,9 +126,26 @@ class StaffSeeder extends Seeder
             ],
         ];
 
+        // Map legacy seed keys onto the current staff schema (post HR revamp).
+        $keyMap = [
+            'employee_id'  => 'employee_number',
+            'joining_date' => 'date_of_joining',
+            'email'        => 'work_email',
+            'phone'        => 'phone_primary',
+            'address'      => 'current_address',
+            'status'       => 'employment_status',
+        ];
+
         foreach ($teachers as $data) {
+            foreach ($keyMap as $old => $new) {
+                if (array_key_exists($old, $data)) {
+                    $data[$new] = $data[$old];
+                    unset($data[$old]);
+                }
+            }
+
             Staff::firstOrCreate(
-                ['employee_id' => $data['employee_id']],
+                ['employee_number' => $data['employee_number']],
                 $data
             );
         }

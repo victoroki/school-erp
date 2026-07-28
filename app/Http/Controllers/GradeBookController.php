@@ -7,35 +7,63 @@ use App\Models\Student;
 use App\Models\Subject;
 use App\Models\ExamResult;
 use App\Models\ClassSection;
+use App\Services\TeacherScopeService;
 use Illuminate\Http\Request;
 
 class GradeBookController extends Controller
 {
-    public function __construct()
+    private TeacherScopeService $teacherScope;
+
+    public function __construct(TeacherScopeService $teacherScope)
     {
-        $this->middleware('can:academics.view');
+        $this->teacherScope = $teacherScope;
+        $this->middleware('can:exams.results.view-own');
     }
 
     public function index(Request $request)
     {
-        $exams = Exam::pluck('name', 'exam_id');
-        $classSections = ClassSection::with(['schoolClass', 'section'])->get()->mapWithKeys(function ($cs) {
-            return [$cs->class_section_id => ($cs->schoolClass->name ?? '') . ' - ' . ($cs->section->name ?? '')];
-        });
+        $user = auth()->user();
+        $viewAll = $user->hasPermission('exams.results.view-all');
+        $hasSettings = $user->hasPermission('academics.settings.manage');
+
+        if ($viewAll || $hasSettings) {
+            $exams = Exam::pluck('name', 'exam_id');
+            $classSections = ClassSection::with(['schoolClass', 'section'])->get()->mapWithKeys(function ($cs) {
+                return [$cs->class_section_id => ($cs->schoolClass->name ?? '') . ' - ' . ($cs->section->name ?? '')];
+            });
+        } else {
+            $classSectionIds = $this->teacherScope->getClassSectionIds($user);
+            $subjectIds = $this->teacherScope->getSubjectIds($user);
+
+            $exams = Exam::whereHas('examSchedules', function ($q) use ($classSectionIds) {
+                $q->whereIn('class_section_id', $classSectionIds);
+            })->orWhereDoesntHave('examSchedules')->pluck('name', 'exam_id');
+
+            $classSections = ClassSection::with(['schoolClass', 'section'])
+                ->whereIn('class_section_id', $classSectionIds)
+                ->get()
+                ->mapWithKeys(function ($cs) {
+                    return [$cs->class_section_id => ($cs->schoolClass->name ?? '') . ' - ' . ($cs->section->name ?? '')];
+                });
+        }
 
         $students = [];
         $subjects = [];
         $results = [];
 
         if ($request->filled(['exam_id', 'class_section_id'])) {
-            // Get students in this class
+            if (!$viewAll && !$hasSettings) {
+                $allowedIds = $this->teacherScope->getClassSectionIds($user);
+                if (!$allowedIds->contains((int) $request->class_section_id)) {
+                    abort(403, 'You are not authorized to view grade book for this class.');
+                }
+            }
+
             $students = Student::whereHas('studentClassEnrollments', function ($q) use ($request) {
                 $q->where('class_section_id', $request->class_section_id)
                   ->where('status', 'active');
             })->orderBy('last_name')->get();
 
-            // Get subjects assigned to this class OR subjects that have results for this exam/class
-            // For simplicity, let's get all subjects first, or just those with results
             $subjectIdsWithResults = ExamResult::where('exam_id', $request->exam_id)
                 ->where('class_section_id', $request->class_section_id)
                 ->distinct()
@@ -43,7 +71,6 @@ class GradeBookController extends Controller
             
             $subjects = Subject::whereIn('subject_id', $subjectIdsWithResults)->get();
 
-            // Fetch all results for this matrix
             $examResults = ExamResult::with('grade')
                 ->where('exam_id', $request->exam_id)
                 ->where('class_section_id', $request->class_section_id)

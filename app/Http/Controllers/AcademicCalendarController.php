@@ -13,7 +13,7 @@ class AcademicCalendarController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('can:academics.view')->only(['index']);
-        $this->middleware('can:academics.manage')->only(['store', 'update', 'destroy']);
+        $this->middleware('can:academics.settings.manage')->only(['store', 'update', 'destroy']);
     }
 
     public function index(Request $request)

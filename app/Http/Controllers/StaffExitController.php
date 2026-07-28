@@ -72,7 +72,7 @@ class StaffExitController extends Controller
 
             DB::commit();
             Flash::success('Exit process initiated successfully.');
-            return redirect()->route('hr.exit.index');
+            return redirect()->route('hr.exit');
         } catch (\Exception $e) {
             DB::rollBack();
             Flash::error('Error initiating exit: ' . $e->getMessage());

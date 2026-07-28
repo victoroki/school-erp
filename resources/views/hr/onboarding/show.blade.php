@@ -90,7 +90,7 @@
                                             </td>
                                             <td>
                                                 @if(!$item->is_completed)
-                                                    <form action="{{ route('hr.onboarding.complete', [$staff->staff_id, $item->id]) }}" method="POST">
+                                                    <form action="{{ route('hr.onboarding.complete-item', [$staff->staff_id, $item->id]) }}" method="POST">
                                                         @csrf
                                                         <button type="submit" class="btn btn-xs btn-success" title="Mark as Completed">
                                                             <i class="fas fa-check"></i>

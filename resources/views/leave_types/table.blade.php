@@ -1,6 +1,6 @@
 <div class="card-body p-0">
     <div class="table-responsive">
-        <table class="table" id="leave-types-table">
+        <table class="table" id="leaveTypes-table">
             <thead>
             <tr>
                 <th>Name</th>
@@ -18,13 +18,13 @@
                     <td>{{ $leaveType->description }}</td>
                     <td>{{ $leaveType->is_paid }}</td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['leave-types.destroy', $leaveType->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['leaveTypes.destroy', $leaveType->id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('leave-types.show', [$leaveType->id]) }}"
+                            <a href="{{ route('leaveTypes.show', [$leaveType->id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('leave-types.edit', [$leaveType->id]) }}"
+                            <a href="{{ route('leaveTypes.edit', [$leaveType->id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

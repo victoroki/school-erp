@@ -52,7 +52,7 @@ class FeeCategoryController extends AppBaseController
 
         Flash::success('Fee Category saved successfully.');
 
-        return redirect(route('fee-categories.index'));
+        return redirect(route('feeCategories.index'));
     }
 
     /**
@@ -65,7 +65,7 @@ class FeeCategoryController extends AppBaseController
         if (empty($feeCategory)) {
             Flash::error('Fee Category not found');
 
-            return redirect(route('fee-categories.index'));
+            return redirect(route('feeCategories.index'));
         }
 
         return view('fee_categories.show')->with('feeCategory', $feeCategory);
@@ -81,7 +81,7 @@ class FeeCategoryController extends AppBaseController
         if (empty($feeCategory)) {
             Flash::error('Fee Category not found');
 
-            return redirect(route('fee-categories.index'));
+            return redirect(route('feeCategories.index'));
         }
 
         return view('fee_categories.edit')->with('feeCategory', $feeCategory);
@@ -97,7 +97,7 @@ class FeeCategoryController extends AppBaseController
         if (empty($feeCategory)) {
             Flash::error('Fee Category not found');
 
-            return redirect(route('fee-categories.index'));
+            return redirect(route('feeCategories.index'));
         }
 
         $feeCategory = $this->feeCategoryRepository->update($request->all(), $id);
@@ -145,7 +145,7 @@ class FeeCategoryController extends AppBaseController
         if (empty($feeCategory)) {
             Flash::error('Fee Category not found');
 
-            return redirect(route('fee-categories.index'));
+            return redirect(route('feeCategories.index'));
         }
 
         $this->feeCategoryRepository->delete($id);

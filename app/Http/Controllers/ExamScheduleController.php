@@ -21,8 +21,8 @@ class ExamScheduleController extends AppBaseController
     public function __construct(ExamScheduleRepository $examScheduleRepo)
     {
         $this->examScheduleRepository = $examScheduleRepo;
-        $this->middleware('can:exams.view')->only(['index', 'show']);
-        $this->middleware('can:exams.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+        $this->middleware('can:exams.schedule.view')->only(['index', 'show']);
+        $this->middleware('can:academics.settings.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -50,7 +50,7 @@ class ExamScheduleController extends AppBaseController
             'exams' => \App\Models\Exam::pluck('name', 'exam_id'),
             'classes' => \App\Models\SchoolClass::pluck('name', 'class_id'),
             'subjects' => \App\Models\Subject::pluck('name', 'subject_id'),
-            'rooms' => \App\Models\Classroom::pluck('name', 'classroom_id'),
+            'rooms' => \App\Models\Classroom::pluck('room_number', 'classroom_id'),
         ];
     }
     /**
