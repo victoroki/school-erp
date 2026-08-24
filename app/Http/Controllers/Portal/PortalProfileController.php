@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -37,6 +38,8 @@ class PortalProfileController extends Controller
         ]);
 
         $user->fill($validated)->save();
+
+        AuditTrail::log('Portal', 'PROFILE UPDATE', $user->id, null, $validated);
 
         return back()->with('success', 'Profile updated successfully.');
     }

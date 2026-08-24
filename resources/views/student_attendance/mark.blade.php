@@ -53,7 +53,7 @@
                                 <td class="align-middle font-weight-bold">{{ $student->admission_no }}</td>
                                 <td class="align-middle">
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ $student->avatar_url }}" class="img-circle img-sm mr-2 border shadow-sm" style="width: 32px; height: 32px;">
+                                        @include('students._avatar', ['student' => $student, 'size' => 32])
                                         <span>{{ $student->full_name }}</span>
                                     </div>
                                 </td>

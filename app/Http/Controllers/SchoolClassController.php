@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateSchoolClassRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\SchoolClassRepository;
 use App\Models\SchoolClass;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -53,6 +54,8 @@ class SchoolClassController extends AppBaseController
         $input = $request->all();
 
         $schoolClass = $this->schoolClassRepository->create($input);
+
+        AuditTrail::log('School Class', 'CREATE', $schoolClass->class_id, null, $schoolClass->toArray());
 
         Flash::success('School Class saved successfully.');
 
@@ -116,7 +119,10 @@ class SchoolClassController extends AppBaseController
             return redirect(route('school-classes.index'));
         }
 
+        $oldData = $schoolClass->toArray();
         $schoolClass = $this->schoolClassRepository->update($request->all(), $id);
+
+        AuditTrail::log('School Class', 'UPDATE', $schoolClass->class_id, $oldData, $schoolClass->toArray());
 
         Flash::success('School Class updated successfully.');
 
@@ -138,7 +144,10 @@ class SchoolClassController extends AppBaseController
             return redirect(route('school-classes.index'));
         }
 
+        $oldData = $schoolClass->toArray();
         $this->schoolClassRepository->delete($id);
+
+        AuditTrail::log('School Class', 'DELETE', $id, $oldData, null);
 
         Flash::success('School Class deleted successfully.');
 

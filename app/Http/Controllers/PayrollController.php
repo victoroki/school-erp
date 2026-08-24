@@ -7,6 +7,7 @@ use App\Http\Requests\UpdatePayrollRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\PayrollRepository;
 use App\Models\Staff;
+use App\Models\AuditTrail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Flash;
@@ -112,6 +113,8 @@ class PayrollController extends AppBaseController
         $input = $request->all();
 
         $payroll = $this->payrollRepository->create($input);
+
+        AuditTrail::log('Payroll', 'CREATE', $payroll->id, null, $payroll->toArray());
 
         Flash::success('Payroll saved successfully.');
 
@@ -221,7 +224,10 @@ class PayrollController extends AppBaseController
             return redirect(route('payrolls.index'));
         }
 
+        $oldData = $payroll->toArray();
         $payroll = $this->payrollRepository->update($request->all(), $id);
+
+        AuditTrail::log('Payroll', 'UPDATE', $payroll->id, $oldData, $payroll->toArray());
 
         Flash::success('Payroll updated successfully.');
 
@@ -243,7 +249,10 @@ class PayrollController extends AppBaseController
             return redirect(route('payrolls.index'));
         }
 
+        $oldData = $payroll->toArray();
         $this->payrollRepository->delete($id);
+
+        AuditTrail::log('Payroll', 'DELETE', $id, $oldData, null);
 
         Flash::success('Payroll deleted successfully.');
 

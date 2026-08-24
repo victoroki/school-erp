@@ -24,6 +24,8 @@ class CreateStaffRequest extends FormRequest
      */
     public function rules()
     {
-        return Staff::$rules;
+        $rules = Staff::$rules;
+        $rules['photo'] = 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048';
+        return $rules;
     }
 }

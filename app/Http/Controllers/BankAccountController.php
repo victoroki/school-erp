@@ -6,6 +6,7 @@ use App\Http\Requests\CreateBankAccountRequest;
 use App\Http\Requests\UpdateBankAccountRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\BankAccountRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -48,6 +49,8 @@ class BankAccountController extends AppBaseController
         $input = $request->all();
 
         $bankAccount = $this->bankAccountRepository->create($input);
+
+        AuditTrail::log('Bank Account', 'CREATE', $bankAccount->account_id, null, $bankAccount->toArray());
 
         Flash::success('Bank Account saved successfully.');
 
@@ -99,7 +102,10 @@ class BankAccountController extends AppBaseController
             return redirect(route('bankAccounts.index'));
         }
 
+        $oldData = $bankAccount->toArray();
         $bankAccount = $this->bankAccountRepository->update($request->all(), $id);
+
+        AuditTrail::log('Bank Account', 'UPDATE', $bankAccount->account_id, $oldData, $bankAccount->toArray());
 
         Flash::success('Bank Account updated successfully.');
 
@@ -121,7 +127,10 @@ class BankAccountController extends AppBaseController
             return redirect(route('bankAccounts.index'));
         }
 
+        $oldData = $bankAccount->toArray();
         $this->bankAccountRepository->delete($id);
+
+        AuditTrail::log('Bank Account', 'DELETE', $id, $oldData, null);
 
         Flash::success('Bank Account deleted successfully.');
 

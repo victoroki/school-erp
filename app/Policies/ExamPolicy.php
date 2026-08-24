@@ -13,7 +13,7 @@ class ExamPolicy
 
     public function manage(User $user): bool
     {
-        return $user->hasPermission('exams.manage');
+        return $user->hasPermission('academics.settings.manage');
     }
 
     public function approve(User $user): bool
@@ -28,6 +28,6 @@ class ExamPolicy
 
     public function export(User $user): bool
     {
-        return $user->hasPermission('exams.export');
+        return $user->hasPermission('exams.report-cards.export');
     }
 }

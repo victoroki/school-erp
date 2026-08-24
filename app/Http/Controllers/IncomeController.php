@@ -106,7 +106,10 @@ class IncomeController extends AppBaseController
             }
         }
 
+        $oldData = $income->toArray();
         $income->delete();
+
+        AuditTrail::log('Finance', 'DELETE', $income->income_id, $oldData, null);
 
         Flash::success('Income record deleted successfully.');
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\StaffAttendance;
 use App\Models\Staff;
 use App\Models\Department;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -93,6 +94,11 @@ class StaffAttendanceController extends Controller
                 );
             }
 
+            AuditTrail::log('Staff Attendance', 'CREATE', null, null, [
+                'date' => $request->date,
+                'records' => $request->attendance,
+            ]);
+
             DB::commit();
             Flash::success('Attendance marked successfully.');
             return redirect()->route('staff-attendance.index', ['date' => $request->date]);
@@ -120,6 +126,7 @@ class StaffAttendanceController extends Controller
             'status' => 'required|in:present,absent,late,half_day,on_leave',
         ]);
 
+        $oldData = $staffAttendance->toArray();
         $staffAttendance->update([
             'status' => $request->status,
             'time_in' => $request->time_in,
@@ -127,13 +134,17 @@ class StaffAttendanceController extends Controller
             'notes' => $request->notes,
         ]);
 
+        AuditTrail::log('Staff Attendance', 'UPDATE', $staffAttendance->attendance_id, $oldData, $staffAttendance->toArray());
+
         Flash::success('Attendance updated successfully.');
         return redirect()->route('staff-attendance.index');
     }
 
     public function destroy(StaffAttendance $staffAttendance)
     {
+        $oldData = $staffAttendance->toArray();
         $staffAttendance->delete();
+        AuditTrail::log('Staff Attendance', 'DELETE', $staffAttendance->attendance_id, $oldData, null);
         Flash::success('Attendance record deleted successfully.');
         return redirect()->route('staff-attendance.index');
     }

@@ -24,8 +24,8 @@ class UpdateParentsRequest extends FormRequest
      */
     public function rules()
     {
-        $rules = Parents::$rules;
-        
+        $rules = Parents::rules();
+
         return $rules;
     }
 }

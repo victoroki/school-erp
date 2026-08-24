@@ -7,6 +7,7 @@ use App\Models\StudentClassEnrollment;
 use App\Models\SchoolClass;
 use App\Models\ClassSection;
 use App\Models\AcademicYear;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use DB;
@@ -68,6 +69,12 @@ class StudentPromotionController extends Controller
                 ]);
             }
             DB::commit();
+            AuditTrail::log('Student', 'PROMOTE', null, null, [
+                'from_class_section_id' => $request->from_class_section_id,
+                'to_class_section_id' => $toClassSectionId,
+                'academic_year_id' => $academicYearId,
+                'students_promoted' => count($studentIds),
+            ]);
             Flash::success(count($studentIds) . ' students promoted successfully.');
         } catch (\Exception $e) {
             DB::rollback();

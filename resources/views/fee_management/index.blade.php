@@ -17,9 +17,6 @@
             <a href="{{ route('fees.dashboard') }}" class="btn-ghost-custom">
                 <i class="fas fa-chart-pie me-1"></i> Dashboard
             </a>
-            <a href="{{ route('fees.assignments.create') }}" class="btn-primary-custom">
-                <i class="fas fa-plus me-1"></i> Assign Fees
-            </a>
         </div>
     </div>
 

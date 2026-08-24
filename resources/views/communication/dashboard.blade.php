@@ -62,6 +62,57 @@
         </div>
     </div>
 
+    {{-- Pending Confirmations Banner --}}
+    @if(isset($stats['pending_count']) && $stats['pending_count'] > 0)
+    <div class="row mb-4">
+        <div class="col-12">
+            <a href="{{ route('communication.pending.index') }}" class="text-decoration-none">
+                <div class="alert alert-warning d-flex align-items-center justify-content-between" style="border-radius: 16px; border-left: 4px solid #f59e0b;">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-bell fa-lg me-3 text-warning"></i>
+                        <div>
+                            <strong>{{ $stats['pending_count'] }} notification(s) awaiting your confirmation</strong>
+                            <p class="mb-0 text-muted small">Medical and disciplinary alerts require manual review before sending</p>
+                        </div>
+                    </div>
+                    <span class="btn btn-warning btn-sm">Review Now <i class="fas fa-arrow-right ms-1"></i></span>
+                </div>
+            </a>
+        </div>
+    </div>
+    @endif
+
+    {{-- Daily Cost Widget --}}
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-teal-light text-teal"><i class="fas fa-coins"></i></div>
+                <div class="stat-content">
+                    <h3 class="stat-val">KES {{ number_format($stats['daily_cost'] ?? 0, 2) }}</h3>
+                    <p class="stat-label">SMS Cost Today</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-purple-light text-purple"><i class="fas fa-paper-plane"></i></div>
+                <div class="stat-content">
+                    <h3 class="stat-val">{{ $stats['daily_sms_count'] ?? 0 }} / {{ $stats['daily_limit'] ?? 500 }}</h3>
+                    <p class="stat-label">Daily SMS Used</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="stat-icon bg-indigo-light text-indigo"><i class="fas fa-toggle-on"></i></div>
+                <div class="stat-content">
+                    <h3 class="stat-val">{{ $stats['active_triggers'] ?? 0 }}</h3>
+                    <p class="stat-label">Active Triggers</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-4">
         {{-- Recent Messages --}}
         <div class="col-xl-8">

@@ -142,17 +142,54 @@
             });
 
             // Toggle Class Selector
+            function updateRecipientCount() {
+                var group = $('#recipient_group').val();
+                var classId = $('select[name="class_id"]').val();
+                var type = $('input[name="message_type"]:checked').val();
+
+                if (!group) {
+                    $('#recipient_estimate').text('Select a group to see count.');
+                    return;
+                }
+
+                $('#recipient_estimate').html('<i class="fas fa-spinner fa-spin"></i> Calculating...');
+
+                $.ajax({
+                    url: '{{ route("communication.api.recipients.count") }}',
+                    method: 'GET',
+                    data: {
+                        recipient_group: group,
+                        class_id: classId,
+                        message_type: type,
+                    },
+                    success: function(response) {
+                        var cost = type === 'SMS' ? (response.count * 0.80).toFixed(2) : '0.00';
+                        $('#recipient_estimate').html(
+                            '<strong class="text-dark">' + response.count + ' recipients</strong>' +
+                            (type === 'SMS' ? '<br><small class="text-muted">Est. cost: KES ' + cost + '</small>' : '')
+                        );
+                    },
+                    error: function() {
+                        $('#recipient_estimate').text('Could not calculate count.');
+                    }
+                });
+            }
+
             $('#recipient_group').change(function() {
                 if($(this).val() === 'Class') {
                     $('#class_selector').removeClass('d-none');
                 } else {
                     $('#class_selector').addClass('d-none');
                 }
-                $('#recipient_estimate').text('Calculating...');
-                // Here you would optimally perform an AJAX check for count
-                setTimeout(function(){
-                     $('#recipient_estimate').text('Approx. recipients based on selection.'); 
-                }, 500);
+                updateRecipientCount();
+            });
+
+            $('select[name="class_id"]').change(function() {
+                updateRecipientCount();
+            });
+
+            $('input[name="message_type"]').change(function() {
+                updateRecipientCount();
             });
 
             // Load Template Content

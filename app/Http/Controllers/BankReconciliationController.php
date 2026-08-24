@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use App\Models\AuditTrail;
 
 class BankReconciliationController extends Controller
 {
@@ -40,11 +41,20 @@ class BankReconciliationController extends Controller
 
         $bankAccount = BankAccount::findOrFail($id);
 
+        $count = count($request->transaction_ids);
+
         // Mark transactions as reconciled
         BankTransaction::whereIn('transaction_id', $request->transaction_ids)
             ->update(['status' => 'reconciled']);
 
+        AuditTrail::log('Bank Reconciliation', 'RECONCILE', $id, null, [
+            'account_id' => $id,
+            'account_name' => $bankAccount->account_name,
+            'transaction_ids' => $request->transaction_ids,
+            'transactions_reconciled' => $count,
+        ]);
+
         return redirect()->route('bank-reconciliations.index')
-            ->with('success', count($request->transaction_ids) . ' transactions successfully reconciled for ' . $bankAccount->account_name . '.');
+            ->with('success', $count . ' transactions successfully reconciled for ' . $bankAccount->account_name . '.');
     }
 }

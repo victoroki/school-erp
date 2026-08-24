@@ -7,6 +7,8 @@ use App\Models\FeePayment;
 use App\Models\Student;
 use App\Models\User;
 use App\Models\Parents;
+use App\Models\Module;
+use App\Models\Role;
 use App\Policies\AcademicsPolicy;
 use App\Policies\CommunicationPolicy;
 use App\Policies\DisciplinePolicy;
@@ -18,6 +20,8 @@ use App\Policies\HrPolicy;
 use App\Policies\InventoryPolicy;
 use App\Policies\LibraryPolicy;
 use App\Policies\ParentPolicy;
+use App\Policies\ModulePolicy;
+use App\Policies\RolePolicy;
 use App\Policies\StudentPolicy;
 use App\Policies\TransportPolicy;
 use App\Policies\UserPolicy;
@@ -33,6 +37,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         User::class              => UserPolicy::class,
+        Role::class              => RolePolicy::class,
         Student::class           => StudentPolicy::class,
         'academics'              => AcademicsPolicy::class,
         'exam'                   => ExamPolicy::class,
@@ -46,6 +51,7 @@ class AuthServiceProvider extends ServiceProvider
         'communication'          => CommunicationPolicy::class,
         'discipline'             => DisciplinePolicy::class,
         Parents::class           => ParentPolicy::class,
+        Module::class            => ModulePolicy::class,
     ];
 
     /**

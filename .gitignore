@@ -39,3 +39,22 @@ desktop.ini
 
 # AI context file (paste into new chat sessions)
 CONTEXT1.md
+
+# Dev scratch files & local DB dumps
+/check_*.php
+/inspect_*.php
+/verify_*.php
+/test_menu.php
+/render_output.html
+/*.log
+/database.sql
+/school-erp-db.sql
+
+# Local editor / AI-tool folders
+/.idea/
+/.opencode/
+/.vscode/
+/.qoder/
+
+# Runtime user uploads
+/public/uploads/

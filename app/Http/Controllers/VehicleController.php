@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateVehicleRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\VehicleRepository;
 use App\Models\Staff;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -57,6 +58,8 @@ class VehicleController extends AppBaseController
         $input = $request->all();
 
         $vehicle = $this->vehicleRepository->create($input);
+
+        AuditTrail::log('Vehicle', 'CREATE', $vehicle->vehicle_id, null, $vehicle->toArray());
 
         Flash::success('Vehicle saved successfully.');
 
@@ -109,7 +112,10 @@ class VehicleController extends AppBaseController
             return redirect(route('vehicles.index'));
         }
 
+        $oldData = $vehicle->toArray();
         $vehicle = $this->vehicleRepository->update($request->all(), $id);
+
+        AuditTrail::log('Vehicle', 'UPDATE', $vehicle->vehicle_id, $oldData, $vehicle->toArray());
 
         Flash::success('Vehicle updated successfully.');
 
@@ -131,7 +137,10 @@ class VehicleController extends AppBaseController
             return redirect(route('vehicles.index'));
         }
 
+        $oldData = $vehicle->toArray();
         $this->vehicleRepository->delete($id);
+
+        AuditTrail::log('Vehicle', 'DELETE', $id, $oldData, null);
 
         Flash::success('Vehicle deleted successfully.');
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FinancialYear;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -33,7 +34,9 @@ class FinancialYearController extends AppBaseController
             'end_date' => 'required|date|after:start_date',
         ]);
 
-        FinancialYear::create($request->all());
+        $financialYear = FinancialYear::create($request->all());
+
+        AuditTrail::log('Financial Year', 'CREATE', $financialYear->id, null, $financialYear->toArray());
 
         Flash::success('Financial Year created successfully.');
         return redirect(route('financial-years.index'));
@@ -48,7 +51,10 @@ class FinancialYearController extends AppBaseController
     public function update(Request $request, $id)
     {
         $financialYear = FinancialYear::findOrFail($id);
+        $oldData = $financialYear->toArray();
         $financialYear->update($request->all());
+
+        AuditTrail::log('Financial Year', 'UPDATE', $financialYear->id, $oldData, $financialYear->toArray());
 
         Flash::success('Financial Year updated successfully.');
         return redirect(route('financial-years.index'));

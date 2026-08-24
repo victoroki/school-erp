@@ -512,14 +512,47 @@ html, body {
     /* margin-left handled by body-level override at top of file */
     padding: calc(57px + 1.5rem) 2rem 2rem !important;
     transition: margin-left 0.2s ease;
-    min-height: calc(100vh - 57px - 52px) !important;
+    min-height: calc(100vh - 57px) !important;
 }
 
 .main-footer {
-    /* margin-left handled by body-level override at top of file */
+    /* margin-left is handled by body-level override at the top of this file */
     transition: margin-left 0.2s ease;
-    position: relative;
+    position: static !important;
     z-index: 1;
+    box-sizing: border-box !important;
+    background-color: #ffffff !important;
+    border-top: 1px solid #e2e8f0 !important;
+    padding: 0.875rem 2rem !important;
+    font-size: 0.813rem !important;
+    color: #64748b !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+}
+
+.main-footer .footer-copy {
+    color: #475569;
+    font-weight: 500;
+}
+
+.main-footer .footer-version {
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.main-footer a {
+    color: #2563eb !important;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.main-footer a:hover {
+    text-decoration: underline;
 }
 
 .main-header {
@@ -532,11 +565,6 @@ html, body {
     left: var(--sidebar-width) !important;
     z-index: 1030;
     margin-left: 0 !important;
-}
-
-.main-footer {
-    /* margin-left handled by body-level override at top of file */
-    transition: margin-left 0.2s ease;
 }
 
 /* Collapsed state is now handled by body-level overrides at the top of the file */
@@ -748,6 +776,11 @@ html, body {
 @media (max-width: 767.98px) {
     .content-wrapper {
         padding: calc(57px + 0.75rem) 0.75rem 0.75rem !important;
+        min-height: calc(100vh - 57px) !important;
+    }
+
+    .main-footer {
+        padding: 0.75rem 1rem !important;
     }
 }
 
@@ -766,6 +799,13 @@ html, body {
 
     .sidebar-user-panel {
         padding: 0.625rem;
+    }
+
+    .main-footer {
+        flex-direction: column !important;
+        justify-content: center !important;
+        text-align: center !important;
+        gap: 0.5rem !important;
     }
 }
 

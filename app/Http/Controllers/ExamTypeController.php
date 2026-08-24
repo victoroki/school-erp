@@ -6,6 +6,7 @@ use App\Http\Requests\CreateExamTypeRequest;
 use App\Http\Requests\UpdateExamTypeRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\ExamTypeRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -17,8 +18,8 @@ class ExamTypeController extends AppBaseController
     public function __construct(ExamTypeRepository $examTypeRepo)
     {
         $this->examTypeRepository = $examTypeRepo;
-        $this->middleware('can:exams.view')->only(['index', 'show']);
-        $this->middleware('can:exams.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.settings.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -48,6 +49,8 @@ class ExamTypeController extends AppBaseController
         $input = $request->all();
 
         $examType = $this->examTypeRepository->create($input);
+
+        AuditTrail::log('Exam Type', 'CREATE', $examType->exam_type_id, null, $examType->toArray());
 
         Flash::success('Exam Type saved successfully.');
 
@@ -99,7 +102,10 @@ class ExamTypeController extends AppBaseController
             return redirect(route('exam-types.index'));
         }
 
+        $oldData = $examType->toArray();
         $examType = $this->examTypeRepository->update($request->all(), $id);
+
+        AuditTrail::log('Exam Type', 'UPDATE', $examType->exam_type_id, $oldData, $examType->toArray());
 
         Flash::success('Exam Type updated successfully.');
 
@@ -121,7 +127,10 @@ class ExamTypeController extends AppBaseController
             return redirect(route('exam-types.index'));
         }
 
+        $oldData = $examType->toArray();
         $this->examTypeRepository->delete($id);
+
+        AuditTrail::log('Exam Type', 'DELETE', $id, $oldData, null);
 
         Flash::success('Exam Type deleted successfully.');
 

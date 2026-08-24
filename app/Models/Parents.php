@@ -30,18 +30,49 @@ class Parents extends Model
         'occupation' => 'string'
     ];
 
-    public static array $rules = [
-        'user_id' => 'nullable',
-        'first_name' => 'required|string|max:50',
-        'last_name' => 'required|string|max:50',
-        'relationship' => 'required|string',
-        'email' => 'nullable|string|max:100',
-        'phone' => 'required|string|max:20',
-        'alternate_phone' => 'nullable|string|max:20',
-        'occupation' => 'nullable|string|max:100',
-        'created_at' => 'nullable',
-        'updated_at' => 'nullable'
-    ];
+    public static function rules(): array
+    {
+        return [
+            'user_id' => 'nullable',
+            'first_name' => 'required|string|max:50',
+            'last_name' => 'required|string|max:50',
+            'relationship' => 'required|string',
+            'email' => 'nullable|string|max:100',
+            'phone' => [
+                'required', 'string', 'max:20',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if (!\App\Services\Communication\PhoneHelper::isValidKenyanMobile($value)) {
+                        $fail('The ' . str_replace('_', ' ', $attribute) . ' must be a valid Kenyan mobile number, e.g. 0712345678 or +254712345678.');
+                    }
+                },
+            ],
+            'alternate_phone' => [
+                'nullable', 'string', 'max:20',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    if ($value !== null && $value !== '' && !\App\Services\Communication\PhoneHelper::isValidKenyanMobile($value)) {
+                        $fail('The ' . str_replace('_', ' ', $attribute) . ' must be a valid Kenyan mobile number, e.g. 0712345678 or +254712345678.');
+                    }
+                },
+            ],
+            'occupation' => 'nullable|string|max:100',
+            'created_at' => 'nullable',
+            'updated_at' => 'nullable'
+        ];
+    }
+
+    /**
+     * Store phone numbers in the canonical local format (07XXXXXXXX) so
+     * SMS providers always receive a consistent, valid number.
+     */
+    public function setPhoneAttribute($value): void
+    {
+        $this->attributes['phone'] = \App\Services\Communication\PhoneHelper::normalizeLocal($value);
+    }
+
+    public function setAlternatePhoneAttribute($value): void
+    {
+        $this->attributes['alternate_phone'] = \App\Services\Communication\PhoneHelper::normalizeLocal($value);
+    }
 
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {

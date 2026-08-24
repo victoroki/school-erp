@@ -15,7 +15,7 @@
                 <p class="page-subtitle mb-0">Record a fee payment for this student</p>
             </div>
         </div>
-        <a href="{{ route('fee-management.index') }}" class="btn-ghost-custom">
+        <a href="{{ route('fees.collect') }}" class="btn-ghost-custom">
             <i class="fas fa-arrow-left me-1"></i> Back
         </a>
     </div>
@@ -88,7 +88,7 @@
                             All Fees — Total Balance: KSh {{ number_format($totalBalance, 2) }}
                         </option>
                         @foreach($student->feeAssignments as $fee)
-                            <option value="{{ $fee->student_fee_assignment_id }}" data-balance="{{ $fee->balance }}" data-name="{{ $fee->feeStructure->category->name }}">
+                            <option value="{{ $fee->id }}" data-balance="{{ $fee->balance }}" data-name="{{ $fee->feeStructure->category->name }}">
                                 {{ $fee->feeStructure->category->name }} — Balance: KSh {{ number_format($fee->balance, 2) }}
                             </option>
                         @endforeach
@@ -121,11 +121,11 @@
                     <div class="form-group">
                         <label for="payment_method" class="form-label-custom">Payment Method <span class="required">*</span></label>
                         <select name="payment_method" id="payment_method" class="form-select-custom" required>
-                            <option value="Cash">Cash</option>
-                            <option value="Bank Transfer">Bank Transfer</option>
-                            <option value="Cheque">Cheque</option>
-                            <option value="Mobile Money">Mobile Money (M-Pesa)</option>
-                            <option value="Other">Other</option>
+                            <option value="cash">Cash</option>
+                            <option value="check">Check</option>
+                            <option value="card">Card</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="online">Online / M-Pesa</option>
                         </select>
                     </div>
 
@@ -321,8 +321,6 @@
 }
 </style>
 
-</div>
-
 @push('page_scripts')
 <script>
 // Enhanced polling strategy to wait for jQuery and Select2
@@ -399,7 +397,7 @@
                     return true;
                 });
 
-                console.log('Payment form initialized successfully');
+
             } catch (error) {
                 console.error('Error initializing payment form:', error);
                 // Fallback to basic functionality
@@ -429,3 +427,4 @@
 })();
 </script>
 @endpush
+@endsection

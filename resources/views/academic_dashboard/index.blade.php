@@ -6,7 +6,13 @@
     <div class="row align-items-center mb-4">
         <div class="col-md-7">
             <h1 class="dash-heading">Academic Management</h1>
-            <p class="dash-sub">Overview of classes, subjects, schedules, and operations</p>
+            <p class="dash-sub">
+                @if($isManager)
+                    Overview of classes, subjects, schedules, and operations
+                @else
+                    Your classes, schedule, and classroom tools
+                @endif
+            </p>
         </div>
         <div class="col-md-5 text-md-end mt-2 mt-md-0">
             <ol class="breadcrumb float-sm-right m-0 bg-transparent p-0" style="font-size: .813rem; font-weight: 600;">
@@ -17,6 +23,7 @@
     </div>
 
     {{-- ② QUICK STATS --}}
+    @if($isManager)
     <div class="row mb-4">
         <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
             <div class="stat-card">
@@ -55,6 +62,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     <div class="row">
         <!-- Today's Lessons -->
@@ -111,6 +119,7 @@
 
         <!-- Side Widgets -->
         <div class="col-lg-4">
+            @if($isManager)
             <!-- Classroom Utilization -->
             <div class="dash-panel mb-4">
                 <div class="dash-panel-header">
@@ -160,6 +169,7 @@
                     </ul>
                 </div>
             </div>
+            @endif
 
             <!-- Quick Actions -->
             <div class="dash-panel">
@@ -170,6 +180,7 @@
                     </div>
                 </div>
                 <div class="dash-panel-body p-2">
+                    @if($isManager)
                     <div class="row m-0">
                         <div class="col-6 p-1">
                             <a href="{{ route('timetables.create') }}" class="qa-btn">
@@ -192,6 +203,30 @@
                             </a>
                         </div>
                     </div>
+                    @else
+                    <div class="row m-0">
+                        <div class="col-6 p-1">
+                            <a href="{{ route('timetables.teacher') }}" class="qa-btn">
+                                <i class="fas fa-calendar-alt mb-1"></i> My Timetable
+                            </a>
+                        </div>
+                        <div class="col-6 p-1">
+                            <a href="{{ route('exam-results.bulk') }}" class="qa-btn">
+                                <i class="fas fa-edit mb-1"></i> Enter Marks
+                            </a>
+                        </div>
+                        <div class="col-6 p-1">
+                            <a href="{{ route('student-attendance.index') }}" class="qa-btn">
+                                <i class="fas fa-calendar-check mb-1"></i> Take Attendance
+                            </a>
+                        </div>
+                        <div class="col-6 p-1">
+                            <a href="{{ route('grade-book.index') }}" class="qa-btn">
+                                <i class="fas fa-book mb-1"></i> Grade Book
+                            </a>
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>

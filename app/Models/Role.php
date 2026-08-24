@@ -11,12 +11,16 @@ class Role extends Model
 
     public $fillable = [
         'role_name',
-        'description'
+        'description',
+        'is_protected',
+        'is_hidden'
     ];
 
     protected $casts = [
         'role_name' => 'string',
-        'description' => 'string'
+        'description' => 'string',
+        'is_protected' => 'boolean',
+        'is_hidden' => 'boolean'
     ];
 
     public static array $rules = [

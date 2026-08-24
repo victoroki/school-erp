@@ -9,6 +9,7 @@ use App\Models\ClassSection;
 use App\Models\Student;
 use App\Models\AcademicYear;
 use App\Repositories\StudentClassEnrollmentRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use DB;
@@ -82,6 +83,8 @@ class StudentClassEnrollmentController extends AppBaseController
 
         $studentClassEnrollment = $this->studentClassEnrollmentRepository->create($input);
 
+        AuditTrail::log('Student Enrollment', 'CREATE', $studentClassEnrollment->enrollment_id, null, $studentClassEnrollment->toArray());
+
         Flash::success('Student Class Enrollment saved successfully.');
 
         return redirect(route('student-class-enrollments.index'));
@@ -136,7 +139,10 @@ class StudentClassEnrollmentController extends AppBaseController
             return redirect(route('student-class-enrollments.index'));
         }
 
+        $oldData = $studentClassEnrollment->toArray();
         $studentClassEnrollment = $this->studentClassEnrollmentRepository->update($request->all(), $id);
+
+        AuditTrail::log('Student Enrollment', 'UPDATE', $studentClassEnrollment->enrollment_id, $oldData, $studentClassEnrollment->toArray());
 
         Flash::success('Student Class Enrollment updated successfully.');
 
@@ -158,7 +164,10 @@ class StudentClassEnrollmentController extends AppBaseController
             return redirect(route('student-class-enrollments.index'));
         }
 
+        $oldData = $studentClassEnrollment->toArray();
         $this->studentClassEnrollmentRepository->delete($id);
+
+        AuditTrail::log('Student Enrollment', 'DELETE', $id, $oldData, null);
 
         Flash::success('Student Class Enrollment deleted successfully.');
 

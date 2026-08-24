@@ -250,12 +250,6 @@
                                     <span class="x-small font-weight-bold">DOSSIERS</span>
                                 </a>
                             </div>
-                            <div class="col-6 p-1">
-                                <a href="{{ route('student-class-enrollments.index') }}" class="btn action-btn w-100 py-3">
-                                    <i class="fas fa-id-card-alt mb-2 fa-lg d-block"></i>
-                                    <span class="x-small font-weight-bold">IDS & CARDS</span>
-                                </a>
-                            </div>
                         </div>
                     </div>
                 </div>

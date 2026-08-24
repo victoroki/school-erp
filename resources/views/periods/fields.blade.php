@@ -4,6 +4,13 @@
     {!! Form::text('name', null, ['class' => 'form-control dash-control', 'required', 'placeholder' => 'e.g. First Period, Morning Session, Break', 'maxlength' => 50]) !!}
 </div>
 
+<!-- Type Field -->
+<div class="form-group col-sm-12 mb-4">
+    {!! Form::label('type', 'Slot Type', ['class' => 'dash-label']) !!}
+    {!! Form::select('type', ['period' => 'Period (teaching slot)', 'break' => 'Break (no lesson)'], old('type', $period->type ?? 'period'), ['class' => 'form-control dash-control', 'required', 'id' => 'period_type']) !!}
+    <small class="text-muted">Breaks appear in the timetable grid but are excluded from lesson scheduling and conflict checks.</small>
+</div>
+
 <div class="row w-100 m-0">
     <!-- Start Time Field -->
     <div class="form-group col-sm-6 ps-0 mb-3">

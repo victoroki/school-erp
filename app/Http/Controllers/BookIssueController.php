@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BookIssue;
 use App\Models\Book;
 use App\Models\LibraryMember;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use Carbon\Carbon;
@@ -75,6 +76,7 @@ class BookIssueController extends Controller
 
         try {
             $this->libraryService->issueBook($request->all());
+            AuditTrail::log('Book Issue', 'ISSUE', $request->book_id, null, $request->only(['book_id', 'member_id', 'due_date']));
             Flash::success('Book issued successfully.');
         } catch (\Exception $e) {
             Flash::error('Error issuing book: ' . $e->getMessage());
@@ -109,6 +111,7 @@ class BookIssueController extends Controller
     {
         try {
             $this->libraryService->returnBook($id, $request->all());
+            AuditTrail::log('Book Issue', 'RETURN', $id, ['status' => 'issued'], ['status' => 'returned']);
             Flash::success('Book returned successfully.');
         } catch (\Exception $e) {
              Flash::error('Error returning book: ' . $e->getMessage());
@@ -133,7 +136,10 @@ class BookIssueController extends Controller
             $bookIssue->book->increment('available_quantity');
         }
 
+        $oldData = $bookIssue->toArray();
         $bookIssue->delete();
+
+        AuditTrail::log('Book Issue', 'DELETE', $id, $oldData, null);
 
         Flash::success('Book Issue deleted successfully.');
 

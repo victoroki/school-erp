@@ -8,6 +8,7 @@ use App\Http\Controllers\AppBaseController;
 use App\Models\EmailTemplate;
 use App\Models\TemplateCategory;
 use App\Repositories\EmailTemplateRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -70,6 +71,8 @@ class EmailTemplateController extends AppBaseController
 
         $emailTemplate = $this->emailTemplateRepository->create($input);
 
+        AuditTrail::log('Email Template', 'CREATE', $emailTemplate->template_id, null, $emailTemplate->toArray());
+
         Flash::success('Email Template saved successfully.');
 
         return redirect(route('emailTemplates.index'));
@@ -121,7 +124,10 @@ class EmailTemplateController extends AppBaseController
             return redirect(route('emailTemplates.index'));
         }
 
+        $oldData = $emailTemplate->toArray();
         $emailTemplate = $this->emailTemplateRepository->update($request->all(), $id);
+
+        AuditTrail::log('Email Template', 'UPDATE', $emailTemplate->template_id, $oldData, $emailTemplate->toArray());
 
         Flash::success('Email Template updated successfully.');
 
@@ -143,7 +149,10 @@ class EmailTemplateController extends AppBaseController
             return redirect(route('emailTemplates.index'));
         }
 
+        $oldData = $emailTemplate->toArray();
         $this->emailTemplateRepository->delete($id);
+
+        AuditTrail::log('Email Template', 'DELETE', $id, $oldData, null);
 
         Flash::success('Email Template deleted successfully.');
 

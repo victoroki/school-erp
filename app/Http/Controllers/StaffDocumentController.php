@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateStaffDocumentRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Models\Staff;
 use App\Repositories\StaffDocumentRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -60,6 +61,8 @@ class StaffDocumentController extends AppBaseController
 
         $staffDocument = $this->staffDocumentRepository->create($input);
 
+        AuditTrail::log('Staff Document', 'CREATE', $staffDocument->id, null, $staffDocument->toArray());
+
         Flash::success('Staff Document saved successfully.');
 
         return redirect(route('staffDocuments.index'));
@@ -94,10 +97,10 @@ class StaffDocumentController extends AppBaseController
             return redirect(route('staffDocuments.index'));
         }
 
+        $dropdownData = $this->getDropdownData();
         return view('staff_documents.edit', array_merge([
             'staffDocument'=> $staffDocument,
-            $dropdownData
-        ]));
+        ], $dropdownData));
     }
 
     /**
@@ -113,7 +116,10 @@ class StaffDocumentController extends AppBaseController
             return redirect(route('staffDocuments.index'));
         }
 
+        $oldData = $staffDocument->toArray();
         $staffDocument = $this->staffDocumentRepository->update($request->all(), $id);
+
+        AuditTrail::log('Staff Document', 'UPDATE', $staffDocument->id, $oldData, $staffDocument->toArray());
 
         Flash::success('Staff Document updated successfully.');
 
@@ -135,7 +141,10 @@ class StaffDocumentController extends AppBaseController
             return redirect(route('staffDocuments.index'));
         }
 
+        $oldData = $staffDocument->toArray();
         $this->staffDocumentRepository->delete($id);
+
+        AuditTrail::log('Staff Document', 'DELETE', $id, $oldData, null);
 
         Flash::success('Staff Document deleted successfully.');
 

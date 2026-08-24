@@ -93,7 +93,7 @@
                         <ul class="nav nav-tabs" id="classTab" role="tablist">
                             <li class="nav-item">
                                 <a class="nav-link active" id="sections-tab" data-toggle="pill" href="#sections" role="tab" aria-controls="sections" aria-selected="true">
-                                    <i class="fas fa-layer-group mr-1"></i> Class Sections
+                                    <i class="fas fa-layer-group mr-1"></i> Class Rosters
                                 </a>
                             </li>
                             <li class="nav-item">

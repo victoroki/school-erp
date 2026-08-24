@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateClassSubjectRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Models\AcademicYear;
 use App\Repositories\ClassSubjectRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use App\Models\SchoolClass; 
@@ -74,16 +75,20 @@ class ClassSubjectController extends AppBaseController
 
         // Check if subject_id is an array (multi-select)
         if (isset($input['subject_id']) && is_array($input['subject_id'])) {
+            $periodsPerWeek = (int) ($input['periods_per_week'] ?? 1);
             foreach ($input['subject_id'] as $subjectId) {
-                $this->classSubjectRepository->create([
+                $classSubject = $this->classSubjectRepository->create([
                     'class_id' => $input['class_id'],
                     'subject_id' => $subjectId,
-                    'academic_year_id' => $input['academic_year_id']
+                    'academic_year_id' => $input['academic_year_id'],
+                    'periods_per_week' => $periodsPerWeek
                 ]);
+                AuditTrail::log('Class Subject', 'CREATE', $classSubject->class_subject_id, null, $classSubject->toArray());
             }
             Flash::success('Subjects assigned to class successfully.');
         } else {
-            $this->classSubjectRepository->create($input);
+            $classSubject = $this->classSubjectRepository->create($input);
+            AuditTrail::log('Class Subject', 'CREATE', $classSubject->class_subject_id, null, $classSubject->toArray());
             Flash::success('Class Subject saved successfully.');
         }
 
@@ -143,7 +148,10 @@ class ClassSubjectController extends AppBaseController
             return redirect(route('class-subjects.index'));
         }
 
+        $oldData = $classSubject->toArray();
         $classSubject = $this->classSubjectRepository->update($request->all(), $id);
+
+        AuditTrail::log('Class Subject', 'UPDATE', $classSubject->class_subject_id, $oldData, $classSubject->toArray());
 
         Flash::success('Class Subject updated successfully.');
 
@@ -165,11 +173,43 @@ class ClassSubjectController extends AppBaseController
             return redirect(route('class-subjects.index'));
         }
 
+        $oldData = $classSubject->toArray();
         $this->classSubjectRepository->delete($id);
+
+        AuditTrail::log('Class Subject', 'DELETE', $id, $oldData, null);
 
         Flash::success('Class Subject deleted successfully.');
 
         return redirect(route('class-subjects.index'));
+    }
+
+    /**
+     * Get subjects filtered by class grade level (AJAX).
+     * Subjects without a grade_level are always included (general subjects).
+     * Subjects matching the class's numeric_value (grade level) are included.
+     */
+    public function getSubjectsByClass($classId)
+    {
+        $class = SchoolClass::find($classId);
+        if (!$class) {
+            return response()->json([]);
+        }
+
+        $gradeLevel = $class->numeric_value;
+
+        $subjects = Subject::where(function ($query) use ($gradeLevel) {
+                $query->whereNull('grade_level')
+                    ->orWhere('grade_level', $gradeLevel);
+            })
+            ->orderBy('name')
+            ->get(['subject_id', 'name', 'grade_level'])
+            ->map(fn($s) => [
+                'id' => $s->subject_id,
+                'name' => $s->name,
+                'grade_level' => $s->grade_level,
+            ]);
+
+        return response()->json($subjects);
     }
 
     /**
@@ -186,6 +226,8 @@ class ClassSubjectController extends AppBaseController
 
         // Delete all class subjects for this class
         $deletedCount = \App\Models\ClassSubject::where('class_id', $classId)->delete();
+
+        AuditTrail::log('Class Subject', 'BULK DELETE', $classId, ['class_id' => $classId], ['deleted_count' => $deletedCount]);
 
         Flash::success("Successfully cleared all ($deletedCount) subjects from the class.");
 

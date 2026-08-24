@@ -35,6 +35,6 @@ class FeePayment extends Model
 
     public function collectedBy()
     {
-        return $this->belongsTo(User::class, 'collected_by');
+        return $this->belongsTo(\App\Models\Staff::class, 'collected_by', 'staff_id');
     }
 }

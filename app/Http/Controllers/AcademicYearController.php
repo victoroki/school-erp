@@ -6,6 +6,7 @@ use App\Http\Requests\CreateAcademicYearRequest;
 use App\Http\Requests\UpdateAcademicYearRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\AcademicYearRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -50,6 +51,8 @@ class AcademicYearController extends AppBaseController
         $input = $request->all();
 
         $academicYear = $this->academicYearRepository->create($input);
+
+        AuditTrail::log('Academic Year', 'CREATE', $academicYear->academic_year_id, null, $academicYear->toArray());
 
         Flash::success('Academic Year saved successfully.');
 
@@ -101,7 +104,10 @@ class AcademicYearController extends AppBaseController
             return redirect(route('academic-years.index'));
         }
 
+        $oldData = $academicYear->toArray();
         $academicYear = $this->academicYearRepository->update($request->all(), $id);
+
+        AuditTrail::log('Academic Year', 'UPDATE', $academicYear->academic_year_id, $oldData, $academicYear->toArray());
 
         Flash::success('Academic Year updated successfully.');
 
@@ -123,7 +129,10 @@ class AcademicYearController extends AppBaseController
             return redirect(route('academic-years.index'));
         }
 
+        $oldData = $academicYear->toArray();
         $this->academicYearRepository->delete($id);
+
+        AuditTrail::log('Academic Year', 'DELETE', $id, $oldData, null);
 
         Flash::success('Academic Year deleted successfully.');
 

@@ -6,6 +6,7 @@ use App\Http\Requests\CreateIncomeCategoryRequest;
 use App\Http\Requests\UpdateIncomeCategoryRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\IncomeCategoryRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -48,6 +49,8 @@ class IncomeCategoryController extends AppBaseController
         $input = $request->all();
 
         $incomeCategory = $this->incomeCategoryRepository->create($input);
+
+        AuditTrail::log('Income Category', 'CREATE', $incomeCategory->category_id, null, $incomeCategory->toArray());
 
         Flash::success('Income Category saved successfully.');
 
@@ -99,7 +102,10 @@ class IncomeCategoryController extends AppBaseController
             return redirect(route('incomeCategories.index'));
         }
 
+        $oldData = $incomeCategory->toArray();
         $incomeCategory = $this->incomeCategoryRepository->update($request->all(), $id);
+
+        AuditTrail::log('Income Category', 'UPDATE', $incomeCategory->category_id, $oldData, $incomeCategory->toArray());
 
         Flash::success('Income Category updated successfully.');
 
@@ -121,7 +127,10 @@ class IncomeCategoryController extends AppBaseController
             return redirect(route('incomeCategories.index'));
         }
 
+        $oldData = $incomeCategory->toArray();
         $this->incomeCategoryRepository->delete($id);
+
+        AuditTrail::log('Income Category', 'DELETE', $id, $oldData, null);
 
         Flash::success('Income Category deleted successfully.');
 

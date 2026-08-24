@@ -22,7 +22,6 @@ class FeeReportsController extends Controller
     {
         $this->financeService = $financeService;
         $this->middleware('can:fees.view');
-        $this->middleware('can:fees.export')->only(['expectedRevenue', 'collectionReport']);
     }
 
     public function expectedRevenue(Request $request)
@@ -58,11 +57,9 @@ class FeeReportsController extends Controller
                  return $q->where('student_fee_assignments.academic_year_id', $yearId)
                           ->where('student_class_enrollments.academic_year_id', $yearId);
             })
-            ->select(
-                'classes.name as class_name',
-                DB::raw('COUNT(DISTINCT student_fee_assignments.student_id) as student_count'),
-                DB::raw('SUM(student_fee_assignments.final_amount) as expected'),
-                DB::raw('(SELECT COALESCE(SUM(fp.amount), 0) FROM fee_payments fp INNER JOIN student_fee_assignments sfa ON fp.student_fee_assignment_id = sfa.id INNER JOIN student_class_enrollments sce ON sfa.student_id = sce.student_id INNER JOIN class_sections cs ON sce.class_section_id = cs.class_section_id WHERE cs.class_id = classes.class_id AND sfa.status = "active"'.($yearId ? ' AND sfa.academic_year_id = '.$yearId.' AND sce.academic_year_id = '.$yearId : '').') as collected')
+            ->selectRaw(
+                'classes.name as class_name, COUNT(DISTINCT student_fee_assignments.student_id) as student_count, SUM(student_fee_assignments.final_amount) as expected, (SELECT COALESCE(SUM(fp.amount), 0) FROM fee_payments fp INNER JOIN student_fee_assignments sfa ON fp.student_fee_assignment_id = sfa.id INNER JOIN student_class_enrollments sce ON sfa.student_id = sce.student_id INNER JOIN class_sections cs ON sce.class_section_id = cs.class_section_id WHERE cs.class_id = classes.class_id AND sfa.status = "active"'.($yearId ? ' AND sfa.academic_year_id = ? AND sce.academic_year_id = ?' : '').') as collected',
+                $yearId ? [$yearId, $yearId] : []
             )
             ->groupBy('classes.class_id', 'classes.name')
             ->orderByDesc('expected')

@@ -114,7 +114,7 @@ class FeeSeeder extends Seeder
                 if ($paymentStatusChance <= 4) {
                     // Paid (40% chance)
                     FeePayment::create([
-                        'student_fee_assignment_id' => $assignment->student_fee_assignment_id,
+                        'student_fee_assignment_id' => $assignment->id,
                         'amount' => $finalAmount,
                         'payment_date' => Carbon::now()->subDays(rand(1, 15)),
                         'payment_method' => collect(['cash', 'bank_transfer', 'online'])->random(),
@@ -126,7 +126,7 @@ class FeeSeeder extends Seeder
                     // Partial (30% chance)
                     $partialAmount = round($finalAmount * (rand(30, 70) / 100), 2);
                     FeePayment::create([
-                        'student_fee_assignment_id' => $assignment->student_fee_assignment_id,
+                        'student_fee_assignment_id' => $assignment->id,
                         'amount' => $partialAmount,
                         'payment_date' => Carbon::now()->subDays(rand(1, 5)),
                         'payment_method' => collect(['cash', 'bank_transfer'])->random(),

@@ -30,14 +30,16 @@
 
 <!-- Phone Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('phone', 'Phone:') !!}
-    {!! Form::text('phone', null, ['class' => 'form-control', 'required', 'maxlength' => 20, 'maxlength' => 20]) !!}
+    {!! Form::label('phone', 'Phone:') !!} <span class="text-danger">*</span>
+    {!! Form::text('phone', null, ['class' => 'form-control', 'required', 'maxlength' => 20, 'type' => 'tel', 'placeholder' => 'e.g. 0712 345 678']) !!}
+    <small class="form-text text-muted">Kenyan mobile number — used for SMS alerts.</small>
 </div>
 
 <!-- Alternate Phone Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('alternate_phone', 'Alternate Phone:') !!}
-    {!! Form::text('alternate_phone', null, ['class' => 'form-control', 'maxlength' => 20, 'maxlength' => 20]) !!}
+    {!! Form::text('alternate_phone', null, ['class' => 'form-control', 'maxlength' => 20, 'type' => 'tel', 'placeholder' => 'e.g. 0733 111 222']) !!}
+    <small class="form-text text-muted">Optional backup number for SMS alerts.</small>
 </div>
 
 <!-- Occupation Field -->

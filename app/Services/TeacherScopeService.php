@@ -51,6 +51,41 @@ class TeacherScopeService
     }
 
     /**
+     * Get the class_ids derived from the teacher's assigned class sections.
+     * exam_schedules references classes (class_id), not class sections.
+     */
+    public function getClassIds(User $user): Collection
+    {
+        $sectionIds = $this->getClassSectionIds($user);
+        if ($sectionIds->isEmpty()) {
+            return collect();
+        }
+
+        return ClassSection::whereIn('class_section_id', $sectionIds)
+            ->pluck('class_id')
+            ->unique()
+            ->values();
+    }
+
+    /**
+     * Scope an Exam query to only the exams scheduled for the teacher's classes.
+     * Exams with no schedules at all remain visible.
+     */
+    public function scopeExams($query, User $user)
+    {
+        $classIds = $this->getClassIds($user);
+        if ($classIds->isEmpty()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function ($q) use ($classIds) {
+            $q->whereHas('examSchedules', function ($s) use ($classIds) {
+                $s->whereIn('class_id', $classIds);
+            })->orWhereDoesntHave('examSchedules');
+        });
+    }
+
+    /**
      * Apply a class_section_id scope to a query builder.
      * Falls back to empty scope (no results) if user is not a teacher/staff.
      */

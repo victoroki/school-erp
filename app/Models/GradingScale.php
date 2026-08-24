@@ -28,8 +28,8 @@ class GradingScale extends Model
 
     public static array $rules = [
         'name' => 'required|string|max:20',
-        'min_percentage' => 'required|numeric',
-        'max_percentage' => 'required|numeric',
+        'min_percentage' => 'required|numeric|min:0|max:100',
+        'max_percentage' => 'required|numeric|min:0|max:100|gt:min_percentage',
         'grade_point' => 'nullable|numeric',
         'description' => 'nullable|string|max:65535',
         'created_at' => 'nullable',

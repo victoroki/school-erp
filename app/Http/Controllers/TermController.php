@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Term;
 use App\Models\AcademicYear;
+use App\Models\AuditTrail;
 use App\Http\Requests\CreateTermRequest;
 use App\Http\Requests\UpdateTermRequest;
 use Illuminate\Http\Request;
@@ -46,7 +47,9 @@ class TermController extends AppBaseController
     {
         $input = $request->all();
 
-        Term::create($input);
+        $term = Term::create($input);
+
+        AuditTrail::log('Term', 'CREATE', $term->id, null, $term->toArray());
 
         Flash::success('Term created successfully.');
 
@@ -71,7 +74,10 @@ class TermController extends AppBaseController
     public function update($id, UpdateTermRequest $request)
     {
         $term = Term::findOrFail($id);
+        $oldData = $term->toArray();
         $term->update($request->all());
+
+        AuditTrail::log('Term', 'UPDATE', $term->id, $oldData, $term->toArray());
 
         Flash::success('Term updated successfully.');
 
@@ -87,7 +93,10 @@ class TermController extends AppBaseController
             return redirect()->back();
         }
 
+        $oldData = $term->toArray();
         $term->delete();
+
+        AuditTrail::log('Term', 'DELETE', $id, $oldData, null);
 
         Flash::success('Term deleted successfully.');
 
@@ -103,6 +112,8 @@ class TermController extends AppBaseController
             ->update(['status' => 'completed']);
 
         $term->update(['status' => 'active']);
+
+        AuditTrail::log('Term', 'ACTIVATE', $term->id, ['status' => 'completed'], ['status' => 'active']);
 
         Flash::success('Term activated successfully.');
 

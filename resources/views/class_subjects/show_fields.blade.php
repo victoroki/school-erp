@@ -40,6 +40,19 @@
     </div>
 </div>
 
+<!-- Periods per Week Field -->
+<div class="col-sm-6 mb-4">
+    <div class="d-flex align-items-center">
+        <div class="rounded-circle d-flex align-items-center justify-content-center mr-3 shadow-sm text-amber" style="width: 45px; height: 45px; background-color: #fffbeb;">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div>
+            <label class="text-muted d-block small mb-1" style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Periods per Week</label>
+            <p class="font-weight-bold mb-0 text-dark" style="font-size: 1.1rem;">{{ $classSubject->periods_per_week ?? 1 }}</p>
+        </div>
+    </div>
+</div>
+
 <!-- Extra Badge Information -->
 <div class="col-sm-12 mt-3">
     <div class="p-3 rounded border bg-light d-flex align-items-center" style="border-radius: 12px !important;">

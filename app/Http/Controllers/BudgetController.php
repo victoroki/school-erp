@@ -9,6 +9,7 @@ use App\Models\IncomeCategory;
 use App\Models\Expenses;
 use App\Models\Income;
 use App\Models\FeePayment;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -52,7 +53,9 @@ class BudgetController extends AppBaseController
             'amount' => 'required|numeric|min:0',
         ]);
 
-        Budget::create($request->all() + ['created_by' => auth()->id()]);
+        $budget = Budget::create($request->all() + ['created_by' => auth()->id()]);
+
+        AuditTrail::log('Budget', 'CREATE', $budget->id, null, $budget->toArray());
 
         Flash::success('Budget entry saved successfully.');
         return redirect(route('budgets.index'));
@@ -102,7 +105,10 @@ class BudgetController extends AppBaseController
             'amount' => 'required|numeric|min:0',
         ]);
 
+        $oldData = $budget->toArray();
         $budget->update($request->all());
+
+        AuditTrail::log('Budget', 'UPDATE', $budget->id, $oldData, $budget->toArray());
 
         Flash::success('Budget updated successfully.');
         return redirect(route('budgets.index'));
@@ -117,7 +123,10 @@ class BudgetController extends AppBaseController
             return redirect(route('budgets.index'));
         }
 
+        $oldData = $budget->toArray();
         $budget->delete();
+
+        AuditTrail::log('Budget', 'DELETE', $id, $oldData, null);
 
         Flash::success('Budget deleted successfully.');
         return redirect(route('budgets.index'));

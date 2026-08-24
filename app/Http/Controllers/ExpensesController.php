@@ -10,6 +10,7 @@ use App\Models\ExpenseCategory;
 use App\Models\BankAccount;
 use App\Models\Supplier;
 use App\Models\Staff;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -76,6 +77,8 @@ class ExpensesController extends AppBaseController
 
         $expenses = Expenses::create($input);
 
+        AuditTrail::log('Expense', 'CREATE', $expenses->id, null, $expenses->toArray());
+
         Flash::success('Expense request submitted and is pending approval.');
 
         return redirect(route('expenses.index'));
@@ -101,10 +104,13 @@ class ExpensesController extends AppBaseController
             return redirect()->back();
         }
 
+        $oldStatus = $expense->status;
         $expense->update([
             'status' => 'approved',
             'approved_by' => auth()->id()
         ]);
+
+        AuditTrail::log('Expense', 'APPROVE', $expense->id, ['status' => $oldStatus], $expense->toArray());
 
         Flash::success('Expense approved successfully.');
         return redirect()->back();
@@ -123,10 +129,13 @@ class ExpensesController extends AppBaseController
             return redirect()->back();
         }
 
+        $oldStatus = $expense->status;
         $expense->update([
             'status' => 'paid',
             'payment_date' => now()
         ]);
+
+        AuditTrail::log('Expense', 'MARK PAID', $expense->id, ['status' => $oldStatus], $expense->toArray());
 
         // Deduct from bank account
         if ($expense->bank_account_id) {
@@ -157,7 +166,10 @@ class ExpensesController extends AppBaseController
             }
         }
 
+        $oldData = $expenses->toArray();
         $expenses->delete();
+
+        AuditTrail::log('Expense', 'DELETE', $id, $oldData, null);
 
         Flash::success('Expenses deleted successfully.');
 

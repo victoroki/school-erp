@@ -10,6 +10,7 @@ use App\Models\SchoolClass;
 use App\Models\AcademicYear;
 use App\Models\DiscountScheme;
 use App\Models\Term;
+use App\Models\AuditTrail;
 use App\Services\FeeAssignmentService;
 use DB;
 use Flash;
@@ -138,6 +139,12 @@ class StudentFeeAssignmentController extends Controller
             }
 
             DB::commit();
+            AuditTrail::log('Fee Assignment', 'BULK CREATE', null, null, [
+                'assignment_type' => $request->assignment_type,
+                'academic_year_id' => $academicYearId,
+                'term' => $term,
+                'assignments_created' => $count,
+            ]);
             Flash::success("$count assignments created successfully.");
             return redirect()->route('fees.assignments.index');
 
@@ -276,7 +283,10 @@ class StudentFeeAssignmentController extends Controller
     {
         $assignment = StudentFeeAssignment::findOrFail($id);
 
+        $oldData = $assignment->toArray();
         $assignment->delete();
+
+        AuditTrail::log('Fee Assignment', 'DELETE', $id, $oldData, null);
 
         Flash::success('Fee assignment removed successfully.');
         return redirect()->back();
@@ -284,18 +294,22 @@ class StudentFeeAssignmentController extends Controller
 
     protected function assignFeesToStudents($students, $fees, $academicYearId, $term, $count = 0, $isBulkAll = false)
     {
+        $termId = \App\Models\Term::where('academic_year_id', $academicYearId)->where('code', $term)->value('id');
+
         $studentChunks = $students->chunk(100);
 
         foreach ($studentChunks as $chunk) {
             foreach ($chunk as $student) {
                 foreach ($fees as $fee) {
                     if ($isBulkAll && $fee->class_id) {
-                        $studentClassIds = $student->studentClassEnrollments()
+                        $enrollment = $student->studentClassEnrollments()
                             ->where('is_current', true)
-                            ->pluck('class_id')
-                            ->toArray();
+                            ->with('classSection')
+                            ->first();
 
-                        if (!in_array($fee->class_id, $studentClassIds)) {
+                        $studentClassId = $enrollment?->classSection?->class_id;
+
+                        if ($fee->class_id != $studentClassId) {
                             continue;
                         }
                     }
@@ -312,6 +326,7 @@ class StudentFeeAssignmentController extends Controller
                             'fee_structure_id' => $fee->fee_structure_id,
                             'academic_year_id' => $academicYearId,
                             'term' => $term,
+                            'term_id' => $termId,
                             'amount' => $fee->amount,
                             'final_amount' => $fee->amount,
                             'assigned_by' => auth()->id(),

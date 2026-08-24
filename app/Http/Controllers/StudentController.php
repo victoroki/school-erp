@@ -12,6 +12,7 @@ use Flash;
 use App\Models\Student;
 use App\Models\ClassSection;
 use App\Models\AcademicYear;
+use App\Models\AuditTrail;
 
 class StudentController extends AppBaseController
 {
@@ -42,9 +43,7 @@ class StudentController extends AppBaseController
                     ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%$q%"])
                     ->orWhereRaw("CONCAT(first_name, ' ', middle_name, ' ', last_name) LIKE ?", ["%$q%"])
                     ->orWhere('admission_no', 'like', "%$q%")
-                    ->orWhere('nemis_number', 'like', "%$q%")
-                    ->orWhere('upi_number', 'like', "%$q%")
-                    ->orWhere('roll_number', 'like', "%$q%");
+                    ->orWhere('nemis_number', 'like', "%$q%");
             });
         }
 
@@ -116,10 +115,7 @@ class StudentController extends AppBaseController
         $input = $request->all();
 
         if ($request->hasFile('photo')) {
-            $photo = $request->file('photo');
-            $photoName = time() . '.' . $photo->getClientOriginalExtension();
-            $photo->move(public_path('students/photos'), $photoName);
-            $input['photo_url'] = 'students/photos/' . $photoName;
+            $input['photo_url'] = $this->storeStudentPhoto($request->file('photo'));
         }
 
         $student = $this->studentRepository->create($input);
@@ -136,6 +132,8 @@ class StudentController extends AppBaseController
                 'is_current' => true
             ]);
         }
+
+        AuditTrail::log('Student', 'CREATE', $student->student_id, null, $student->toArray());
 
         Flash::success('Student saved successfully.');
 
@@ -204,19 +202,24 @@ class StudentController extends AppBaseController
         $input = $request->all();
 
         if ($request->hasFile('photo')) {
-            // Optional: Delete old photo if it exists
-            if ($student->photo_url && file_exists(public_path($student->photo_url))) {
-                unlink(public_path($student->photo_url));
+            // Delete the old photo if it exists (covers legacy students/photos/ paths too)
+            if ($student->photo_url) {
+                $oldPath = str_starts_with($student->photo_url, 'students/')
+                    ? public_path($student->photo_url)
+                    : public_path('uploads/' . $student->photo_url);
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
+                }
             }
 
-            $photo = $request->file('photo');
-            $photoName = time() . '.' . $photo->getClientOriginalExtension();
-            $photo->move(public_path('students/photos'), $photoName);
-            $input['photo_url'] = 'students/photos/' . $photoName;
+            $input['photo_url'] = $this->storeStudentPhoto($request->file('photo'));
         }
 
 
+        $oldData = $student->toArray();
         $student = $this->studentRepository->update($input, $id);
+
+        AuditTrail::log('Student', 'UPDATE', $student->student_id, $oldData, $student->toArray());
 
         Flash::success('Student updated successfully.');
 
@@ -238,15 +241,44 @@ class StudentController extends AppBaseController
             return redirect(route('students.index'));
         }
         
-        if ($student->photo_url && file_exists(public_path($student->photo_url))) {
-            unlink(public_path($student->photo_url));
+        if ($student->photo_url) {
+            $photoPath = str_starts_with($student->photo_url, 'students/')
+                ? public_path($student->photo_url)
+                : public_path('uploads/' . $student->photo_url);
+            if (file_exists($photoPath)) {
+                @unlink($photoPath);
+            }
         }
 
+        $oldData = $student->toArray();
         $this->studentRepository->delete($id);
+
+        AuditTrail::log('Student', 'DELETE', $id, $oldData, null);
 
         Flash::success('Student deleted successfully.');
 
         return redirect(route('students.index'));
+    }
+
+    /**
+     * Save an uploaded photo under public/uploads/student_photos and return
+     * the relative path (student_photos/...) to store in the database.
+     *
+     * A plain public folder is used (not the storage disk) so photos are
+     * directly servable without a `storage` symlink — which cannot be created
+     * on shared cPanel hosting without terminal/SSH access.
+     */
+    private function storeStudentPhoto($photo): string
+    {
+        $dir = public_path('uploads/student_photos');
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
+        $photoName = time() . '.' . $photo->getClientOriginalExtension();
+        $photo->move($dir, $photoName);
+
+        return 'student_photos/' . $photoName;
     }
 
     public function addSibling(Request $request, $id)
@@ -280,6 +312,8 @@ class StudentController extends AppBaseController
                 'is_twin' => $request->has('is_twin'),
                 'notes' => $request->input('notes')
             ]);
+
+            AuditTrail::log('Student', 'SIBLING ADDED', $student->student_id, null, ['sibling_id' => $siblingId, 'relationship_type' => $request->input('relationship_type')]);
 
             Flash::success('Sibling added successfully.');
         } else {

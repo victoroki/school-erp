@@ -1,6 +1,6 @@
 <x-laravel-ui-adminlte::adminlte-layout>
 
-    <body class="hold-transition sidebar-mini layout-fixed">
+    <body class="hold-transition sidebar-mini">
         <div class="wrapper">
             <!-- Main Header -->
             <nav class="main-header navbar navbar-expand navbar-white navbar-light">
@@ -87,11 +87,8 @@
 
             <!-- Main Footer -->
             <footer class="main-footer">
-                <div class="float-right d-none d-sm-block">
-                    <b>Version</b> 1.0.0
-                </div>
-                <strong>Copyright &copy; 2025-2027 <a href="#">{{ config('app.name') }}</a>.</strong> All rights
-                reserved.
+                <span class="footer-copy">&copy; 2025&ndash;2027 <a href="#">{{ config('app.name') }}</a>. All rights reserved.</span>
+                <span class="footer-version"><b>Version</b> 1.0.0</span>
             </footer>
         </div>
 

@@ -17,6 +17,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'user_type',
+        'is_active',
+        'email_verified_at',
+        'is_protected',
+        'is_hidden',
     ];
 
     protected $hidden = [
@@ -27,6 +32,9 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_active' => 'boolean',
+        'is_protected' => 'boolean',
+        'is_hidden' => 'boolean',
     ];
 
     public function roles(): BelongsToMany
@@ -66,6 +74,34 @@ class User extends Authenticatable
             $role = Role::where('role_name', $role)->firstOrFail();
         }
         $this->roles()->syncWithoutDetaching($role);
+    }
+
+    /**
+     * True when the user holds a protected role (e.g. Super Admin, Owner).
+     * Protected roles may modify other protected roles/accounts.
+     */
+    public function canBypassProtection(): bool
+    {
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles');
+        }
+
+        return $this->roles->contains('is_protected', true);
+    }
+
+    /**
+     * True only for the SaaS platform owner (the developer's account, seeded
+     * per deployment via OwnerSeeder). The Owner role is never granted by the
+     * setup flow and is the sole key to the Administration module (modules,
+     * audit trail, system logs).
+     */
+    public function isOwner(): bool
+    {
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles');
+        }
+
+        return $this->roles->contains('role_name', 'Owner');
     }
 
     /**

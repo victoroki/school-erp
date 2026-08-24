@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BankTransaction;
 use App\Models\BankAccount;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use DB;
@@ -51,7 +52,7 @@ class BankTransactionController extends AppBaseController
         $input = $request->all();
         $input['created_by'] = auth()->id();
 
-        DB::transaction(function () use ($input) {
+        $transaction = DB::transaction(function () use ($input, $request) {
             $transaction = BankTransaction::create($input);
             $account = BankAccount::find($input['account_id']);
 
@@ -64,12 +65,13 @@ class BankTransactionController extends AppBaseController
                     $account->decrement('current_balance', $input['amount']);
                     $targetAccount = BankAccount::find($request->target_account_id);
                     $targetAccount->increment('current_balance', $input['amount']);
-                    
-                    // Create reverse transaction for target account? 
-                    // Usually transfers are linked.
                 }
             }
+
+            return $transaction;
         });
+
+        AuditTrail::log('Bank Transaction', 'CREATE', $transaction->transaction_id, null, $transaction->toArray());
 
         Flash::success('Bank transaction recorded successfully.');
         return redirect(route('bank-transactions.index'));

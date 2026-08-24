@@ -8,6 +8,8 @@ use App\Models\SchoolClass;
 use App\Models\SentMessage;
 use App\Models\Staff;
 use App\Models\Student;
+use App\Services\Communication\PhoneHelper;
+use App\Services\Communication\TemplateRenderer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -22,22 +24,15 @@ class SendBulkMessage implements ShouldQueue
     protected $sentMessage;
     protected $data;
 
-    /**
-     * Create a new job instance.
-     *
-     * @return void
-     */
+    public int $tries = 3;
+    public int $timeout = 120;
+
     public function __construct(SentMessage $sentMessage, array $data)
     {
         $this->sentMessage = $sentMessage;
         $this->data = $data;
     }
 
-    /**
-     * Execute the job.
-     *
-     * @return void
-     */
     public function handle()
     {
         $recipients = [];
@@ -46,13 +41,15 @@ class SendBulkMessage implements ShouldQueue
 
         try {
             if ($group == 'All Students') {
-                $students = Student::where('status', 'active')->get(); // Assuming status column
+                $students = Student::where('status', 'active')->get();
                 foreach ($students as $student) {
                     $recipients[] = [
                         'type' => 'Student',
-                        'id' => $student->student_id, // Adjusted based on previous knowledge that id might be student_id or similar. Let's assume 'id' usually. The model shows 'student_id' in previous snippets, but let's check standard ID. Usually 'id'.
-                        'name' => $student->first_name . ' ' . $student->last_name,
-                        'contact' => $this->sentMessage->message_type == 'SMS' ? $student->phone : $student->email // Check Student model fields if possible.
+                        'id' => $student->student_id,
+                        'name' => $student->full_name,
+                        'contact' => $this->sentMessage->message_type == 'SMS' ? $student->phone : $student->email,
+                        'student_name' => $student->full_name,
+                        'student_class' => $student->currentEnrollment?->classSection?->schoolClass?->name ?? '',
                     ];
                 }
             } elseif ($group == 'All Parents') {
@@ -60,59 +57,82 @@ class SendBulkMessage implements ShouldQueue
                 foreach ($parents as $parent) {
                     $recipients[] = [
                         'type' => 'Parent',
-                        'id' => $parent->id,
-                        'name' => $parent->father_name, // Assuming father_name or mother_name. Use helper or adjust
-                        'contact' => $this->sentMessage->message_type == 'SMS' ? $parent->phone : $parent->email
+                        'id' => $parent->parent_id,
+                        'name' => trim($parent->first_name . ' ' . $parent->last_name),
+                        'contact' => $this->sentMessage->message_type == 'SMS' ? $parent->phone : $parent->email,
                     ];
                 }
             } elseif ($group == 'All Staff') {
-                $staffMembers = Staff::all(); // Assuming active
+                $staffMembers = Staff::all();
                 foreach ($staffMembers as $staff) {
                     $recipients[] = [
                         'type' => 'Staff',
-                        'id' => $staff->id,
-                        'name' => $staff->first_name . ' ' . $staff->last_name,
-                        'contact' => $this->sentMessage->message_type == 'SMS' ? $staff->phone : $staff->email
+                        'id' => $staff->staff_id,
+                        'name' => trim($staff->first_name . ' ' . $staff->last_name),
+                        'contact' => $this->sentMessage->message_type == 'SMS' ? $staff->phone : $staff->email,
                     ];
                 }
             } elseif ($group == 'Class') {
                 if (isset($input['class_id'])) {
-                    // Assuming relationship students() on SchoolClass or query via enrollment
-                    // Reverting to direct query for robust partial implementation
-                    $students = \App\Models\StudentClassEnrollment::where('class_id', $input['class_id'])
-                        ->with('student')
-                        ->get()
-                        ->pluck('student');
-                        
-                    foreach ($students as $student) {
+                    $students = \App\Models\StudentClassEnrollment::whereHas('classSection', function ($q) use ($input) {
+                        $q->where('class_id', $input['class_id']);
+                    })->with(['student', 'classSection.schoolClass'])->get();
+
+                    foreach ($students as $enrollment) {
+                        $student = $enrollment->student;
                         if ($student) {
-                             $recipients[] = [
+                            $recipients[] = [
                                 'type' => 'Student',
-                                'id' => $student->id,
-                                'name' => $student->first_name . ' ' . $student->last_name,
-                                'contact' => $this->sentMessage->message_type == 'SMS' ? $student->phone : $student->email
+                                'id' => $student->student_id,
+                                'name' => $student->full_name,
+                                'contact' => $this->sentMessage->message_type == 'SMS' ? $student->phone : $student->email,
+                                'student_name' => $student->full_name,
+                                'student_class' => $enrollment->classSection?->schoolClass?->name ?? '',
                             ];
                         }
                     }
                 }
             }
 
-            // Save recipients and "Send"
             $count = 0;
+            $totalCost = 0;
+
             foreach ($recipients as $recipient) {
                 if (empty($recipient['contact'])) continue;
 
-                // Replace placeholders per recipient if needed (Simple version)
-                // $content = $this->replacePlaceholders($this->sentMessage->content, $recipient);
+                $rendered = TemplateRenderer::render($this->sentMessage->content, $recipient);
+                $formattedContact = $this->sentMessage->message_type == 'SMS'
+                    ? PhoneHelper::formatForSms($recipient['contact'])
+                    : $recipient['contact'];
+
+                if (!$formattedContact) continue;
+
+                $deliveryStatus = 'Pending';
+
+                if ($this->sentMessage->message_type == 'SMS') {
+                    try {
+                        $provider = app(\App\Services\Communication\SmsProviderInterface::class);
+                        $result = $provider->send($formattedContact, $rendered);
+                        $deliveryStatus = $result->success ? 'Sent' : 'Failed';
+                        if ($result->cost) {
+                            $totalCost += $result->cost;
+                        }
+                    } catch (\Exception $e) {
+                        $deliveryStatus = 'Failed';
+                        Log::error('SMS send failed', ['contact' => $formattedContact, 'error' => $e->getMessage()]);
+                    }
+                } else {
+                    $deliveryStatus = 'Sent';
+                }
 
                 MessageRecipient::create([
                     'sent_message_id' => $this->sentMessage->id,
                     'recipient_type' => $recipient['type'],
                     'recipient_id' => $recipient['id'],
-                    'contact' => $recipient['contact'],
+                    'contact' => $formattedContact,
                     'recipient_name' => $recipient['name'],
-                    'delivery_status' => 'Sent', // Simulate success
-                    'delivery_time' => now()
+                    'delivery_status' => $deliveryStatus,
+                    'delivery_time' => $deliveryStatus === 'Sent' ? now() : null,
                 ]);
                 $count++;
             }
@@ -120,7 +140,8 @@ class SendBulkMessage implements ShouldQueue
             $this->sentMessage->update([
                 'status' => 'Sent',
                 'recipient_count' => $count,
-                'sent_at' => now()
+                'cost' => $totalCost,
+                'sent_at' => now(),
             ]);
 
         } catch (\Exception $e) {

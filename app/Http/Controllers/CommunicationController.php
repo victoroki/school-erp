@@ -11,6 +11,7 @@ use App\Models\Parents;
 use App\Models\Staff;
 use App\Models\SchoolClass;
 use App\Models\Section;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use App\Jobs\SendBulkMessage;
@@ -63,6 +64,12 @@ class CommunicationController extends Controller
         // Dispatch Job
         SendBulkMessage::dispatch($sentMessage, $request->all());
 
+        AuditTrail::log('Communication', 'SEND', $sentMessage->id, null, [
+            'message_type' => $sentMessage->message_type,
+            'recipient_group' => $sentMessage->recipient_type,
+            'template_id' => $sentMessage->template_id,
+        ]);
+
         if ($request->template_id) {
             if ($request->message_type == 'SMS') {
                 SmsTemplate::find($request->template_id)->increment('usage_count');
@@ -102,5 +109,33 @@ class CommunicationController extends Controller
         }
 
         return response()->json($template);
+    }
+
+    public function getRecipientCount(Request $request)
+    {
+        $group = $request->input('recipient_group');
+        $classId = $request->input('class_id');
+        $count = 0;
+
+        switch ($group) {
+            case 'All Students':
+                $count = Student::where('status', 'active')->count();
+                break;
+            case 'All Parents':
+                $count = Parents::count();
+                break;
+            case 'All Staff':
+                $count = Staff::count();
+                break;
+            case 'Class':
+                if ($classId) {
+                    $count = \App\Models\StudentClassEnrollment::whereHas('classSection', function ($q) use ($classId) {
+                        $q->where('class_id', $classId);
+                    })->count();
+                }
+                break;
+        }
+
+        return response()->json(['count' => $count]);
     }
 }

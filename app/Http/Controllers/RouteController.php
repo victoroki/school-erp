@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateRouteRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Models\Route;
 use App\Repositories\RouteRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -55,6 +56,8 @@ class RouteController extends AppBaseController
         $input = $request->all();
 
         $route = $this->routeRepository->create($input);
+
+        AuditTrail::log('Route', 'CREATE', $route->route_id, null, $route->toArray());
 
         Flash::success('Route saved successfully.');
 
@@ -106,7 +109,10 @@ class RouteController extends AppBaseController
             return redirect(route('routes.index'));
         }
 
+        $oldData = $route->toArray();
         $route = $this->routeRepository->update($request->all(), $id);
+
+        AuditTrail::log('Route', 'UPDATE', $route->route_id, $oldData, $route->toArray());
 
         Flash::success('Route updated successfully.');
 
@@ -134,7 +140,10 @@ class RouteController extends AppBaseController
             return redirect()->back();
         }
 
+        $oldData = $route->toArray();
         $this->routeRepository->delete($id);
+
+        AuditTrail::log('Route', 'DELETE', $id, $oldData, null);
 
         Flash::success('Route deleted successfully.');
 

@@ -20,6 +20,8 @@ use App\Models\Vehicle;
 use App\Models\Exam;
 use App\Models\Subject;
 use App\Services\MenuService;
+use App\Services\DashboardWidgetService;
+use App\Services\ModuleManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -32,13 +34,24 @@ class DashboardController extends Controller
         $user->load('roles');
         $roleName = strtolower($user->roles->first()->role_name ?? 'administrator');
 
-        $isSuperAdmin = $user->hasAnyRole(['Super Admin']);
+        // Recent-activity tiles are drawn from the audit trail, so they share
+        // its platform-Owner-only visibility.
+        $isPrivileged = $user->isOwner();
 
-        $widgetConfig = config('dashboard_widgets.modules', []);
-        $alertConfig  = config('dashboard_widgets.alerts', []);
+        $widgetService = app(DashboardWidgetService::class);
+        $widgetConfig = $widgetService->modules();
+        $alertConfig = $widgetService->alerts();
 
+        // A tile is visible only when the user holds its permission AND its
+        // module is enabled in Administration → Modules (same gating the
+        // sidebar applies) — disabled modules never surface tiles or their
+        // summary counts on the dashboard.
+        $moduleManager = app(ModuleManager::class);
         $visibleModules = [];
         foreach ($widgetConfig as $key => $widget) {
+            if (! $this->moduleIsActive($widget['module'] ?? $key)) {
+                continue;
+            }
             if (MenuService::canSee($user, $widget['permission'])) {
                 $visibleModules[$key] = $widget;
                 $visibleModules[$key]['data'] = ($widget['summary'])();
@@ -49,6 +62,9 @@ class DashboardController extends Controller
 
         $visibleAlerts = [];
         foreach ($alertConfig as $alert) {
+            if (! $this->moduleIsActive($alert['module'] ?? '')) {
+                continue;
+            }
             if (!MenuService::canSee($user, $alert['permission'])) {
                 continue;
             }
@@ -66,7 +82,7 @@ class DashboardController extends Controller
         }
 
         $recentActivity = [];
-        if ($isSuperAdmin || $user->hasAnyRole(['Admin'])) {
+        if ($isPrivileged) {
             $recentActivity = AuditTrail::with('user')
                 ->latest()
                 ->limit(6)
@@ -86,7 +102,7 @@ class DashboardController extends Controller
             'user', 'roleName',
             'keyMetrics', 'chartSeries',
             'recentActivity',
-            'visibleModules', 'visibleAlerts'
+            'visibleModules', 'visibleAlerts', 'moduleManager'
         ));
     }
 
@@ -100,7 +116,7 @@ class DashboardController extends Controller
         $statistics = [];
         $charts = [];
 
-        if (MenuService::canSee($user, ['students.view'])) {
+        if ($this->moduleIsActive('students') && MenuService::canSee($user, ['students.view'])) {
             $statistics['total_students'] = Student::count();
 
             $months = [];
@@ -115,15 +131,15 @@ class DashboardController extends Controller
             $charts['enrollment_trend'] = ['labels' => $months, 'data' => $counts];
         }
 
-        if (MenuService::canSee($user, ['hr.view'])) {
+        if ($this->moduleIsActive('hr') && MenuService::canSee($user, ['hr.view'])) {
             $statistics['total_teachers'] = User::whereHas('roles', fn($q) => $q->where('role_name', 'teacher'))->count();
         }
 
-        if (MenuService::canSee($user, ['academics.view'])) {
+        if ($this->moduleIsActive('academics') && MenuService::canSee($user, ['academics.view'])) {
             $statistics['total_classes'] = SchoolClass::count();
         }
 
-        if (MenuService::canSee($user, ['fees.view', 'fees.collect', 'finance.view'])) {
+        if ($this->moduleIsActive('fees') && MenuService::canSee($user, ['fees.view', 'fees.collect', 'finance.view'])) {
             $statistics['monthly_revenue'] = FeePayment::whereMonth('created_at', now()->month)->sum('amount');
         }
 
@@ -131,6 +147,18 @@ class DashboardController extends Controller
             'statistics' => $statistics,
             'charts'     => $charts,
         ]);
+    }
+
+    /**
+     * Whether a dashboard surface's governing module is enabled.
+     *
+     * Mirrors the sidebar's module gating: unknown keys (no row in the
+     * modules table) are treated as active so nothing vanishes before the
+     * installer opts into the module registry.
+     */
+    private function moduleIsActive(string $key): bool
+    {
+        return app(ModuleManager::class)->isActive($key);
     }
 
     private function getAlertCounts(): array
@@ -164,6 +192,7 @@ class DashboardController extends Controller
         if ($isFinance && MenuService::canSee($user, ['fees.view', 'fees.collect'])) {
             $cards = [
                 [
+                    'module' => 'fees',
                     'permission' => ['fees.view', 'fees.collect'],
                     'col' => 'col-md-4', 'route' => 'fee-management.index',
                     'icon' => 'fa-money-bill-wave', 'color' => 'ic-green',
@@ -173,6 +202,7 @@ class DashboardController extends Controller
                     'foot'  => 'Payments received today',
                 ],
                 [
+                    'module' => 'fees',
                     'permission' => ['fees.view', 'fees.collect'],
                     'col' => 'col-md-4', 'route' => 'fee-management.index',
                     'icon' => 'fa-calendar-check', 'color' => 'ic-blue',
@@ -182,6 +212,7 @@ class DashboardController extends Controller
                     'foot'  => 'Total collected this month',
                 ],
                 [
+                    'module' => 'fees',
                     'permission' => ['fees.view', 'fees.collect'],
                     'col' => 'col-md-4', 'route' => 'fee-management.index',
                     'icon' => 'fa-exclamation-circle', 'color' => 'ic-red',
@@ -203,6 +234,7 @@ class DashboardController extends Controller
         } elseif ($isHR && MenuService::canSee($user, ['hr.view'])) {
             $cards = [
                 [
+                    'module' => 'hr',
                     'permission' => ['hr.view'],
                     'col' => 'col-md-6', 'route' => 'staff.index',
                     'icon' => 'fa-users', 'color' => 'ic-blue',
@@ -212,6 +244,7 @@ class DashboardController extends Controller
                     'foot'  => 'Academic & support combined',
                 ],
                 [
+                    'module' => 'hr',
                     'permission' => ['hr.view'],
                     'col' => 'col-md-6', 'route' => 'leave-applications.index',
                     'icon' => 'fa-user-clock', 'color' => 'ic-yellow',
@@ -225,6 +258,7 @@ class DashboardController extends Controller
         } else {
             $cards = [
                 [
+                    'module' => 'students',
                     'permission' => ['students.view'],
                     'col' => 'col-xl-3 col-sm-6', 'route' => 'students.index',
                     'icon' => 'fa-user-graduate', 'color' => 'ic-blue',
@@ -235,6 +269,7 @@ class DashboardController extends Controller
                     'foot'  => 'Enrolled students',
                 ],
                 [
+                    'module' => 'hr',
                     'permission' => ['hr.view'],
                     'col' => 'col-xl-3 col-sm-6', 'route' => 'staff.index',
                     'icon' => 'fa-users', 'color' => 'ic-purple',
@@ -244,6 +279,7 @@ class DashboardController extends Controller
                     'foot'  => 'Academic & support',
                 ],
                 [
+                    'module' => 'academics',
                     'permission' => ['academics.view'],
                     'col' => 'col-xl-3 col-sm-6', 'route' => 'school-classes.index',
                     'icon' => 'fa-chalkboard', 'color' => 'ic-green',
@@ -253,6 +289,7 @@ class DashboardController extends Controller
                     'foot'  => 'Academic groups',
                 ],
                 [
+                    'module' => 'fees',
                     'permission' => ['fees.view', 'fees.collect'],
                     'col' => 'col-xl-3 col-sm-6', 'route' => 'fee-management.index',
                     'icon' => 'fa-coins', 'color' => 'ic-yellow',
@@ -269,8 +306,9 @@ class DashboardController extends Controller
             ];
         }
 
-        // Filter by permission BEFORE evaluating any card data.
+        // Filter by permission AND module state BEFORE evaluating any card data.
         return collect($cards)
+            ->filter(fn($card) => $this->moduleIsActive($card['module'] ?? ''))
             ->filter(fn($card) => MenuService::canSee($user, $card['permission']))
             ->map(function ($card) {
                 foreach (['value', 'badge', 'badgeClass', 'foot'] as $key) {
@@ -295,11 +333,11 @@ class DashboardController extends Controller
     {
         $series = [];
 
-        if (MenuService::canSee($user, ['students.view'])) {
+        if ($this->moduleIsActive('students') && MenuService::canSee($user, ['students.view'])) {
             $series['admissions'] = $this->getEnrollmentTrend();
         }
 
-        if (MenuService::canSee($user, ['fees.view', 'fees.collect', 'finance.view'])) {
+        if ($this->moduleIsActive('fees') && MenuService::canSee($user, ['fees.view', 'fees.collect', 'finance.view'])) {
             $series['revenue'] = $this->getFeeTrend();
         }
 

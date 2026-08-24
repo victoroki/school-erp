@@ -141,19 +141,25 @@
         <div class="col-md-5 text-md-end mt-2 mt-md-0">
             <div class="d-flex flex-wrap gap-2 justify-content-md-end">
                 @if(in_array($roleName, ['finance','accountant','bursar']))
-                    <a href="{{ route('financial-reports.index') }}" class="btn-dash btn-ghost"><i class="fas fa-file-alt"></i> Reports</a>
-                    <a href="{{ route('fee-management.index') }}" class="btn-dash btn-primary-dash"><i class="fas fa-money-check-alt"></i> Collect Fees</a>
+                    @if($moduleManager->isActive('finance'))
+                        <a href="{{ route('financial-reports.index') }}" class="btn-dash btn-ghost"><i class="fas fa-file-alt"></i> Reports</a>
+                    @endif
+                    @if($moduleManager->isActive('fees'))
+                        <a href="{{ route('fees.collect') }}" class="btn-dash btn-primary-dash"><i class="fas fa-money-check-alt"></i> Collect Fees</a>
+                    @endif
                 @elseif(in_array($roleName, ['hr','human resources','hr manager']))
-                    <a href="{{ route('leave-applications.index') }}" class="btn-dash btn-ghost"><i class="fas fa-calendar-alt"></i> Leave Requests</a>
-                    <a href="{{ route('hr.onboarding') }}" class="btn-dash btn-primary-dash"><i class="fas fa-user-plus"></i> Onboard Staff</a>
+                    @if($moduleManager->isActive('hr'))
+                        <a href="{{ route('leave-applications.index') }}" class="btn-dash btn-ghost"><i class="fas fa-calendar-alt"></i> Leave Requests</a>
+                        <a href="{{ route('hr.onboarding') }}" class="btn-dash btn-primary-dash"><i class="fas fa-user-plus"></i> Onboard Staff</a>
+                    @endif
                 @else
-                    @if(\App\Services\MenuService::canSee($user, ['students.manage']))
+                    @if($moduleManager->isActive('students') && \App\Services\MenuService::canSee($user, ['students.manage']))
                         <a href="{{ route('students.create') }}" class="btn-dash btn-ghost"><i class="fas fa-user-graduate"></i> Admit</a>
                     @endif
-                    @if(\App\Services\MenuService::canSee($user, ['academics.view', 'academics.manage']))
+                    @if($moduleManager->isActive('academics') && \App\Services\MenuService::canSee($user, ['academics.view', 'academics.manage']))
                         <a href="{{ route('school-classes.index') }}" class="btn-dash btn-ghost"><i class="fas fa-chalkboard"></i> Classes</a>
                     @endif
-                    @if(\App\Services\MenuService::canSee($user, ['fees.view', 'fees.collect']))
+                    @if($moduleManager->isActive('fees') && \App\Services\MenuService::canSee($user, ['fees.view', 'fees.collect']))
                         <a href="{{ route('fee-management.index') }}" class="btn-dash btn-primary-dash"><i class="fas fa-coins"></i> Fees</a>
                     @endif
                 @endif
@@ -281,30 +287,7 @@
             </div>
             @endif
 
-            {{-- Recent Activity (Super Admin / Admin only) --}}
-            @if(!empty($recentActivity))
-            <div class="dash-panel mb-4">
-                <div class="dash-panel-head">
-                    <h3 class="dash-panel-title">Recent Activity</h3>
-                </div>
-                <div class="dash-panel-body">
-                    <ul class="activity-list">
-                        @foreach($recentActivity as $act)
-                        <li class="activity-item">
-                            <div class="ai-dot ic-blue"><i class="fas fa-circle" style="font-size:.5rem"></i></div>
-                            <div class="ai-body">
-                                <p class="ai-title">{{ $act['user'] }} {{ strtolower($act['action']) }} a {{ strtolower($act['module']) }}</p>
-                                <div class="ai-meta">
-                                    <span class="ai-badge">{{ $act['module'] }}</span>
-                                    <span class="ai-time">{{ $act['time'] }}</span>
-                                </div>
-                            </div>
-                        </li>
-                        @endforeach
-                    </ul>
-                </div>
-            </div>
-            @endif
+            {{-- Recent Activity hidden --}}
         </div>
     </div>
 </div>

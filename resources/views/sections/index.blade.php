@@ -22,7 +22,7 @@
         @include('flash::message')
 
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
-            <h5 class="text-secondary font-weight-bold mb-3 mb-md-0">Manage Class Sections</h5>
+            <h5 class="text-secondary font-weight-bold mb-3 mb-md-0">Manage Sections</h5>
             <div class="d-flex flex-column flex-sm-row" style="gap: 10px;">
                 <div class="input-group input-group-sm mb-2 mb-sm-0" style="width: 100%; max-width: 250px;">
                     <div class="input-group-prepend">

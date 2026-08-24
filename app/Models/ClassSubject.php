@@ -13,17 +13,19 @@ class ClassSubject extends Model
     public $fillable = [
         'class_id',
         'subject_id',
-        'academic_year_id'
+        'academic_year_id',
+        'periods_per_week'
     ];
 
     protected $casts = [
-        
+        'periods_per_week' => 'integer',
     ];
 
     public static array $rules = [
         'class_id' => 'nullable',
         'subject_id' => 'nullable',
-        'academic_year_id' => 'nullable'
+        'academic_year_id' => 'nullable',
+        'periods_per_week' => 'nullable|integer|min:1|max:40'
     ];
 
     public function academicYear(): \Illuminate\Database\Eloquent\Relations\BelongsTo

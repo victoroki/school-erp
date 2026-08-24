@@ -29,7 +29,7 @@ class PortalReportCardController extends Controller
             ->pluck('exam_id')
             ->unique();
 
-        $exams = Exam::with(['examType', 'academicYear', 'termModel'])
+        $exams = Exam::with(['examType', 'academicYear'])
             ->whereIn('exam_id', $examIds)
             ->latest('start_date')
             ->get();

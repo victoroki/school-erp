@@ -8,7 +8,7 @@
                 <div class="icon-wrap bg-indigo-light text-indigo">
                     <i class="fas fa-layer-group"></i>
                 </div>
-                <h3 class="dash-panel-title">Add Class Section</h3>
+                <h3 class="dash-panel-title">Add Class Roster</h3>
             </div>
             <a href="{{ route('class-sections.index') }}" class="btn-dash btn-ghost py-1 px-2">
                 <i class="fas fa-times"></i>
@@ -29,7 +29,7 @@
                 Cancel
             </a>
             <button type="submit" class="btn-dash btn-indigo-dash">
-                Create Section
+                Create Roster
             </button>
         </div>
         {!! Form::close() !!}

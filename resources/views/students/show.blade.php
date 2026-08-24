@@ -29,6 +29,17 @@
         object-fit: cover;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
+    .avatar-initials {
+        width: 100px; height: 100px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 2.25rem;
+        font-weight: 700;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
     .status-dot {
         position: absolute;
         bottom: -5px; right: -5px;
@@ -97,7 +108,13 @@
         <div class="d-flex justify-content-between align-items-start align-items-md-center flex-column flex-md-row">
             <div class="d-flex align-items-center gap-3">
                 <div class="avatar-wrapper shadow-sm mr-2">
-                    <img src="{{ $student->avatar_url }}" alt="Avatar">
+                    @if($student->has_photo && $student->avatar_url)
+                        <img src="{{ $student->avatar_url }}" alt="Avatar">
+                    @else
+                        <div class="avatar-initials" style="background-color: {{ $student->avatar_color }};">
+                            {{ $student->initials }}
+                        </div>
+                    @endif
                     @if($student->status === 'active')
                         <div class="status-dot"></div>
                     @endif

@@ -6,6 +6,7 @@ use App\Models\Student;
 use App\Models\CbcAssessment;
 use App\Models\CbcLearningArea;
 use App\Models\ClassSection;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Auth;
 use Flash;
@@ -92,6 +93,13 @@ class CompetencyAssessmentController extends Controller
                 }
             }
         });
+
+        AuditTrail::log('CBC Assessment', 'RECORD', $learning_area_id, null, [
+            'learning_area_id' => $learning_area_id,
+            'strand_id' => $strand_id,
+            'sub_strand_id' => $sub_strand_id,
+            'students_assessed' => count(array_filter($ratings)),
+        ]);
 
         Flash::success('CBC Assessments recorded successfully.');
         return redirect()->back()->withInput();

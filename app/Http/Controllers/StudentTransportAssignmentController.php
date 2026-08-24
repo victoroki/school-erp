@@ -7,6 +7,7 @@ use App\Models\Route;
 use App\Models\RouteStop;
 use App\Models\Student;
 use App\Models\StudentTransportAssignment;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -62,7 +63,9 @@ class StudentTransportAssignmentController extends Controller
             }
         }
 
-        StudentTransportAssignment::create($request->all());
+        $assignment = StudentTransportAssignment::create($request->all());
+
+        AuditTrail::log('Transport', 'STUDENT ASSIGN', $assignment->assignment_id, null, $assignment->toArray());
 
         Flash::success('Student assigned to transport successfully.');
 
@@ -96,7 +99,10 @@ class StudentTransportAssignmentController extends Controller
         }
 
         $request->validate(StudentTransportAssignment::$rules);
+        $oldData = $assignment->toArray();
         $assignment->update($request->all());
+
+        AuditTrail::log('Transport', 'STUDENT ASSIGN UPDATE', $assignment->assignment_id, $oldData, $assignment->toArray());
 
         Flash::success('Assignment updated successfully.');
 
@@ -111,7 +117,9 @@ class StudentTransportAssignmentController extends Controller
             return redirect(route('student-transport-assignments.index'));
         }
 
+        $oldData = $assignment->toArray();
         $assignment->delete();
+        AuditTrail::log('Transport', 'STUDENT ASSIGN DELETE', $id, $oldData, null);
         Flash::success('Assignment deleted successfully.');
 
         return redirect(route('student-transport-assignments.index'));

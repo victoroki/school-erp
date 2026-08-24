@@ -7,6 +7,7 @@ use App\Models\LeaveType;
 use App\Models\Staff;
 use App\Models\StaffLeaveBalance;
 use App\Models\AcademicYear;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -81,6 +82,7 @@ class LeaveApplicationController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'required|string|min:10',
             'relief_staff_id' => 'nullable|exists:staff,staff_id',
+            'supporting_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'supporting_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
@@ -129,6 +131,8 @@ class LeaveApplicationController extends Controller
             'application_status' => 'pending',
             'submitted_date' => now(),
         ]);
+
+        AuditTrail::log('Leave', 'CREATE', $leave->id, null, $leave->toArray());
 
         Flash::success('Leave application submitted successfully.');
         return redirect()->route('leave-applications.index');
@@ -197,6 +201,8 @@ class LeaveApplicationController extends Controller
                 return redirect()->back();
             }
 
+            AuditTrail::log('Leave', 'APPROVE', $leave->id, null, $leave->toArray());
+
             DB::commit();
             return redirect()->route('leave-applications.show', $leave->id);
         } catch (\Exception $e) {
@@ -220,6 +226,8 @@ class LeaveApplicationController extends Controller
             'rejection_reason' => $request->rejection_reason,
         ]);
 
+        AuditTrail::log('Leave', 'REJECT', $leave->id, ['application_status' => 'pending'], $leave->toArray());
+
         Flash::success('Leave application rejected.');
         return redirect()->route('leave-applications.index');
     }
@@ -231,7 +239,9 @@ class LeaveApplicationController extends Controller
             return redirect()->back();
         }
 
+        $oldData = $leaveApplication->toArray();
         $leaveApplication->delete();
+        AuditTrail::log('Leave', 'DELETE', $leaveApplication->id, $oldData, null);
         Flash::success('Leave application deleted successfully.');
         return redirect()->route('leave-applications.index');
     }

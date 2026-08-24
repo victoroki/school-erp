@@ -8,9 +8,10 @@ use Illuminate\Support\Facades\Auth;
 class MenuService
 {
     protected array $config;
+
     protected ?User $user = null;
 
-    public function __construct()
+    public function __construct(private ModuleManager $modules)
     {
         $this->config = config('menu.sections', []);
     }
@@ -26,11 +27,15 @@ class MenuService
      *     one visible child follows it before the next sub-header.
      *   - A parent item renders only when it has at least one visible
      *     non-header child.
+     *
+     * Module gating is additive: a top-level item is hidden when its module
+     * key is disabled (children inherit the parent's module), then the
+     * existing permission check runs exactly as before.
      */
     public function getVisibleMenu(): array
     {
         $this->user = Auth::user();
-        if (!$this->user) {
+        if (! $this->user) {
             return [];
         }
 
@@ -41,24 +46,31 @@ class MenuService
             // Buffer section headers — only flushed when a visible item follows.
             if (isset($item['header'])) {
                 $pendingHeader = $item;
+
+                continue;
+            }
+
+            // Hide the whole section when its module is disabled.
+            if (! $this->moduleIsVisible($item['key'] ?? '')) {
                 continue;
             }
 
             if (empty($item['children'])) {
-                if (self::canSee($this->user, $item['permission'] ?? [])) {
+                if (self::canSee($this->user, $item['permission'] ?? [], $item['owner_only'] ?? false)) {
                     if ($pendingHeader !== null) {
                         $visible[] = $pendingHeader;
                         $pendingHeader = null;
                     }
                     $visible[] = $item;
                 }
+
                 continue;
             }
 
             $visibleChildren = $this->filterChildren($item['children']);
 
-            $nonHeaderChildren = array_filter($visibleChildren, fn($c) => !isset($c['header']));
-            if (!empty($nonHeaderChildren)) {
+            $nonHeaderChildren = array_filter($visibleChildren, fn ($c) => ! isset($c['header']));
+            if (! empty($nonHeaderChildren)) {
                 $item['children'] = $visibleChildren;
                 if ($pendingHeader !== null) {
                     $visible[] = $pendingHeader;
@@ -69,6 +81,19 @@ class MenuService
         }
 
         return $visible;
+    }
+
+    /**
+     * A menu item renders only when its module is active. Keys that are not
+     * registered modules (no row in the modules table) are always visible.
+     */
+    protected function moduleIsVisible(string $key): bool
+    {
+        if ($key === '') {
+            return true;
+        }
+
+        return $this->modules->isActive($key);
     }
 
     /**
@@ -83,10 +108,17 @@ class MenuService
         foreach ($children as $child) {
             if (isset($child['header'])) {
                 $pendingHeader = $child;
+
                 continue;
             }
 
-            if (self::canSee($this->user, $child['permission'] ?? [])) {
+            // A child can opt into its own module: it is hidden when that
+            // module is disabled, independently of the parent's module.
+            if (! empty($child['module']) && ! $this->moduleIsVisible($child['module'])) {
+                continue;
+            }
+
+            if (self::canSee($this->user, $child['permission'] ?? [], $child['owner_only'] ?? false)) {
                 if ($pendingHeader !== null) {
                     $visible[] = $pendingHeader;
                     $pendingHeader = null;
@@ -103,14 +135,19 @@ class MenuService
      * Shared static method — called by MenuService and DashboardController.
      *
      * Returns true if:
+     *   - Item is owner-only and the user holds the platform Owner role
      *   - No permission is required (always visible)
-     *   - User is Super Admin (sees everything)
+     *   - User holds a protected role (sees everything)
      *   - User holds ANY of the listed permissions
      */
-    public static function canSee(?User $user, array|string|null $permissions): bool
+    public static function canSee(?User $user, array|string|null $permissions, bool $ownerOnly = false): bool
     {
-        if (!$user) {
+        if (! $user) {
             return false;
+        }
+
+        if ($ownerOnly) {
+            return $user->isOwner();
         }
 
         if (empty($permissions)) {
@@ -119,7 +156,7 @@ class MenuService
 
         $required = (array) $permissions;
 
-        if ($user->hasAnyRole(['Super Admin'])) {
+        if ($user->canBypassProtection()) {
             return true;
         }
 
@@ -132,7 +169,8 @@ class MenuService
     public static function isActive(string $pattern): bool
     {
         $path = request()->path();
-        $regex = '#^' . str_replace('*', '.*', $pattern) . '$#';
+        $regex = '#^'.str_replace('*', '.*', $pattern).'$#';
+
         return (bool) preg_match($regex, $path);
     }
 
@@ -146,6 +184,7 @@ class MenuService
                 return true;
             }
         }
+
         return false;
     }
 }

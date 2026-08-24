@@ -25,13 +25,13 @@
 <!-- Enrollment Date Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('enrollment_date', 'Enrollment Date:') !!}
-    {!! Form::date('enrollment_date', null, ['class' => 'form-control', 'required']) !!}
+    {!! Form::date('enrollment_date', (isset($studentClassEnrollment) && $studentClassEnrollment->enrollment_date) ? $studentClassEnrollment->enrollment_date->format('Y-m-d') : null, ['class' => 'form-control', 'required']) !!}
 </div>
 
 <!-- Status Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('status', 'Status:') !!}
-    {!! Form::select('status', ['' => 'Select Status'] + $statusOptions, 'active', ['class' => 'form-control', 'required']) !!}
+    {!! Form::select('status', ['' => 'Select Status'] + $statusOptions, (isset($studentClassEnrollment) && $studentClassEnrollment->status) ? $studentClassEnrollment->status : 'active', ['class' => 'form-control', 'required']) !!}
 </div>
 
 @push('page_css')

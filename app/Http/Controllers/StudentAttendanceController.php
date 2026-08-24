@@ -6,6 +6,7 @@ use App\Models\Student;
 use App\Models\StudentAttendance;
 use App\Models\ClassSection;
 use App\Models\AcademicYear;
+use App\Models\AuditTrail;
 use App\Services\TeacherScopeService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -98,6 +99,12 @@ class StudentAttendanceController extends Controller
                 ]
             );
         }
+
+        AuditTrail::log('Attendance', 'MARK', $classSectionId, null, [
+            'class_section_id' => $classSectionId,
+            'date' => $date,
+            'records' => count($request->attendance),
+        ]);
 
         Flash::success('Attendance marked successfully for ' . $date);
         return redirect()->back();

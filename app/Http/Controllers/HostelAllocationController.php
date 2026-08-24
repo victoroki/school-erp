@@ -13,6 +13,7 @@ use App\Models\AcademicYear;
 use App\Models\Hostel;
 use App\Models\HostelRoom;
 use App\Models\HostelAllocation;
+use App\Models\AuditTrail;
 
 class HostelAllocationController extends AppBaseController
 {
@@ -111,6 +112,8 @@ class HostelAllocationController extends AppBaseController
             $room->update(['status' => 'partial']);
         }
 
+        AuditTrail::log('Hostel Allocation', 'CREATE', $hostelAllocation->allocation_id, null, $hostelAllocation->toArray());
+
         Flash::success('Hostel Allocation saved successfully.');
 
         return redirect(route('hostel-allocations.index'));
@@ -159,7 +162,10 @@ class HostelAllocationController extends AppBaseController
             return redirect(route('hostel-allocations.index'));
         }
 
+        $oldData = $hostelAllocation->toArray();
         $hostelAllocation = $this->hostelAllocationRepository->update($request->all(), $id);
+
+        AuditTrail::log('Hostel Allocation', 'UPDATE', $hostelAllocation->allocation_id, $oldData, $hostelAllocation->toArray());
 
         Flash::success('Hostel Allocation updated successfully.');
 
@@ -191,7 +197,10 @@ class HostelAllocationController extends AppBaseController
             }
         }
 
+        $oldData = $hostelAllocation->toArray();
         $this->hostelAllocationRepository->delete($id);
+
+        AuditTrail::log('Hostel Allocation', 'DELETE', $id, $oldData, null);
 
         Flash::success('Hostel Allocation deleted successfully.');
 
@@ -214,6 +223,8 @@ class HostelAllocationController extends AppBaseController
             'vacating_date' => now(),
             'checkout_notes' => $request->checkout_notes
         ]);
+
+        AuditTrail::log('Hostel Allocation', 'CHECKOUT', $hostelAllocation->allocation_id, ['status' => 'active'], $hostelAllocation->toArray());
 
         $room = $hostelAllocation->room;
         if ($room) {
@@ -276,6 +287,13 @@ class HostelAllocationController extends AppBaseController
             $room->update(['status' => 'partial']);
         }
 
+        AuditTrail::log('Hostel Allocation', 'BULK CREATE', $request->room_id, null, [
+            'hostel_id' => $request->hostel_id,
+            'room_id' => $request->room_id,
+            'student_ids' => $request->student_ids,
+            'count' => $count,
+        ]);
+
         Flash::success("$count students allocated successfully.");
         return redirect(route('hostel-allocations.index'));
     }
@@ -334,6 +352,11 @@ class HostelAllocationController extends AppBaseController
         } else {
             $newRoom->update(['status' => 'partial']);
         }
+
+        AuditTrail::log('Hostel Allocation', 'TRANSFER', $id, ['room_id' => $oldAllocation->room_id], [
+            'student_id' => $oldAllocation->student_id,
+            'new_room_id' => $newRoom->room_id,
+        ]);
 
         Flash::success('Student transferred successfully.');
         return redirect(route('hostel-allocations.index'));

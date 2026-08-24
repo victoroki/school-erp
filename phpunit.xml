@@ -18,16 +18,38 @@
         </include>
     </source>
     <php>
-        <env name="APP_ENV" value="testing"/>
-        <env name="BCRYPT_ROUNDS" value="4"/>
-        <env name="CACHE_DRIVER" value="array"/>
+        <!-- force="true" is REQUIRED: the shell exports APP_ENV/DB_DATABASE from
+             .env (e.g. DB_DATABASE=school_management_system), and without forcing
+             PHPUnit skips these overrides. That made RefreshDatabase's
+             migrate:fresh wipe the dev database and kept CSRF enabled (APP_ENV
+             resolving to "local" instead of "testing"). -->
+        <!-- force="true" is REQUIRED: the shell exports APP_ENV/DB_DATABASE from
+             .env (e.g. DB_DATABASE=school_management_system), and without forcing
+             PHPUnit skips these overrides. That made RefreshDatabase's
+             migrate:fresh wipe the dev database and kept CSRF enabled (APP_ENV
+             resolving to "local" instead of "testing").
+             The <server> entries are equally important: Laravel's env() reader
+             checks $_SERVER before $_ENV, so the shell-exported values must be
+             overridden there too. -->
+        <env name="APP_ENV" value="testing" force="true"/>
+        <server name="APP_ENV" value="testing" force="true"/>
+        <env name="BCRYPT_ROUNDS" value="4" force="true"/>
+        <server name="BCRYPT_ROUNDS" value="4" force="true"/>
+        <env name="CACHE_DRIVER" value="array" force="true"/>
+        <server name="CACHE_DRIVER" value="array" force="true"/>
         <!-- Tests MUST run against an isolated database: RefreshDatabase in
              the suite runs migrate:fresh, which would wipe the dev database. -->
-        <env name="DB_DATABASE" value="school_erp_test"/>
-        <env name="MAIL_MAILER" value="array"/>
-        <env name="PULSE_ENABLED" value="false"/>
-        <env name="QUEUE_CONNECTION" value="sync"/>
-        <env name="SESSION_DRIVER" value="array"/>
-        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="DB_DATABASE" value="school_erp_test" force="true"/>
+        <server name="DB_DATABASE" value="school_erp_test" force="true"/>
+        <env name="MAIL_MAILER" value="array" force="true"/>
+        <server name="MAIL_MAILER" value="array" force="true"/>
+        <env name="PULSE_ENABLED" value="false" force="true"/>
+        <server name="PULSE_ENABLED" value="false" force="true"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <server name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
+        <server name="SESSION_DRIVER" value="array" force="true"/>
+        <env name="TELESCOPE_ENABLED" value="false" force="true"/>
+        <server name="TELESCOPE_ENABLED" value="false" force="true"/>
     </php>
 </phpunit>

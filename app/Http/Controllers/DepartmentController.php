@@ -6,6 +6,7 @@ use App\Http\Requests\CreateDepartmentRequest;
 use App\Http\Requests\UpdateDepartmentRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\DepartmentRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -58,6 +59,8 @@ class DepartmentController extends AppBaseController
         $input = $request->all();
 
         $department = $this->departmentRepository->create($input);
+
+        AuditTrail::log('Department', 'CREATE', $department->department_id, null, $department->toArray());
 
         Flash::success('Department saved successfully.');
 
@@ -112,7 +115,10 @@ class DepartmentController extends AppBaseController
             return redirect(route('departments.index'));
         }
 
+        $oldData = $department->toArray();
         $department = $this->departmentRepository->update($request->all(), $id);
+
+        AuditTrail::log('Department', 'UPDATE', $department->department_id, $oldData, $department->toArray());
 
         Flash::success('Department updated successfully.');
 
@@ -134,7 +140,10 @@ class DepartmentController extends AppBaseController
             return redirect(route('departments.index'));
         }
 
+        $oldData = $department->toArray();
         $this->departmentRepository->delete($id);
+
+        AuditTrail::log('Department', 'DELETE', $id, $oldData, null);
 
         Flash::success('Department deleted successfully.');
 

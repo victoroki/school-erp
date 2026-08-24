@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::open(['route' => 'grading-scales.store']) !!}
+            {!! Form::open(['route' => 'gradingScales.store']) !!}
 
             <div class="card-body">
 

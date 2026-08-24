@@ -13,6 +13,6 @@ class AcademicsPolicy
 
     public function manage(User $user): bool
     {
-        return $user->hasPermission('academics.manage');
+        return $user->hasPermission('academics.settings.manage');
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Requests\CreateDiscountSchemeRequest;
 use App\Http\Requests\UpdateDiscountSchemeRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\DiscountSchemeRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -53,6 +54,8 @@ class DiscountSchemeController extends AppBaseController
         $input = $request->all();
 
         $discountScheme = $this->discountSchemeRepository->create($input);
+
+        AuditTrail::log('Discount Scheme', 'CREATE', $discountScheme->id, null, $discountScheme->toArray());
 
         Flash::success('Discount Scheme saved successfully.');
 
@@ -110,7 +113,10 @@ class DiscountSchemeController extends AppBaseController
             return redirect(route('fees.discounts.index'));
         }
 
+        $oldData = $discountScheme->toArray();
         $discountScheme = $this->discountSchemeRepository->update($request->all(), $id);
+
+        AuditTrail::log('Discount Scheme', 'UPDATE', $discountScheme->id, $oldData, $discountScheme->toArray());
 
         Flash::success('Discount Scheme updated successfully.');
 
@@ -130,7 +136,10 @@ class DiscountSchemeController extends AppBaseController
             return redirect(route('fees.discounts.index'));
         }
 
+        $oldData = $discountScheme->toArray();
         $this->discountSchemeRepository->delete($id);
+
+        AuditTrail::log('Discount Scheme', 'DELETE', $id, $oldData, null);
 
         Flash::success('Discount Scheme deleted successfully.');
 

@@ -71,7 +71,7 @@
                             @foreach($results as $result)
                             <tr>
                                 <td>{{ $result->subject->name ?? 'N/A' }}</td>
-                                <td>{{ $result->classSection?->name ?? 'N/A' }}</td>
+                                <td>{{ trim(($result->classSection?->schoolClass?->name ?? '') . ' ' . ($result->classSection?->section?->name ?? '')) ?: 'N/A' }}</td>
                                 <td>{{ $result->marks_obtained ?? 'N/A' }}</td>
                                 <td>
                                     @if($result->grade)

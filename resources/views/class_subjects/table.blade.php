@@ -40,7 +40,7 @@
                             <div class="cs-item" data-subject-name="{{ strtolower($classSubject->subject->name) }}">
                                 <div>
                                     <span class="cs-name">{{ $classSubject->subject->name }}</span>
-                                    <span class="cs-desc">Year: {{ $classSubject->academicYear->name }}</span>
+                                    <span class="cs-desc">Year: {{ $classSubject->academicYear->name }} · {{ $classSubject->periods_per_week ?? 1 }}x/week</span>
                                 </div>
                                 <div class="d-flex gap-1">
                                     {!! Form::open(['route' => ['class-subjects.destroy', $classSubject->class_subject_id], 'method' => 'delete', 'class' => 'm-0 d-flex justify-content-end gap-1']) !!}

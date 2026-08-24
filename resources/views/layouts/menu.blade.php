@@ -96,7 +96,7 @@
         <li class="nav-item">
             <a href="{{ route('class-sections.index') }}" class="nav-link {{ Request::is('class-sections*') ? 'active' : '' }}">
                 <i class="far fa-sitemap nav-icon text-info"></i>
-                <p>Class Sections</p>
+                <p>Class Rosters</p>
             </a>
         </li>
         @endcan
@@ -159,8 +159,8 @@
 @endcanany
 
 <!-- Student Management -->
-<li class="nav-item has-treeview {{ Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('emergency-contacts*') || Request::is('student-transfer*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('emergency-contacts*') || Request::is('student-transfer*') ? 'active' : '' }}">
+<li class="nav-item has-treeview {{ Request::is('students*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('emergency-contacts*') || Request::is('student-transfer*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('students*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('emergency-contacts*') || Request::is('student-transfer*') ? 'active' : '' }}">
         <i class="nav-icon fas fa-user-graduate text-warning"></i>
         <p>
             Student Management
@@ -172,12 +172,6 @@
             <a href="{{ route('students.index') }}" class="nav-link {{ Request::is('students*') ? 'active' : '' }}">
                 <i class="far fa-user nav-icon text-warning"></i>
                 <p>Students</p>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('student-class-enrollments.index') }}" class="nav-link {{ Request::is('student-class-enrollments*') ? 'active' : '' }}">
-                <i class="far fa-user-plus nav-icon text-warning"></i>
-                <p>Class Enrollments</p>
             </a>
         </li>
         <li class="nav-item">
@@ -687,12 +681,14 @@
         </li>
 
         <li class="nav-header small text-uppercase text-secondary">Auditing & Setup</li>
+        @if(auth()->user()->isOwner())
         <li class="nav-item">
             <a href="{{ route('audit-trail.index') }}" class="nav-link {{ Request::is('audit-trail*') ? 'active' : '' }}">
                 <i class="fas fa-history nav-icon text-secondary"></i>
                 <p>Audit Trail</p>
             </a>
         </li>
+        @endif
         <li class="nav-item">
             <a href="{{ route('financial-years.index') }}" class="nav-link {{ Request::is('financial-years*') ? 'active' : '' }}">
                 <i class="fas fa-calendar-alt nav-icon text-secondary"></i>
@@ -968,7 +964,6 @@
 </li>
 
 <!-- Communication -->
-<!-- Communication -->
 <li class="nav-item has-treeview {{ Request::is('communication*') || Request::is('sms-templates*') || Request::is('email-templates*') ? 'menu-open' : '' }}">
     <a href="#" class="nav-link {{ Request::is('communication*') || Request::is('sms-templates*') || Request::is('email-templates*') ? 'active' : '' }}">
         <i class="nav-icon fas fa-comments text-secondary"></i>
@@ -996,7 +991,7 @@
                 <p>Message History</p>
             </a>
         </li>
-        {{-- <li class="nav-item">
+        <li class="nav-item">
             <a href="{{ route('smsTemplates.index') }}" class="nav-link {{ Request::is('sms-templates*') ? 'active' : '' }}">
                 <i class="fas fa-sms nav-icon text-secondary"></i>
                 <p>SMS Templates</p>
@@ -1007,6 +1002,35 @@
                 <i class="fas fa-envelope nav-icon text-secondary"></i>
                 <p>Email Templates</p>
             </a>
-        </li> --}}
+        </li>
+        @can('communication.view')
+        <li class="nav-item">
+            <a href="{{ route('communication.triggers.index') }}" class="nav-link {{ Request::is('communication/triggers*') ? 'active' : '' }}">
+                <i class="fas fa-bolt nav-icon text-secondary"></i>
+                <p>Auto Triggers</p>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{{ route('communication.pending.index') }}" class="nav-link {{ Request::is('communication/pending*') ? 'active' : '' }}">
+                <i class="fas fa-inbox nav-icon text-secondary"></i>
+                <p>Pending Confirmations
+                    @php
+                        $pendingCount = \App\Models\PendingConfirmation::pending()->count();
+                    @endphp
+                    @if($pendingCount > 0)
+                        <span class="badge badge-warning right">{{ $pendingCount }}</span>
+                    @endif
+                </p>
+            </a>
+        </li>
+        @endcan
+        @can('communication.manage')
+        <li class="nav-item">
+            <a href="{{ route('communication.providers.index') }}" class="nav-link {{ Request::is('communication/providers*') ? 'active' : '' }}">
+                <i class="fas fa-cog nav-icon text-secondary"></i>
+                <p>Provider Settings</p>
+            </a>
+        </li>
+        @endcan
     </ul>
 </li>

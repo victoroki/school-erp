@@ -13,14 +13,16 @@ class Subject extends Model
         'subject_code',
         'name',
         'description',
-        'is_elective'
+        'is_elective',
+        'grade_level',
     ];
 
     protected $casts = [
         'subject_code' => 'string',
         'name' => 'string',
         'description' => 'string',
-        'is_elective' => 'boolean'
+        'is_elective' => 'boolean',
+        'grade_level' => 'integer',
     ];
 
     public static array $rules = [
@@ -31,6 +33,11 @@ class Subject extends Model
         'created_at' => 'nullable',
         'updated_at' => 'nullable'
     ];
+
+    public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Department::class, 'department_id');
+    }
 
     public function assignments(): \Illuminate\Database\Eloquent\Relations\HasMany
     {

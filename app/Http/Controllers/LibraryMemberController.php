@@ -6,6 +6,7 @@ use App\Http\Requests\CreateLibraryMemberRequest;
 use App\Http\Requests\UpdateLibraryMemberRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\LibraryMemberRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -69,6 +70,8 @@ class LibraryMemberController extends AppBaseController
 
         $libraryMember = $this->libraryMemberRepository->create($input);
 
+        AuditTrail::log('Library Member', 'CREATE', $libraryMember->member_id, null, $libraryMember->toArray());
+
         Flash::success('Library Member saved successfully.');
 
         return redirect(route('library-members.index'));
@@ -119,7 +122,10 @@ class LibraryMemberController extends AppBaseController
             return redirect(route('library-members.index'));
         }
 
+        $oldData = $libraryMember->toArray();
         $libraryMember = $this->libraryMemberRepository->update($request->all(), $id);
+
+        AuditTrail::log('Library Member', 'UPDATE', $libraryMember->member_id, $oldData, $libraryMember->toArray());
 
         Flash::success('Library Member updated successfully.');
 
@@ -141,7 +147,10 @@ class LibraryMemberController extends AppBaseController
             return redirect(route('library-members.index'));
         }
 
+        $oldData = $libraryMember->toArray();
         $this->libraryMemberRepository->delete($id);
+
+        AuditTrail::log('Library Member', 'DELETE', $id, $oldData, null);
 
         Flash::success('Library Member deleted successfully.');
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CbcSubStrand;
 use App\Models\CbcStrand;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -36,7 +37,8 @@ class SubStrandController extends Controller
             'name' => 'required|string|max:200',
         ]);
 
-        CbcSubStrand::create($request->all());
+        $subStrand = CbcSubStrand::create($request->all());
+        AuditTrail::log('Sub-Strand', 'CREATE', $subStrand->id, null, $subStrand->toArray());
         Flash::success('Sub-Strand saved successfully.');
         return redirect(route('sub-strands.index'));
     }
@@ -58,7 +60,9 @@ class SubStrandController extends Controller
         ]);
 
         $subStrand = CbcSubStrand::findOrFail($id);
+        $oldData = $subStrand->toArray();
         $subStrand->update($request->all());
+        AuditTrail::log('Sub-Strand', 'UPDATE', $subStrand->id, $oldData, $subStrand->toArray());
         Flash::success('Sub-Strand updated successfully.');
         return redirect(route('sub-strands.index'));
     }
@@ -66,7 +70,9 @@ class SubStrandController extends Controller
     public function destroy($id)
     {
         $subStrand = CbcSubStrand::findOrFail($id);
+        $oldData = $subStrand->toArray();
         $subStrand->delete();
+        AuditTrail::log('Sub-Strand', 'DELETE', $id, $oldData, null);
         Flash::success('Sub-Strand deleted successfully.');
         return redirect(route('sub-strands.index'));
     }

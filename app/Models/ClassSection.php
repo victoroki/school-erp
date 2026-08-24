@@ -97,7 +97,6 @@ class ClassSection extends Model
     //     ]);
 
     //     return implode(' ', $names);
-    //     dd($names);
     // }
 
 }

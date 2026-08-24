@@ -4,6 +4,7 @@
             <thead style="background-color: #f8fafc; border-bottom: 2px solid #f1f5f9;">
             <tr>
                 <th class="px-4 py-3 text-muted small font-weight-bold text-uppercase" style="letter-spacing: 0.5px;">Period Name</th>
+                <th class="py-3 text-muted small font-weight-bold text-uppercase" style="letter-spacing: 0.5px;">Type</th>
                 <th class="py-3 text-muted small font-weight-bold text-uppercase" style="letter-spacing: 0.5px;">Schedule Duration</th>
                 <th class="px-4 py-3 text-muted small font-weight-bold text-uppercase text-right" style="letter-spacing: 0.5px;">Actions</th>
             </tr>
@@ -18,6 +19,17 @@
                             </div>
                             <span class="font-weight-bold" style="font-size: 0.95rem;">{{ $period->name }}</span>
                         </div>
+                    </td>
+                    <td class="py-3 align-middle">
+                        @if(($period->type ?? 'period') === 'break')
+                            <span class="badge" style="background-color: #fff7ed; color: #c2410c; padding: 6px 12px; border-radius: 6px;">
+                                <i class="fas fa-mug-hot mr-2"></i> Break
+                            </span>
+                        @else
+                            <span class="badge" style="background-color: #eff6ff; color: #1d4ed8; padding: 6px 12px; border-radius: 6px;">
+                                <i class="fas fa-book mr-2"></i> Period
+                            </span>
+                        @endif
                     </td>
                     <td class="py-3 align-middle">
                         <div class="d-flex align-items-center">

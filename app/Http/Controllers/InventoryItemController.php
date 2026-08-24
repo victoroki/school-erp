@@ -8,6 +8,7 @@ use App\Http\Controllers\AppBaseController;
 use App\Models\InventoryCategory;
 use App\Models\InventoryItem;
 use App\Models\Supplier;
+use App\Models\AuditTrail;
 use App\Repositories\InventoryItemRepository;
 use Illuminate\Http\Request;
 use Flash;
@@ -123,6 +124,8 @@ class InventoryItemController extends AppBaseController
 
         $inventoryItem = $this->inventoryItemRepository->create($input);
 
+        AuditTrail::log('Inventory Item', 'CREATE', $inventoryItem->item_id, null, $inventoryItem->toArray());
+
         Flash::success('Inventory Item saved successfully.');
 
         return redirect(route('inventory-items.index'));
@@ -179,7 +182,10 @@ class InventoryItemController extends AppBaseController
             return redirect(route('inventory-items.index'));
         }
 
+        $oldData = $inventoryItem->toArray();
         $inventoryItem = $this->inventoryItemRepository->update($request->all(), $id);
+
+        AuditTrail::log('Inventory Item', 'UPDATE', $inventoryItem->item_id, $oldData, $inventoryItem->toArray());
 
         Flash::success('Inventory Item updated successfully.');
 
@@ -201,7 +207,10 @@ class InventoryItemController extends AppBaseController
             return redirect(route('inventory-items.index'));
         }
 
+        $oldData = $inventoryItem->toArray();
         $this->inventoryItemRepository->delete($id);
+
+        AuditTrail::log('Inventory Item', 'DELETE', $id, $oldData, null);
 
         Flash::success('Inventory Item deleted successfully.');
 

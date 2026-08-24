@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Requisition;
 use App\Models\InventoryItem;
 use App\Models\Department;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use DB;
@@ -83,6 +84,8 @@ class RequisitionController extends AppBaseController
 
             $requisition->update(['total_cost' => $totalCost]);
 
+            AuditTrail::log('Requisition', 'CREATE', $requisition->requisition_id, null, $requisition->toArray());
+
             DB::commit();
             Flash::success('Requisition submitted successfully.');
             return redirect()->route('inventory.requisitions.index');
@@ -109,12 +112,14 @@ class RequisitionController extends AppBaseController
                 'approved_by' => auth()->id(),
                 'approved_date' => now(),
             ]);
+            AuditTrail::log('Requisition', 'APPROVE', $requisition->requisition_id, ['status' => 'Pending'], $requisition->toArray());
             Flash::success('Requisition approved.');
         } else {
             $requisition->update([
                 'status' => 'Rejected',
                 'rejected_reason' => $request->reason,
             ]);
+            AuditTrail::log('Requisition', 'REJECT', $requisition->requisition_id, ['status' => 'Pending'], $requisition->toArray());
             Flash::error('Requisition rejected.');
         }
 

@@ -2,15 +2,15 @@
 
 namespace Tests\Unit;
 
-use Tests\TestCase;
+use App\Models\FeePayment;
 use App\Models\Student;
 use App\Models\StudentFeeAssignment;
-use App\Models\FeePayment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class FeeCalculationTest extends TestCase
 {
-    // use RefreshDatabase; // Commented out to use seeded data or manual cleanup
+    use RefreshDatabase;
 
     public function test_fee_calculations()
     {
@@ -44,7 +44,7 @@ class FeeCalculationTest extends TestCase
         // Make a partial payment
         $paymentAmount = 400;
         FeePayment::create([
-            'student_fee_assignment_id' => $assignment->student_fee_assignment_id,
+            'student_fee_assignment_id' => $assignment->id,
             'amount' => $paymentAmount,
             'payment_date' => now(),
             'payment_method' => 'cash',
@@ -63,7 +63,7 @@ class FeeCalculationTest extends TestCase
         // Make remaining payment
         $remainingAmount = $finalAmount - $paymentAmount;
         FeePayment::create([
-            'student_fee_assignment_id' => $assignment->student_fee_assignment_id,
+            'student_fee_assignment_id' => $assignment->id,
             'amount' => $remainingAmount,
             'payment_date' => now(),
             'payment_method' => 'cash',
@@ -78,7 +78,7 @@ class FeeCalculationTest extends TestCase
         $this->assertEquals($finalAmount, $student->paid_fee);
         $this->assertEquals(0, $student->balance_fee);
         $this->assertEquals('Paid', $student->payment_status);
-        
+
         // Cleanup
         $student->delete();
     }

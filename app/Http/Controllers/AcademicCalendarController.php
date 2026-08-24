@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicEvent;
 use App\Models\AcademicYear;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -42,7 +43,9 @@ class AcademicCalendarController extends Controller
     public function store(Request $request)
     {
         $request->validate(AcademicEvent::$rules);
-        AcademicEvent::create($request->all());
+        $event = AcademicEvent::create($request->all());
+
+        AuditTrail::log('Academic Event', 'CREATE', $event->id, null, $event->toArray());
 
         Flash::success('Academic Event saved successfully.');
         return redirect(route('academic-calendar.index'));
@@ -59,7 +62,10 @@ class AcademicCalendarController extends Controller
     {
         $event = AcademicEvent::findOrFail($id);
         $request->validate(AcademicEvent::$rules);
+        $oldData = $event->toArray();
         $event->update($request->all());
+
+        AuditTrail::log('Academic Event', 'UPDATE', $event->id, $oldData, $event->toArray());
 
         Flash::success('Academic Event updated successfully.');
         return redirect(route('academic-calendar.index'));
@@ -68,7 +74,10 @@ class AcademicCalendarController extends Controller
     public function destroy($id)
     {
         $event = AcademicEvent::findOrFail($id);
+        $oldData = $event->toArray();
         $event->delete();
+
+        AuditTrail::log('Academic Event', 'DELETE', $id, $oldData, null);
 
         Flash::success('Academic Event deleted successfully.');
         return redirect(route('academic-calendar.index'));

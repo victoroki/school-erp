@@ -8,6 +8,7 @@ use App\Http\Controllers\AppBaseController;
 use App\Models\Route;
 use App\Models\RouteStop;
 use App\Repositories\RouteStopRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -64,6 +65,8 @@ class RouteStopController extends AppBaseController
 
         $routeStop = $this->routeStopRepository->create($input);
 
+        AuditTrail::log('Route Stop', 'CREATE', $routeStop->stop_id, null, $routeStop->toArray());
+
         Flash::success('Route Stop saved successfully.');
 
         return redirect(route('routeStops.index'));
@@ -117,7 +120,10 @@ class RouteStopController extends AppBaseController
             return redirect(route('routeStops.index'));
         }
 
+        $oldData = $routeStop->toArray();
         $routeStop = $this->routeStopRepository->update($request->all(), $id);
+
+        AuditTrail::log('Route Stop', 'UPDATE', $routeStop->stop_id, $oldData, $routeStop->toArray());
 
         Flash::success('Route Stop updated successfully.');
 
@@ -145,7 +151,10 @@ class RouteStopController extends AppBaseController
             return redirect()->back();
         }
 
+        $oldData = $routeStop->toArray();
         $this->routeStopRepository->delete($id);
+
+        AuditTrail::log('Route Stop', 'DELETE', $id, $oldData, null);
 
         Flash::success('Route Stop deleted successfully.');
 

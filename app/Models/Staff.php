@@ -52,6 +52,8 @@ class Staff extends Model
         'reporting_manager_id',
         'work_location',
         'work_schedule',
+        'max_periods_per_day',
+        'max_periods_per_week',
         'tsc_number',
         'kra_pin',
         'nhif_number',

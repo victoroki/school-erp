@@ -23,6 +23,53 @@
     </div>
 </div>
 
+{{-- ③ RESET PASSWORD MODAL --}}
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content reset-card">
+            <div class="modal-header reset-card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="reset-icon"><i class="fas fa-key"></i></span>
+                    <div>
+                        <h5 class="modal-title reset-title">Reset Password</h5>
+                        <p class="reset-sub mb-0">Set a new password for <strong class="text-dark" id="resetPasswordUserName"></strong></p>
+                    </div>
+                </div>
+                <button type="button" class="close text-muted" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="resetPasswordForm" method="POST" action="" autocomplete="off">
+                @csrf
+                @method('PATCH')
+                <div class="modal-body reset-card-body">
+                    <div class="alert alert-danger reset-alert d-none" id="resetPasswordError" role="alert"></div>
+
+                    <div class="form-group mb-3">
+                        <label for="resetPasswordNew" class="reset-label">New Password</label>
+                        <input type="password" name="password" id="resetPasswordNew"
+                               class="form-control reset-input" minlength="8" required placeholder="Minimum 8 characters">
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label for="resetPasswordConfirm" class="reset-label">Confirm Password</label>
+                        <input type="password" name="password_confirmation" id="resetPasswordConfirm"
+                               class="form-control reset-input" minlength="8" required placeholder="Re-enter the new password">
+                    </div>
+
+                    <p class="reset-hint mt-3 mb-0"><i class="fas fa-shield-alt mr-1"></i> The user will need this password for their next login.</p>
+                </div>
+                <div class="modal-footer reset-card-footer">
+                    <button type="button" class="btn-dash btn-ghost" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-dash btn-primary-dash">
+                        <i class="fas fa-check me-1"></i> Reset Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
 /* ── Emil Kowalski Utility Suite ── */
 :root {
@@ -74,5 +121,80 @@
 }
 .action-btn:hover { background: #f1f5f9; color: var(--text); border-color: #e2e8f0; }
 .btn-delete:hover { background: #fee2e2; color: #ef4444; border-color: #fecaca; }
+
+/* Reset Password Modal */
+.reset-card { border: none; border-radius: 14px; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12); overflow: hidden; }
+.reset-card-header { background: #fff; border-bottom: 1px solid #f8fafc; padding: 1.25rem 1.5rem; align-items: center; }
+.reset-icon { width: 40px; height: 40px; border-radius: 10px; background: #eef2ff; color: var(--indigo); display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+.reset-title { font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
+.reset-sub { font-size: .75rem; color: var(--muted); font-weight: 500; }
+.reset-card-body { padding: 1.5rem; }
+.reset-label { font-size: .75rem; font-weight: 700; color: var(--text); margin-bottom: .375rem; display: block; }
+.reset-input { border: 1px solid var(--border); border-radius: 8px; padding: .5rem .75rem; font-size: .875rem; }
+.reset-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12); }
+.reset-hint { font-size: .75rem; color: var(--muted); }
+.reset-alert { font-size: .813rem; border-radius: 8px; border: 0; background: #fef2f2; color: #b91c1c; }
+.reset-card-footer { background: #f8fafc; border-top: 1px solid var(--border); padding: .875rem 1.5rem; }
 </style>
+
+@push('page_scripts')
+<script>
+    $(function () {
+        const $modal = $('#resetPasswordModal');
+        const $form = $('#resetPasswordForm');
+        const $errorBox = $('#resetPasswordError');
+
+        $modal.on('show.bs.modal', function (event) {
+            const button = $(event.relatedTarget);
+            const userId = button.data('user-id');
+            const userName = button.data('user-name');
+
+            $('#resetPasswordUserName').text(userName);
+            $form.attr('action', '{{ url('users') }}/' + userId + '/reset-password');
+            $form.find('input[type="password"]').val('');
+            $errorBox.addClass('d-none').text('');
+        });
+
+        $form.on('submit', function (e) {
+            e.preventDefault();
+
+            const password = $('#resetPasswordNew').val();
+            const confirmation = $('#resetPasswordConfirm').val();
+
+            if (password.length < 8) {
+                return showError('Password must be at least 8 characters.');
+            }
+            if (password !== confirmation) {
+                return showError('The password confirmation does not match.');
+            }
+
+            $form.find('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Resetting…');
+
+            $.post({
+                url: $form.attr('action'),
+                data: $form.serialize(),
+            }).done(function (data) {
+                if (data.success) {
+                    $modal.modal('hide');
+                    location.reload();
+                }
+            }).fail(function (xhr) {
+                const data = xhr.responseJSON || {};
+                if (data.errors) {
+                    const flat = Object.values(data.errors).flat();
+                    return showError(flat.join(' '));
+                }
+                showError('Something went wrong. Please try again.');
+            }).always(function () {
+                $form.find('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-check me-1"></i> Reset Password');
+            });
+
+            function showError(msg) {
+                $errorBox.removeClass('d-none').text(msg);
+                return false;
+            }
+        });
+    });
+</script>
+@endpush
 @endsection

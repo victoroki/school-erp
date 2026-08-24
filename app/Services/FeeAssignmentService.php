@@ -2,29 +2,31 @@
 
 namespace App\Services;
 
-use App\Models\Student;
-use App\Models\FeeStructure;
-use App\Models\StudentFeeAssignment;
 use App\Models\AcademicYear;
-use App\Models\Term;
-use App\Models\FeeInvoice;
 use App\Models\DiscountScheme;
+use App\Models\FeeInvoice;
+use App\Models\FeeStructure;
+use App\Models\Student;
 use App\Models\StudentDiscount;
+use App\Models\StudentFeeAssignment;
+use App\Models\Term;
 use Illuminate\Support\Facades\DB;
 
 class FeeAssignmentService
 {
-    public function assignFeeToStudent(int $studentId, int $feeStructureId, string $academicYearId, string $term, float $discountAmount = 0, ?int $assignedBy = null): StudentFeeAssignment
+    public function assignFeeToStudent(int $studentId, int $feeStructureId, int $academicYearId, string $term, float $discountAmount = 0, ?int $assignedBy = null): StudentFeeAssignment
     {
         $feeStructure = FeeStructure::findOrFail($feeStructureId);
-        $finalAmount = $feeStructure->amount - $discountAmount;
+        $finalAmount = max(0, $feeStructure->amount - $discountAmount);
+        $termId = $this->resolveTermId($academicYearId, $term);
 
-        return DB::transaction(function () use ($studentId, $feeStructure, $academicYearId, $term, $discountAmount, $finalAmount, $assignedBy) {
+        return DB::transaction(function () use ($studentId, $feeStructure, $academicYearId, $term, $termId, $discountAmount, $finalAmount, $assignedBy) {
             return StudentFeeAssignment::create([
                 'student_id' => $studentId,
                 'fee_structure_id' => $feeStructure->fee_structure_id,
                 'academic_year_id' => $academicYearId,
                 'term' => $term,
+                'term_id' => $termId,
                 'amount' => $feeStructure->amount,
                 'discount_amount' => $discountAmount,
                 'final_amount' => $finalAmount,
@@ -41,7 +43,7 @@ class FeeAssignmentService
             ? AcademicYear::find($academicYearId)
             : AcademicYear::where('is_current', true)->first();
 
-        if (!$academicYear) {
+        if (! $academicYear) {
             return ['success' => false, 'message' => 'No academic year found', 'count' => 0];
         }
 
@@ -56,7 +58,7 @@ class FeeAssignmentService
             ->where('is_current', true)
             ->first();
 
-        if (!$enrollment) {
+        if (! $enrollment) {
             return ['success' => false, 'message' => 'Student has no active enrollment for this academic year', 'count' => 0];
         }
 
@@ -147,7 +149,7 @@ class FeeAssignmentService
     {
         $academicYear = AcademicYear::find($academicYearId);
 
-        if (!$academicYear) {
+        if (! $academicYear) {
             return ['success' => false, 'message' => 'Academic year not found', 'count' => 0, 'students_processed' => 0];
         }
 
@@ -187,25 +189,28 @@ class FeeAssignmentService
         $count = 0;
         $studentsProcessed = 0;
         $skippedCount = 0;
+        $termId = $this->resolveTermId($academicYearId, $term);
 
-        DB::transaction(function () use ($feeStructures, $students, $academicYearId, $term, &$count, &$studentsProcessed, &$skippedCount) {
+        DB::transaction(function () use ($feeStructures, $students, $academicYearId, $term, $termId, &$count, &$studentsProcessed, &$skippedCount) {
             foreach ($students->chunk(100) as $studentChunk) {
                 foreach ($studentChunk as $student) {
                     $enrollment = $student->studentClassEnrollments->first();
 
-                    if (!$enrollment || !$enrollment->classSection) {
+                    if (! $enrollment || ! $enrollment->classSection) {
                         $skippedCount++;
+
                         continue;
                     }
 
                     $studentClassId = $enrollment->classSection->class_id;
 
                     $studentFeeStructures = $feeStructures->filter(function ($fee) use ($studentClassId) {
-                        return !$fee->class_id || $fee->class_id == $studentClassId;
+                        return ! $fee->class_id || $fee->class_id == $studentClassId;
                     });
 
                     if ($studentFeeStructures->isEmpty()) {
                         $skippedCount++;
+
                         continue;
                     }
 
@@ -218,12 +223,13 @@ class FeeAssignmentService
                             ->where('term', $term)
                             ->exists();
 
-                        if (!$exists) {
+                        if (! $exists) {
                             StudentFeeAssignment::create([
                                 'student_id' => $student->student_id,
                                 'fee_structure_id' => $fee->fee_structure_id,
                                 'academic_year_id' => $academicYearId,
                                 'term' => $term,
+                                'term_id' => $termId,
                                 'amount' => $fee->amount,
                                 'final_amount' => $fee->amount,
                                 'assigned_by' => auth()->id(),
@@ -258,13 +264,24 @@ class FeeAssignmentService
     public function bulkAssign($feeStructures, $students, int $academicYearId, string $term, bool $matchClass = false): int
     {
         $count = 0;
+        $termId = $this->resolveTermId($academicYearId, $term);
 
-        DB::transaction(function () use ($feeStructures, $students, $academicYearId, $term, $matchClass, &$count) {
+        DB::transaction(function () use ($feeStructures, $students, $academicYearId, $term, $termId, $matchClass, &$count) {
             foreach ($students->chunk(100) as $studentChunk) {
                 foreach ($studentChunk as $student) {
-                    $studentClassId = $student->studentClassEnrollments()
+                    $enrollment = $student->studentClassEnrollments()
                         ->where('is_current', true)
-                        ->value('class_id');
+                        ->where('academic_year_id', $academicYearId)
+                        ->with('classSection')
+                        ->first();
+
+                    // Only assign to students with a current enrollment in the
+                    // assignment's academic year.
+                    if (! $enrollment) {
+                        continue;
+                    }
+
+                    $studentClassId = $enrollment->classSection?->class_id;
 
                     foreach ($feeStructures as $fee) {
                         if ($matchClass && $fee->class_id && $fee->class_id != $studentClassId) {
@@ -277,12 +294,13 @@ class FeeAssignmentService
                             ->where('term', $term)
                             ->exists();
 
-                        if (!$exists) {
+                        if (! $exists) {
                             StudentFeeAssignment::create([
                                 'student_id' => $student->student_id,
                                 'fee_structure_id' => $fee->fee_structure_id,
                                 'academic_year_id' => $academicYearId,
                                 'term' => $term,
+                                'term_id' => $termId,
                                 'amount' => $fee->amount,
                                 'final_amount' => $fee->amount,
                                 'assigned_by' => auth()->id(),
@@ -305,13 +323,15 @@ class FeeAssignmentService
         $autoDiscounts = DiscountScheme::where('academic_year_id', $academicYearId)
             ->where('status', 'active')
             ->where('auto_apply', true)
-            ->get();
+            ->get()
+            ->filter(fn ($scheme) => $this->isEligibleForDiscount($student, $scheme))
+            ->values();
 
-        foreach ($autoDiscounts as $scheme) {
-            if ($this->isEligibleForDiscount($student, $scheme)) {
-                $this->applyDiscountToStudentAssignments($student, $scheme, $academicYearId);
-            }
+        if ($autoDiscounts->isEmpty()) {
+            return;
         }
+
+        $this->applyDiscountToStudentAssignments($student, $autoDiscounts, $academicYearId);
     }
 
     public function generateInvoicesForTerm(int $academicYearId, string $term, ?int $classId = null): int
@@ -424,41 +444,89 @@ class FeeAssignmentService
         return $student->siblings()->where('is_active', true)->exists();
     }
 
-    protected function applyDiscountToStudentAssignments(Student $student, DiscountScheme $scheme, int $academicYearId): void
+    protected function applyDiscountToStudentAssignments(Student $student, $schemes, int $academicYearId): void
     {
         $assignments = StudentFeeAssignment::where('student_id', $student->student_id)
             ->where('academic_year_id', $academicYearId)
             ->where('status', 'active')
             ->get();
 
-        $totalDiscount = 0;
+        $primarySchemeId = $schemes->first()->id;
 
         foreach ($assignments as $assignment) {
-            $discountAmount = $this->calculateDiscount($assignment->amount, $scheme);
-            $totalDiscount += $discountAmount;
+            // Manual discount protection: assignments carrying a manual
+            // reduction (discount_id null but discount_amount > 0, e.g. from an
+            // approved fee adjustment) are never touched by auto-apply.
+            if (! $assignment->discount_id && (float) $assignment->discount_amount > 0) {
+                continue;
+            }
 
-            $assignment->update([
-                'discount_id' => $scheme->id,
-                'discount_amount' => $discountAmount,
-                'final_amount' => $assignment->amount - $discountAmount,
-            ]);
+            $totalDiscount = 0;
+
+            foreach ($schemes as $scheme) {
+                $totalDiscount += $this->calculateDiscount($assignment->amount, $scheme);
+            }
+
+            $totalDiscount = min($totalDiscount, $assignment->amount);
+
+            if ($totalDiscount > 0) {
+                $assignment->update([
+                    'discount_id' => $primarySchemeId,
+                    'discount_amount' => $totalDiscount,
+                    'final_amount' => $assignment->amount - $totalDiscount,
+                ]);
+            }
         }
 
-        if ($totalDiscount > 0) {
-            StudentDiscount::create([
-                'student_id' => $student->student_id,
-                'discount_scheme_id' => $scheme->id,
-                'academic_year_id' => $academicYearId,
-                'applied_amount' => $totalDiscount,
-                'justification' => "Auto-applied: {$scheme->name}",
-                'requested_by' => auth()->id(),
-                'requested_date' => now(),
-                'approval_status' => 'approved',
-                'approved_by' => auth()->id(),
-                'approved_date' => now(),
-                'status' => 'active',
-            ]);
+        foreach ($schemes as $scheme) {
+            $schemeTotal = 0;
+
+            foreach ($assignments as $assignment) {
+                if (! $assignment->discount_id && (float) $assignment->discount_amount > 0) {
+                    continue;
+                }
+
+                $schemeTotal += $this->calculateDiscount($assignment->amount, $scheme);
+            }
+
+            if ($schemeTotal > 0 && $this->hasStudentDiscountRecord($student, $scheme, $academicYearId)) {
+                continue;
+            }
+
+            if ($schemeTotal > 0) {                StudentDiscount::create([
+                    'student_id' => $student->student_id,
+                    'discount_scheme_id' => $scheme->id,
+                    'academic_year_id' => $academicYearId,
+                    'applied_amount' => $schemeTotal,
+                    'justification' => "Auto-applied: {$scheme->name}",
+                    'requested_by' => auth()->id(),
+                    'requested_date' => now(),
+                    'approval_status' => 'approved',
+                    'approved_by' => auth()->id(),
+                    'approved_date' => now(),
+                    'status' => 'active',
+                ]);
+            }
         }
+    }
+
+    protected function hasStudentDiscountRecord(Student $student, DiscountScheme $scheme, int $academicYearId): bool
+    {
+        return StudentDiscount::where('student_id', $student->student_id)
+            ->where('discount_scheme_id', $scheme->id)
+            ->where('academic_year_id', $academicYearId)
+            ->exists();
+    }
+
+    protected function resolveTermId(int $academicYearId, ?string $term): ?int
+    {
+        if (! $term) {
+            return null;
+        }
+
+        return Term::where('academic_year_id', $academicYearId)
+            ->where('code', $term)
+            ->value('id');
     }
 
     protected function calculateDiscount(float $amount, DiscountScheme $scheme): float

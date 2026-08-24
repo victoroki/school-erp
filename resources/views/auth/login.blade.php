@@ -507,7 +507,7 @@
             <div class="logo-wrap" aria-hidden="true">
                 <img src="{{ asset('garikon-white-bg.png') }}" alt="{{ config('app.name') }} logo">
             </div>
-            <p class="brand-name">{{ config('app.name', 'Garikon Academy') }}</p>
+            <p class="brand-name">{{ school_name() }}</p>
             <p class="brand-sub">School Management Portal</p>
         </div>
 

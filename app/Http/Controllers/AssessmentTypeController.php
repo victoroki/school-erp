@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\AssessmentType;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -29,7 +30,8 @@ class AssessmentTypeController extends Controller
     public function store(Request $request)
     {
         $request->validate(AssessmentType::$rules);
-        AssessmentType::create($request->all());
+        $assessmentType = AssessmentType::create($request->all());
+        AuditTrail::log('Assessment Type', 'CREATE', $assessmentType->id, null, $assessmentType->toArray());
         Flash::success('Assessment Type saved successfully.');
         return redirect(route('assessment-types.index'));
     }
@@ -44,7 +46,9 @@ class AssessmentTypeController extends Controller
     {
         $request->validate(AssessmentType::$rules);
         $assessmentType = AssessmentType::findOrFail($id);
+        $oldData = $assessmentType->toArray();
         $assessmentType->update($request->all());
+        AuditTrail::log('Assessment Type', 'UPDATE', $assessmentType->id, $oldData, $assessmentType->toArray());
         Flash::success('Assessment Type updated successfully.');
         return redirect(route('assessment-types.index'));
     }
@@ -52,7 +56,9 @@ class AssessmentTypeController extends Controller
     public function destroy(string $id)
     {
         $assessmentType = AssessmentType::findOrFail($id);
+        $oldData = $assessmentType->toArray();
         $assessmentType->delete();
+        AuditTrail::log('Assessment Type', 'DELETE', $id, $oldData, null);
         Flash::success('Assessment Type deleted successfully.');
         return redirect(route('assessment-types.index'));
     }

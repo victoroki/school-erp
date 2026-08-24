@@ -6,9 +6,9 @@
             <div class="row mb-3 align-items-center">
                 <div class="col-sm-6">
                     <h1 class="font-weight-bold text-dark" style="font-size: 1.75rem;">
-                        <i class="fas fa-info-circle text-primary mr-2"></i> Class Section Details
+                        <i class="fas fa-info-circle text-primary mr-2"></i> Class Roster Details
                     </h1>
-                    <p class="text-muted mb-0">Full overview of the class and its assigned section.</p>
+                    <p class="text-muted mb-0">Full overview of the roster and its assigned section.</p>
                 </div>
                 <div class="col-sm-6 d-flex justify-content-end">
                     <a class="btn px-4 py-2 shadow-sm"

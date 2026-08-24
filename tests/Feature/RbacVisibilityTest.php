@@ -24,6 +24,8 @@ class RbacVisibilityTest extends TestCase
         'Super Admin' => 'rbac-test-superadmin@test.local',
         'Teacher'     => 'rbac-test-teacher@test.local',
         'Student'     => 'rbac-test-student@test.local',
+        'Accountant'  => 'rbac-test-accountant@test.local',
+        'Owner'       => 'rbac-test-owner@test.local',
     ];
 
     protected function setUp(): void
@@ -108,6 +110,22 @@ class RbacVisibilityTest extends TestCase
         ));
     }
 
+    private function allChildLabels(array $menu): array
+    {
+        $labels = [];
+        foreach ($menu as $item) {
+            if (!isset($item['children'])) {
+                continue;
+            }
+            foreach ($item['children'] as $child) {
+                if (!isset($child['header'])) {
+                    $labels[] = $child['label'];
+                }
+            }
+        }
+        return $labels;
+    }
+
     // ─── SIDEBAR ──────────────────────────────────────────────────
 
     public function test_super_admin_sees_every_section_and_item(): void
@@ -142,8 +160,9 @@ class RbacVisibilityTest extends TestCase
         // Student Management: only Student Attendance is visible (academics.attendance.manage)
         $this->assertSame(['Student Attendance'], $this->childLabels($menu, 'students'));
 
-        // Academic Management: only Dashboard is visible (academics.view)
-        $this->assertSame(['Dashboard'], $this->childLabels($menu, 'academics'));
+        // Academic Management: only Dashboard + My Timetable are visible
+        // (academics.view); structural/admin children stay hidden.
+        $this->assertSame(['Dashboard', 'My Timetable'], $this->childLabels($menu, 'academics'));
 
         // Examinations: teacher has schedule.view, marks.enter-own, results.view-own
         // Children: Dashboard, Sessions, Timetables, Enter Marks, Grade Book, Report Cards
@@ -370,5 +389,87 @@ class RbacVisibilityTest extends TestCase
         $this->actingAs($this->userWithRole('Super Admin'))
             ->get('/fees/terms')
             ->assertOk();
+    }
+
+    public function test_terms_menu_item_matches_terms_route_access(): void
+    {
+        // Super Admin (academics.settings.manage) sees the Terms link.
+        $adminMenu = $this->visibleMenuFor($this->userWithRole('Super Admin'));
+        $this->assertContains('Terms', $this->childLabels($adminMenu, 'fees'));
+
+        // Accountant has fees.view/manage but NOT academics.settings.manage:
+        // Fee Management is visible but Terms must be hidden (matches the 403
+        // the TermController returns for that role).
+        $accountantMenu = $this->visibleMenuFor($this->userWithRole('Accountant'));
+        $this->assertContains('Fee Management', $this->topLabels($accountantMenu));
+        $this->assertNotContains('Terms', $this->childLabels($accountantMenu, 'fees'));
+
+        // Teacher has neither fees.view nor academics.settings.manage.
+        $this->assertNotContains('Fee Management', $this->topLabels($this->visibleMenuFor($this->userWithRole('Teacher'))));
+    }
+
+    public function test_expected_revenue_report_requires_only_fees_view(): void
+    {
+        // Regression: the report was guarded by the non-existent 'fees.export'
+        // permission, which locked out every role including Super Admin.
+        $this->actingAs($this->userWithRole('Super Admin'))
+            ->get('/fees/reports/expected-revenue')
+            ->assertOk();
+
+        $this->actingAs($this->userWithRole('Accountant'))
+            ->get('/fees/reports/expected-revenue')
+            ->assertOk();
+
+        // Teacher has no fees.view → forbidden.
+        $this->actingAs($this->userWithRole('Teacher'))
+            ->get('/fees/reports/expected-revenue')
+            ->assertForbidden();
+    }
+
+    // ─── AUDIT TRAIL — PLATFORM OWNER ONLY ──────────────────────
+
+    public function test_audit_trail_route_is_owner_only(): void
+    {
+        $this->actingAs($this->userWithRole('Teacher'))
+            ->get('/audit-trail')
+            ->assertForbidden();
+
+        // The school's Super Admin must NOT see the audit trail — it is the
+        // platform Owner's window into every school action.
+        $this->actingAs($this->userWithRole('Super Admin'))
+            ->get('/audit-trail')
+            ->assertForbidden();
+
+        $this->actingAs($this->userWithRole('Owner'))
+            ->get('/audit-trail')
+            ->assertOk();
+
+        // Filtered view still renders (module + date range).
+        $this->actingAs($this->userWithRole('Owner'))
+            ->get('/audit-trail?module=Finance&from=2026-01-01&to=2026-12-31')
+            ->assertOk();
+    }
+
+    public function test_audit_trail_menu_hidden_from_permissioned_roles(): void
+    {
+        // A user holding users.view (the former audit-trail gate) must NOT see it.
+        $role = new Role(['role_name' => 'Test Auditor']);
+        $role->setRelation(
+            'permissions',
+            Permission::where('permission_name', 'users.view')->get()
+        );
+        $user = new User(['name' => 'Test Auditor', 'email' => 'auditor@test.local']);
+        $user->setRelation('roles', collect([$role]));
+
+        $menu = $this->visibleMenuFor($user);
+        $this->assertNotContains('Audit Trail', $this->allChildLabels($menu));
+
+        // The school's Super Admin does NOT see the Administration section.
+        $adminMenu = $this->visibleMenuFor($this->userWithRole('Super Admin'));
+        $this->assertNotContains('Audit Trail', $this->allChildLabels($adminMenu));
+
+        // Only the platform Owner does.
+        $ownerMenu = $this->visibleMenuFor($this->userWithRole('Owner'));
+        $this->assertContains('Audit Trail', $this->allChildLabels($ownerMenu));
     }
 }

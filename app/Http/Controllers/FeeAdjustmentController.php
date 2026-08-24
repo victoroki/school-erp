@@ -7,6 +7,7 @@ use App\Models\StudentFeeAssignment;
 use App\Models\Student;
 use App\Models\AcademicYear;
 use App\Models\FeeAdjustmentAuditLog;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use DB;
@@ -111,6 +112,8 @@ class FeeAdjustmentController extends Controller
                 'adjustment_type' => $request->adjustment_type,
             ]);
 
+            AuditTrail::log('Fee Adjustment', 'CREATE', $adjustment->id, null, $adjustment->toArray());
+
             DB::commit();
 
             Flash::success('Fee adjustment request created successfully and pending approval.');
@@ -157,6 +160,8 @@ class FeeAdjustmentController extends Controller
                 'notes' => $request->approval_notes,
             ]);
 
+            AuditTrail::log('Fee Adjustment', 'APPROVE', $adjustment->id, ['status' => 'pending'], $adjustment->toArray());
+
             DB::commit();
 
             Flash::success('Fee adjustment approved successfully.');
@@ -188,6 +193,8 @@ class FeeAdjustmentController extends Controller
             $adjustment->logAction('rejected', auth()->id(), [
                 'reason' => $request->rejection_reason,
             ]);
+
+            AuditTrail::log('Fee Adjustment', 'REJECT', $adjustment->id, ['status' => 'pending'], $adjustment->toArray());
 
             DB::commit();
 

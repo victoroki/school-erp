@@ -35,9 +35,7 @@ class MarkSheetController extends Controller
             $classSectionIds = $this->teacherScope->getClassSectionIds($user);
             $subjectIds = $this->teacherScope->getSubjectIds($user);
 
-            $exams = Exam::whereHas('examSchedules', function ($q) use ($classSectionIds) {
-                $q->whereIn('class_section_id', $classSectionIds);
-            })->orWhereDoesntHave('examSchedules')->pluck('name', 'exam_id');
+            $exams = $this->teacherScope->scopeExams(Exam::query(), $user)->pluck('name', 'exam_id');
 
             $classSections = ClassSection::with(['schoolClass', 'section'])
                 ->whereIn('class_section_id', $classSectionIds)

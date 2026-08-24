@@ -3,7 +3,7 @@
         <div class="icon-wrap bg-slate-light text-slate mx-auto mb-3" style="width: 56px; height: 56px; border-radius: 16px;">
             <i class="fas fa-ghost"></i>
         </div>
-        <p class="text-muted fw-500 small">No class sections found. Begin your architecture by adding a new section.</p>
+        <p class="text-muted fw-500 small">No class rosters found. Begin your architecture by adding a new roster.</p>
     </div>
 @else
     <div class="row g-5" id="class-sections-grid">

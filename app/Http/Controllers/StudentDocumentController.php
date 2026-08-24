@@ -6,6 +6,7 @@ use App\Http\Requests\CreateStudentDocumentRequest;
 use App\Http\Requests\UpdateStudentDocumentRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\StudentDocumentRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use Illuminate\Support\Facades\Storage;
@@ -150,6 +151,8 @@ class StudentDocumentController extends AppBaseController
 
         $studentDocument = $this->studentDocumentRepository->create($input);
 
+        AuditTrail::log('Student Document', 'CREATE', $studentDocument->document_id, null, $studentDocument->toArray());
+
         Flash::success('Student Document saved successfully.');
 
         return redirect(route('student-documents.index'));
@@ -226,7 +229,10 @@ class StudentDocumentController extends AppBaseController
             }
         }
 
+        $oldData = $studentDocument->toArray();
         $studentDocument = $this->studentDocumentRepository->update($input, $id);
+
+        AuditTrail::log('Student Document', 'UPDATE', $studentDocument->document_id, $oldData, $studentDocument->toArray());
 
         Flash::success('Student Document updated successfully.');
 
@@ -253,7 +259,10 @@ class StudentDocumentController extends AppBaseController
             Storage::disk('public')->delete($studentDocument->file_path);
         }
 
+        $oldData = $studentDocument->toArray();
         $this->studentDocumentRepository->delete($id);
+
+        AuditTrail::log('Student Document', 'DELETE', $id, $oldData, null);
 
         Flash::success('Student Document deleted successfully.');
 

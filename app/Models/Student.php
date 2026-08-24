@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Student extends Model
 {
+    use HasFactory;
+
     public $table = 'students';
+
     protected $primaryKey = 'student_id';
 
     public $fillable = [
@@ -62,7 +66,7 @@ class Student extends Model
         'behavior_score',
         'special_notes',
         'last_login_at',
-        'is_active'
+        'is_active',
     ];
 
     protected $casts = [
@@ -76,15 +80,13 @@ class Student extends Model
         'is_scholarship_holder' => 'boolean',
         'is_active' => 'boolean',
         'behavior_score' => 'integer',
-        'route_id' => 'integer'
+        'route_id' => 'integer',
     ];
 
     public static array $rules = [
         'user_id' => 'nullable|exists:users,id',
         'admission_no' => 'required|string|max:20',
         'nemis_number' => 'nullable|string|max:50',
-        'upi_number' => 'nullable|string|max:50',
-        'roll_number' => 'nullable|string|max:20',
         'first_name' => 'required|string|max:50',
         'middle_name' => 'nullable|string|max:50',
         'last_name' => 'required|string|max:50',
@@ -98,7 +100,7 @@ class Student extends Model
         'is_scholarship_holder' => 'boolean',
         'uses_transport' => 'boolean',
         'is_hosteller' => 'boolean',
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
     ];
 
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -214,7 +216,11 @@ class Student extends Model
 
     public function getFullNameAttribute()
     {
-        return trim("{$this->first_name} {$this->middle_name} {$this->last_name}");
+        return implode(' ', array_filter([
+            $this->first_name,
+            $this->middle_name,
+            $this->last_name,
+        ]));
     }
 
     public function siblings(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
@@ -281,18 +287,104 @@ class Student extends Model
         return $badges[$status] ?? $badges['No Fee'];
     }
 
-    public function getAvatarUrlAttribute()
+    /**
+     * Whether the student actually has a photo file on disk.
+     *
+     * A non-empty photo_url is not enough — legacy rows can point at files
+     * that no longer exist, and rendering an <img> for those shows a broken
+     * image icon. Results are memoized per request so a large list does not
+     * hit the filesystem once per row.
+     */
+    public function hasPhoto(): bool
     {
-        if ($this->photo_url) {
-            return asset($this->photo_url);
+        static $cache = [];
+
+        if (isset($cache[$this->student_id])) {
+            return $cache[$this->student_id];
         }
 
-        // Generate initials avatar
-        $initials = strtoupper(substr($this->first_name, 0, 1) . substr($this->last_name, 0, 1));
-        $colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a'];
-        $color = $colors[ord($initials[0]) % count($colors)];
-        
-        return "https://ui-avatars.com/api/?name={$initials}&background=" . ltrim($color, '#') . "&color=fff&size=200&bold=true";
+        $exists = false;
+        if ($this->photo_url) {
+            $path = str_starts_with($this->photo_url, 'students/')
+                ? $this->photo_url
+                : 'uploads/' . $this->photo_url;
+
+            // Prefer the public path (photos live in public/uploads). Also
+            // accept storage-backed files via the public/storage symlink.
+            if (file_exists(public_path($path))) {
+                $exists = true;
+            } elseif (file_exists(public_path('storage/'.$this->photo_url))) {
+                $exists = true;
+            }
+        }
+
+        return $cache[$this->student_id] = $exists;
+    }
+
+    public function getHasPhotoAttribute(): bool
+    {
+        return $this->hasPhoto();
+    }
+
+    public function getAvatarUrlAttribute()
+    {
+        // Only return a URL when the photo file actually exists on disk —
+        // otherwise views fall through to the local initials avatar instead
+        // of rendering a broken image.
+        if (! $this->hasPhoto()) {
+            return null;
+        }
+
+        $path = str_starts_with($this->photo_url, 'students/')
+            ? $this->photo_url
+            : 'uploads/' . $this->photo_url;
+
+        if (file_exists(public_path($path))) {
+            return asset($path);
+        }
+
+        // File lives under storage/app/public (legacy/other disks) → served
+        // through the public/storage symlink.
+        return asset('storage/'.$this->photo_url);
+    }
+
+    /**
+     * Initials used for the local initials avatar when no photo is on file.
+     * Falls back to the first letters of first/last name; if those are
+     * missing, shows the first two letters of whichever name exists, then
+     * a generic placeholder.
+     */
+    public function getInitialsAttribute(): string
+    {
+        $first = strtoupper(mb_substr((string) $this->first_name, 0, 1));
+        $last  = strtoupper(mb_substr((string) $this->last_name, 0, 1));
+
+        if ($first !== '' && $last !== '') {
+            return $first.$last;
+        }
+
+        if ($first !== '') {
+            return $first.strtoupper(mb_substr((string) $this->first_name, 1, 1));
+        }
+
+        if ($last !== '') {
+            return $last.strtoupper(mb_substr((string) $this->last_name, 1, 1));
+        }
+
+        return 'ST';
+    }
+
+    /**
+     * Deterministic background color for the initials avatar, picked from a
+     * small palette by the initials so each student keeps a stable color.
+     */
+    public function getAvatarColorAttribute(): string
+    {
+        $colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#f6a821', '#e9506d'];
+        $seed = $this->initials;
+        $index = $seed !== '' ? ord($seed[0]) % count($colors) : 0;
+
+        return $colors[$index];
     }
 
     // Get student's complete academic journey
@@ -314,9 +406,12 @@ class Student extends Model
     public function getAttendancePercentageAttribute()
     {
         $totalDays = $this->studentAttendances()->count();
-        if ($totalDays == 0) return 0;
-        
+        if ($totalDays == 0) {
+            return 0;
+        }
+
         $presentDays = $this->studentAttendances()->where('status', 'present')->count();
+
         return round(($presentDays / $totalDays) * 100, 2);
     }
 
@@ -325,21 +420,23 @@ class Student extends Model
      */
     public function formatKenyanPhone($phone)
     {
-        if (!$phone) return null;
-        
+        if (! $phone) {
+            return null;
+        }
+
         $phone = preg_replace('/[^0-9]/', '', $phone);
-        
+
         if (str_starts_with($phone, '0')) {
-            $phone = '254' . substr($phone, 1);
+            $phone = '254'.substr($phone, 1);
         } elseif (str_starts_with($phone, '7') || str_starts_with($phone, '1')) {
-            $phone = '254' . $phone;
+            $phone = '254'.$phone;
         }
-        
+
         if (strlen($phone) == 12) {
-            return '+' . substr($phone, 0, 3) . ' ' . substr($phone, 3, 3) . ' ' . substr($phone, 6, 3) . ' ' . substr($phone, 9);
+            return '+'.substr($phone, 0, 3).' '.substr($phone, 3, 3).' '.substr($phone, 6, 3).' '.substr($phone, 9);
         }
-        
-        return '+' . $phone;
+
+        return '+'.$phone;
     }
 
     public function getFormattedPhoneAttribute()
@@ -372,7 +469,7 @@ class Student extends Model
 
     public function getFormattedFeeBalanceAttribute()
     {
-        return 'KES ' . number_format($this->balance_fee, 2);
+        return 'KES '.number_format($this->balance_fee, 2);
     }
 
     public function feeAssignments()

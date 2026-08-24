@@ -8,6 +8,7 @@ use App\Http\Controllers\AppBaseController;
 use App\Models\SmsTemplate;
 use App\Models\TemplateCategory;
 use App\Repositories\SmsTemplateRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -70,6 +71,8 @@ class SmsTemplateController extends AppBaseController
 
         $smsTemplate = $this->smsTemplateRepository->create($input);
 
+        AuditTrail::log('SMS Template', 'CREATE', $smsTemplate->template_id, null, $smsTemplate->toArray());
+
         Flash::success('Sms Template saved successfully.');
 
         return redirect(route('smsTemplates.index'));
@@ -121,7 +124,10 @@ class SmsTemplateController extends AppBaseController
             return redirect(route('smsTemplates.index'));
         }
 
+        $oldData = $smsTemplate->toArray();
         $smsTemplate = $this->smsTemplateRepository->update($request->all(), $id);
+
+        AuditTrail::log('SMS Template', 'UPDATE', $smsTemplate->template_id, $oldData, $smsTemplate->toArray());
 
         Flash::success('Sms Template updated successfully.');
 
@@ -143,7 +149,10 @@ class SmsTemplateController extends AppBaseController
             return redirect(route('smsTemplates.index'));
         }
 
+        $oldData = $smsTemplate->toArray();
         $this->smsTemplateRepository->delete($id);
+
+        AuditTrail::log('SMS Template', 'DELETE', $id, $oldData, null);
 
         Flash::success('Sms Template deleted successfully.');
 

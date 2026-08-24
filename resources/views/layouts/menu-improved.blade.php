@@ -75,7 +75,7 @@
         <li class="nav-item">
             <a href="{{ route('class-sections.index') }}" class="nav-link {{ Request::is('class-sections*') ? 'active' : '' }}">
                 <i class="far fa-sitemap nav-icon text-info"></i>
-                <p>Class Sections</p>
+                <p>Class Rosters</p>
             </a>
         </li>
         <li class="nav-item">
@@ -118,8 +118,8 @@
 </li>
 
 <!-- Student Management -->
-<li class="nav-item has-treeview {{ Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('emergency-contacts*') || Request::is('student-transfer*') ? 'menu-open' : '' }}">
-    <a href="#" class="nav-link {{ Request::is('students*') || Request::is('student-class-enrollments*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('emergency-contacts*') || Request::is('student-transfer*') ? 'active' : '' }}">
+<li class="nav-item has-treeview {{ Request::is('students*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('emergency-contacts*') || Request::is('student-transfer*') ? 'menu-open' : '' }}">
+    <a href="#" class="nav-link {{ Request::is('students*') || Request::is('student-parent-relationships*') || Request::is('student-documents*') || Request::is('emergency-contacts*') || Request::is('student-transfer*') ? 'active' : '' }}">
         <i class="nav-icon fas fa-user-graduate text-warning"></i>
         <p>
             Student Management
@@ -131,12 +131,6 @@
             <a href="{{ route('students.index') }}" class="nav-link {{ Request::is('students*') ? 'active' : '' }}">
                 <i class="far fa-user nav-icon text-warning"></i>
                 <p>Students</p>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{{ route('student-class-enrollments.index') }}" class="nav-link {{ Request::is('student-class-enrollments*') ? 'active' : '' }}">
-                <i class="far fa-user-plus nav-icon text-warning"></i>
-                <p>Class Enrollments</p>
             </a>
         </li>
         <li class="nav-item">

@@ -6,6 +6,7 @@ use App\Http\Requests\CreatePermissionRequest;
 use App\Http\Requests\UpdatePermissionRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\PermissionRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -53,6 +54,8 @@ class PermissionController extends AppBaseController
         $input = $request->all();
 
         $permission = $this->permissionRepository->create($input);
+
+        AuditTrail::log('Permission', 'CREATE', $permission->permission_id, null, $permission->toArray());
 
         Flash::success('Permission saved successfully.');
 
@@ -104,7 +107,10 @@ class PermissionController extends AppBaseController
             return redirect(route('permissions.index'));
         }
 
+        $oldData = $permission->toArray();
         $permission = $this->permissionRepository->update($request->all(), $id);
+
+        AuditTrail::log('Permission', 'UPDATE', $permission->permission_id, $oldData, $permission->toArray());
 
         Flash::success('Permission updated successfully.');
 
@@ -126,7 +132,10 @@ class PermissionController extends AppBaseController
             return redirect(route('permissions.index'));
         }
 
+        $oldData = $permission->toArray();
         $this->permissionRepository->delete($id);
+
+        AuditTrail::log('Permission', 'DELETE', $id, $oldData, null);
 
         Flash::success('Permission deleted successfully.');
 

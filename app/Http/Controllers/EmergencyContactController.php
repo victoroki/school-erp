@@ -7,6 +7,7 @@ use App\Http\Requests\CreateEmergencyContactRequest;
 use App\Http\Requests\UpdateEmergencyContactRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\EmergencyContactRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -52,6 +53,8 @@ class EmergencyContactController extends AppBaseController
         $input = $request->all();
 
         $emergencyContact = $this->emergencyContactRepository->create($input);
+
+        AuditTrail::log('Emergency Contact', 'CREATE', $emergencyContact->emergency_contact_id, null, $emergencyContact->toArray());
 
         Flash::success('Emergency Contact saved successfully.');
 
@@ -107,7 +110,10 @@ class EmergencyContactController extends AppBaseController
             return redirect(route('emergencyContacts.index'));
         }
 
+        $oldData = $emergencyContact->toArray();
         $emergencyContact = $this->emergencyContactRepository->update($request->all(), $id);
+
+        AuditTrail::log('Emergency Contact', 'UPDATE', $emergencyContact->emergency_contact_id, $oldData, $emergencyContact->toArray());
 
         Flash::success('Emergency Contact updated successfully.');
 
@@ -129,7 +135,10 @@ class EmergencyContactController extends AppBaseController
             return redirect(route('emergencyContacts.index'));
         }
 
+        $oldData = $emergencyContact->toArray();
         $this->emergencyContactRepository->delete($id);
+
+        AuditTrail::log('Emergency Contact', 'DELETE', $id, $oldData, null);
 
         Flash::success('Emergency Contact deleted successfully.');
 

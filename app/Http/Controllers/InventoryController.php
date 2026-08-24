@@ -10,6 +10,7 @@ use App\Models\Supplier;
 use App\Models\InventoryTransaction;
 use App\Models\Requisition;
 use App\Models\PurchaseOrder;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facade;
@@ -74,7 +75,9 @@ class InventoryController extends AppBaseController
         DB::beginTransaction();
         try {
             $transaction = $this->inventoryService->addStock($validated);
-            
+
+            AuditTrail::log('Inventory', 'ADD STOCK', $transaction->id, null, $validated + ['transaction_id' => $transaction->id]);
+
             DB::commit();
             
             flash()->success('Stock added successfully.');
@@ -115,7 +118,9 @@ class InventoryController extends AppBaseController
         DB::beginTransaction();
         try {
             $transaction = $this->inventoryService->issueStock($validated);
-            
+
+            AuditTrail::log('Inventory', 'ISSUE STOCK', $transaction->id, null, $validated + ['transaction_id' => $transaction->id]);
+
             DB::commit();
             
             flash()->success('Stock issued successfully.');
@@ -154,7 +159,9 @@ class InventoryController extends AppBaseController
         DB::beginTransaction();
         try {
             $transaction = $this->inventoryService->adjustStock($validated);
-            
+
+            AuditTrail::log('Inventory', 'ADJUST STOCK', $transaction->id, null, $validated + ['transaction_id' => $transaction->id]);
+
             DB::commit();
             
             flash()->success('Stock adjusted successfully.');

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditTrail;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
@@ -53,5 +55,13 @@ class LoginController extends Controller
             return '/portal';
         }
         return '/home';
+    }
+
+    /**
+     * Record successful logins in the system audit trail.
+     */
+    protected function authenticated(Request $request, $user)
+    {
+        AuditTrail::log('Auth', 'LOGIN', $user->id, null, ['email' => $user->email]);
     }
 }

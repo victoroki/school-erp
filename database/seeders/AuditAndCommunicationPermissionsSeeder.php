@@ -15,6 +15,8 @@ class AuditAndCommunicationPermissionsSeeder extends Seeder
     {
         $permissions = [
             'audit-trail.index' => 'View system audit trails',
+            'communication.view' => 'View communication module pages',
+            'communication.manage' => 'Manage communication providers, templates and triggers',
             'communication.dashboard' => 'View communication dashboard',
             'communication.compose' => 'Compose and send messages',
             'communication.send' => 'Execute sending of messages',
@@ -31,8 +33,8 @@ class AuditAndCommunicationPermissionsSeeder extends Seeder
             $permissionIds[] = $permission->permission_id;
         }
 
-        // Assign to Admin and Super Admin roles
-        $roles = Role::whereIn('role_name', ['Admin', 'Super Admin'])->get();
+        // Assign to Owner, Admin and Super Admin roles
+        $roles = Role::whereIn('role_name', ['Owner', 'Admin', 'Super Admin'])->get();
         foreach ($roles as $role) {
             $role->permissions()->syncWithoutDetaching($permissionIds);
         }

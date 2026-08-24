@@ -29,7 +29,7 @@ class Term extends Model
     public static array $rules = [
         'academic_year_id' => 'required|exists:academic_years,academic_year_id',
         'name' => 'required|string|max:100',
-        'code' => 'required|string|max:20|unique:terms,code',
+        'code' => 'required|string|max:20',
         'start_date' => 'required|date',
         'end_date' => 'required|date|after:start_date',
         'fee_due_date' => 'nullable|date',
@@ -49,7 +49,7 @@ class Term extends Model
 
     public function feeAssignments()
     {
-        return $this->hasMany(\App\Models\StudentFeeAssignment::class, 'term', 'code');
+        return $this->hasMany(\App\Models\StudentFeeAssignment::class, 'term_id');
     }
 
     public function isCurrentAttribute()

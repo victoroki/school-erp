@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateSupplierRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Models\Supplier;
 use App\Repositories\SupplierRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -65,6 +66,8 @@ class SupplierController extends AppBaseController
 
         $supplier = $this->supplierRepository->create($input);
 
+        AuditTrail::log('Supplier', 'CREATE', $supplier->supplier_id, null, $supplier->toArray());
+
         Flash::success('Supplier saved successfully.');
 
         return redirect(route('suppliers.index'));
@@ -115,7 +118,10 @@ class SupplierController extends AppBaseController
             return redirect(route('suppliers.index'));
         }
 
+        $oldData = $supplier->toArray();
         $supplier = $this->supplierRepository->update($request->all(), $id);
+
+        AuditTrail::log('Supplier', 'UPDATE', $supplier->supplier_id, $oldData, $supplier->toArray());
 
         Flash::success('Supplier updated successfully.');
 
@@ -137,7 +143,10 @@ class SupplierController extends AppBaseController
             return redirect(route('suppliers.index'));
         }
 
+        $oldData = $supplier->toArray();
         $this->supplierRepository->delete($id);
+
+        AuditTrail::log('Supplier', 'DELETE', $id, $oldData, null);
 
         Flash::success('Supplier deleted successfully.');
 

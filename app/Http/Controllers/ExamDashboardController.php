@@ -17,12 +17,16 @@ class ExamDashboardController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:exams.view');
+        $this->middleware('can:exams.schedule.view');
     }
 
     public function index()
     {
         $now = Carbon::now();
+
+        $user = auth()->user();
+        $viewAll = $user->hasPermission('exams.results.view-all');
+        $hasSettings = $user->hasPermission('academics.settings.manage');
 
         // Key Metrics
         $upcomingExamsCount = Exam::where('start_date', '>', $now)->count();
@@ -59,8 +63,11 @@ class ExamDashboardController extends Controller
             ->orderBy('grading_scales.min_percentage', 'desc')
             ->get();
 
-        // Recent Activities
+        // Recent Activities - scoped for teachers so they only see their own classes' results
         $recentResults = ExamResult::with(['student', 'subject', 'exam'])
+            ->when(!$viewAll && !$hasSettings, function ($query) use ($user) {
+                return app(\App\Services\TeacherScopeService::class)->scopeByClassSections($query, $user);
+            })
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();

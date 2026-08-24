@@ -6,6 +6,7 @@ use App\Http\Requests\CreateUserRoleRequest;
 use App\Http\Requests\UpdateUserRoleRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\UserRoleRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use App\Models\User;
@@ -51,6 +52,8 @@ class UserRoleController extends AppBaseController
         $input = $request->all();
 
         $userRole = $this->userRoleRepository->create($input);
+
+        AuditTrail::log('User Role', 'CREATE', $userRole->id, null, $userRole->toArray());
 
         Flash::success('User Role saved successfully.');
 
@@ -104,7 +107,10 @@ class UserRoleController extends AppBaseController
             return redirect(route('userRoles.index'));
         }
 
+        $oldData = $userRole->toArray();
         $userRole = $this->userRoleRepository->update($request->all(), $id);
+
+        AuditTrail::log('User Role', 'UPDATE', $userRole->id, $oldData, $userRole->toArray());
 
         Flash::success('User Role updated successfully.');
 
@@ -126,7 +132,10 @@ class UserRoleController extends AppBaseController
             return redirect(route('userRoles.index'));
         }
 
+        $oldData = $userRole->toArray();
         $this->userRoleRepository->delete($id);
+
+        AuditTrail::log('User Role', 'DELETE', $id, $oldData, null);
 
         Flash::success('User Role deleted successfully.');
 

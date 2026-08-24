@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Models\InventoryItem;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use DB;
@@ -77,6 +78,8 @@ class PurchaseOrderController extends AppBaseController
                 ]);
             }
 
+            AuditTrail::log('Purchase Order', 'CREATE', $po->po_id, null, $po->toArray());
+
             DB::commit();
             Flash::success('Purchase Order created and awaiting approval.');
             return redirect()->route('inventory.purchase-orders.index');
@@ -99,6 +102,7 @@ class PurchaseOrderController extends AppBaseController
         
         DB::beginTransaction();
         try {
+            $oldStatus = $po->status;
             $po->update([
                 'status' => 'Fully_Received',
                 'received_by' => auth()->id(),
@@ -122,6 +126,8 @@ class PurchaseOrderController extends AppBaseController
                     'remarks' => 'Received from PO #' . $po->po_number,
                 ]);
             }
+
+            AuditTrail::log('Purchase Order', 'RECEIVE', $po->po_id, ['status' => $oldStatus], $po->toArray());
 
             DB::commit();
             Flash::success('Stock received and inventory updated.');

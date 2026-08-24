@@ -6,6 +6,7 @@ use App\Http\Requests\CreateHostelRequest;
 use App\Http\Requests\UpdateHostelRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\HostelRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -59,6 +60,8 @@ class HostelController extends AppBaseController
 
         $hostel = $this->hostelRepository->create($input);
 
+        AuditTrail::log('Hostel', 'CREATE', $hostel->hostel_id, null, $hostel->toArray());
+
         Flash::success('Hostel saved successfully.');
 
         return redirect(route('hostels.index'));
@@ -107,7 +110,10 @@ class HostelController extends AppBaseController
             return redirect(route('hostels.index'));
         }
 
+        $oldData = $hostel->toArray();
         $hostel = $this->hostelRepository->update($request->all(), $id);
+
+        AuditTrail::log('Hostel', 'UPDATE', $hostel->hostel_id, $oldData, $hostel->toArray());
 
         Flash::success('Hostel updated successfully.');
 
@@ -132,7 +138,10 @@ class HostelController extends AppBaseController
             return redirect()->back();
         }
 
+        $oldData = $hostel->toArray();
         $this->hostelRepository->delete($id);
+
+        AuditTrail::log('Hostel', 'DELETE', $id, $oldData, null);
 
         Flash::success('Hostel deleted successfully.');
 

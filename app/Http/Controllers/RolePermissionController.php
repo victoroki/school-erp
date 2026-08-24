@@ -6,6 +6,7 @@ use App\Http\Requests\CreateRolePermissionRequest;
 use App\Http\Requests\UpdateRolePermissionRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\RolePermissionRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use App\Models\Role;
@@ -51,6 +52,8 @@ class RolePermissionController extends AppBaseController
         $input = $request->all();
 
         $rolePermission = $this->rolePermissionRepository->create($input);
+
+        AuditTrail::log('Role Permission', 'CREATE', $rolePermission->id, null, $rolePermission->toArray());
 
         Flash::success('Role Permission saved successfully.');
 
@@ -104,7 +107,10 @@ class RolePermissionController extends AppBaseController
             return redirect(route('rolePermissions.index'));
         }
 
+        $oldData = $rolePermission->toArray();
         $rolePermission = $this->rolePermissionRepository->update($request->all(), $id);
+
+        AuditTrail::log('Role Permission', 'UPDATE', $rolePermission->id, $oldData, $rolePermission->toArray());
 
         Flash::success('Role Permission updated successfully.');
 
@@ -126,7 +132,10 @@ class RolePermissionController extends AppBaseController
             return redirect(route('rolePermissions.index'));
         }
 
+        $oldData = $rolePermission->toArray();
         $this->rolePermissionRepository->delete($id);
+
+        AuditTrail::log('Role Permission', 'DELETE', $id, $oldData, null);
 
         Flash::success('Role Permission deleted successfully.');
 

@@ -6,6 +6,7 @@ use App\Models\StudentFeeAssignment;
 use App\Models\FeePayment;
 use App\Models\Student;
 use App\Models\FeeStructure;
+use App\Models\Term;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -14,18 +15,26 @@ class FinanceService
     /**
      * Assign a fee structure to a student
      */
-    public function assignFeeToStudent($studentId, $feeStructureId, $discountAmount = 0, $academicYearId = null, $term = null)
+    public function assignFeeToStudent(int $studentId, int $feeStructureId, float $discountAmount = 0, ?int $academicYearId = null, ?string $term = null)
     {
         $feeStructure = FeeStructure::findOrFail($feeStructureId);
+
+        $yearId = $academicYearId ?? $feeStructure->academic_year_id;
+        $termValue = $term ?? $feeStructure->term;
+        $termId = $termValue
+            ? Term::where('academic_year_id', $yearId)->where('code', $termValue)->value('id')
+            : null;
+        $finalAmount = max(0, $feeStructure->amount - $discountAmount);
 
         return StudentFeeAssignment::create([
             'student_id' => $studentId,
             'fee_structure_id' => $feeStructureId,
-            'academic_year_id' => $academicYearId ?? $feeStructure->academic_year_id,
-            'term' => $term ?? $feeStructure->term,
+            'academic_year_id' => $yearId,
+            'term' => $termValue,
+            'term_id' => $termId,
             'amount' => $feeStructure->amount,
             'discount_amount' => $discountAmount,
-            'final_amount' => $feeStructure->amount - $discountAmount,
+            'final_amount' => $finalAmount,
             'assigned_by' => auth()->id(),
             'assigned_date' => now(),
             'status' => 'active'
@@ -95,7 +104,7 @@ class FinanceService
                 'transaction_id' => $data['transaction_id'] ?? null,
                 'receipt_number' => $this->generateReceiptNumber(),
                 'remarks' => $data['remarks'] ?? null,
-                'collected_by' => auth()->id(),
+                'collected_by' => auth()->user()?->staff?->staff_id,
             ]);
 
             $this->updateAssignmentPaymentStatus($assignment);

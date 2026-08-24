@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateMessageRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\MessageRepository;
 use App\Models\User;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use Illuminate\Support\Arr;
@@ -59,6 +60,8 @@ class MessageController extends AppBaseController
 
         $message = $this->messageRepository->create($input);
 
+        AuditTrail::log('Message', 'CREATE', $message->message_id, null, $message->toArray());
+
         Flash::success('Message sent successfully.');
 
         return redirect(route('messages.index'));
@@ -110,7 +113,10 @@ class MessageController extends AppBaseController
             return redirect(route('messages.index'));
         }
 
+        $oldData = $message->toArray();
         $message = $this->messageRepository->update($request->all(), $id);
+
+        AuditTrail::log('Message', 'UPDATE', $message->message_id, $oldData, $message->toArray());
 
         Flash::success('Message updated successfully.');
 
@@ -132,7 +138,10 @@ class MessageController extends AppBaseController
             return redirect(route('messages.index'));
         }
 
+        $oldData = $message->toArray();
         $this->messageRepository->delete($id);
+
+        AuditTrail::log('Message', 'DELETE', $id, $oldData, null);
 
         Flash::success('Message deleted successfully.');
 

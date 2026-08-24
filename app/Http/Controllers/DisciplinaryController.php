@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DisciplinaryRecord;
 use App\Models\Student;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use Auth;
@@ -48,7 +49,9 @@ class DisciplinaryController extends Controller
         $data = $request->all();
         $data['reported_by'] = Auth::id();
 
-        DisciplinaryRecord::create($data);
+        $record = DisciplinaryRecord::create($data);
+
+        AuditTrail::log('Disciplinary', 'CREATE', $record->disciplinary_record_id, null, $record->toArray());
 
         Flash::success('Disciplinary action logged successfully.');
 
@@ -64,7 +67,10 @@ class DisciplinaryController extends Controller
             'status' => 'required|in:open,investigating,closed'
         ]);
 
+        $oldData = $record->toArray();
         $record->update($request->only(['action_taken', 'status']));
+
+        AuditTrail::log('Disciplinary', 'UPDATE', $record->disciplinary_record_id, $oldData, $record->toArray());
 
         Flash::success('Record updated successfully.');
 

@@ -416,12 +416,12 @@
             
             function initFeeAssignment() {
                 if (typeof jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
-                    console.log('Waiting for dependencies...');
+
                     return;
                 }
                 
                 clearInterval(checkInterval);
-                console.log('Initializing Fee Assignment...');
+
                 
                 // Initialize Select2
                 jQuery('.select2').select2({
@@ -833,7 +833,7 @@
                 jQuery('#bulk_fields').show();
                 jQuery('#assignmentTypeCards .type-card').first().trigger('click');
                 
-                console.log('Fee Assignment initialized successfully!');
+
             }
             
             // Poll for dependencies

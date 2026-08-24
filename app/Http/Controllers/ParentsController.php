@@ -6,6 +6,7 @@ use App\Http\Requests\CreateParentsRequest;
 use App\Http\Requests\UpdateParentsRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\ParentsRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -61,6 +62,8 @@ class ParentsController extends AppBaseController
 
         $parents = $this->parentsRepository->create($input);
 
+        AuditTrail::log('Parent', 'CREATE', $parents->parent_id, null, $parents->toArray());
+
         Flash::success('Parents saved successfully.');
 
         return redirect(route('parents.index'));
@@ -111,7 +114,10 @@ class ParentsController extends AppBaseController
             return redirect(route('parents.index'));
         }
 
+        $oldData = $parents->toArray();
         $parents = $this->parentsRepository->update($request->all(), $id);
+
+        AuditTrail::log('Parent', 'UPDATE', $parents->parent_id, $oldData, $parents->toArray());
 
         Flash::success('Parents updated successfully.');
 
@@ -133,7 +139,10 @@ class ParentsController extends AppBaseController
             return redirect(route('parents.index'));
         }
 
+        $oldData = $parents->toArray();
         $this->parentsRepository->delete($id);
+
+        AuditTrail::log('Parent', 'DELETE', $id, $oldData, null);
 
         Flash::success('Parents deleted successfully.');
 

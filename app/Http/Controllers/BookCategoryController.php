@@ -6,6 +6,7 @@ use App\Http\Requests\CreateBookCategoryRequest;
 use App\Http\Requests\UpdateBookCategoryRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\BookCategoryRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -48,6 +49,8 @@ class BookCategoryController extends AppBaseController
         $input = $request->all();
 
         $bookCategory = $this->bookCategoryRepository->create($input);
+
+        AuditTrail::log('Book Category', 'CREATE', $bookCategory->category_id, null, $bookCategory->toArray());
 
         Flash::success('Book Category saved successfully.');
 
@@ -99,7 +102,10 @@ class BookCategoryController extends AppBaseController
             return redirect(route('bookCategories.index'));
         }
 
+        $oldData = $bookCategory->toArray();
         $bookCategory = $this->bookCategoryRepository->update($request->all(), $id);
+
+        AuditTrail::log('Book Category', 'UPDATE', $bookCategory->category_id, $oldData, $bookCategory->toArray());
 
         Flash::success('Book Category updated successfully.');
 
@@ -121,7 +127,10 @@ class BookCategoryController extends AppBaseController
             return redirect(route('bookCategories.index'));
         }
 
+        $oldData = $bookCategory->toArray();
         $this->bookCategoryRepository->delete($id);
+
+        AuditTrail::log('Book Category', 'DELETE', $id, $oldData, null);
 
         Flash::success('Book Category deleted successfully.');
 

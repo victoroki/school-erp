@@ -211,13 +211,13 @@
                                             <td><span class="receipt-badge">{{ $payment->receipt_number }}</span></td>
                                             <td>
                                                 <span class="method-badge">
-                                                    <i class="fas fa-{{ $payment->payment_method === 'Cash' ? 'money-bill-wave' : ($payment->payment_method === 'Mobile Money' ? 'mobile-alt' : ($payment->payment_method === 'Bank Transfer' ? 'university' : ($payment->payment_method === 'Cheque' ? 'money-check' : 'credit-card'))) }}"></i>
-                                                    {{ $payment->payment_method }}
+                                                    <i class="fas fa-{{ $payment->payment_method === 'cash' ? 'money-bill-wave' : ($payment->payment_method === 'online' ? 'mobile-alt' : ($payment->payment_method === 'bank_transfer' ? 'university' : ($payment->payment_method === 'check' ? 'money-check' : 'credit-card'))) }}"></i>
+                                                    {{ \Illuminate\Support\Str::title(str_replace('_', ' ', $payment->payment_method)) }}
                                                 </span>
                                             </td>
                                             <td class="text-right mono text-emerald font-semibold">KSh {{ number_format($payment->amount, 2) }}</td>
                                             <td class="text-muted-sm">{{ $payment->studentFeeAssignment->feeStructure->category->name ?? 'N/A' }}</td>
-                                            <td class="text-muted-sm">{{ $payment->collectedBy->name ?? 'System' }}</td>
+                                            <td class="text-muted-sm">{{ $payment->collectedBy->full_name ?? 'System' }}</td>
                                         </tr>
                                     @empty
                                         <tr>
@@ -478,7 +478,7 @@
                     $(this).addClass('active');
                     $('#tab-' + tab).addClass('active');
                     
-                    console.log('Tab switched to:', tab);
+
                 });
                 
                 // Ensure first tab is active by default
@@ -487,7 +487,7 @@
                     $('.tab-pane:first').addClass('active');
                 }
                 
-                console.log('Tabs initialized successfully');
+
             } catch (error) {
                 console.error('Error initializing tabs:', error);
                 

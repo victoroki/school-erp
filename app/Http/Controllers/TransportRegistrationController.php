@@ -11,6 +11,7 @@ use App\Models\Route;
 use App\Models\RouteStop;
 use App\Models\AcademicYear;
 use App\Models\TransportRegistration;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use Illuminate\Support\Arr;
@@ -72,6 +73,8 @@ class TransportRegistrationController extends AppBaseController
 
         $transportRegistration = $this->transportRegistrationRepository->create($input);
 
+        AuditTrail::log('Transport Registration', 'CREATE', $transportRegistration->registration_id, null, $transportRegistration->toArray());
+
         Flash::success('Transport Registration saved successfully.');
 
         return redirect(route('transport-registrations.index'));
@@ -131,7 +134,10 @@ class TransportRegistrationController extends AppBaseController
             return redirect()->back()->withInput();
         }
 
+        $oldData = $transportRegistration->toArray();
         $transportRegistration = $this->transportRegistrationRepository->update($input, $id);
+
+        AuditTrail::log('Transport Registration', 'UPDATE', $transportRegistration->registration_id, $oldData, $transportRegistration->toArray());
 
         Flash::success('Transport Registration updated successfully.');
 
@@ -153,7 +159,10 @@ class TransportRegistrationController extends AppBaseController
             return redirect(route('transport-registrations.index'));
         }
 
+        $oldData = $transportRegistration->toArray();
         $this->transportRegistrationRepository->delete($id);
+
+        AuditTrail::log('Transport Registration', 'DELETE', $id, $oldData, null);
 
         Flash::success('Transport Registration deleted successfully.');
 

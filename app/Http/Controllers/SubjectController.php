@@ -6,6 +6,7 @@ use App\Http\Requests\CreateSubjectRequest;
 use App\Http\Requests\UpdateSubjectRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\SubjectRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -50,6 +51,8 @@ class SubjectController extends AppBaseController
         $input = $request->all();
 
         $subject = $this->subjectRepository->create($input);
+
+        AuditTrail::log('Subject', 'CREATE', $subject->subject_id, null, $subject->toArray());
 
         Flash::success('Subject saved successfully.');
 
@@ -101,7 +104,10 @@ class SubjectController extends AppBaseController
             return redirect(route('subjects.index'));
         }
 
+        $oldData = $subject->toArray();
         $subject = $this->subjectRepository->update($request->all(), $id);
+
+        AuditTrail::log('Subject', 'UPDATE', $subject->subject_id, $oldData, $subject->toArray());
 
         Flash::success('Subject updated successfully.');
 
@@ -123,7 +129,10 @@ class SubjectController extends AppBaseController
             return redirect(route('subjects.index'));
         }
 
+        $oldData = $subject->toArray();
         $this->subjectRepository->delete($id);
+
+        AuditTrail::log('Subject', 'DELETE', $id, $oldData, null);
 
         Flash::success('Subject deleted successfully.');
 

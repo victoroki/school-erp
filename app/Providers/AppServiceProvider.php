@@ -10,7 +10,26 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register()
     {
-        //
+        $helperPath = app_path('Helpers/school.php');
+        if (file_exists($helperPath)) {
+            require_once $helperPath;
+        }
+
+        // Communication service bindings — dynamic based on active SMS provider
+        $this->app->bind(
+            \App\Services\Communication\SmsProviderInterface::class,
+            function () {
+                $activeProvider = \App\Models\CommunicationSetting::getActiveSmsProviderName();
+                if ($activeProvider === 'sozuri') {
+                    return new \App\Services\Communication\SozuriSmsProvider();
+                }
+                return new \App\Services\Communication\AfricasTalkingSmsProvider();
+            }
+        );
+        $this->app->bind(
+            \App\Services\Communication\EmailProviderInterface::class,
+            \App\Services\Communication\SmtpEmailProvider::class
+        );
     }
 
 public function boot()

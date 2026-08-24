@@ -14,6 +14,7 @@ use App\Models\Staff;
 use App\Models\Subject;
 use App\Models\ClassSection;
 use App\Models\AcademicYear;
+use App\Models\AuditTrail;
 
 class TeacherSubjectController extends AppBaseController
 {
@@ -59,10 +60,13 @@ class TeacherSubjectController extends AppBaseController
             ->distinct()
             ->orderBy('staff_id');
 
-        // Use a simple manual paginator so the count reflects unique teachers
+        // Use a simple manual paginator so the count reflects unique teachers.
+        // IMPORTANT: count DISTINCT staff_ids — counting rows would inflate
+        // the total when teachers hold multiple subjects, creating phantom
+        // pages that render an empty grid.
         $perPage        = 8;
         $currentPage    = (int) $request->get('page', 1);
-        $totalTeachers  = (clone $staffQuery)->count();
+        $totalTeachers  = (clone $staffQuery)->distinct()->count('staff_id');
 
         $staffIds = $staffQuery
             ->offset(($currentPage - 1) * $perPage)
@@ -145,6 +149,8 @@ class TeacherSubjectController extends AppBaseController
 
         $teacherSubject = $this->teacherSubjectRepository->create($input);
 
+        AuditTrail::log('Academic', 'TEACHER SUBJECT ASSIGNED', $teacherSubject->teacher_subject_id, null, $teacherSubject->toArray());
+
         Flash::success('Teacher Subject saved successfully.');
 
         return redirect(route('teacher-subjects.index', ['academic_year_id' => $input['academic_year_id'] ?? null]));
@@ -200,7 +206,10 @@ class TeacherSubjectController extends AppBaseController
             return redirect(route('teacher-subjects.index'));
         }
 
+        $oldData = $teacherSubject->toArray();
         $teacherSubject = $this->teacherSubjectRepository->update($request->all(), $id);
+
+        AuditTrail::log('Academic', 'TEACHER SUBJECT UPDATED', $teacherSubject->teacher_subject_id, $oldData, $teacherSubject->toArray());
 
         Flash::success('Teacher Subject updated successfully.');
 
@@ -222,7 +231,10 @@ class TeacherSubjectController extends AppBaseController
             return redirect(route('teacher-subjects.index'));
         }
 
+        $oldData = $teacherSubject->toArray();
         $this->teacherSubjectRepository->delete($id);
+
+        AuditTrail::log('Academic', 'TEACHER SUBJECT REMOVED', $id, $oldData, null);
 
         Flash::success('Teacher Subject deleted successfully.');
 

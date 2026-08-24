@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateFeeCategoryRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\FeeCategoryRepository;
 use App\Models\FeeCategory;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -49,6 +50,8 @@ class FeeCategoryController extends AppBaseController
         $input = $request->all();
 
         $feeCategory = $this->feeCategoryRepository->create($input);
+
+        AuditTrail::log('Fee Category', 'CREATE', $feeCategory->category_id, null, $feeCategory->toArray());
 
         Flash::success('Fee Category saved successfully.');
 
@@ -100,7 +103,10 @@ class FeeCategoryController extends AppBaseController
             return redirect(route('feeCategories.index'));
         }
 
+        $oldData = $feeCategory->toArray();
         $feeCategory = $this->feeCategoryRepository->update($request->all(), $id);
+
+        AuditTrail::log('Fee Category', 'UPDATE', $feeCategory->category_id, $oldData, $feeCategory->toArray());
 
         Flash::success('Fee Category updated successfully.');
 
@@ -148,7 +154,10 @@ class FeeCategoryController extends AppBaseController
             return redirect(route('feeCategories.index'));
         }
 
+        $oldData = $feeCategory->toArray();
         $this->feeCategoryRepository->delete($id);
+
+        AuditTrail::log('Fee Category', 'DELETE', $id, $oldData, null);
 
         Flash::success('Fee Category deleted successfully.');
 

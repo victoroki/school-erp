@@ -25,20 +25,28 @@
                         </div>
                     </td>
                     <td class="text-right align-middle">
-                        {!! Form::open(['route' => ['users.destroy', $user->id], 'method' => 'delete', 'class' => 'm-0 d-flex justify-content-end gap-1']) !!}
-                        <a href="{{ route('users.show', [$user->id]) }}" class="action-btn" title="View Details">
-                            <i class="far fa-eye"></i>
-                        </a>
-                        <a href="{{ route('users.edit', [$user->id]) }}" class="action-btn" title="Edit User">
-                            <i class="far fa-edit"></i>
-                        </a>
-                        {!! Form::button('<i class="far fa-trash-alt"></i>', [
-                            'type' => 'submit', 
-                            'class' => 'action-btn btn-delete', 
-                            'title' => 'Delete User',
-                            'onclick' => "return confirm('Are you sure you want to delete this user?')"
-                        ]) !!}
-                        {!! Form::close() !!}
+                        <div class="d-flex justify-content-end gap-1">
+                            <a href="{{ route('users.show', [$user->id]) }}" class="action-btn" title="View Details">
+                                <i class="far fa-eye"></i>
+                            </a>
+                            <a href="{{ route('users.edit', [$user->id]) }}" class="action-btn" title="Edit User">
+                                <i class="far fa-edit"></i>
+                            </a>
+                            <button type="button" class="action-btn" title="Reset Password"
+                                    data-toggle="modal" data-target="#resetPasswordModal"
+                                    data-user-id="{{ $user->id }}"
+                                    data-user-name="{{ $user->name }}">
+                                <i class="fas fa-key"></i>
+                            </button>
+                            {!! Form::open(['route' => ['users.destroy', $user->id], 'method' => 'delete', 'class' => 'm-0']) !!}
+                                {!! Form::button('<i class="far fa-trash-alt"></i>', [
+                                    'type' => 'submit',
+                                    'class' => 'action-btn btn-delete',
+                                    'title' => 'Delete User',
+                                    'onclick' => "return confirm('Are you sure you want to delete this user?')"
+                                ]) !!}
+                            {!! Form::close() !!}
+                        </div>
                     </td>
                 </tr>
             @endforeach

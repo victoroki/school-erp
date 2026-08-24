@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Flash;
 use App\Models\Student;
 use App\Models\StudentFeeAssignment;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -15,8 +16,8 @@ class FeeManagementController extends Controller
     public function __construct(\App\Services\FinanceService $financeService)
     {
         $this->financeService = $financeService;
-        $this->middleware('can:fees.view')->only(['index', 'show']);
-        $this->middleware('can:fees.collect')->only(['collect', 'receipt']);
+        $this->middleware('can:fees.view')->only(['index', 'show', 'print']);
+        $this->middleware('can:fees.collect')->only(['collect', 'collectPayment', 'storePayment']);
     }
 
     public function index(Request $request)
@@ -71,6 +72,34 @@ class FeeManagementController extends Controller
         return view('fee_management.index', compact('students', 'metrics', 'classes'));
     }
 
+    public function collect(Request $request)
+    {
+        $query = Student::query()
+            ->with(['feeAssignments', 'studentClassEnrollments.classSection.schoolClass'])
+            ->where('is_active', true);
+
+        if ($request->filled('q')) {
+            $q = trim($request->q);
+            $query->where(function ($sub) use ($q) {
+                $sub->where('admission_no', 'like', "%{$q}%")
+                    ->orWhere('first_name', 'like', "%{$q}%")
+                    ->orWhere('middle_name', 'like', "%{$q}%")
+                    ->orWhere('last_name', 'like', "%{$q}%");
+            });
+        }
+
+        if ($request->filled('class_id')) {
+            $query->whereHas('studentClassEnrollments.classSection.schoolClass', function ($sub) use ($request) {
+                $sub->where('class_id', $request->class_id);
+            });
+        }
+
+        $students = $query->orderBy('admission_no')->paginate(25)->withQueryString();
+        $classes = \App\Models\SchoolClass::orderBy('name')->pluck('name', 'class_id');
+
+        return view('fee_management.collect', compact('students', 'classes'));
+    }
+
     public function show($id)
     {
         $student = Student::with([
@@ -97,17 +126,7 @@ class FeeManagementController extends Controller
 
     public function storePayment(Request $request, $id)
     {
-        \Log::info('ENTERING storePayment method');
-        \Log::info('Payment submission:', $request->all());
-
-        // Check for validation errors in session
-        if (session()->has('errors')) {
-            \Log::error('Validation errors found:', session('errors')->toArray());
-        }
-
         try {
-            \Log::info('Processing payment...');
-            
             // Handle "total" payment - distribute across all unpaid fee assignments
             if ((string)$request->student_fee_assignment_id === 'total') {
                 $student = Student::with(['feeAssignments' => function($q) {
@@ -126,7 +145,7 @@ class FeeManagementController extends Controller
                         $paymentAmount = min($remainingAmount, $balance);
 
                         $this->financeService->recordPayment([
-                            'student_fee_assignment_id' => $feeAssignment->student_fee_assignment_id,
+                            'student_fee_assignment_id' => $feeAssignment->id,
                             'amount' => $paymentAmount,
                             'payment_date' => $request->payment_date,
                             'payment_method' => $request->payment_method,
@@ -138,14 +157,28 @@ class FeeManagementController extends Controller
                     }
                 }
 
+                AuditTrail::log('Fees', 'RECORD PAYMENT', $id, null, [
+                    'student_id' => $id,
+                    'amount' => $request->amount,
+                    'payment_method' => $request->payment_method,
+                    'type' => 'total',
+                ]);
+
                 Flash::success('Total payment recorded successfully across all fees.');
                 \Log::info('Total payment recorded successfully');
             } else {
                 // Single fee payment
                 $this->financeService->recordPayment($request->all());
+                AuditTrail::log('Fees', 'RECORD PAYMENT', $id, null, [
+                    'student_id' => $id,
+                    'student_fee_assignment_id' => $request->student_fee_assignment_id,
+                    'amount' => $request->amount,
+                    'payment_method' => $request->payment_method,
+                ]);
                 Flash::success('Payment recorded successfully.');
             }
         } catch (\Exception $e) {
+            \Log::error('Payment recording failed: ' . $e->getMessage());
             Flash::error('Error recording payment: ' . $e->getMessage());
         }
 

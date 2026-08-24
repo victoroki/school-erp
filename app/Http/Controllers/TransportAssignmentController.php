@@ -9,6 +9,7 @@ use App\Repositories\TransportAssignmentRepository;
 use App\Models\Route;
 use App\Models\Vehicle;
 use App\Models\Staff;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use Illuminate\Support\Arr;
@@ -64,6 +65,8 @@ class TransportAssignmentController extends AppBaseController
 
         $transportAssignment = $this->transportAssignmentRepository->create($input);
 
+        AuditTrail::log('Transport Assignment', 'CREATE', $transportAssignment->assignment_id, null, $transportAssignment->toArray());
+
         Flash::success('Transport Assignment saved successfully.');
 
         return redirect(route('transport-assignments.index'));
@@ -115,7 +118,10 @@ class TransportAssignmentController extends AppBaseController
             return redirect(route('transport-assignments.index'));
         }
 
+        $oldData = $transportAssignment->toArray();
         $transportAssignment = $this->transportAssignmentRepository->update($request->all(), $id);
+
+        AuditTrail::log('Transport Assignment', 'UPDATE', $transportAssignment->assignment_id, $oldData, $transportAssignment->toArray());
 
         Flash::success('Transport Assignment updated successfully.');
 
@@ -137,7 +143,10 @@ class TransportAssignmentController extends AppBaseController
             return redirect(route('transport-assignments.index'));
         }
 
+        $oldData = $transportAssignment->toArray();
         $this->transportAssignmentRepository->delete($id);
+
+        AuditTrail::log('Transport Assignment', 'DELETE', $id, $oldData, null);
 
         Flash::success('Transport Assignment deleted successfully.');
 

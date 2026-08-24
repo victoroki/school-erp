@@ -249,11 +249,13 @@
                                 <i class="fas fa-clipboard-list mb-1 text-emerald"></i> Budgets
                             </a>
                         </div>
+                        @if(auth()->user()->hasAnyRole(['Super Admin']))
                         <div class="col-6 p-1">
                             <a href="{{ route('audit-trail.index') }}" class="qa-btn">
                                 <i class="fas fa-history mb-1 text-slate"></i> Audit Log
                             </a>
                         </div>
+                        @endif
                         <div class="col-6 p-1">
                             <a href="{{ route('financial-years.index') }}" class="qa-btn">
                                 <i class="fas fa-calendar-alt mb-1 text-indigo"></i> Setup Year

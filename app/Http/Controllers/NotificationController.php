@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateNotificationRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\NotificationRepository;
 use App\Models\User;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use Illuminate\Support\Arr;
@@ -59,6 +60,8 @@ class NotificationController extends AppBaseController
 
         $notification = $this->notificationRepository->create($input);
 
+        AuditTrail::log('Notification', 'CREATE', $notification->notification_id, null, $notification->toArray());
+
         Flash::success('Notification saved successfully.');
 
         return redirect(route('notifications.index'));
@@ -110,7 +113,10 @@ class NotificationController extends AppBaseController
             return redirect(route('notifications.index'));
         }
 
+        $oldData = $notification->toArray();
         $notification = $this->notificationRepository->update($request->all(), $id);
+
+        AuditTrail::log('Notification', 'UPDATE', $notification->notification_id, $oldData, $notification->toArray());
 
         Flash::success('Notification updated successfully.');
 
@@ -132,7 +138,10 @@ class NotificationController extends AppBaseController
             return redirect(route('notifications.index'));
         }
 
+        $oldData = $notification->toArray();
         $this->notificationRepository->delete($id);
+
+        AuditTrail::log('Notification', 'DELETE', $id, $oldData, null);
 
         Flash::success('Notification deleted successfully.');
 

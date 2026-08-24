@@ -6,6 +6,7 @@ use App\Http\Requests\CreatePeriodRequest;
 use App\Http\Requests\UpdatePeriodRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\PeriodRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -50,6 +51,8 @@ class PeriodController extends AppBaseController
         $input = $request->all();
 
         $period = $this->periodRepository->create($input);
+
+        AuditTrail::log('Period', 'CREATE', $period->period_id, null, $period->toArray());
 
         Flash::success('Period saved successfully.');
 
@@ -101,7 +104,10 @@ class PeriodController extends AppBaseController
             return redirect(route('periods.index'));
         }
 
+        $oldData = $period->toArray();
         $period = $this->periodRepository->update($request->all(), $id);
+
+        AuditTrail::log('Period', 'UPDATE', $period->period_id, $oldData, $period->toArray());
 
         Flash::success('Period updated successfully.');
 
@@ -123,7 +129,10 @@ class PeriodController extends AppBaseController
             return redirect(route('periods.index'));
         }
 
+        $oldData = $period->toArray();
         $this->periodRepository->delete($id);
+
+        AuditTrail::log('Period', 'DELETE', $id, $oldData, null);
 
         Flash::success('Period deleted successfully.');
 

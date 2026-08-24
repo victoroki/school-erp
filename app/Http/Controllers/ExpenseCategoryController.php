@@ -6,6 +6,7 @@ use App\Http\Requests\CreateExpenseCategoryRequest;
 use App\Http\Requests\UpdateExpenseCategoryRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\ExpenseCategoryRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -48,6 +49,8 @@ class ExpenseCategoryController extends AppBaseController
         $input = $request->all();
 
         $expenseCategory = $this->expenseCategoryRepository->create($input);
+
+        AuditTrail::log('Expense Category', 'CREATE', $expenseCategory->category_id, null, $expenseCategory->toArray());
 
         Flash::success('Expense Category saved successfully.');
 
@@ -99,7 +102,10 @@ class ExpenseCategoryController extends AppBaseController
             return redirect(route('expenseCategories.index'));
         }
 
+        $oldData = $expenseCategory->toArray();
         $expenseCategory = $this->expenseCategoryRepository->update($request->all(), $id);
+
+        AuditTrail::log('Expense Category', 'UPDATE', $expenseCategory->category_id, $oldData, $expenseCategory->toArray());
 
         Flash::success('Expense Category updated successfully.');
 
@@ -121,7 +127,10 @@ class ExpenseCategoryController extends AppBaseController
             return redirect(route('expenseCategories.index'));
         }
 
+        $oldData = $expenseCategory->toArray();
         $this->expenseCategoryRepository->delete($id);
+
+        AuditTrail::log('Expense Category', 'DELETE', $id, $oldData, null);
 
         Flash::success('Expense Category deleted successfully.');
 

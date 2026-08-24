@@ -58,7 +58,7 @@
         // Note: Real implementation would need routes for these.
         $('#class_section_id').on('change', function() {
             // Simplified for demonstration - usually you'd hit an API endpoint here
-            console.log("Class section changed to: " + $(this).val());
+            // Class section changed
         });
     });
 </script>

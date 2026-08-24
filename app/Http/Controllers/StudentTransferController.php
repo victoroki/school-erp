@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Student;
 use App\Models\StudentClassEnrollment;
+use App\Models\AuditTrail;
 use Flash;
 
 class StudentTransferController extends Controller
@@ -50,6 +51,8 @@ class StudentTransferController extends Controller
         StudentClassEnrollment::where('student_id', $student->student_id)
             ->where('status', 'active')
             ->update(['status' => 'transferred']);
+
+        AuditTrail::log('Student', 'TRANSFER', $student->student_id, ['status' => 'active'], $student->toArray());
 
         Flash::success('Student transferred successfully.');
 

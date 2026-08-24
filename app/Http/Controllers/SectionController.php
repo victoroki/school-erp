@@ -6,6 +6,7 @@ use App\Http\Requests\CreateSectionRequest;
 use App\Http\Requests\UpdateSectionRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\SectionRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -59,6 +60,8 @@ class SectionController extends AppBaseController
         $input = $request->all();
 
         $section = $this->sectionRepository->create($input);
+
+        AuditTrail::log('Section', 'CREATE', $section->section_id, null, $section->toArray());
 
         Flash::success('Section saved successfully.');
 
@@ -115,7 +118,10 @@ class SectionController extends AppBaseController
             return redirect(route('sections.index'));
         }
 
+        $oldData = $section->toArray();
         $section = $this->sectionRepository->update($request->all(), $id);
+
+        AuditTrail::log('Section', 'UPDATE', $section->section_id, $oldData, $section->toArray());
 
         Flash::success('Section updated successfully.');
 
@@ -137,7 +143,10 @@ class SectionController extends AppBaseController
             return redirect(route('sections.index'));
         }
 
+        $oldData = $section->toArray();
         $this->sectionRepository->delete($id);
+
+        AuditTrail::log('Section', 'DELETE', $id, $oldData, null);
 
         Flash::success('Section deleted successfully.');
 

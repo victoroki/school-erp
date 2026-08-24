@@ -10,6 +10,7 @@ use App\Http\Requests\CreateExamRequest;
 use App\Http\Requests\UpdateExamRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Models\AcademicYear;
+use App\Models\AuditTrail;
 
 class ExamController extends AppBaseController
 {
@@ -78,6 +79,8 @@ class ExamController extends AppBaseController
 
         $exam = $this->examRepository->create($input);
 
+        AuditTrail::log('Exam', 'CREATE', $exam->exam_id, null, $exam->toArray());
+
         Flash::success('Exam saved successfully.');
 
         return redirect(route('exams.index'));
@@ -141,7 +144,10 @@ class ExamController extends AppBaseController
             return redirect(route('exams.index'));
         }
 
+        $oldData = $exam->toArray();
         $exam = $this->examRepository->update($request->all(), $id);
+
+        AuditTrail::log('Exam', 'UPDATE', $exam->exam_id, $oldData, $exam->toArray());
 
         Flash::success('Exam updated successfully.');
 
@@ -163,7 +169,10 @@ class ExamController extends AppBaseController
             return redirect(route('exams.index'));
         }
 
+        $oldData = $exam->toArray();
         $this->examRepository->delete($id);
+
+        AuditTrail::log('Exam', 'DELETE', $id, $oldData, null);
 
         Flash::success('Exam deleted successfully.');
 

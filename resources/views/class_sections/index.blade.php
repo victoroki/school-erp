@@ -15,7 +15,7 @@
                     <input type="text" id="classSectionSearch" placeholder="Filter architecture...">
                 </div>
                 <a class="btn-dash btn-primary-dash" href="{{ route('class-sections.create') }}">
-                    <i class="fas fa-plus me-2"></i> New Section
+                    <i class="fas fa-plus me-2"></i> New Roster
                 </a>
             </div>
         </div>

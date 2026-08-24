@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Staff;
 use App\Models\StaffExitClearance;
 use App\Models\User;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Laracasts\Flash\Flash;
@@ -69,6 +70,8 @@ class StaffExitController extends Controller
             if ($staff->user_id) {
                 User::where('id', $staff->user_id)->update(['is_active' => false]);
             }
+
+            AuditTrail::log('Staff Exit', 'INITIATE', $clearance->id, null, $clearance->toArray());
 
             DB::commit();
             Flash::success('Exit process initiated successfully.');

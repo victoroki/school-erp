@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::model($gradingScale, ['route' => ['grading-scales.update', $gradingScale->grade_id], 'method' => 'patch']) !!}
+            {!! Form::model($gradingScale, ['route' => ['gradingScales.update', $gradingScale->grade_id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">
