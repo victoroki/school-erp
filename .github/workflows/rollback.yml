@@ -261,6 +261,40 @@ jobs:
           fi
           echo ".env generated for ${KEY} ($(wc -l < .env) lines, hook secret ${#DEPLOY_HOOK_SECRET} chars)"
 
+      # Diagnose connection problems BEFORE the upload step: tries plain FTP,
+      # explicit FTPS (AUTH TLS), and implicit FTPS so a timeout tells us WHERE
+      # it broke (firewall vs TLS requirement vs wrong port).
+      - name: Probe FTP connectivity
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          FTP_USERNAME: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
+          FTP_PASSWORD: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
+        run: |
+          set -uo pipefail
+          HOST="${FTP_SERVER}"
+          HOST="${HOST#*://}"
+          HOST="${HOST%%/*}"
+          HOST="${HOST%%:*}"
+          CREDS="${FTP_USERNAME}:${FTP_PASSWORD}"
+
+          probe() {
+            local label="$1"; shift
+            local out
+            if out=$(curl -sS --connect-timeout 15 --max-time 30 -u "$CREDS" "$@" -o /dev/null 2>&1); then
+              echo "$label -> OK"
+              return 0
+            fi
+            echo "$label -> FAIL: $(printf '%s' "$out" | tail -n 1)"
+          }
+
+          probe "plain FTP :21       " "ftp://${HOST}/"
+          probe "explicit FTPS :21   " --ssl-reqd "ftp://${HOST}/"
+          probe "implicit FTPS :990  " --ssl-reqd "ftps://${HOST}:990/"
+
+          echo "::notice::All three timed out => host firewall drops runner IPs (check cPanel CSF/cPHulkD, or allow-list GitHub Actions ranges). Plain FTP failed but explicit FTPS worked => set ${{ matrix.key }}_FTP_PROTOCOL=ftps."
+
       - name: FTP deploy to cPanel
         if: steps.config-check.outputs.skip == 'false'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -268,6 +302,8 @@ jobs:
           server: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
           username: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
           password: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
+          protocol: ${{ secrets[format('{0}_FTP_PROTOCOL', matrix.key)] || 'ftp' }}
+          port: ${{ secrets[format('{0}_FTP_PORT', matrix.key)] || '21' }}
           server-dir: ${{ steps.config-check.outputs.server_dir }}
           state-name: ${{ matrix.key }}-ftp-state.json
           dangerous-clean-slate: false
