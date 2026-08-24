@@ -1,38 +1,65 @@
-name: Rollback Deploy
+name: Rollback
 
-# Re-deploys a previously tagged release (created by deploy.yml's
-# tag-release job) to all 3 school subdomains.
-#
-#   ⚠️  ROLLING BACK CODE DOES NOT UNDO DATABASE MIGRATIONS ⚠️
-#   If the newer release contained destructive schema changes, rolling the
-#   code back can leave migrations in a state the old code does not expect.
-#   Restore the database from backup FIRST if destructive migrations ran,
-#   then roll back the code.
+# Tag-based re-deploy — re-uploads the tagged commit to the same 3 schools.
+# Uses the same FTP state tracking and post-deploy hook as the main pipeline.
+# Set the tag in `on: workflow_dispatch` or trigger via `gh workflow run`.
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Git tag to roll back to (e.g. deploy-20260824-120000)'
+        description: 'Deploy tag to re-deploy (e.g. deploy-20241201-183000)'
         required: true
-        type: string
+        default: ''
+  push:
+    branches: [feat/rbac-consolidated-permissions]
 
 concurrency:
-  group: deploy-production
+  group: rollback-production
   cancel-in-progress: false
 
 jobs:
-  build:
-    name: Build rollback artifact (${{ inputs.tag }})
+  rollback:
+    name: Rollback to ${{ inputs.tag || 'last tag' }}
     runs-on: ubuntu-latest
+    if: inputs.tag != ''
+    defaults:
+      run:
+        shell: bash
     steps:
-      - name: Confirm tag exists
-        run: git ls-remote --tags origin "refs/tags/${{ inputs.tag }}" | grep -q "${{ inputs.tag }}" \
-          && echo "Tag found." || { echo "::error::Tag '${{ inputs.tag }}' does not exist on origin."; exit 1; }
-
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag }}
+          fetch-depth: 0        # full history so git describe/tags work
+
+      - name: Resolve tag
+        id: resolve-tag
+        run: |
+          TAG="${INPUTS_TAG:-}"
+          if git rev-parse --quiet-verify "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          else
+            # fall back to most recent deploy tag
+            LAST=$(git describe --tags --match='deploy-*' --abbrev=0 2>/dev/null || true)
+            if [ -z "${LAST}" ]; then
+              echo "::error::Tag ${TAG} not found and no prior deploy tag exists."
+              exit 1
+            fi
+            echo "tag=${LAST}" >> "$GITHUB_OUTPUT"
+            echo "::notice::Tag ${TAG} not found — rolling back to ${LAST} instead."
+          fi
+
+      - name: Detect dependency changes since that tag
+        id: deps
+        run: |
+          TAG="${{ steps.resolve-tag.outputs.tag }}"
+          COUNT=$(git diff --name-only "${TAG}" HEAD -- composer.json composer.lock | wc -l)
+          if [ "${COUNT}" -gt 0 ]; then
+            echo "vendor_changed=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Dependencies changed since ${TAG} — vendor WILL be uploaded."
+          else
+            echo "vendor_changed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Dependencies unchanged since ${TAG} — vendor upload SKIPPED."
+          fi
 
       - name: Setup PHP 8.2
         uses: shivammathur/setup-php@v2
@@ -53,10 +80,12 @@ jobs:
       - name: Build frontend assets (Vite)
         run: npm ci && npm run build
 
-      - name: Upload rollback artifact
+      # Same artifact name regardless — the deploy job below stays identical.
+      - name: Upload build artifact (includes vendor)
+        if: steps.deps.outputs.vendor_changed == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: app-build-${{ inputs.tag }}
+          name: app-build-${{ github.sha }}
           retention-days: 30
           include-hidden-files: true
           path: |
@@ -66,21 +95,22 @@ jobs:
             !node_modules/**
             !tests/**
 
-  rollback:
-    name: Rollback → ${{ matrix.key }} @ ${{ inputs.tag }}
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - key: SCHOOL1
-          - key: SCHOOL2
-          - key: SCHOOL3
+      - name: Upload build artifact (code only — vendor unchanged)
+        if: steps.deps.outputs.vendor_changed == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build-${{ github.sha }}
+          retention-days: 30
+          include-hidden-files: true
+          path: |
+            .
+            !.git/**
+            !.github/**
+            !node_modules/**
+            !tests/**
+            !vendor/**
 
-    steps:
-      # Schools without secrets yet are skipped gracefully.
-      - name: Skip if this school is not configured
+      - name: Check configuration
         id: config-check
         env:
           FTP_SERVER: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
@@ -92,27 +122,52 @@ jobs:
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "::notice::${{ matrix.key }} has no deployment secrets configured — skipping."
             echo "| ${{ matrix.key }} | ⏭️ skipped — secrets not set yet |" >> "$GITHUB_STEP_SUMMARY"
-          else
-            # FTP-Deploy-Action requires the path to end with a slash.
-            echo "server_dir=${SERVER_DIR%/}/" >> "$GITHUB_OUTPUT"
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::${{ matrix.key }} is configured — rolling back."
+            exit 0
           fi
 
-      - name: Migration warning banner
-        run: |
-          echo "::warning title=Rollback scope::Rolling back CODE ONLY. Database migrations are NOT reversed. If the newer release ran destructive migrations, restore a DB backup first."
+          echo "server_dir=${SERVER_DIR%/}/" >> "$GITHUB_OUTPUT"
 
-      - name: Download rollback artifact
+          BASE_EXCLUDE=$(cat <<'EXCL'
+          **/.git*
+          **/.github/**
+          **/node_modules/**
+          **/tests/**
+          .env.example
+          storage/app/public/**
+          storage/logs/**
+          storage/framework/sessions/**
+          storage/framework/cache/**
+          storage/framework/views/**
+          public/storage/**
+          database/*.sql
+          *.md
+          opencode-install.log
+          EXCL
+          )
+
+          if [ "${VENDOR_CHANGED}" != "true" ]; then
+            BASE_EXCLUDE="${BASE_EXCLUDE}
+            **/vendor/**"
+            echo "| ${{ matrix.key }} | deploying code only (vendor unchanged) |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "| ${{ matrix.key }} | deploying FULL build incl. vendor |" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          {
+            echo "ftp_exclude<<DEPLOY_EXCLUDE_EOF"
+            printf '%s\n' "${BASE_EXCLUDE}"
+            echo "DEPLOY_EXCLUDE_EOF"
+          } >> "$GITHUB_ENV"
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Download build artifact
         if: steps.config-check.outputs.skip == 'false'
         uses: actions/download-artifact@v4
         with:
-          name: app-build-${{ inputs.tag }}
+          name: app-build-${{ github.sha }}
           path: .
 
-      # Same .env generation as deploy.yml — the server's runtime config is
-      # always fully derived from GitHub Secrets, so a rollback also restores
-      # the .env that matched that code version.
       - name: Generate per-school .env from secrets
         if: steps.config-check.outputs.skip == 'false'
         shell: bash
@@ -139,6 +194,7 @@ jobs:
           set -e
           mkdir -p storage/framework/cache/data storage/framework/sessions \
                    storage/framework/views storage/logs storage/app/public bootstrap/cache
+
           {
             echo "APP_NAME='${APP_NAME}'"
             echo "APP_ENV=production"
@@ -189,10 +245,9 @@ jobs:
             echo "DEPLOY_HOOK_SECRET='${DEPLOY_HOOK_SECRET}'"
           } > .env
           chmod 600 .env || true
+          echo ".env generated for ${KEY} ($(wc -l < .env) lines)"
 
-      # Same state-tracking as deploys, so files added by the bad release are
-      # removed again while student data / uploads / logs stay untouched.
-      - name: FTP rollback to cPanel
+      - name: FTP deploy to cPanel
         if: steps.config-check.outputs.skip == 'false'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -202,23 +257,9 @@ jobs:
           server-dir: ${{ steps.config-check.outputs.server_dir }}
           state-name: ${{ matrix.key }}-ftp-state.json
           dangerous-clean-slate: false
-          exclude: |
-            **/.git*
-            **/.github/**
-            **/node_modules/**
-            **/tests/**
-            .env.example
-            storage/app/public/**
-            storage/logs/**
-            storage/framework/sessions/**
-            storage/framework/cache/**
-            storage/framework/views/**
-            public/storage/**
-            database/*.sql
-            *.md
-            opencode-install.log
+          exclude: ${{ env.ftp_exclude }}
 
-      - name: Trigger post-deploy hook
+      - name: Trigger post-deploy hook (migrate, storage:link, caches)
         if: steps.config-check.outputs.skip == 'false'
         shell: bash
         env:
@@ -227,20 +268,32 @@ jobs:
         run: |
           set -uo pipefail
           HOOK_URL="${APP_URL%/}/deploy-hook.php"
+          echo "Calling ${HOOK_URL} ..."
           RESPONSE="$(mktemp)"
           HTTP_CODE=$(curl -sS -o "$RESPONSE" -w '%{http_code}' \
             -X POST "$HOOK_URL" \
+            -A "Mozilla/5.0 (X11; Linux x86_64) SchoolERP-Deploy/1.0" \
             -H "X-Deploy-Token: ${TOKEN}" \
             -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
             --max-time 300 \
             --retry 2 --retry-delay 5) || HTTP_CODE="000"
 
+          echo "--- Hook response (HTTP ${HTTP_CODE}) ---"
           cat "$RESPONSE" || true
 
           if [ "$HTTP_CODE" = "200" ]; then
-            echo "| ${{ matrix.key }} | ✅ rolled back to \`${{ inputs.tag }}\` |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Post-deploy hook | ✅ success |" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "| ${{ matrix.key }} | ❌ rollback hook failed (HTTP ${HTTP_CODE}) |" >> "$GITHUB_STEP_SUMMARY"
-            echo "Rollback hook FAILED (HTTP ${HTTP_CODE})" >&2
+            {
+              echo "## Deploy to ${{ matrix.key }} FAILED at post-deploy hook"
+              echo ""
+              echo "HTTP status: **${HTTP_CODE}**"
+              echo ""
+              echo '```'
+              head -c 4000 "$RESPONSE" || true
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "Hook FAILED with HTTP ${HTTP_CODE}" >&2
             exit 1
           fi

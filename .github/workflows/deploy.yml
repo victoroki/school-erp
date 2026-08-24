@@ -6,8 +6,9 @@ name: Build & Deploy
 #
 # Real hostnames & paths live ONLY in GitHub Secrets:
 #   SCHOOL1_FTP_SERVER, SCHOOL1_SERVER_DIR, SCHOOL1_APP_URL, ...
-# To add a 4th school: duplicate a matrix entry + its secrets. Nothing
-# in this file needs editing.
+#
+# vendor/ is only uploaded when composer.json/composer.lock changed since
+# the last successful deploy tag — UI-only pushes skip ~30MB of FTP time.
 
 on:
   push:
@@ -25,8 +26,31 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    outputs:
+      vendor_changed: ${{ steps.deps.outputs.vendor_changed }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # full history so we can diff against deploy tags
+
+      - name: Detect dependency changes since last deploy
+        id: deps
+        run: |
+          LAST_TAG=$(git describe --tags --match='deploy-*' --abbrev=0 2>/dev/null || true)
+
+          if [ -z "${LAST_TAG}" ]; then
+            echo "vendor_changed=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::No previous deploy tag — vendor will be uploaded."
+          else
+            COUNT=$(git diff --name-only "${LAST_TAG}" HEAD -- composer.json composer.lock | wc -l)
+            if [ "${COUNT}" -gt 0 ]; then
+              echo "vendor_changed=true" >> "$GITHUB_OUTPUT"
+              echo "::notice::Dependencies changed since ${LAST_TAG} — vendor WILL be uploaded."
+            else
+              echo "vendor_changed=false" >> "$GITHUB_OUTPUT"
+              echo "::notice::Dependencies unchanged since ${LAST_TAG} — vendor upload SKIPPED."
+            fi
+          fi
 
       - name: Setup PHP 8.2
         uses: shivammathur/setup-php@v2
@@ -47,7 +71,9 @@ jobs:
       - name: Build frontend assets (Vite)
         run: npm ci && npm run build
 
-      - name: Upload build artifact
+      # Same artifact name either way — the deploy job stays identical.
+      - name: Upload build artifact (includes vendor)
+        if: steps.deps.outputs.vendor_changed == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: app-build-${{ github.sha }}
@@ -59,6 +85,21 @@ jobs:
             !.github/**
             !node_modules/**
             !tests/**
+
+      - name: Upload build artifact (code only — vendor unchanged)
+        if: steps.deps.outputs.vendor_changed == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build-${{ github.sha }}
+          retention-days: 30
+          include-hidden-files: true
+          path: |
+            .
+            !.git/**
+            !.github/**
+            !node_modules/**
+            !tests/**
+            !vendor/**
 
   # ──────────────────────────────────────────────────────────────────────
   # DEPLOY — matrix over the 3 school subdomains
@@ -76,26 +117,62 @@ jobs:
           - key: SCHOOL3
 
     steps:
-      # Schools without secrets yet (e.g. you've only onboarded SCHOOL1)
-      # are skipped gracefully instead of failing the whole pipeline.
-      - name: Skip if this school is not configured
+      # Schools without secrets yet are skipped gracefully; configured ones
+      # get a normalized server-dir and the right FTP exclusion list.
+      - name: Check configuration
         id: config-check
         env:
           FTP_SERVER: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
           SERVER_DIR: ${{ secrets[format('{0}_SERVER_DIR', matrix.key)] }}
           APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
           DB_PASSWORD: ${{ secrets[format('{0}_DB_PASSWORD', matrix.key)] }}
+          VENDOR_CHANGED: ${{ needs.build.outputs.vendor_changed }}
         run: |
           if [ -z "${FTP_SERVER}" ] || [ -z "${SERVER_DIR}" ] || [ -z "${APP_URL}" ] || [ -z "${DB_PASSWORD}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "::notice::${{ matrix.key }} has no deployment secrets configured — skipping."
             echo "| ${{ matrix.key }} | ⏭️ skipped — secrets not set yet |" >> "$GITHUB_STEP_SUMMARY"
-          else
-            # FTP-Deploy-Action requires the path to end with a slash.
-            echo "server_dir=${SERVER_DIR%/}/" >> "$GITHUB_OUTPUT"
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::${{ matrix.key }} is configured — deploying."
+            exit 0
           fi
+
+          # FTP-Deploy-Action requires the path to end with a slash.
+          echo "server_dir=${SERVER_DIR%/}/" >> "$GITHUB_OUTPUT"
+
+          # Files that must never be uploaded OR deleted on the server:
+          # student photos, uploaded documents, logs, sessions, .env…
+          BASE_EXCLUDE=$(cat <<'EXCL'
+          **/.git*
+          **/.github/**
+          **/node_modules/**
+          **/tests/**
+          .env.example
+          storage/app/public/**
+          storage/logs/**
+          storage/framework/sessions/**
+          storage/framework/cache/**
+          storage/framework/views/**
+          public/storage/**
+          database/*.sql
+          *.md
+          opencode-install.log
+          EXCL
+          )
+
+          if [ "${VENDOR_CHANGED}" != "true" ]; then
+            BASE_EXCLUDE="${BASE_EXCLUDE}
+**/vendor/**"
+            echo "| ${{ matrix.key }} | deploying code only (vendor unchanged) |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "| ${{ matrix.key }} | deploying FULL build incl. vendor |" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          {
+            echo "ftp_exclude<<DEPLOY_EXCLUDE_EOF"
+            printf '%s\n' "${BASE_EXCLUDE}"
+            echo "DEPLOY_EXCLUDE_EOF"
+          } >> "$GITHUB_ENV"
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
 
       - name: Download build artifact
         if: steps.config-check.outputs.skip == 'false'
@@ -185,9 +262,7 @@ jobs:
           echo ".env generated for ${KEY} ($(wc -l < .env) lines)"
 
       # State-tracked FTP sync: files deleted locally are removed from the
-      # server, EXCEPT everything matching `exclude` — student photos,
-      # uploaded documents, logs, sessions and each server's own .env can
-      # never be wiped by a deploy.
+      # server, EXCEPT everything matching `exclude`.
       - name: FTP deploy to cPanel
         if: steps.config-check.outputs.skip == 'false'
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -198,21 +273,7 @@ jobs:
           server-dir: ${{ steps.config-check.outputs.server_dir }}
           state-name: ${{ matrix.key }}-ftp-state.json
           dangerous-clean-slate: false
-          exclude: |
-            **/.git*
-            **/.github/**
-            **/node_modules/**
-            **/tests/**
-            .env.example
-            storage/app/public/**
-            storage/logs/**
-            storage/framework/sessions/**
-            storage/framework/cache/**
-            storage/framework/views/**
-            public/storage/**
-            database/*.sql
-            *.md
-            opencode-install.log
+          exclude: ${{ env.ftp_exclude }}
 
       - name: Trigger post-deploy hook (migrate, storage:link, caches)
         if: steps.config-check.outputs.skip == 'false'
@@ -227,8 +288,10 @@ jobs:
           RESPONSE="$(mktemp)"
           HTTP_CODE=$(curl -sS -o "$RESPONSE" -w '%{http_code}' \
             -X POST "$HOOK_URL" \
+            -A "Mozilla/5.0 (X11; Linux x86_64) SchoolERP-Deploy/1.0" \
             -H "X-Deploy-Token: ${TOKEN}" \
             -H "Content-Type: application/json" \
+            -H "Accept: application/json" \
             --max-time 300 \
             --retry 2 --retry-delay 5) || HTTP_CODE="000"
 
@@ -241,12 +304,11 @@ jobs:
             {
               echo "## Deploy to ${{ matrix.key }} FAILED at post-deploy hook"
               echo ""
-              echo "HTTP status: **${HTTP_CODE}** — check deploy-hook.php reachability,"
-              echo "the *_DEPLOY_HOOK_SECRET value, and the cPanel PHP error log."
+              echo "HTTP status: **${HTTP_CODE}**"
               echo ""
-              '```'
+              echo '```'
               head -c 4000 "$RESPONSE" || true
-              '```'
+              echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
             echo "Hook FAILED with HTTP ${HTTP_CODE}" >&2
             exit 1
