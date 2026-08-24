@@ -91,6 +91,8 @@ jobs:
             echo "::notice::${{ matrix.key }} has no deployment secrets configured — skipping."
             echo "| ${{ matrix.key }} | ⏭️ skipped — secrets not set yet |" >> "$GITHUB_STEP_SUMMARY"
           else
+            # FTP-Deploy-Action requires the path to end with a slash.
+            echo "server_dir=${SERVER_DIR%/}/" >> "$GITHUB_OUTPUT"
             echo "skip=false" >> "$GITHUB_OUTPUT"
             echo "::notice::${{ matrix.key }} is configured — deploying."
           fi
@@ -193,7 +195,7 @@ jobs:
           server: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
           username: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
           password: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
-          server-dir: ${{ secrets[format('{0}_SERVER_DIR', matrix.key)] }}
+          server-dir: ${{ steps.config-check.outputs.server_dir }}
           state-name: ${{ matrix.key }}-ftp-state.json
           dangerous-clean-slate: false
           exclude: |
