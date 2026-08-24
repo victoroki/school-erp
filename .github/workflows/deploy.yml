@@ -284,20 +284,27 @@ jobs:
           set -uo pipefail
           HOOK_URL="${APP_URL%/}/deploy-hook.php"
           echo "Calling ${HOOK_URL} ..."
+          UA="Mozilla/5.0 (X11; Linux x86_64) SchoolERP-Deploy/1.0"
 
-          # Pre-flight: the hook answers any GET with 405 + JSON. An HTML 403
-          # here means the host blocks us before PHP runs (ModSecurity /
-          # LiteSpeed bot protection) and needs a hosting-side whitelist.
-          PROBE_CODE=$(curl -sS -o /dev/null -w '%{http_code}' \
+          # 0) Sanity: is the site itself reachable at all?
+          ROOT_CODE=$(curl -sS -o /dev/null -w '%{http_code}' "${APP_URL%/}/" \
+            -A "$UA" --max-time 60) || ROOT_CODE="000"
+          echo "Site root -> HTTP ${ROOT_CODE} (200 expected)"
+
+          # 1) Pre-flight: the hook answers any GET with 405 + JSON.
+          PROBE_HEADERS="$(mktemp)"
+          PROBE_CODE=$(curl -sS -o /dev/null -w '%{http_code}' -D "$PROBE_HEADERS" \
             "$HOOK_URL" \
-            -A "Mozilla/5.0 (X11; Linux x86_64) SchoolERP-Deploy/1.0" \
-            --max-time 60) || PROBE_CODE="000"
+            -A "$UA" --max-time 60) || PROBE_CODE="000"
           echo "Pre-flight GET -> HTTP ${PROBE_CODE} (405 expected)"
+          cat "$PROBE_HEADERS" || true
 
+          # 2) The actual authenticated POST.
           RESPONSE="$(mktemp)"
-          HTTP_CODE=$(curl -sS -o "$RESPONSE" -w '%{http_code}' \
+          RESP_HEADERS="$(mktemp)"
+          HTTP_CODE=$(curl -sS -o "$RESPONSE" -w '%{http_code}' -D "$RESP_HEADERS" \
             -X POST "$HOOK_URL" \
-            -A "Mozilla/5.0 (X11; Linux x86_64) SchoolERP-Deploy/1.0" \
+            -A "$UA" \
             -H "X-Deploy-Token: ${TOKEN}" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
@@ -315,16 +322,28 @@ jobs:
             {
               echo "## Deploy to ${{ matrix.key }} FAILED at post-deploy hook"
               echo ""
-              echo "POST status: **${HTTP_CODE}** — pre-flight GET was **${PROBE_CODE}** (405 expected)."
+              echo "| probe | result | expected |"
+              echo "|---|---|---|"
+              echo "| GET site root | ${ROOT_CODE} | 200 |"
+              echo "| GET deploy-hook.php | ${PROBE_CODE} | 405 |"
+              echo "| POST deploy-hook.php | ${HTTP_CODE} | 200 |"
               echo ""
               echo '```'
+              echo "--- GET deploy-hook.php headers ---"
+              cat "$PROBE_HEADERS" || true
+              echo "--- POST headers ---"
+              cat "$RESP_HEADERS" || true
+              echo "--- POST body ---"
               head -c 4000 "$RESPONSE" || true
               echo '```'
               echo ""
-              echo "If the body above is an HTML error page (LiteSpeed/Apache/cPanel) instead of"
-              echo "JSON, the request was blocked by the HOST before PHP ran: ModSecurity,"
-              echo "LiteSpeed bot/DDoS protection or IP blocking. Ask the host to whitelist"
-              echo "${HOOK_URL} for automated POST requests."
+              echo "**Diagnosis guide:**"
+              echo "- Root ≠ 200 → APP_URL/domain/docroot problem."
+              echo "- GET hook = 404 → deploy-hook.php is not under the domain's web root:"
+              echo "  verify SERVER_DIR points at the folder that CONTAINS public/, and the"
+              echo "  domain's document root is set to SERVER_DIR/public in cPanel → Domains."
+              echo "- GET hook = 405 but POST = 403/406 or HTML → ModSecurity/bot protection"
+              echo "  is killing automated POSTs; ask the host to whitelist ${HOOK_URL}."
             } >> "$GITHUB_STEP_SUMMARY"
             echo "Hook FAILED with HTTP ${HTTP_CODE}" >&2
             exit 1
