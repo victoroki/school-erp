@@ -159,8 +159,7 @@ jobs:
           )
 
           if [ "${VENDOR_CHANGED}" != "true" ]; then
-            BASE_EXCLUDE="${BASE_EXCLUDE}
-**/vendor/**"
+            BASE_EXCLUDE=$(printf '%s\n%s' "${BASE_EXCLUDE}" '**/vendor/**')
             echo "| ${{ matrix.key }} | deploying code only (vendor unchanged) |" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "| ${{ matrix.key }} | deploying FULL build incl. vendor |" >> "$GITHUB_STEP_SUMMARY"
@@ -285,6 +284,16 @@ jobs:
           set -uo pipefail
           HOOK_URL="${APP_URL%/}/deploy-hook.php"
           echo "Calling ${HOOK_URL} ..."
+
+          # Pre-flight: the hook answers any GET with 405 + JSON. An HTML 403
+          # here means the host blocks us before PHP runs (ModSecurity /
+          # LiteSpeed bot protection) and needs a hosting-side whitelist.
+          PROBE_CODE=$(curl -sS -o /dev/null -w '%{http_code}' \
+            "$HOOK_URL" \
+            -A "Mozilla/5.0 (X11; Linux x86_64) SchoolERP-Deploy/1.0" \
+            --max-time 60) || PROBE_CODE="000"
+          echo "Pre-flight GET -> HTTP ${PROBE_CODE} (405 expected)"
+
           RESPONSE="$(mktemp)"
           HTTP_CODE=$(curl -sS -o "$RESPONSE" -w '%{http_code}' \
             -X POST "$HOOK_URL" \
@@ -292,6 +301,8 @@ jobs:
             -H "X-Deploy-Token: ${TOKEN}" \
             -H "Content-Type: application/json" \
             -H "Accept: application/json" \
+            -H "Referer: ${APP_URL%/}/" \
+            -H "X-Requested-With: XMLHttpRequest" \
             --max-time 300 \
             --retry 2 --retry-delay 5) || HTTP_CODE="000"
 
@@ -304,11 +315,16 @@ jobs:
             {
               echo "## Deploy to ${{ matrix.key }} FAILED at post-deploy hook"
               echo ""
-              echo "HTTP status: **${HTTP_CODE}**"
+              echo "POST status: **${HTTP_CODE}** — pre-flight GET was **${PROBE_CODE}** (405 expected)."
               echo ""
               echo '```'
               head -c 4000 "$RESPONSE" || true
               echo '```'
+              echo ""
+              echo "If the body above is an HTML error page (LiteSpeed/Apache/cPanel) instead of"
+              echo "JSON, the request was blocked by the HOST before PHP ran: ModSecurity,"
+              echo "LiteSpeed bot/DDoS protection or IP blocking. Ask the host to whitelist"
+              echo "${HOOK_URL} for automated POST requests."
             } >> "$GITHUB_STEP_SUMMARY"
             echo "Hook FAILED with HTTP ${HTTP_CODE}" >&2
             exit 1
