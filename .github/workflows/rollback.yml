@@ -1,0 +1,244 @@
+name: Rollback Deploy
+
+# Re-deploys a previously tagged release (created by deploy.yml's
+# tag-release job) to all 3 school subdomains.
+#
+#   ⚠️  ROLLING BACK CODE DOES NOT UNDO DATABASE MIGRATIONS ⚠️
+#   If the newer release contained destructive schema changes, rolling the
+#   code back can leave migrations in a state the old code does not expect.
+#   Restore the database from backup FIRST if destructive migrations ran,
+#   then roll back the code.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Git tag to roll back to (e.g. deploy-20260824-120000)'
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build rollback artifact (${{ inputs.tag }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirm tag exists
+        run: git ls-remote --tags origin "refs/tags/${{ inputs.tag }}" | grep -q "${{ inputs.tag }}" \
+          && echo "Tag found." || { echo "::error::Tag '${{ inputs.tag }}' does not exist on origin."; exit 1; }
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, bcmath, pdo_mysql, fileinfo, openssl, tokenizer, gd
+          coverage: none
+
+      - name: Install Composer dependencies (production)
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Build frontend assets (Vite)
+        run: npm ci && npm run build
+
+      - name: Upload rollback artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build-${{ inputs.tag }}
+          retention-days: 30
+          include-hidden-files: true
+          path: |
+            .
+            !.git/**
+            !.github/**
+            !node_modules/**
+            !tests/**
+
+  rollback:
+    name: Rollback → ${{ matrix.key }} @ ${{ inputs.tag }}
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - key: SCHOOL1
+          - key: SCHOOL2
+          - key: SCHOOL3
+
+    steps:
+      # Schools without secrets yet are skipped gracefully.
+      - name: Skip if this school is not configured
+        id: config-check
+        env:
+          FTP_SERVER: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          SERVER_DIR: ${{ secrets[format('{0}_SERVER_DIR', matrix.key)] }}
+          APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
+          DB_PASSWORD: ${{ secrets[format('{0}_DB_PASSWORD', matrix.key)] }}
+        run: |
+          if [ -z "${FTP_SERVER}" ] || [ -z "${SERVER_DIR}" ] || [ -z "${APP_URL}" ] || [ -z "${DB_PASSWORD}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::${{ matrix.key }} has no deployment secrets configured — skipping."
+            echo "| ${{ matrix.key }} | ⏭️ skipped — secrets not set yet |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::${{ matrix.key }} is configured — rolling back."
+          fi
+
+      - name: Migration warning banner
+        run: |
+          echo "::warning title=Rollback scope::Rolling back CODE ONLY. Database migrations are NOT reversed. If the newer release ran destructive migrations, restore a DB backup first."
+
+      - name: Download rollback artifact
+        if: steps.config-check.outputs.skip == 'false'
+        uses: actions/download-artifact@v4
+        with:
+          name: app-build-${{ inputs.tag }}
+          path: .
+
+      # Same .env generation as deploy.yml — the server's runtime config is
+      # always fully derived from GitHub Secrets, so a rollback also restores
+      # the .env that matched that code version.
+      - name: Generate per-school .env from secrets
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        env:
+          KEY: ${{ matrix.key }}
+          APP_NAME: ${{ secrets[format('{0}_APP_NAME', matrix.key)] }}
+          APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
+          APP_KEY: ${{ secrets[format('{0}_APP_KEY', matrix.key)] }}
+          DB_HOST: ${{ secrets[format('{0}_DB_HOST', matrix.key)] }}
+          DB_DATABASE: ${{ secrets[format('{0}_DB_DATABASE', matrix.key)] }}
+          DB_USERNAME: ${{ secrets[format('{0}_DB_USERNAME', matrix.key)] }}
+          DB_PASSWORD: ${{ secrets[format('{0}_DB_PASSWORD', matrix.key)] }}
+          DEPLOY_HOOK_SECRET: ${{ secrets[format('{0}_DEPLOY_HOOK_SECRET', matrix.key)] }}
+          SETUP_TOKEN: ${{ secrets[format('{0}_SETUP_TOKEN', matrix.key)] }}
+          SAAS_OWNER_EMAIL: ${{ secrets[format('{0}_SAAS_OWNER_EMAIL', matrix.key)] }}
+          SAAS_OWNER_PASSWORD: ${{ secrets[format('{0}_SAAS_OWNER_PASSWORD', matrix.key)] }}
+          SAAS_OWNER_NAME: ${{ secrets[format('{0}_SAAS_OWNER_NAME', matrix.key)] }}
+          MAIL_HOST: ${{ secrets[format('{0}_MAIL_HOST', matrix.key)] }}
+          MAIL_PORT: ${{ secrets[format('{0}_MAIL_PORT', matrix.key)] }}
+          MAIL_USERNAME: ${{ secrets[format('{0}_MAIL_USERNAME', matrix.key)] }}
+          MAIL_PASSWORD: ${{ secrets[format('{0}_MAIL_PASSWORD', matrix.key)] }}
+          MAIL_FROM_ADDRESS: ${{ secrets[format('{0}_MAIL_FROM_ADDRESS', matrix.key)] }}
+        run: |
+          set -e
+          mkdir -p storage/framework/cache/data storage/framework/sessions \
+                   storage/framework/views storage/logs storage/app/public bootstrap/cache
+          {
+            echo "APP_NAME='${APP_NAME}'"
+            echo "APP_ENV=production"
+            echo "APP_KEY=${APP_KEY}"
+            echo "APP_DEBUG=false"
+            echo "APP_URL='${APP_URL}'"
+            echo ""
+            echo "# Secret token for the one-time school setup link"
+            echo "SETUP_TOKEN='${SETUP_TOKEN}'"
+            echo ""
+            echo "# Platform Owner account (SaaS provider) — seeded by db:seed"
+            echo "SAAS_OWNER_EMAIL='${SAAS_OWNER_EMAIL}'"
+            echo "SAAS_OWNER_PASSWORD='${SAAS_OWNER_PASSWORD}'"
+            echo "SAAS_OWNER_NAME='Platform Owner'"
+            echo ""
+            echo "LOG_CHANNEL=stack"
+            echo "LOG_LEVEL=error"
+            echo ""
+            echo "DB_CONNECTION=mysql"
+            echo "DB_HOST='${DB_HOST:-127.0.0.1}'"
+            echo "DB_PORT=3306"
+            echo "DB_DATABASE='${DB_DATABASE}'"
+            echo "DB_USERNAME='${DB_USERNAME}'"
+            echo "DB_PASSWORD='${DB_PASSWORD}'"
+            echo ""
+            echo "BROADCAST_DRIVER=log"
+            echo "CACHE_DRIVER=file"
+            echo "FILESYSTEM_DISK=local"
+            echo "QUEUE_CONNECTION=database"
+            echo "SESSION_DRIVER=file"
+            echo "SESSION_LIFETIME=120"
+            echo ""
+            echo "MEMCACHED_HOST=127.0.0.1"
+            echo "REDIS_HOST=127.0.0.1"
+            echo "REDIS_PASSWORD=null"
+            echo "REDIS_PORT=6379"
+            echo ""
+            echo "MAIL_MAILER=smtp"
+            echo "MAIL_HOST='${MAIL_HOST}'"
+            echo "MAIL_PORT=${MAIL_PORT:-587}"
+            echo "MAIL_USERNAME='${MAIL_USERNAME}'"
+            echo "MAIL_PASSWORD='${MAIL_PASSWORD}'"
+            echo "MAIL_ENCRYPTION=tls"
+            echo "MAIL_FROM_ADDRESS='${MAIL_FROM_ADDRESS}'"
+            echo "MAIL_FROM_NAME=\"${APP_NAME}\""
+            echo ""
+            echo "# Token required by public/deploy-hook.php"
+            echo "DEPLOY_HOOK_SECRET='${DEPLOY_HOOK_SECRET}'"
+          } > .env
+          chmod 600 .env || true
+
+      # Same state-tracking as deploys, so files added by the bad release are
+      # removed again while student data / uploads / logs stay untouched.
+      - name: FTP rollback to cPanel
+        if: steps.config-check.outputs.skip == 'false'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          username: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
+          password: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
+          server-dir: ${{ secrets[format('{0}_SERVER_DIR', matrix.key)] }}
+          state-name: ${{ matrix.key }}-ftp-state.json
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.github/**
+            **/node_modules/**
+            **/tests/**
+            .env.example
+            storage/app/public/**
+            storage/logs/**
+            storage/framework/sessions/**
+            storage/framework/cache/**
+            storage/framework/views/**
+            public/storage/**
+            database/*.sql
+            *.md
+            opencode-install.log
+
+      - name: Trigger post-deploy hook
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        env:
+          APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
+          TOKEN: ${{ secrets[format('{0}_DEPLOY_HOOK_SECRET', matrix.key)] }}
+        run: |
+          set -uo pipefail
+          HOOK_URL="${APP_URL%/}/deploy-hook.php"
+          RESPONSE="$(mktemp)"
+          HTTP_CODE=$(curl -sS -o "$RESPONSE" -w '%{http_code}' \
+            -X POST "$HOOK_URL" \
+            -H "X-Deploy-Token: ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            --max-time 300 \
+            --retry 2 --retry-delay 5) || HTTP_CODE="000"
+
+          cat "$RESPONSE" || true
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "| ${{ matrix.key }} | ✅ rolled back to \`${{ inputs.tag }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "| ${{ matrix.key }} | ❌ rollback hook failed (HTTP ${HTTP_CODE}) |" >> "$GITHUB_STEP_SUMMARY"
+            echo "Rollback hook FAILED (HTTP ${HTTP_CODE})" >&2
+            exit 1
+          fi

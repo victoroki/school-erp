@@ -1,0 +1,279 @@
+name: Build & Deploy
+
+# Deploys the SAME build to 3 school subdomains over FTP (cPanel, no SSH).
+# After each upload the per-school deploy-hook.php endpoint runs
+# migrations / storage:link / config caches over HTTP.
+#
+# Real hostnames & paths live ONLY in GitHub Secrets:
+#   SCHOOL1_FTP_SERVER, SCHOOL1_SERVER_DIR, SCHOOL1_APP_URL, ...
+# To add a 4th school: duplicate a matrix entry + its secrets. Nothing
+# in this file needs editing.
+
+on:
+  push:
+    branches: [feat/rbac-consolidated-permissions]   # change to main when you go live
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false   # never kill a mid-deploy to one school
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────
+  # BUILD — one artifact shared by every school deploy
+  # ──────────────────────────────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, bcmath, pdo_mysql, fileinfo, openssl, tokenizer, gd
+          coverage: none
+
+      - name: Install Composer dependencies (production)
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Build frontend assets (Vite)
+        run: npm ci && npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build-${{ github.sha }}
+          retention-days: 30
+          include-hidden-files: true   # .htaccess MUST ship with the build
+          path: |
+            .
+            !.git/**
+            !.github/**
+            !node_modules/**
+            !tests/**
+
+  # ──────────────────────────────────────────────────────────────────────
+  # DEPLOY — matrix over the 3 school subdomains
+  # ──────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to ${{ matrix.key }}
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false           # one school failing must not block others
+      matrix:
+        include:
+          - key: SCHOOL1
+          - key: SCHOOL2
+          - key: SCHOOL3
+
+    steps:
+      # Schools without secrets yet (e.g. you've only onboarded SCHOOL1)
+      # are skipped gracefully instead of failing the whole pipeline.
+      - name: Skip if this school is not configured
+        id: config-check
+        env:
+          FTP_SERVER: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          SERVER_DIR: ${{ secrets[format('{0}_SERVER_DIR', matrix.key)] }}
+          APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
+          DB_PASSWORD: ${{ secrets[format('{0}_DB_PASSWORD', matrix.key)] }}
+        run: |
+          if [ -z "${FTP_SERVER}" ] || [ -z "${SERVER_DIR}" ] || [ -z "${APP_URL}" ] || [ -z "${DB_PASSWORD}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::${{ matrix.key }} has no deployment secrets configured — skipping."
+            echo "| ${{ matrix.key }} | ⏭️ skipped — secrets not set yet |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::${{ matrix.key }} is configured — deploying."
+          fi
+
+      - name: Download build artifact
+        if: steps.config-check.outputs.skip == 'false'
+        uses: actions/download-artifact@v4
+        with:
+          name: app-build-${{ github.sha }}
+          path: .
+
+      - name: Generate per-school .env from secrets
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        env:
+          KEY: ${{ matrix.key }}
+          APP_NAME: ${{ secrets[format('{0}_APP_NAME', matrix.key)] }}
+          APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
+          APP_KEY: ${{ secrets[format('{0}_APP_KEY', matrix.key)] }}
+          DB_HOST: ${{ secrets[format('{0}_DB_HOST', matrix.key)] }}
+          DB_DATABASE: ${{ secrets[format('{0}_DB_DATABASE', matrix.key)] }}
+          DB_USERNAME: ${{ secrets[format('{0}_DB_USERNAME', matrix.key)] }}
+          DB_PASSWORD: ${{ secrets[format('{0}_DB_PASSWORD', matrix.key)] }}
+          DEPLOY_HOOK_SECRET: ${{ secrets[format('{0}_DEPLOY_HOOK_SECRET', matrix.key)] }}
+          SETUP_TOKEN: ${{ secrets[format('{0}_SETUP_TOKEN', matrix.key)] }}
+          SAAS_OWNER_EMAIL: ${{ secrets[format('{0}_SAAS_OWNER_EMAIL', matrix.key)] }}
+          SAAS_OWNER_PASSWORD: ${{ secrets[format('{0}_SAAS_OWNER_PASSWORD', matrix.key)] }}
+          SAAS_OWNER_NAME: ${{ secrets[format('{0}_SAAS_OWNER_NAME', matrix.key)] }}
+          MAIL_HOST: ${{ secrets[format('{0}_MAIL_HOST', matrix.key)] }}
+          MAIL_PORT: ${{ secrets[format('{0}_MAIL_PORT', matrix.key)] }}
+          MAIL_USERNAME: ${{ secrets[format('{0}_MAIL_USERNAME', matrix.key)] }}
+          MAIL_PASSWORD: ${{ secrets[format('{0}_MAIL_PASSWORD', matrix.key)] }}
+          MAIL_FROM_ADDRESS: ${{ secrets[format('{0}_MAIL_FROM_ADDRESS', matrix.key)] }}
+        run: |
+          set -e
+          # Runtime directories the app needs on a fresh server
+          mkdir -p storage/framework/cache/data storage/framework/sessions \
+                   storage/framework/views storage/logs storage/app/public bootstrap/cache
+
+          {
+            echo "APP_NAME='${APP_NAME}'"
+            echo "APP_ENV=production"
+            echo "APP_KEY=${APP_KEY}"
+            echo "APP_DEBUG=false"
+            echo "APP_URL='${APP_URL}'"
+            echo ""
+            echo "# Secret token for the one-time school setup link"
+            echo "SETUP_TOKEN='${SETUP_TOKEN}'"
+            echo ""
+            echo "# Platform Owner account (SaaS provider) — seeded by db:seed"
+            echo "SAAS_OWNER_EMAIL='${SAAS_OWNER_EMAIL}'"
+            echo "SAAS_OWNER_PASSWORD='${SAAS_OWNER_PASSWORD}'"
+            echo "SAAS_OWNER_NAME='Platform Owner'"
+            echo ""
+            echo "LOG_CHANNEL=stack"
+            echo "LOG_LEVEL=error"
+            echo ""
+            echo "DB_CONNECTION=mysql"
+            echo "DB_HOST='${DB_HOST:-127.0.0.1}'"
+            echo "DB_PORT=3306"
+            echo "DB_DATABASE='${DB_DATABASE}'"
+            echo "DB_USERNAME='${DB_USERNAME}'"
+            echo "DB_PASSWORD='${DB_PASSWORD}'"
+            echo ""
+            echo "BROADCAST_DRIVER=log"
+            echo "CACHE_DRIVER=file"
+            echo "FILESYSTEM_DISK=local"
+            echo "QUEUE_CONNECTION=database"
+            echo "SESSION_DRIVER=file"
+            echo "SESSION_LIFETIME=120"
+            echo ""
+            echo "MEMCACHED_HOST=127.0.0.1"
+            echo "REDIS_HOST=127.0.0.1"
+            echo "REDIS_PASSWORD=null"
+            echo "REDIS_PORT=6379"
+            echo ""
+            echo "MAIL_MAILER=smtp"
+            echo "MAIL_HOST='${MAIL_HOST}'"
+            echo "MAIL_PORT=${MAIL_PORT:-587}"
+            echo "MAIL_USERNAME='${MAIL_USERNAME}'"
+            echo "MAIL_PASSWORD='${MAIL_PASSWORD}'"
+            echo "MAIL_ENCRYPTION=tls"
+            echo "MAIL_FROM_ADDRESS='${MAIL_FROM_ADDRESS}'"
+            echo "MAIL_FROM_NAME=\"${APP_NAME}\""
+            echo ""
+            echo "# Token required by public/deploy-hook.php"
+            echo "DEPLOY_HOOK_SECRET='${DEPLOY_HOOK_SECRET}'"
+          } > .env
+          chmod 600 .env || true
+          echo ".env generated for ${KEY} ($(wc -l < .env) lines)"
+
+      # State-tracked FTP sync: files deleted locally are removed from the
+      # server, EXCEPT everything matching `exclude` — student photos,
+      # uploaded documents, logs, sessions and each server's own .env can
+      # never be wiped by a deploy.
+      - name: FTP deploy to cPanel
+        if: steps.config-check.outputs.skip == 'false'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          username: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
+          password: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
+          server-dir: ${{ secrets[format('{0}_SERVER_DIR', matrix.key)] }}
+          state-name: ${{ matrix.key }}-ftp-state.json
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.github/**
+            **/node_modules/**
+            **/tests/**
+            .env.example
+            storage/app/public/**
+            storage/logs/**
+            storage/framework/sessions/**
+            storage/framework/cache/**
+            storage/framework/views/**
+            public/storage/**
+            database/*.sql
+            *.md
+            opencode-install.log
+
+      - name: Trigger post-deploy hook (migrate, storage:link, caches)
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        env:
+          APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
+          TOKEN: ${{ secrets[format('{0}_DEPLOY_HOOK_SECRET', matrix.key)] }}
+        run: |
+          set -uo pipefail
+          HOOK_URL="${APP_URL%/}/deploy-hook.php"
+          echo "Calling ${HOOK_URL} ..."
+          RESPONSE="$(mktemp)"
+          HTTP_CODE=$(curl -sS -o "$RESPONSE" -w '%{http_code}' \
+            -X POST "$HOOK_URL" \
+            -H "X-Deploy-Token: ${TOKEN}" \
+            -H "Content-Type: application/json" \
+            --max-time 300 \
+            --retry 2 --retry-delay 5) || HTTP_CODE="000"
+
+          echo "--- Hook response (HTTP ${HTTP_CODE}) ---"
+          cat "$RESPONSE" || true
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "| Post-deploy hook | ✅ success |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## Deploy to ${{ matrix.key }} FAILED at post-deploy hook"
+              echo ""
+              echo "HTTP status: **${HTTP_CODE}** — check deploy-hook.php reachability,"
+              echo "the *_DEPLOY_HOOK_SECRET value, and the cPanel PHP error log."
+              echo ""
+              '```'
+              head -c 4000 "$RESPONSE" || true
+              '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "Hook FAILED with HTTP ${HTTP_CODE}" >&2
+            exit 1
+          fi
+
+  # ──────────────────────────────────────────────────────────────────────
+  # TAG — record exactly what is live after ALL schools deployed fine
+  # ──────────────────────────────────────────────────────────────────────
+  tag-release:
+    name: Tag release
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create & push deploy tag
+        id: tag
+        run: |
+          TAG="deploy-$(date -u +%Y%m%d-%H%M%S)"
+          git config user.name  "deploy-bot"
+          git config user.email "actions@github.com"
+          git tag -a "${TAG}" -m "Deployed to all schools from commit ${GITHUB_SHA::7}"
+          git push origin "${TAG}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        run: |
+          {
+            echo "## Release tagged 🏷️"
+            echo ""
+            echo "`${{ steps.tag.outputs.tag }}` pushed — use this tag as the rollback input."
+          } >> "$GITHUB_STEP_SUMMARY"
