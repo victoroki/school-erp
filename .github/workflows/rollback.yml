@@ -258,6 +258,24 @@ jobs:
           dangerous-clean-slate: false
           exclude: ${{ env.ftp_exclude }}
 
+      # Proof of placement: shows the remote timestamps so a docroot mismatch
+      # (files landing in one folder while the domain serves another) is
+      # visible directly in the run log.
+      - name: Verify uploaded files (FTP listing)
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          FTP_USERNAME: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
+          FTP_PASSWORD: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
+        run: |
+          set -uo pipefail
+          DIR="${{ steps.config-check.outputs.server_dir }}"
+          echo "Remote ${DIR}public/ on ${FTP_SERVER}:"
+          lftp -u "${FTP_USERNAME},${FTP_PASSWORD}" "${FTP_SERVER}" \
+            -e "set ssl:check-hostname off; cls -l --sort=date '${DIR}public/deploy-hook.php'; echo '--- directory ---'; cls -l --sort=date '${DIR}public/' | head -n 25; bye" \
+            || echo "::warning::FTP listing failed — verify credentials and SERVER_DIR."
+
       - name: Trigger post-deploy hook (migrate, storage:link, caches)
         if: steps.config-check.outputs.skip == 'false'
         shell: bash
@@ -271,11 +289,11 @@ jobs:
           UA="Mozilla/5.0 (X11; Linux x86_64) SchoolERP-Deploy/1.0"
 
           # 0) Sanity: is the site itself reachable at all?
-          ROOT_CODE=$(curl -sS -o /dev/null -w '%{http_code}' "${APP_URL%/}/" \
-            -A "$UA" --max-time 60) || ROOT_CODE="000"
-          echo "Site root -> HTTP ${ROOT_CODE} (200 expected)"
+          ROOT_RESULT=$(curl -sS -o /dev/null -w '%{http_code} -> %{redirect_url}' "${APP_URL%/}/" \
+            -A "$UA" --max-time 60) || ROOT_RESULT="000"
+          echo "Site root -> ${ROOT_RESULT}"
 
-          # 1) Pre-flight: the hook answers any GET with 405 + JSON.
+          # 1) Pre-flight: the hook answers any token-less GET with 405 + JSON.
           PROBE_HEADERS="$(mktemp)"
           PROBE_CODE=$(curl -sS -o /dev/null -w '%{http_code}' -D "$PROBE_HEADERS" \
             "$HOOK_URL" \
@@ -300,6 +318,22 @@ jobs:
           echo "--- Hook response (HTTP ${HTTP_CODE}) ---"
           cat "$RESPONSE" || true
 
+          # 3) WAF fallback: many shared hosts (ModSecurity/LiteSpeed) kill
+          # automated POSTs with 403/406 but leave plain GETs alone. The hook
+          # accepts ?token=… on GET for exactly this case.
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "POST returned ${HTTP_CODE} — retrying as authenticated GET..."
+            sleep 2
+            HTTP_CODE=$(curl -sS -o "$RESPONSE" -w '%{http_code}' -D "$RESP_HEADERS" \
+              -G "$HOOK_URL" \
+              --data-urlencode "token=${TOKEN}" \
+              -A "$UA" \
+              -H "Accept: application/json" \
+              --max-time 300) || HTTP_CODE="000"
+            echo "--- Fallback GET response (HTTP ${HTTP_CODE}) ---"
+            cat "$RESPONSE" || true
+          fi
+
           if [ "$HTTP_CODE" = "200" ]; then
             echo "| Rollback hook | ✅ success |" >> "$GITHUB_STEP_SUMMARY"
           else
@@ -308,9 +342,9 @@ jobs:
               echo ""
               echo "| probe | result | expected |"
               echo "|---|---|---|"
-              echo "| GET site root | ${ROOT_CODE} | 200 |"
+              echo "| GET site root | ${ROOT_RESULT} | 200 |"
               echo "| GET deploy-hook.php | ${PROBE_CODE} | 405 |"
-              echo "| POST deploy-hook.php | ${HTTP_CODE} | 200 |"
+              echo "| POST deploy-hook.php (or GET fallback) | ${HTTP_CODE} | 200 |"
               echo ""
               echo '```'
               echo "--- GET deploy-hook.php headers ---"
@@ -322,12 +356,13 @@ jobs:
               echo '```'
               echo ""
               echo "**Diagnosis guide:**"
-              echo "- Root ≠ 200 → APP_URL/domain/docroot problem."
-              echo "- GET hook = 404 → deploy-hook.php is not under the domain's web root:"
-              echo "  verify SERVER_DIR points at the folder that CONTAINS public/, and the"
-              echo "  domain's document root is set to SERVER_DIR/public in cPanel → Domains."
-              echo "- GET hook = 405 but POST = 403/406 or HTML → ModSecurity/bot protection"
-              echo "  is killing automated POSTs; ask the host to whitelist ${HOOK_URL}."
+              echo "- Root redirects (302) to a working app while GET hook = 404 with"
+              echo "  Laravel headers → an OLD copy of the app is live and the freshly FTP'd"
+              echo "  tree is NOT what the domain serves. Check cPanel: domain document root"
+              echo "  must be SERVER_DIR/public, and deploy-hook.php must exist there."
+              echo "- GET hook = 405/403-JSON but POST = 403/406 → WAF blocks POSTs; the GET"
+              echo "  fallback should have handled it. If the fallback ALSO fails, ask the"
+              echo "  host to whitelist ${HOOK_URL}."
             } >> "$GITHUB_STEP_SUMMARY"
             echo "Hook FAILED with HTTP ${HTTP_CODE}" >&2
             exit 1

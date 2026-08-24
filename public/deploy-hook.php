@@ -18,8 +18,12 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Artisan;
 
 $httpMethod = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+$tokenInQuery = isset($_GET['token']) ? (string) $_GET['token'] : '';
 
-if ($httpMethod !== 'POST') {
+// POST is the primary entry point. A GET carrying ?token=… is accepted as a
+// fallback because shared-hosting WAFs (ModSecurity) frequently block
+// automated POSTs while letting plain GETs through untouched.
+if ($httpMethod !== 'POST' && $tokenInQuery === '') {
     http_response_code(405);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode(['status' => 'error', 'message' => 'Method not allowed. Use POST.']);
@@ -54,7 +58,7 @@ if (is_readable($hookEnvFile)) {
 }
 
 // ── 1. Authenticate BEFORE bootstrapping anything ────────────────────────
-$providedToken = $_SERVER['HTTP_X_DEPLOY_TOKEN'] ?? '';
+$providedToken = (string) ($_SERVER['HTTP_X_DEPLOY_TOKEN'] ?? $tokenInQuery);
 $expectedToken = (string) ($_ENV['DEPLOY_HOOK_SECRET']
     ?? getenv('DEPLOY_HOOK_SECRET')
     ?: '');
