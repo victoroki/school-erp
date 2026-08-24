@@ -35,14 +35,23 @@ class AppServiceProvider extends ServiceProvider
 public function boot()
 {
     \Illuminate\Pagination\Paginator::useBootstrapFour();
-    
-    // Fix for Doctrine DBAL ENUM type issue
-    $platform = DB::connection()->getDoctrineSchemaManager()->getDatabasePlatform();
-    $platform->registerDoctrineTypeMapping('enum', 'string');
-    
-    // Alternative method as backup
-    if (!Type::hasType('enum')) {
-        Type::addType('enum', 'Doctrine\DBAL\Types\StringType');
+
+    // Fix for Doctrine DBAL ENUM type issue.
+    //
+    // Wrapped so the app still boots when no database is reachable —
+    // composer's post-autoload-dump (package:discover) boots the framework
+    // during CI builds, where there is deliberately no MySQL server yet.
+    try {
+        $platform = DB::connection()->getDoctrineSchemaManager()->getDatabasePlatform();
+        $platform->registerDoctrineTypeMapping('enum', 'string');
+
+        // Alternative method as backup
+        if (!Type::hasType('enum')) {
+            Type::addType('enum', 'Doctrine\DBAL\Types\StringType');
+        }
+    } catch (\Throwable) {
+        // No DB connection available in this context — the enum mapping is
+        // only needed when migrations/queries actually touch the database.
     }
 }
 }
