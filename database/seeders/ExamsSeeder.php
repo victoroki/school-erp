@@ -6,211 +6,54 @@ use Illuminate\Database\Seeder;
 use App\Models\Exam;
 use App\Models\ExamType;
 use App\Models\AcademicYear;
+use App\Models\Term;
 
 class ExamsSeeder extends Seeder
 {
     public function run(): void
     {
-        $academicYear = AcademicYear::where('is_current', true)->first();
-        $examTypes = ExamType::all();
-        
-        // Ensure required exam types exist
-        $requiredTypes = [
-            'First Term Examination',
-            'Unit Test',
-            'Monthly Test',
-            'Practical Examination',
-            'Oral Examination',
-            'Olympiad',
-            'Science Olympiad',
-            'Diagnostic Test',
-            'Second Term Examination',
-            'Weekly Test'
-        ];
-        
-        foreach ($requiredTypes as $typeName) {
-            if (!$examTypes->where('name', $typeName)->first()) {
-                // Create the exam type if it doesn't exist
-                $newType = ExamType::create([
-                    'name' => $typeName,
-                    'description' => 'Examination type for ' . $typeName
-                ]);
-                $examTypes->push($newType);
-            }
+        $year = AcademicYear::where('is_current', true)->first();
+        if (!$year) {
+            return;
         }
-        
-        // Current academic year exams
-        $currentYearExams = [
-            // First Term Examinations
-            [
-                'exam_type_id' => $examTypes->where('name', 'First Term Examination')->first()->exam_type_id ?? 1,
-                'name' => 'First Term Examination 2024',
-                'description' => 'Comprehensive mid-year assessment covering all subjects from first semester syllabus',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-10-15',
-                'end_date' => '2024-10-25',
-                'publish_result' => true,
-            ],
-            
-            // Unit Tests for First Term
-            [
-                'exam_type_id' => $examTypes->where('name', 'Unit Test')->first()->exam_type_id ?? 2,
-                'name' => 'Unit Test 1 - Mathematics',
-                'description' => 'Mathematics unit test covering algebra and basic arithmetic concepts',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-09-05',
-                'end_date' => '2024-09-05',
-                'publish_result' => true,
-            ],
-            [
-                'exam_type_id' => $examTypes->where('name', 'Unit Test')->first()->exam_type_id ?? 2,
-                'name' => 'Unit Test 2 - Science',
-                'description' => 'Science unit test covering basic physics and chemistry concepts',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-09-12',
-                'end_date' => '2024-09-12',
-                'publish_result' => true,
-            ],
-            [
-                'exam_type_id' => $examTypes->where('name', 'Unit Test')->first()->exam_type_id ?? 2,
-                'name' => 'Unit Test 3 - English',
-                'description' => 'English unit test covering grammar and composition skills',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-09-19',
-                'end_date' => '2024-09-19',
-                'publish_result' => true,
-            ],
-            
-            // Monthly Tests
-            [
-                'exam_type_id' => $examTypes->where('name', 'Monthly Test')->first()->exam_type_id ?? 4,
-                'name' => 'Monthly Test - September 2024',
-                'description' => 'Comprehensive monthly assessment for all core subjects',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-09-28',
-                'end_date' => '2024-09-30',
-                'publish_result' => true,
-            ],
-            [
-                'exam_type_id' => $examTypes->where('name', 'Monthly Test')->first()->exam_type_id ?? 4,
-                'name' => 'Monthly Test - November 2024',
-                'description' => 'Comprehensive monthly assessment for all core subjects',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-11-28',
-                'end_date' => '2024-11-30',
-                'publish_result' => false,
-            ],
-            
-            // Practical Examinations
-            [
-                'exam_type_id' => $examTypes->where('name', 'Practical Examination')->first()->exam_type_id ?? 7,
-                'name' => 'Science Practical Examination',
-                'description' => 'Hands-on practical assessment for physics, chemistry, and biology',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-11-10',
-                'end_date' => '2024-11-12',
-                'publish_result' => true,
-            ],
-            [
-                'exam_type_id' => $examTypes->where('name', 'Practical Examination')->first()->exam_type_id ?? 7,
-                'name' => 'Computer Science Practical',
-                'description' => 'Programming and computer applications practical assessment',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-11-15',
-                'end_date' => '2024-11-15',
-                'publish_result' => true,
-            ],
-            
-            // Oral Examinations
-            [
-                'exam_type_id' => $examTypes->where('name', 'Oral Examination')->first()->exam_type_id ?? 8,
-                'name' => 'English Oral Examination',
-                'description' => 'Verbal assessment of English speaking and communication skills',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-10-08',
-                'end_date' => '2024-10-10',
-                'publish_result' => true,
-            ],
-            [
-                'exam_type_id' => $examTypes->where('name', 'Oral Examination')->first()->exam_type_id ?? 8,
-                'name' => 'Hindi Oral Examination',
-                'description' => 'Verbal assessment of Hindi speaking and communication skills',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-10-11',
-                'end_date' => '2024-10-13',
-                'publish_result' => true,
-            ],
-            
-            // Competitive Examinations
-            [
-                'exam_type_id' => $examTypes->where('name', 'Olympiad')->first()->exam_type_id ?? 9,
-                'name' => 'Mathematics Olympiad 2024',
-                'description' => 'Advanced mathematics competition for talented students',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-12-05',
-                'end_date' => '2024-12-05',
-                'publish_result' => false,
-            ],
-            [
-                'exam_type_id' => $examTypes->where('name', 'Science Olympiad')->first()->exam_type_id ?? 10,
-                'name' => 'Science Olympiad 2024',
-                'description' => 'Advanced science competition for talented students',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-12-10',
-                'end_date' => '2024-12-10',
-                'publish_result' => false,
-            ],
-            
-            // Diagnostic Tests
-            [
-                'exam_type_id' => $examTypes->where('name', 'Diagnostic Test')->first()->exam_type_id ?? 11,
-                'name' => 'Beginning of Year Diagnostic Test',
-                'description' => 'Assessment to identify student learning levels at start of academic year',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-07-01',
-                'end_date' => '2024-07-03',
-                'publish_result' => true,
-            ],
-            
-            // Second Term Examinations (Upcoming)
-            [
-                'exam_type_id' => $examTypes->where('name', 'Second Term Examination')->first()->exam_type_id ?? 12,
-                'name' => 'Second Term Examination 2025',
-                'description' => 'End-of-year comprehensive examination covering full academic year syllabus',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2025-03-15',
-                'end_date' => '2025-03-25',
-                'publish_result' => false,
-            ],
-            
-            // Weekly Tests
-            [
-                'exam_type_id' => $examTypes->where('name', 'Weekly Test')->first()->exam_type_id ?? 13,
-                'name' => 'Weekly Test - Week 1',
-                'description' => 'Short assessment to reinforce weekly learning objectives',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-09-02',
-                'end_date' => '2024-09-02',
-                'publish_result' => true,
-            ],
-            [
-                'exam_type_id' => $examTypes->where('name', 'Weekly Test')->first()->exam_type_id ?? 13,
-                'name' => 'Weekly Test - Week 2',
-                'description' => 'Short assessment to reinforce weekly learning objectives',
-                'academic_year_id' => $academicYear->academic_year_id,
-                'start_date' => '2024-09-09',
-                'end_date' => '2024-09-09',
-                'publish_result' => true,
-            ],
+
+        $type = function (string $name) {
+            return ExamType::where('name', $name)->value('exam_type_id');
+        };
+
+        $exams = [
+            // Term 1 (2026)
+            ['name' => 'Term 1 Opener Examination 2026', 'type' => 'Opener Examination', 'publish_result' => true, 'start' => '2026-01-12', 'end' => '2026-01-16'],
+            ['name' => 'Term 1 Mid-Term Assessment 2026', 'type' => 'Mid-Term Assessment', 'publish_result' => true, 'start' => '2026-02-23', 'end' => '2026-02-27'],
+            ['name' => 'Term 1 End of Term Examination 2026', 'type' => 'End of Term Examination', 'publish_result' => true, 'start' => '2026-03-23', 'end' => '2026-04-02'],
+
+            // Term 2 (2026) — currently active (make results publishable)
+            ['name' => 'Term 2 Opener Examination 2026', 'type' => 'Opener Examination', 'publish_result' => true, 'start' => '2026-05-11', 'end' => '2026-05-15'],
+            ['name' => 'Term 2 Mid-Term Assessment 2026', 'type' => 'Mid-Term Assessment', 'publish_result' => true, 'start' => '2026-06-22', 'end' => '2026-06-26'],
+            ['name' => 'Term 2 End of Term Examination 2026', 'type' => 'End of Term Examination', 'publish_result' => true, 'start' => '2026-07-27', 'end' => '2026-08-06'],
+
+            // National & candidate assessments
+            ['name' => 'KPSEA Trial Assessment 2026', 'type' => 'KPSEA', 'publish_result' => true, 'start' => '2026-07-13', 'end' => '2026-07-17'],
+            ['name' => 'KCSE Mock Examination 2026', 'type' => 'KCSE Mock Examination', 'publish_result' => true, 'start' => '2026-06-08', 'end' => '2026-06-19'],
+            ['name' => 'Grade 9 Junior School Assessment 2026', 'type' => 'Junior School Assessment', 'publish_result' => true, 'start' => '2026-07-20', 'end' => '2026-07-24'],
+
+            // Continuous & practical assessments
+            ['name' => 'CAT 2 Continuous Assessment 2026', 'type' => 'Continuous Assessment Test', 'publish_result' => true, 'start' => '2026-06-01', 'end' => '2026-06-05'],
+            ['name' => 'CBC Project & Practical Assessment 2026', 'type' => 'CBC Project & Practical Assessment', 'publish_result' => true, 'start' => '2026-07-06', 'end' => '2026-07-10'],
+            ['name' => 'Oral & Communication Assessment 2026', 'type' => 'Oral & Communication Assessment', 'publish_result' => true, 'start' => '2026-05-25', 'end' => '2026-05-29'],
         ];
 
-        foreach ($currentYearExams as $examData) {
+        foreach ($exams as $data) {
             Exam::firstOrCreate(
+                ['name' => $data['name'], 'academic_year_id' => $year->academic_year_id],
                 [
-                    'name' => $examData['name'],
-                    'academic_year_id' => $examData['academic_year_id'],
-                ],
-                $examData
+                    'exam_type_id' => $type($data['type']),
+                    'description' => $data['name'] . ' — ' . $year->name . ' academic year',
+                    'academic_year_id' => $year->academic_year_id,
+                    'start_date' => $data['start'],
+                    'end_date' => $data['end'],
+                    'publish_result' => $data['publish_result'],
+                ]
             );
         }
     }

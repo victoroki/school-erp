@@ -48,6 +48,55 @@
                                 </span>
                             </div>
 
+                            @can('academics.settings.manage')
+                            <div class="class-sections-block mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="text-uppercase font-weight-bold text-muted" style="font-size: 0.7rem; letter-spacing: 0.04em;">Sections</span>
+                                    <button type="button" class="btn btn-xs btn-outline-info" onclick="toggleClassSections({{ $schoolClass->class_id }})" style="font-weight: 600;">
+                                        <i class="fas fa-folder-plus mr-1"></i> Manage
+                                    </button>
+                                </div>
+
+                                <div id="classSections-{{ $schoolClass->class_id }}" class="class-sections-list rounded" style="background-color: #f8fafc; padding: 0.75rem; border: 1px solid #f1f5f9;">
+                                    @forelse($schoolClass->sections as $section)
+                                        <div class="d-flex justify-content-between align-items-center py-1">
+                                            <span class="text-dark" style="font-size: 0.85rem;">
+                                                <i class="fas fa-tag text-muted mr-1" style="font-size: 0.7rem;"></i>
+                                                <strong>{{ $section->name }}</strong>
+                                                @if($section->capacity)
+                                                    <small class="text-muted">(cap {{ $section->capacity }})</small>
+                                                @endif
+                                            </span>
+                                            <span class="d-inline-flex" style="gap: 4px;">
+                                                <a href="{{ route('sections.edit', $section->section_id) }}" class="btn btn-xs btn-light" title="Edit" style="padding: 0.15rem 0.4rem; border-color: #e2e8f0;">
+                                                    <i class="fas fa-edit text-primary" style="font-size: 0.7rem;"></i>
+                                                </a>
+                                                {!! Form::open(['route' => ['sections.destroy', $section->section_id], 'method' => 'delete', 'class' => 'm-0']) !!}
+                                                    <button type="submit" class="btn btn-xs btn-light" title="Delete" onclick="return confirm('Delete this section?')" style="padding: 0.15rem 0.4rem; border-color: #e2e8f0;">
+                                                        <i class="fas fa-trash-alt text-danger" style="font-size: 0.7rem;"></i>
+                                                    </button>
+                                                {!! Form::close() !!}
+                                            </span>
+                                        </div>
+                                    @empty
+                                        <p class="text-muted mb-1" style="font-size: 0.8rem;">No sections yet. Add one below.</p>
+                                    @endforelse
+
+                                    <hr style="border-color: #e2e8f0; margin: 0.5rem 0;">
+                                    {!! Form::open(['route' => 'sections.store', 'class' => 'mt-1']) !!}
+                                        <input type="hidden" name="class_id" value="{{ $schoolClass->class_id }}">
+                                        <div class="d-flex mb-1" style="gap: 6px;">
+                                            <input type="text" name="name" class="form-control form-control-sm" placeholder="Name (e.g. A)" required style="border-color: #e2e8f0;">
+                                            <input type="number" name="capacity" class="form-control form-control-sm" placeholder="Cap" min="1" style="border-color: #e2e8f0; max-width: 76px;">
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-block text-white" style="background-color: #0284c7; font-weight: 600;">
+                                            <i class="fas fa-plus mr-1"></i> Add Section
+                                        </button>
+                                    {!! Form::close() !!}
+                                </div>
+                            </div>
+                            @endcan
+
                             <div class="d-flex justify-content-between align-items-center pt-3 border-top" style="border-top-color: #f1f5f9 !important;">
                                 <div class="d-flex" style="gap: 0.5rem;">
                                     <a href="{{ route('school-classes.show', $schoolClass->class_id) }}"
@@ -91,3 +140,15 @@
         @endif
     </div>
 @endsection
+
+@push('page_scripts')
+<script>
+    function toggleClassSections(classId) {
+        var el = document.getElementById('classSections-' + classId);
+        if (el) {
+            var hidden = el.style.display === 'none';
+            el.style.display = hidden ? 'block' : 'none';
+        }
+    }
+</script>
+@endpush

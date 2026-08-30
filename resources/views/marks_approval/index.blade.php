@@ -141,6 +141,13 @@
                     </table>
                 </div>
             </div>
+            @if($batches->hasPages())
+            <div class="card-footer bg-white">
+                <div class="float-right">
+                    {{ $batches->links('pagination::bootstrap-4') }}
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 @endsection

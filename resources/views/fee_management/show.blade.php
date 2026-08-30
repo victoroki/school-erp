@@ -137,6 +137,11 @@
                         <span>Payment History</span>
                         <span class="tab-count">{{ $student->payments->count() }}</span>
                     </button>
+                    <button class="tab-btn" data-tab="ledger">
+                        <i class="fas fa-book-open"></i>
+                        <span>Ledger / Statement</span>
+                        <span class="tab-count">{{ $statement['entries']->count() }}</span>
+                    </button>
                 </div>
 
                 <div class="tab-content">
@@ -225,6 +230,64 @@
                                                 <div class="empty-mini">
                                                     <i class="fas fa-receipt"></i>
                                                     <p>No payments recorded</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Ledger / Statement Tab --}}
+                    <div class="tab-pane" id="tab-ledger">
+                        <div class="ledger-summary">
+                            <div class="ledger-stat">
+                                <span class="ledger-stat-label">Opening Balance</span>
+                                <span class="ledger-stat-value">KSh {{ number_format($statement['openBalance'], 2) }}</span>
+                            </div>
+                            <div class="ledger-stat">
+                                <span class="ledger-stat-label">Total Charges (Debits)</span>
+                                <span class="ledger-stat-value text-rose">KSh {{ number_format($statement['totalCharges'], 2) }}</span>
+                            </div>
+                            <div class="ledger-stat">
+                                <span class="ledger-stat-label">Total Credits</span>
+                                <span class="ledger-stat-value text-emerald">KSh {{ number_format($statement['totalCredits'], 2) }}</span>
+                            </div>
+                            <div class="ledger-stat ledger-stat-highlight">
+                                <span class="ledger-stat-label">Closing Balance</span>
+                                <span class="ledger-stat-value {{ $statement['closing'] > 0 ? 'text-rose' : 'text-emerald' }}">KSh {{ number_format($statement['closing'], 2) }}</span>
+                            </div>
+                        </div>
+
+                        <div class="table-wrap">
+                            <table class="detail-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Description</th>
+                                        <th>Type</th>
+                                        <th class="text-right">Debit (Charges)</th>
+                                        <th class="text-right">Credit (Payments)</th>
+                                        <th class="text-right">Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($statement['entries'] as $entry)
+                                        <tr>
+                                            <td class="text-muted-sm">{{ $entry->entry_date ? \Carbon\Carbon::parse($entry->entry_date)->format('d M Y') : 'N/A' }}</td>
+                                            <td class="font-semibold">{{ $entry->description }}</td>
+                                            <td><span class="method-badge ledger-type-{{ $entry->entry_type }}">{{ ucwords(str_replace('_', ' ', $entry->entry_type)) }}</span></td>
+                                            <td class="text-right mono">{{ $entry->debit > 0 ? 'KSh ' . number_format($entry->debit, 2) : '—' }}</td>
+                                            <td class="text-right mono {{ $entry->credit > 0 ? 'text-emerald font-semibold' : '' }}">{{ $entry->credit > 0 ? 'KSh ' . number_format($entry->credit, 2) : '—' }}</td>
+                                            <td class="text-right mono {{ $entry->balance_after > 0 ? 'text-rose' : 'text-emerald' }} font-semibold">KSh {{ number_format($entry->balance_after, 2) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="6" class="empty-cell">
+                                                <div class="empty-mini">
+                                                    <i class="fas fa-book-open"></i>
+                                                    <p>No ledger entries yet. Record a payment or charge to initialise the student's statement.</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -446,8 +509,131 @@
 .empty-mini i { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
 .empty-mini p { font-size: 0.82rem; font-weight: 600; color: var(--slate-400); margin: 0; }
 
+/* Ledger */
+.ledger-summary {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem;
+    padding: 1rem; background: var(--slate-50); border-bottom: 1px solid var(--border);
+}
+.ledger-stat { display: flex; flex-direction: column; gap: 2px; }
+.ledger-stat-label { font-size: 0.66rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.04em; }
+.ledger-stat-value { font-size: 0.95rem; font-weight: 800; color: var(--slate-800); font-family: monospace; }
+.ledger-stat-highlight {
+    padding: 0.5rem 0.75rem; border-radius: 8px; background: #fff; border: 1px solid var(--border);
+}
+.ledger-type-charge { color: var(--rose); }
+.ledger-type-payment { color: var(--emerald); }
+.ledger-type-refund { color: var(--indigo); }
+.ledger-type-adjustment { color: var(--amber-600); }
+.ledger-type-reversal { color: var(--rose); }
+.ledger-type-opening_balance { color: var(--slate-500); }
+
+/* — Tablet — */
 @media (max-width: 1024px) {
+    .fee-detail-wrap { padding: 1.25rem 1.5rem; }
     .detail-grid { grid-template-columns: 1fr; }
+    .summary-column { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .parents-card { grid-column: 1 / -1; }
+    .tabs-nav { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 0 0.5rem; }
+    .tabs-nav::-webkit-scrollbar { display: none; }
+}
+
+/* — Mobile — */
+@media (max-width: 768px) {
+    .fee-detail-wrap { padding: 1rem; }
+
+    /* Header stacks */
+    .d-flex.align-items-center.justify-content-between.mb-4 {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.75rem;
+    }
+    .d-flex.align-items-center.justify-content-between.mb-4 > .d-flex {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .d-flex.align-items-center.justify-content-between.mb-4 .btn-ghost-custom,
+    .d-flex.align-items-center.justify-content-between.mb-4 .btn-primary-custom {
+        flex: 1;
+        justify-content: center;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.72rem;
+    }
+    .page-title { font-size: 1.1rem; }
+
+    /* Summary column: single column on mobile */
+    .summary-column {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Student card */
+    .student-card-body { padding: 1.25rem; }
+    .student-photo-lg { width: 64px; height: 64px; }
+    .student-photo-lg-placeholder { width: 64px; height: 64px; font-size: 1.4rem; }
+    .student-name-lg { font-size: 1rem; }
+
+    /* Tabs: scrollable */
+    .tabs-card { border-radius: 12px; }
+    .tabs-nav {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0 0.375rem;
+        gap: 0;
+        scrollbar-width: none;
+    }
+    .tabs-nav::-webkit-scrollbar { display: none; }
+    .tab-btn {
+        flex-shrink: 0;
+        padding: 0.75rem 0.75rem;
+        font-size: 0.72rem;
+        white-space: nowrap;
+    }
+    .tab-btn span:not(.tab-count) { display: none; }
+    .tab-btn i { font-size: 0.85rem; margin-right: 0; }
+    .tab-btn .tab-count { margin-left: 0; }
+
+    /* Tables: hide less important columns */
+    /* Fees table: hide Due Date and Discount */
+    #tab-fees .detail-table th:nth-child(2),
+    #tab-fees .detail-table td:nth-child(2),
+    #tab-fees .detail-table th:nth-child(4),
+    #tab-fees .detail-table td:nth-child(4) { display: none; }
+
+    /* Payments table: hide Collected By */
+    #tab-payments .detail-table th:nth-child(6),
+    #tab-payments .detail-table td:nth-child(6) { display: none; }
+
+    .detail-table th { padding: 0.6rem 0.625rem; font-size: 0.6rem; }
+    .detail-table td { padding: 0.6rem 0.625rem; font-size: 0.75rem; }
+    .mono { font-size: 0.7rem; }
+    .receipt-badge { font-size: 0.65rem; padding: 1px 6px; }
+    .method-badge { font-size: 0.7rem; }
+    .status-badge-sm { padding: 2px 6px; font-size: 0.62rem; }
+    .text-muted-sm { font-size: 0.7rem; }
+
+    /* Ledger summary: 2 columns */
+    .ledger-summary { grid-template-columns: 1fr 1fr; padding: 0.75rem; gap: 0.5rem; }
+    .ledger-stat-value { font-size: 0.85rem; }
+    .ledger-stat-highlight { grid-column: 1 / -1; text-align: center; padding: 0.625rem; }
+
+    /* Ledger table: hide Type column */
+    #tab-ledger .detail-table th:nth-child(3),
+    #tab-ledger .detail-table td:nth-child(3) { display: none; }
+}
+
+@media (max-width: 420px) {
+    .fee-detail-wrap { padding: 0.75rem; }
+    .icon-box { width: 34px; height: 34px; font-size: 0.85rem; }
+    .page-title { font-size: 1rem; }
+    .btn-primary-custom, .btn-ghost-custom { padding: 0.5rem 0.625rem; font-size: 0.68rem; }
+    .student-card-body { padding: 1rem; }
+    .financial-card-body .fin-row { padding: 0.5rem 1rem; }
+    .fin-value { font-size: 0.8rem; }
+    .fin-row-highlight { padding: 0.625rem 1rem; margin: 0.25rem 0.5rem; }
+    .fin-row-highlight .fin-value { font-size: 0.88rem; }
+    .ledger-summary { grid-template-columns: 1fr; }
+    .ledger-stat-highlight { grid-column: auto; }
 }
 </style>
 

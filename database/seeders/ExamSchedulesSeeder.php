@@ -11,287 +11,154 @@ use App\Models\ExamSchedule;
 
 class ExamSchedulesSeeder extends Seeder
 {
+    private const TIME_SLOTS = [
+        ['start' => '09:00:00', 'end' => '11:00:00'],
+        ['start' => '11:30:00', 'end' => '13:00:00'],
+        ['start' => '14:00:00', 'end' => '16:00:00'],
+    ];
+
     public function run(): void
     {
-        $exams = Exam::all();
-        $classes = SchoolClass::all();
-        $subjects = Subject::all();
         $classrooms = Classroom::all();
-        
-        // First Term Examination Schedule
-        $firstTermExam = $exams->where('name', 'First Term Examination 2024')->first();
-        if ($firstTermExam) {
-            $this->createTermExamSchedule($firstTermExam, $classes, $subjects, $classrooms, '2024-10-15', '2024-10-25');
+        if ($classrooms->isEmpty()) {
+            return;
         }
-        
-        // Second Term Examination Schedule
-        $secondTermExam = $exams->where('name', 'Second Term Examination 2025')->first();
-        if ($secondTermExam) {
-            $this->createTermExamSchedule($secondTermExam, $classes, $subjects, $classrooms, '2025-03-15', '2025-03-25');
+
+        foreach (SchoolClass::all() as $class) {
+            $subjects = $this->subjectsFor($class);
+            if ($subjects->isEmpty()) {
+                continue;
+            }
+
+            [$max, $passing] = $this->marksFor($class->numeric_value);
+            $slot = 0;
+
+            $eot = $this->exam('Term 1 End of Term Examination 2026') ?: $this->exam('Term 2 End of Term Examination 2026');
+            if ($eot) {
+                $this->schedule($eot, $class, $subjects, $classrooms, $max, $passing, $slot);
+            }
         }
-        
-        // Unit Test Schedules
-        $this->createUnitTestSchedules($exams, $classes, $subjects, $classrooms);
-        
-        // Monthly Test Schedules
-        $this->createMonthlyTestSchedules($exams, $classes, $subjects, $classrooms);
-        
-        // Practical Examination Schedules
-        $this->createPracticalExamSchedules($exams, $classes, $subjects, $classrooms);
-        
-        // Oral Examination Schedules
-        $this->createOralExamSchedules($exams, $classes, $subjects, $classrooms);
-        
-        // Olympiad Schedules
-        $this->createOlympiadSchedules($exams, $classes, $subjects, $classrooms);
-        
-        // Weekly Test Schedules
-        $this->createWeeklyTestSchedules($exams, $classes, $subjects, $classrooms);
+
+        $this->scheduleNationalExams($classrooms);
+        $this->scheduleContinuousAssessments($classrooms);
     }
-    
-    private function createTermExamSchedule($exam, $classes, $subjects, $classrooms, $startDate, $endDate)
+
+    private function scheduleNationalExams($classrooms)
     {
-        $examDate = $startDate;
-        $timeSlots = [
-            ['start' => '09:00:00', 'end' => '11:00:00'],
-            ['start' => '11:30:00', 'end' => '13:30:00'],
-            ['start' => '14:00:00', 'end' => '16:00:00'],
+        $defs = [
+            ['exam' => 'KPSEA Trial Assessment 2026', 'class' => 'Grade 6', 'max' => 60],
+            ['exam' => 'Grade 9 Junior School Assessment 2026', 'class' => 'Grade 9', 'max' => 100],
+            ['exam' => 'KCSE Mock Examination 2026', 'class' => 'Grade 12', 'max' => 100],
         ];
-        
-        $coreSubjects = $subjects->whereIn('subject_code', ['MATH', 'ENG', 'SCI', 'SOC', 'COMP']);
-        
-        foreach ($classes as $class) {
-            $timeSlotIndex = 0;
-            foreach ($coreSubjects as $subject) {
-                if (strtotime($examDate) > strtotime($endDate)) {
-                    $examDate = $startDate;
+
+        foreach ($defs as $def) {
+            $exam = $this->exam($def['exam']);
+            $class = SchoolClass::where('name', $def['class'])->first();
+            if (!$exam || !$class) {
+                continue;
+            }
+            $subjects = $this->subjectsFor($class);
+            if ($subjects->isEmpty()) {
+                continue;
+            }
+            $slot = 0;
+            $this->schedule($exam, $class, $subjects, $classrooms, $def['max'], (int) round($def['max'] * 0.33), $slot);
+        }
+    }
+
+    private function scheduleContinuousAssessments($classrooms)
+    {
+        $cats = [
+            ['name' => 'Term 2 Mid-Term Assessment 2026', 'max' => 50],
+            ['name' => 'CAT 2 Continuous Assessment 2026', 'max' => 30],
+            ['name' => 'CBC Project & Practical Assessment 2026', 'max' => 40],
+            ['name' => 'Oral & Communication Assessment 2026', 'max' => 20],
+        ];
+
+        foreach (SchoolClass::all() as $class) {
+            if (str_starts_with($class->name, 'PP')) {
+                continue;
+            }
+            $subjects = $this->subjectsFor($class);
+            if ($subjects->isEmpty()) {
+                continue;
+            }
+
+            foreach ($cats as $cat) {
+                $exam = $this->exam($cat['name']);
+                if (!$exam) {
+                    continue;
                 }
-                
-                $timeSlot = $timeSlots[$timeSlotIndex % count($timeSlots)];
-                
-                ExamSchedule::firstOrCreate(
-                    [
-                        'exam_id' => $exam->exam_id,
-                        'class_id' => $class->class_id,
-                        'subject_id' => $subject->subject_id,
-                        'exam_date' => $examDate,
-                    ],
-                    [
-                        'start_time' => $timeSlot['start'],
-                        'end_time' => $timeSlot['end'],
-                        'room_id' => $classrooms->random()->room_id,
-                        'max_marks' => $this->getMaxMarksForClass($class->class_name),
-                        'passing_marks' => $this->getPassingMarksForClass($class->class_name),
-                    ]
-                );
-                
-                $timeSlotIndex++;
-                if ($timeSlotIndex >= count($timeSlots)) {
-                    $examDate = date('Y-m-d', strtotime($examDate . ' +1 day'));
-                    $timeSlotIndex = 0;
-                }
+                $slot = 0;
+                $this->schedule($exam, $class, $subjects, $classrooms, $cat['max'], (int) round($cat['max'] * 0.33), $slot);
             }
         }
     }
-    
-    private function createUnitTestSchedules($exams, $classes, $subjects, $classrooms)
+
+    private function schedule($exam, $class, $subjects, $classrooms, $maxMarks, $passing, &$slot)
     {
-        $unitTests = $exams->filter(function($exam) {
-            return strpos($exam->name, 'Unit Test') !== false;
-        });
-        
-        foreach ($unitTests as $unitTest) {
-            foreach ($classes->random(min(3, $classes->count())) as $class) {
-                $subject = $subjects->random();
-                
-                ExamSchedule::firstOrCreate(
-                    [
-                        'exam_id' => $unitTest->exam_id,
-                        'class_id' => $class->class_id,
-                        'subject_id' => $subject->subject_id,
-                        'exam_date' => $unitTest->start_date,
-                    ],
-                    [
-                        'start_time' => '10:00:00',
-                        'end_time' => '11:00:00',
-                        'room_id' => $classrooms->random()->room_id,
-                        'max_marks' => 25,
-                        'passing_marks' => 10,
-                    ]
-                );
-            }
+        $examDate = $exam->start_date ? $exam->start_date->format('Y-m-d') : now()->format('Y-m-d');
+        $roomPool = $classrooms->pluck('classroom_id')->all();
+        $roomCount = count($roomPool) ?: 1;
+
+        foreach ($subjects as $subject) {
+            $time = self::TIME_SLOTS[$slot % count(self::TIME_SLOTS)];
+
+            ExamSchedule::firstOrCreate(
+                [
+                    'exam_id' => $exam->exam_id,
+                    'class_id' => $class->class_id,
+                    'subject_id' => $subject->subject_id,
+                    'exam_date' => $examDate,
+                ],
+                [
+                    'start_time' => $time['start'],
+                    'end_time' => $time['end'],
+                    'room_id' => $roomPool[$slot % $roomCount],
+                    'max_marks' => $maxMarks,
+                    'passing_marks' => $passing,
+                ]
+            );
+
+            $slot++;
         }
     }
-    
-    private function createMonthlyTestSchedules($exams, $classes, $subjects, $classrooms)
+
+    private function subjectsFor(?SchoolClass $class)
     {
-        $monthlyTests = $exams->filter(function($exam) {
-            return strpos($exam->name, 'Monthly Test') !== false;
-        });
-        
-        foreach ($monthlyTests as $monthlyTest) {
-            $coreSubjects = $subjects->whereIn('subject_code', ['MATH', 'ENG', 'SCI']);
-            
-            foreach ($classes as $class) {
-                foreach ($coreSubjects as $subject) {
-                    ExamSchedule::firstOrCreate(
-                        [
-                            'exam_id' => $monthlyTest->exam_id,
-                            'class_id' => $class->class_id,
-                            'subject_id' => $subject->subject_id,
-                            'exam_date' => $monthlyTest->start_date,
-                        ],
-                        [
-                            'start_time' => '09:30:00',
-                            'end_time' => '11:30:00',
-                            'room_id' => $classrooms->random()->room_id,
-                            'max_marks' => 50,
-                            'passing_marks' => 20,
-                        ]
-                    );
-                }
-            }
+        if (!$class) {
+            return collect();
         }
-    }
-    
-    private function createPracticalExamSchedules($exams, $classes, $subjects, $classrooms)
-    {
-        $practicalExams = $exams->filter(function($exam) {
-            return strpos($exam->name, 'Practical') !== false;
-        });
-        
-        foreach ($practicalExams as $practicalExam) {
-            $practicalSubjects = $subjects->whereIn('subject_code', ['SCI', 'COMP', 'PHY', 'CHEM', 'BIO']);
-            
-            foreach ($classes->random(min(2, $classes->count())) as $class) {
-                foreach ($practicalSubjects->random(min(2, $practicalSubjects->count())) as $subject) {
-                    ExamSchedule::firstOrCreate(
-                        [
-                            'exam_id' => $practicalExam->exam_id,
-                            'class_id' => $class->class_id,
-                            'subject_id' => $subject->subject_id,
-                            'exam_date' => $practicalExam->start_date,
-                        ],
-                        [
-                            'start_time' => '14:00:00',
-                            'end_time' => '16:00:00',
-                            'room_id' => $classrooms->random()->room_id,
-                            'max_marks' => 30,
-                            'passing_marks' => 12,
-                        ]
-                    );
-                }
-            }
+
+        $nv = (int) $class->numeric_value;
+
+        if ($nv <= 2) {
+            return Subject::whereIn('subject_code', ['ENG', 'KIS', 'MAT'])->get();
         }
-    }
-    
-    private function createOralExamSchedules($exams, $classes, $subjects, $classrooms)
-    {
-        $oralExams = $exams->filter(function($exam) {
-            return strpos($exam->name, 'Oral') !== false;
-        });
-        
-        foreach ($oralExams as $oralExam) {
-            $languageSubjects = $subjects->whereIn('subject_code', ['ENG', 'HINDI', 'FRENCH', 'SPAN']);
-            
-            foreach ($classes->random(min(2, $classes->count())) as $class) {
-                foreach ($languageSubjects->random(min(1, $languageSubjects->count())) as $subject) {
-                    ExamSchedule::firstOrCreate(
-                        [
-                            'exam_id' => $oralExam->exam_id,
-                            'class_id' => $class->class_id,
-                            'subject_id' => $subject->subject_id,
-                            'exam_date' => $oralExam->start_date,
-                        ],
-                        [
-                            'start_time' => '11:00:00',
-                            'end_time' => '12:00:00',
-                            'room_id' => $classrooms->random()->room_id,
-                            'max_marks' => 20,
-                            'passing_marks' => 8,
-                        ]
-                    );
-                }
-            }
+        if ($nv <= 8) {
+            return Subject::whereIn('subject_code', ['ENG', 'KIS', 'MAT', 'SCI', 'SST', 'AGR', 'PES'])->get();
         }
-    }
-    
-    private function createOlympiadSchedules($exams, $classes, $subjects, $classrooms)
-    {
-        $olympiads = $exams->filter(function($exam) {
-            return strpos($exam->name, 'Olympiad') !== false;
-        });
-        
-        foreach ($olympiads as $olympiad) {
-            $olympiadSubjects = $subjects->whereIn('subject_code', ['MATH', 'SCI', 'COMP']);
-            
-            foreach ($classes->random(min(2, $classes->count())) as $class) {
-                foreach ($olympiadSubjects->random(min(1, $olympiadSubjects->count())) as $subject) {
-                    ExamSchedule::firstOrCreate(
-                        [
-                            'exam_id' => $olympiad->exam_id,
-                            'class_id' => $class->class_id,
-                            'subject_id' => $subject->subject_id,
-                            'exam_date' => $olympiad->start_date,
-                        ],
-                        [
-                            'start_time' => '10:00:00',
-                            'end_time' => '12:00:00',
-                            'room_id' => $classrooms->random()->room_id,
-                            'max_marks' => 60,
-                            'passing_marks' => 24,
-                        ]
-                    );
-                }
-            }
+        if ($nv <= 11) {
+            return Subject::whereIn('subject_code', ['ENG', 'KIS', 'MAT', 'ISC', 'SST', 'PTS', 'AGR'])->get();
         }
+
+        return Subject::whereIn('subject_code', ['ENG', 'KIS', 'MAT', 'BIO', 'CHE', 'PHY', 'GEO', 'HIS', 'BUS', 'COM'])->get();
     }
-    
-    private function createWeeklyTestSchedules($exams, $classes, $subjects, $classrooms)
+
+    private function marksFor(?int $numericValue): array
     {
-        $weeklyTests = $exams->filter(function($exam) {
-            return strpos($exam->name, 'Weekly Test') !== false;
-        });
-        
-        foreach ($weeklyTests as $weeklyTest) {
-            foreach ($classes->random(min(2, $classes->count())) as $class) {
-                $subject = $subjects->random();
-                
-                ExamSchedule::firstOrCreate(
-                    [
-                        'exam_id' => $weeklyTest->exam_id,
-                        'class_id' => $class->class_id,
-                        'subject_id' => $subject->subject_id,
-                        'exam_date' => $weeklyTest->start_date,
-                    ],
-                    [
-                        'start_time' => '09:00:00',
-                        'end_time' => '09:45:00',
-                        'room_id' => $classrooms->random()->room_id,
-                        'max_marks' => 15,
-                        'passing_marks' => 6,
-                    ]
-                );
-            }
+        $nv = (int) $numericValue;
+        if ($nv <= 2) {
+            return [30, 10];
         }
-    }
-    
-    private function getMaxMarksForClass($className)
-    {
-        $classNumber = (int) filter_var($className, FILTER_SANITIZE_NUMBER_INT);
-        
-        if ($classNumber <= 2) {
-            return 50;
-        } elseif ($classNumber <= 5) {
-            return 80;
-        } else {
-            return 100;
+        if ($nv <= 8) {
+            return [60, 20];
         }
+        return [100, 33];
     }
-    
-    private function getPassingMarksForClass($className)
+
+    private function exam(string $name): ?Exam
     {
-        $maxMarks = $this->getMaxMarksForClass($className);
-        return round($maxMarks * 0.33); // 33% passing criteria
+        return Exam::where('name', $name)->first();
     }
 }

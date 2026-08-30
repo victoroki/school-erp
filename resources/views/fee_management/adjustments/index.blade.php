@@ -188,4 +188,29 @@
             @endif
         </div>
     </div>
+
+    @push('page_styles')
+    <style>
+        @media (max-width: 768px) {
+            .content-header .row { flex-direction: column; gap: 0.5rem; }
+            .content-header .col-sm-6 { width: 100%; }
+            .content-header .btn { width: 100%; justify-content: center; }
+
+            .row.g-3 > [class*="col-"] { flex: 0 0 50%; max-width: 50%; }
+            .row.g-3 > [class*="col-"] > div { padding: 0.75rem !important; }
+
+            .card-header form { flex-direction: column; gap: 0.5rem !important; width: 100%; }
+            .card-header form select,
+            .card-header form button { width: 100% !important; min-width: 0; }
+
+            .table th:nth-child(n+5),
+            .table td:nth-child(n+5) { display: none; }
+            .table { min-width: 0 !important; }
+        }
+
+        @media (max-width: 420px) {
+            .row.g-3 > [class*="col-"] { flex: 0 0 100%; max-width: 100%; }
+        }
+    </style>
+    @endpush
 @endsection

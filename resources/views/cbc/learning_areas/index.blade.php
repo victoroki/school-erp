@@ -13,6 +13,7 @@
                     </h6>
                 </div>
                 <div class="col-sm-5 text-right">
+                    @if($totalCount === 0)
                     <form action="{{ route('learning-areas.seed') }}" method="POST" class="d-inline"
                           onsubmit="return confirm('Load the official Kenyan CBE curriculum (learning areas, strands & sub-strands)? Existing areas are kept.')">
                         @csrf
@@ -20,6 +21,11 @@
                             <i class="fas fa-download mr-1"></i> Load Kenyan Curriculum
                         </button>
                     </form>
+                    @else
+                    <button type="button" class="btn btn-outline-success elevation-1 disabled" title="Curriculum already loaded ({{ $totalCount }} areas)" disabled>
+                        <i class="fas fa-check-circle mr-1"></i> Curriculum Loaded
+                    </button>
+                    @endif
                     <a class="btn btn-danger elevation-2 px-4" href="{{ route('learning-areas.create') }}">
                         <i class="fas fa-plus mr-1"></i> Add New Area
                     </a>

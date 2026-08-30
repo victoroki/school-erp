@@ -107,7 +107,56 @@ class FinanceService
                 'collected_by' => auth()->user()?->staff?->staff_id,
             ]);
 
+            // Allocate the full payment to the single assignment and post ledger entries.
+            app(\App\Services\LedgerService::class)->allocatePayment(
+                $payment,
+                [['id' => $assignment->id, 'amount' => (float) $data['amount']]],
+                $data['allocation_strategy'] ?? 'manual'
+            );
+
             $this->updateAssignmentPaymentStatus($assignment);
+
+            DB::commit();
+            return $payment;
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Record a payment against a student and split it across one or more
+     * assignments using the recommended (oldest-first by default) allocation.
+     * Used by the "pay total balance" flow.
+     */
+    public function recordTotalPayment(array $data, $assignments)
+    {
+        DB::beginTransaction();
+        try {
+            // Recommend allocation across the provided outstanding assignments.
+            $recommended = app(\App\Services\LedgerService::class)
+                ->recommendAllocation($assignments, (float) $data['amount'], $data['allocation_strategy'] ?? 'oldest_first');
+
+            if (empty($recommended)) {
+                throw new Exception('There is no outstanding balance to allocate this payment against.');
+            }
+
+            $payment = FeePayment::create([
+                'student_fee_assignment_id' => $recommended[0]['id'],
+                'amount' => (float) $data['amount'],
+                'payment_date' => $data['payment_date'] ?? now(),
+                'payment_method' => $data['payment_method'],
+                'transaction_id' => $data['transaction_id'] ?? null,
+                'receipt_number' => $this->generateReceiptNumber(),
+                'remarks' => ($data['remarks'] ?? null) . ' (Part of total payment)',
+                'collected_by' => auth()->user()?->staff?->staff_id,
+            ]);
+
+            app(\App\Services\LedgerService::class)->allocatePayment(
+                $payment,
+                $recommended,
+                $data['allocation_strategy'] ?? 'oldest_first'
+            );
 
             DB::commit();
             return $payment;

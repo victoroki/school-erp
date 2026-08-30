@@ -76,7 +76,7 @@ class MarksApprovalController extends Controller
             $genderQuery->where('exam_results.class_section_id', $request->class_section_id);
         }
 
-        $batches = $batchQuery->orderBy('oldest_entry')->get();
+        $batches = $batchQuery->orderBy('oldest_entry')->paginate(15)->appends($request->query());
         $genders = $genderQuery->get();
 
         $batches = $batches->map(function ($batch) use ($genders, $exams, $classSections) {

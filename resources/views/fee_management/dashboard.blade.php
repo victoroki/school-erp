@@ -197,6 +197,32 @@
 .summary-card:nth-child(3) { animation-delay: 100ms; }
 .summary-card:nth-child(4) { animation-delay: 150ms; }
 
+/* ── Mobile ── */
+@media (max-width: 768px) {
+    .fee-dash-wrap { padding: 1rem; }
+    .fee-heading { font-size: 1.25rem; }
+    .fee-sub { font-size: 0.8rem; }
+    .summary-card-value { font-size: 1.35rem; }
+    .summary-card { padding: 1.25rem; }
+    .summary-card-bg { font-size: 4rem; right: -10px; bottom: -10px; }
+    .section-label { margin-top: 1.25rem; }
+    .fee-panel-head { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .fee-panel-body { padding: 1rem; }
+    .fee-table thead th { padding: 0.6rem 0.75rem; font-size: 0.6rem; }
+    .fee-table tbody td { padding: 0.75rem; font-size: 0.8rem; }
+    .fee-class-icon { width: 32px; height: 32px; font-size: 0.65rem; }
+    .action-card-inner { padding: 1rem; }
+    .action-card-icon { width: 44px; height: 44px; font-size: 1rem; }
+    .action-card-title { font-size: 0.8rem; }
+}
+
+@media (max-width: 420px) {
+    .fee-heading { font-size: 1.1rem; }
+    .summary-card-value { font-size: 1.15rem; }
+    .summary-card-label { font-size: 0.6rem; }
+    .summary-card-footer { font-size: 0.65rem; flex-direction: column; gap: 0.35rem; align-items: flex-start; }
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
     .summary-card, .fee-panel, .action-card { animation: none; opacity: 1; transform: none; transition: none; }

@@ -145,19 +145,19 @@
                                         $entry = $schedule[$dayKey][$period->period_id] ?? null;
                                     @endphp
                                     @if($isBreak)
-                                        <td class="tt-cell tt-break">
+                                        <td class="tt-cell tt-break" data-period="{{ $period->name }}">
                                             <i class="fas fa-mug-hot"></i>
                                             <span>Break</span>
                                         </td>
                                     @elseif($entry)
-                                        <td class="tt-cell tt-lesson">
+                                        <td class="tt-cell tt-lesson" data-period="{{ $period->name }}">
                                             <div class="tt-subject">{{ $entry->subject->name }}</div>
                                             <div class="tt-teacher">{{ $entry->teacher ? trim(($entry->teacher->first_name ?? '') . ' ' . ($entry->teacher->last_name ?? '')) : 'TBA' }}</div>
                                             <div class="tt-room">Room {{ $entry->classroom->room_number }}</div>
                                             <a href="{{ route('timetables.edit', $entry->timetable_id) }}" class="tt-edit no-print" title="Edit lesson"><i class="fas fa-pen"></i></a>
                                         </td>
                                     @else
-                                        <td class="tt-cell tt-free"><span>Free</span></td>
+                                        <td class="tt-cell tt-free" data-period="{{ $period->name }}"><span>Free</span></td>
                                     @endif
                                 @endforeach
                             </tr>
@@ -271,8 +271,115 @@
     /* Print-only header */
     .print-header { display: none; }
 
-    @media (max-width: 768px) {
+    /* — Tablet — */
+    @media (max-width: 1024px) {
         .dash-wrap { padding: 1.25rem 1rem; }
+        .dash-heading { font-size: 1.35rem; }
+        .tt-table { min-width: 700px; }
+    }
+
+    /* — Mobile — */
+    @media (max-width: 768px) {
+        .dash-wrap { padding: 1rem 0.75rem; }
+
+        /* Header: stack vertically */
+        .dash-header { flex-direction: column; align-items: flex-start !important; gap: 0.75rem; }
+        .dash-header > div:last-child { width: 100%; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .dash-header .btn-dash { flex: 1; min-width: 0; justify-content: center; padding: 0.55rem 0.75rem; font-size: 0.78rem; margin-right: 0 !important; }
+        .dash-header .btn-dash i.mr-2 { margin-right: 5px !important; }
+        .dash-heading { font-size: 1.15rem; }
+        .dash-sub { font-size: 0.8rem; }
+
+        /* Filter panel */
+        .dash-panel .card-body { padding: 0.875rem !important; }
+        .form-row { gap: 0.5rem; }
+        .form-row .form-group { width: 100% !important; flex: 0 0 100% !important; max-width: 100% !important; margin-bottom: 0 !important; }
+        .filter-field { min-height: 40px; border-radius: 10px; padding: 0 10px; }
+        .filter-field > select { font-size: 0.8rem; height: 38px; }
+        .col-lg-3.d-flex { width: 100% !important; }
+        .col-lg-3.d-flex > div { width: 100%; display: flex; gap: 0.5rem; }
+        .col-lg-3.d-flex .btn-dash { flex: 1; justify-content: center; }
+
+        /* Stats strip */
+        .stats-strip { gap: 0.35rem 0; }
+        .stat-chip { padding: 0.35rem 0.75rem; font-size: 0.75rem; }
+        .v-divider { margin: 0 0.5rem; height: 16px; }
+
+        /* Table: transform to card layout */
+        .card { border-radius: 12px !important; }
+        .table-responsive { border: 0; padding: 0; }
+
+        .tt-table { min-width: 0 !important; width: 100% !important; }
+
+        /* Hide thead completely */
+        .tt-table thead { display: none !important; }
+
+        /* Each row becomes a day card */
+        .tt-table tbody tr {
+            display: flex; flex-direction: column;
+            background: #fff; border: 1px solid var(--border);
+            border-radius: 12px; margin-bottom: 0.625rem;
+            overflow: hidden;
+        }
+
+        /* Day column becomes the card header */
+        .tt-day-col {
+            display: flex !important; align-items: center; justify-content: space-between;
+            width: 100% !important; padding: 0.75rem 1rem !important;
+            background: var(--indigo-light) !important;
+            border-right: none !important;
+            border-bottom: 1px solid var(--border);
+        }
+        .tt-day-count { display: none; }
+
+        /* Each period cell becomes a row inside the card */
+        .tt-cell {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.75rem;
+            width: 100% !important;
+            height: auto !important;
+            padding: 0.625rem 1rem !important;
+            border: 0 !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            text-align: left !important;
+            border-radius: 0 !important;
+            position: relative;
+        }
+        .tt-cell:last-child { border-bottom: none !important; }
+
+        /* Period label via data attribute */
+        .tt-cell::before {
+            content: attr(data-period);
+            flex-shrink: 0;
+            width: 70px;
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: var(--indigo);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .tt-cell > *:first-child { font-size: 0.85rem; font-weight: 700; }
+        .tt-subject { font-size: 0.85rem !important; }
+        .tt-teacher { font-size: 0.72rem !important; }
+        .tt-room { font-size: 0.66rem !important; }
+
+        .tt-edit { opacity: 1; position: static; margin-left: auto; flex-shrink: 0; width: 28px; height: 28px; font-size: 0.7rem; }
+
+        .tt-break { background: #fef9c3 !important; color: #92400e !important; }
+        .tt-break i { display: inline; margin-right: 6px; margin-bottom: 0; font-size: 0.8rem; }
+        .tt-break span { font-size: 0.75rem; }
+
+        .tt-free span { font-size: 0.75rem; }
+    }
+
+    @media (max-width: 420px) {
+        .dash-heading { font-size: 1rem; }
+        .stat-chip { padding: 0.3rem 0.6rem; font-size: 0.7rem; }
+        .tt-day-col { padding: 0.625rem 0.75rem !important; font-size: 0.85rem; }
+        .tt-cell { padding: 0.5rem 0.75rem !important; gap: 0.5rem; }
+        .tt-cell::before { width: 60px; font-size: 0.6rem; }
     }
 
     /* - PRINT - */

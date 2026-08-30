@@ -82,7 +82,6 @@ class LeaveApplicationController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'required|string|min:10',
             'relief_staff_id' => 'nullable|exists:staff,staff_id',
-            'supporting_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'supporting_document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 

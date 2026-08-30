@@ -495,7 +495,7 @@ class Student extends Model
     public function getFeeSummaryAttribute()
     {
         $totalAssigned = $this->feeAssignments()->where('status', 'active')->sum('final_amount');
-        $totalPaid = $this->payments()->sum('amount');
+        $totalPaid = $this->payments()->sum('fee_payments.amount');
 
         return [
             'total_assigned' => $totalAssigned,

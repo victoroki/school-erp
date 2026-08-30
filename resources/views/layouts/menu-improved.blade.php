@@ -24,12 +24,6 @@
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('permissions.index') }}" class="nav-link {{ Request::is('permissions*') ? 'active' : '' }}">
-                <i class="far fa-circle nav-icon text-success"></i>
-                <p>Permissions</p>
-            </a>
-        </li>
-        <li class="nav-item">
             <a href="{{ route('user-roles.index') }}" class="nav-link {{ Request::is('user-roles*') ? 'active' : '' }}">
                 <i class="far fa-circle nav-icon text-success"></i>
                 <p>User Roles</p>

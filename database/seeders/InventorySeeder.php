@@ -12,103 +12,90 @@ class InventorySeeder extends Seeder
 {
     public function run()
     {
-        // 1. Create Suppliers first
+        // 1. Kenyan suppliers
         $suppliers = [
-            ['name' => 'Office Supplies Inc', 'contact_person' => 'John Smith', 'email' => 'john@officesupplies.com', 'phone' => '+1234567890', 'address' => '123 Business St, NY'],
-            ['name' => 'Tech Equipment Co', 'contact_person' => 'Sarah Johnson', 'email' => 'sarah@techequip.com', 'phone' => '+1234567891', 'address' => '456 Tech Ave, CA'],
-            ['name' => 'School Furniture Ltd', 'contact_person' => 'Mike Brown', 'email' => 'mike@schoolfurn.com', 'phone' => '+1234567892', 'address' => '789 Furniture Rd, TX'],
-            ['name' => 'Lab Supplies Pro', 'contact_person' => 'Emily Davis', 'email' => 'emily@labsupplies.com', 'phone' => '+1234567893', 'address' => '321 Science Blvd, MA'],
-            ['name' => 'Sports & PE Suppliers', 'contact_person' => 'David Wilson', 'email' => 'david@sportssuppliers.com', 'phone' => '+1234567894', 'address' => '654 Athletic Way, FL']
+            ['name' => 'Jua Kali Stationers Ltd', 'contact_person' => 'Grace Wanjiru', 'email' => 'sales@juakalistationers.co.ke', 'phone' => '0722123001', 'address' => 'River Road, Nairobi', 'code' => 'SUP-001'],
+            ['name' => 'Nairobi Lab & School Equipment', 'contact_person' => 'Peter Otieno', 'email' => 'info@nairobi-lab.co.ke', 'phone' => '0722123002', 'address' => 'Re-insurance Plaza, Nairobi', 'code' => 'SUP-002'],
+            ['name' => 'CG Plaza Book Suppliers', 'contact_person' => 'Mary Achieng', 'email' => 'orders@cgplaza.co.ke', 'phone' => '0722123003', 'address' => 'Moi Avenue, Nakuru', 'code' => 'SUP-003'],
+            ['name' => 'Cussons East Africa', 'contact_person' => 'Brian Wekesa', 'email' => 'procurement@cussons.co.ke', 'phone' => '0722123004', 'address' => 'Industrial Area, Nairobi', 'code' => 'SUP-004'],
+            ['name' => 'Kenya School Furniture Ltd', 'contact_person' => 'Esther Njeri', 'email' => 'sales@kenyafurniture.co.ke', 'phone' => '0722123005', 'address' => 'Thika Road, Nairobi', 'code' => 'SUP-005'],
+            ['name' => 'Homegrown Catering Supplies', 'contact_person' => 'Samuel Kamau', 'email' => 'supply@homegrown.co.ke', 'phone' => '0722123006', 'address' => 'Naivasha Road, Nakuru', 'code' => 'SUP-006'],
         ];
 
         foreach ($suppliers as $supplier) {
-            Supplier::firstOrCreate(['name' => $supplier['name']], $supplier);
+            Supplier::firstOrCreate(['code' => $supplier['code']], $supplier);
         }
 
-        // 2. Create Inventory Categories
+        // 2. Inventory categories
         $categories = [
-            ['name' => 'Electronics', 'description' => 'Electronic devices and equipment for classrooms'],
-            ['name' => 'Furniture', 'description' => 'School furniture including desks, chairs, and cabinets'],
-            ['name' => 'Stationery', 'description' => 'Office and classroom stationery supplies'],
-            ['name' => 'Lab Equipment', 'description' => 'Science laboratory equipment and consumables'],
-            ['name' => 'Sports Equipment', 'description' => 'Physical education and sports equipment'],
-            ['name' => 'Cleaning Supplies', 'description' => 'Cleaning and sanitation products'],
-            ['name' => 'Kitchen Supplies', 'description' => 'Cafeteria and kitchen equipment']
+            ['name' => 'Electronics & ICT', 'description' => 'Computers, projectors and digital learning equipment', 'code' => 'CAT-ELEC', 'category_type' => 'asset'],
+            ['name' => 'Furniture', 'description' => 'Desks, chairs, cabinets and classroom furniture', 'code' => 'CAT-FURN', 'category_type' => 'asset'],
+            ['name' => 'Stationery', 'description' => 'Office and classroom stationery', 'code' => 'CAT-STTN', 'category_type' => 'consumable'],
+            ['name' => 'Lab Equipment', 'description' => 'Science laboratory equipment and consumables', 'code' => 'CAT-LAB', 'category_type' => 'asset'],
+            ['name' => 'Sports Equipment', 'description' => 'Physical education and sports gear', 'code' => 'CAT-SPORT', 'category_type' => 'asset'],
+            ['name' => 'Cleaning Supplies', 'description' => 'Cleaning and sanitation products', 'code' => 'CAT-CLEAN', 'category_type' => 'consumable'],
+            ['name' => 'Kitchen Supplies', 'description' => 'Boarding kitchen and catering equipment', 'code' => 'CAT-KITCH', 'category_type' => 'consumable'],
         ];
 
         foreach ($categories as $category) {
             InventoryCategory::firstOrCreate(['name' => $category['name']], $category);
         }
 
-        // 3. Create Inventory Items
+        // 3. Inventory items (KES)
+        $items = [
+            ['name' => 'Projector - Epson EB-X41', 'category' => 'Electronics & ICT', 'quantity' => 15, 'unit' => 'pcs', 'minimum_quantity' => 5, 'cost_per_unit' => 65000, 'location' => 'ICT Store', 'description' => 'XGA 3LCD classroom projector', 'item_code' => 'ITM-0001'],
+            ['name' => 'Student Laptop - Acer', 'category' => 'Electronics & ICT', 'quantity' => 25, 'unit' => 'pcs', 'minimum_quantity' => 8, 'cost_per_unit' => 58000, 'location' => 'ICT Lab', 'description' => 'Laptops for the computer laboratory', 'item_code' => 'ITM-0002'],
+            ['name' => 'Interactive Smart Board', 'category' => 'Electronics & ICT', 'quantity' => 10, 'unit' => 'pcs', 'minimum_quantity' => 3, 'cost_per_unit' => 180000, 'location' => 'ICT Store', 'description' => 'Smart boards for CBC digital learning', 'item_code' => 'ITM-0003'],
+            ['name' => 'Laser Printer - HP', 'category' => 'Electronics & ICT', 'quantity' => 12, 'unit' => 'pcs', 'minimum_quantity' => 4, 'cost_per_unit' => 42000, 'location' => 'Admin Office', 'description' => 'Laser printers for school offices', 'item_code' => 'ITM-0004'],
+            ['name' => 'Student Desk', 'category' => 'Furniture', 'quantity' => 180, 'unit' => 'pcs', 'minimum_quantity' => 50, 'cost_per_unit' => 8500, 'location' => 'Warehouse', 'description' => 'Individual CBC student desks', 'item_code' => 'ITM-0005'],
+            ['name' => 'Student Chair', 'category' => 'Furniture', 'quantity' => 180, 'unit' => 'pcs', 'minimum_quantity' => 50, 'cost_per_unit' => 4500, 'location' => 'Warehouse', 'description' => 'Ergonomic student chairs', 'item_code' => 'ITM-0006'],
+            ['name' => 'Teacher Desk', 'category' => 'Furniture', 'quantity' => 30, 'unit' => 'pcs', 'minimum_quantity' => 10, 'cost_per_unit' => 19500, 'location' => 'Warehouse', 'description' => 'Teacher office desks', 'item_code' => 'ITM-0007'],
+            ['name' => 'Filing Cabinet', 'category' => 'Furniture', 'quantity' => 24, 'unit' => 'pcs', 'minimum_quantity' => 6, 'cost_per_unit' => 15000, 'location' => 'Warehouse', 'description' => '4-drawer filing cabinets', 'item_code' => 'ITM-0008'],
+            ['name' => 'Whiteboard Markers (box)', 'category' => 'Stationery', 'quantity' => 200, 'unit' => 'boxes', 'minimum_quantity' => 50, 'cost_per_unit' => 350, 'location' => 'Stationery Room', 'description' => 'Assorted dry-erase markers', 'item_code' => 'ITM-0009'],
+            ['name' => 'A4 Printing Paper (ream)', 'category' => 'Stationery', 'quantity' => 120, 'unit' => 'reams', 'minimum_quantity' => 30, 'cost_per_unit' => 550, 'location' => 'Stationery Room', 'description' => 'White A4 paper, 500 sheets', 'item_code' => 'ITM-0010'],
+            ['name' => 'Exercise Books A5', 'category' => 'Stationery', 'quantity' => 600, 'unit' => 'pcs', 'minimum_quantity' => 150, 'cost_per_unit' => 85, 'location' => 'Stationery Room', 'description' => 'Ruled exercise books for learners', 'item_code' => 'ITM-0011'],
+            ['name' => 'Compound Microscope', 'category' => 'Lab Equipment', 'quantity' => 20, 'unit' => 'pcs', 'minimum_quantity' => 6, 'cost_per_unit' => 48000, 'location' => 'Science Lab', 'description' => 'Binocular compound microscopes', 'item_code' => 'ITM-0012'],
+            ['name' => 'Beaker Set', 'category' => 'Lab Equipment', 'quantity' => 50, 'unit' => 'sets', 'minimum_quantity' => 12, 'cost_per_unit' => 2500, 'location' => 'Science Lab', 'description' => 'Glass beaker sets (50-1000ml)', 'item_code' => 'ITM-0013'],
+            ['name' => 'Bunsen Burner', 'category' => 'Lab Equipment', 'quantity' => 25, 'unit' => 'pcs', 'minimum_quantity' => 8, 'cost_per_unit' => 3200, 'location' => 'Science Lab', 'description' => 'Gas burners for practical work', 'item_code' => 'ITM-0014'],
+            ['name' => 'Safety Goggles', 'category' => 'Lab Equipment', 'quantity' => 100, 'unit' => 'pcs', 'minimum_quantity' => 25, 'cost_per_unit' => 450, 'location' => 'Science Lab', 'description' => 'Chemical splash protection', 'item_code' => 'ITM-0015'],
+            ['name' => 'Basketball', 'category' => 'Sports Equipment', 'quantity' => 30, 'unit' => 'pcs', 'minimum_quantity' => 10, 'cost_per_unit' => 3200, 'location' => 'Sports Store', 'description' => 'Official size basketballs', 'item_code' => 'ITM-0016'],
+            ['name' => 'Football (Size 5)', 'category' => 'Sports Equipment', 'quantity' => 28, 'unit' => 'pcs', 'minimum_quantity' => 10, 'cost_per_unit' => 2800, 'location' => 'Sports Store', 'description' => 'Match footballs', 'item_code' => 'ITM-0017'],
+            ['name' => 'Volleyball', 'category' => 'Sports Equipment', 'quantity' => 20, 'unit' => 'pcs', 'minimum_quantity' => 8, 'cost_per_unit' => 2400, 'location' => 'Sports Store', 'description' => 'Official volleyballs', 'item_code' => 'ITM-0018'],
+            ['name' => 'Disinfectant (500ml)', 'category' => 'Cleaning Supplies', 'quantity' => 80, 'unit' => 'bottles', 'minimum_quantity' => 20, 'cost_per_unit' => 380, 'location' => 'Janitorial Store', 'description' => 'Disinfectant concentrate', 'item_code' => 'ITM-0019'],
+            ['name' => 'Mop & Bucket Set', 'category' => 'Cleaning Supplies', 'quantity' => 20, 'unit' => 'sets', 'minimum_quantity' => 6, 'cost_per_unit' => 1200, 'location' => 'Janitorial Store', 'description' => 'Cleaning sets for dormitories', 'item_code' => 'ITM-0020'],
+            ['name' => 'Liquid Hand Soap (5L)', 'category' => 'Cleaning Supplies', 'quantity' => 100, 'unit' => 'bottles', 'minimum_quantity' => 25, 'cost_per_unit' => 650, 'location' => 'Janitorial Store', 'description' => 'Hand-washing soap for washrooms', 'item_code' => 'ITM-0021'],
+            ['name' => 'Ceramic Dinner Plates', 'category' => 'Kitchen Supplies', 'quantity' => 250, 'unit' => 'pcs', 'minimum_quantity' => 60, 'cost_per_unit' => 350, 'location' => 'Kitchen Store', 'description' => 'Dining plates for boarders', 'item_code' => 'ITM-0022'],
+            ['name' => 'Cutlery Set', 'category' => 'Kitchen Supplies', 'quantity' => 150, 'unit' => 'sets', 'minimum_quantity' => 40, 'cost_per_unit' => 800, 'location' => 'Kitchen Store', 'description' => 'Fork, knife and spoon sets', 'item_code' => 'ITM-0023'],
+            ['name' => 'Cookware Pots (Assorted)', 'category' => 'Kitchen Supplies', 'quantity' => 40, 'unit' => 'sets', 'minimum_quantity' => 10, 'cost_per_unit' => 5200, 'location' => 'Kitchen Store', 'description' => 'Cooking pots for the boarding kitchen', 'item_code' => 'ITM-0024'],
+        ];
+
         $cats = InventoryCategory::all();
         $sups = Supplier::all();
 
-        $items = [
-            // Electronics
-            ['name' => 'Projector - Epson EB-X41', 'category' => 'Electronics', 'quantity' => 15, 'unit' => 'pcs', 'minimum_quantity' => 5, 'cost_per_unit' => 450.00, 'location' => 'Storage Room A', 'description' => 'XGA 3LCD projector for classrooms'],
-            ['name' => 'Laptop - Dell Latitude 3520', 'category' => 'Electronics', 'quantity' => 25, 'unit' => 'pcs', 'minimum_quantity' => 10, 'cost_per_unit' => 650.00, 'location' => 'IT Department', 'description' => 'Student laptops for computer lab'],
-            ['name' => 'Interactive Whiteboard', 'category' => 'Electronics', 'quantity' => 8, 'unit' => 'pcs', 'minimum_quantity' => 3, 'cost_per_unit' => 1200.00, 'location' => 'Storage Room A', 'description' => 'Smart boards for interactive learning'],
-            ['name' => 'Document Camera', 'category' => 'Electronics', 'quantity' => 12, 'unit' => 'pcs', 'minimum_quantity' => 5, 'cost_per_unit' => 280.00, 'location' => 'AV Room', 'description' => 'Digital document cameras'],
-            ['name' => 'Printer - HP LaserJet', 'category' => 'Electronics', 'quantity' => 10, 'unit' => 'pcs', 'minimum_quantity' => 4, 'cost_per_unit' => 320.00, 'location' => 'Admin Office', 'description' => 'Laser printers for offices'],
-
-            // Furniture
-            ['name' => 'Student Desk', 'category' => 'Furniture', 'quantity' => 150, 'unit' => 'pcs', 'minimum_quantity' => 50, 'cost_per_unit' => 85.00, 'location' => 'Warehouse B', 'description' => 'Individual student desks'],
-            ['name' => 'Student Chair', 'category' => 'Furniture', 'quantity' => 150, 'unit' => 'pcs', 'minimum_quantity' => 50, 'cost_per_unit' => 45.00, 'location' => 'Warehouse B', 'description' => 'Ergonomic student chairs'],
-            ['name' => 'Teacher Desk', 'category' => 'Furniture', 'quantity' => 25, 'unit' => 'pcs', 'minimum_quantity' => 10, 'cost_per_unit' => 195.00, 'location' => 'Warehouse B', 'description' => 'Office desk for teachers'],
-            ['name' => 'Filing Cabinet', 'category' => 'Furniture', 'quantity' => 20, 'unit' => 'pcs', 'minimum_quantity' => 5, 'cost_per_unit' => 150.00, 'location' => 'Warehouse B', 'description' => '4-drawer filing cabinets'],
-            ['name' => 'Bookshelf', 'category' => 'Furniture', 'quantity' => 30, 'unit' => 'pcs', 'minimum_quantity' => 10, 'cost_per_unit' => 120.00, 'location' => 'Warehouse B', 'description' => 'Library and classroom bookshelves'],
-
-            // Stationery
-            ['name' => 'Whiteboard Markers', 'category' => 'Stationery', 'quantity' => 200, 'unit' => 'boxes', 'minimum_quantity' => 50, 'cost_per_unit' => 8.50, 'location' => 'Stationery Room', 'description' => 'Assorted color markers - 12 per box'],
-            ['name' => 'A4 Paper Reams', 'category' => 'Stationery', 'quantity' => 100, 'unit' => 'reams', 'minimum_quantity' => 30, 'cost_per_unit' => 4.50, 'location' => 'Stationery Room', 'description' => 'White A4 printing paper - 500 sheets per ream'],
-            ['name' => 'Pencils', 'category' => 'Stationery', 'quantity' => 500, 'unit' => 'boxes', 'minimum_quantity' => 100, 'cost_per_unit' => 3.00, 'location' => 'Stationery Room', 'description' => 'HB pencils - 12 per box'],
-            ['name' => 'Notebooks - A5', 'category' => 'Stationery', 'quantity' => 300, 'unit' => 'pcs', 'minimum_quantity' => 100, 'cost_per_unit' => 1.50, 'location' => 'Stationery Room', 'description' => '100-page ruled notebooks'],
-            ['name' => 'Correction Fluid', 'category' => 'Stationery', 'quantity' => 80, 'unit' => 'bottles', 'minimum_quantity' => 20, 'cost_per_unit' => 1.20, 'location' => 'Stationery Room', 'description' => 'White correction fluid'],
-
-            // Lab Equipment
-            ['name' => 'Microscope - Compound', 'category' => 'Lab Equipment', 'quantity' => 20, 'unit' => 'pcs', 'minimum_quantity' => 8, 'cost_per_unit' => 580.00, 'location' => 'Science Lab', 'description' => 'Binocular compound microscopes'],
-            ['name' => 'Beaker Set', 'category' => 'Lab Equipment', 'quantity' => 50, 'unit' => 'sets', 'minimum_quantity' => 15, 'cost_per_unit' => 25.00, 'location' => 'Science Lab', 'description' => 'Glass beaker sets (50ml-1000ml)'],
-            ['name' => 'Test Tubes', 'category' => 'Lab Equipment', 'quantity' => 500, 'unit' => 'pcs', 'minimum_quantity' => 100, 'cost_per_unit' => 0.50, 'location' => 'Science Lab', 'description' => 'Borosilicate glass test tubes'],
-            ['name' => 'Safety Goggles', 'category' => 'Lab Equipment', 'quantity' => 100, 'unit' => 'pcs', 'minimum_quantity' => 30, 'cost_per_unit' => 5.00, 'location' => 'Science Lab', 'description' => 'Chemical splash safety goggles'],
-            ['name' => 'Bunsen Burner', 'category' => 'Lab Equipment', 'quantity' => 25, 'unit' => 'pcs', 'minimum_quantity' => 10, 'cost_per_unit' => 35.00, 'location' => 'Science Lab', 'description' => 'Gas bunsen burners'],
-
-            // Sports Equipment
-            ['name' => 'Basketball', 'category' => 'Sports Equipment', 'quantity' => 30, 'unit' => 'pcs', 'minimum_quantity' => 15, 'cost_per_unit' => 25.00, 'location' => 'Sports Storage', 'description' => 'Official size basketballs'],
-            ['name' => 'Football (Soccer)', 'category' => 'Sports Equipment', 'quantity' => 25, 'unit' => 'pcs', 'minimum_quantity' => 12, 'cost_per_unit' => 20.00, 'location' => 'Sports Storage', 'description' => 'Size 5 soccer balls'],
-            ['name' => 'Volleyball', 'category' => 'Sports Equipment', 'quantity' => 20, 'unit' => 'pcs', 'minimum_quantity' => 10, 'cost_per_unit' => 18.00, 'location' => 'Sports Storage', 'description' => 'Official volleyball balls'],
-            ['name' => 'Table Tennis Table', 'category' => 'Sports Equipment', 'quantity' => 5, 'unit' => 'pcs', 'minimum_quantity' => 2, 'cost_per_unit' => 450.00, 'location' => 'Sports Hall', 'description' => 'Competition table tennis tables'],
-            ['name' => 'Yoga Mats', 'category' => 'Sports Equipment', 'quantity' => 40, 'unit' => 'pcs', 'minimum_quantity' => 15, 'cost_per_unit' => 12.00, 'location' => 'Sports Storage', 'description' => 'Non-slip yoga/exercise mats'],
-
-            // Cleaning Supplies
-            ['name' => 'Disinfectant Spray', 'category' => 'Cleaning Supplies', 'quantity' => 60, 'unit' => 'bottles', 'minimum_quantity' => 20, 'cost_per_unit' => 6.50, 'location' => 'Janitorial Room', 'description' => '500ml disinfectant spray bottles'],
-            ['name' => 'Mop and Bucket Set', 'category' => 'Cleaning Supplies', 'quantity' => 15, 'unit' => 'sets', 'minimum_quantity' => 5, 'cost_per_unit' => 28.00, 'location' => 'Janitorial Room', 'description' => 'Complete mop and bucket cleaning sets'],
-            ['name' => 'Toilet Paper - Industrial', 'category' => 'Cleaning Supplies', 'quantity' => 200, 'unit' => 'rolls', 'minimum_quantity' => 50, 'cost_per_unit' => 1.20, 'location' => 'Janitorial Room', 'description' => 'Large roll toilet paper'],
-            ['name' => 'Hand Soap', 'category' => 'Cleaning Supplies', 'quantity' => 80, 'unit' => 'bottles', 'minimum_quantity' => 25, 'cost_per_unit' => 4.00, 'location' => 'Janitorial Room', 'description' => 'Liquid hand soap dispenser refills'],
-
-            // Kitchen Supplies
-            ['name' => 'Plates - Ceramic', 'category' => 'Kitchen Supplies', 'quantity' => 200, 'unit' => 'pcs', 'minimum_quantity' => 50, 'cost_per_unit' => 3.50, 'location' => 'Cafeteria Storage', 'description' => 'Durable ceramic dinner plates'],
-            ['name' => 'Cutlery Set', 'category' => 'Kitchen Supplies', 'quantity' => 100, 'unit' => 'sets', 'minimum_quantity' => 30, 'cost_per_unit' => 8.00, 'location' => ' Cafeteria Storage', 'description' => 'Fork, knife, spoon sets'],
-            ['name' => 'Food Storage Containers', 'category' => 'Kitchen Supplies', 'quantity' => 50, 'unit' => 'sets', 'minimum_quantity' => 15, 'cost_per_unit' => 15.00, 'location' => 'Cafeteria Storage', 'description' => 'Various size plastic containers'],
-        ];
-
         foreach ($items as $itemData) {
             $category = $cats->firstWhere('name', $itemData['category']);
-            $supplier = $sups->random(); // Randomly assign supplier
+            if (!$category) {
+                continue;
+            }
 
-            if ($category) {
-                InventoryItem::create([
+            $supplier = $sups->random();
+
+            InventoryItem::firstOrCreate(
+                ['item_code' => $itemData['item_code']],
+                [
                     'name' => $itemData['name'],
-                    'category_id' => $category->id,
+                    'category_id' => $category->category_id,
                     'quantity' => $itemData['quantity'],
                     'unit' => $itemData['unit'],
                     'minimum_quantity' => $itemData['minimum_quantity'],
                     'cost_per_unit' => $itemData['cost_per_unit'],
-                    'supplier_id' => $supplier->id,
+                    'supplier_id' => $supplier->supplier_id,
                     'location' => $itemData['location'],
-                    'description' => $itemData['description']
-                ]);
-            }
+                    'description' => $itemData['description'],
+                    'purchase_date' => Carbon::now()->subMonths(4),
+                    'current_condition' => 'Good',
+                ]
+            );
         }
     }
 }

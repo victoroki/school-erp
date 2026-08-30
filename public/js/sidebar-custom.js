@@ -85,35 +85,60 @@
 
         // Setup search functionality
         setupSearch: function() {
-            const searchInput = document.querySelector('.form-control-sidebar');
-            
+            // Our input uses .search-input (not AdminLTE's .form-control-sidebar)
+            const searchInput = document.querySelector('.search-input');
+
             if (!searchInput) return;
+
+            // Track which items were auto-opened by search so we can collapse them on clear
+            const autoOpenedItems = new Set();
 
             searchInput.addEventListener('input', function(e) {
                 const searchTerm = e.target.value.toLowerCase().trim();
                 const navItems = document.querySelectorAll('.nav-sidebar > .nav-item');
-                
+
+                if (searchTerm === '') {
+                    // Reset: show everything, collapse what search opened
+                    navItems.forEach(item => {
+                        item.style.display = '';
+                    });
+                    autoOpenedItems.forEach(item => {
+                        item.classList.remove('menu-open');
+                        const sub = item.querySelector('.nav-treeview');
+                        if (sub) sub.style.display = '';
+                    });
+                    autoOpenedItems.clear();
+                    return;
+                }
+
                 navItems.forEach(item => {
-                    const link = item.querySelector('.nav-link');
-                    const text = link ? link.textContent.toLowerCase() : '';
+                    // Skip section headers — they have no .nav-link
+                    if (item.classList.contains('nav-header') || !item.querySelector('.nav-link')) {
+                        item.style.display = '';
+                        return;
+                    }
+
+                    const parentLink = item.querySelector(':scope > .nav-link');
+                    const parentText = parentLink ? parentLink.textContent.toLowerCase() : '';
                     const childLinks = item.querySelectorAll('.nav-treeview .nav-link');
-                    
-                    let hasMatch = text.includes(searchTerm);
-                    
-                    // Check child items
+
+                    let hasChildMatch = false;
+
                     childLinks.forEach(childLink => {
                         const childText = childLink.textContent.toLowerCase();
                         if (childText.includes(searchTerm)) {
-                            hasMatch = true;
+                            hasChildMatch = true;
                         }
                     });
-                    
-                    // Show/hide item
-                    if (searchTerm === '' || hasMatch) {
+
+                    const hasMatch = parentText.includes(searchTerm) || hasChildMatch;
+
+                    if (hasMatch) {
                         item.style.display = '';
-                        // Expand parent if child matches
-                        if (hasMatch && searchTerm !== '') {
+                        // Auto-expand parents whose children match
+                        if (hasChildMatch && !item.classList.contains('menu-open')) {
                             item.classList.add('menu-open');
+                            autoOpenedItems.add(item);
                         }
                     } else {
                         item.style.display = 'none';
@@ -121,11 +146,12 @@
                 });
             });
 
-            // Clear search on escape
+            // Clear search on Escape
             searchInput.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') {
                     e.target.value = '';
                     e.target.dispatchEvent(new Event('input'));
+                    e.target.blur();
                 }
             });
         },

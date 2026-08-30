@@ -32,7 +32,7 @@
                             <div class="card-body">
                                 <div class="form-group">
                                     <label>Leave Type <span class="text-danger">*</span></label>
-                                    <select name="leave_type_id" class="form-control @error('leave_type_id') is-invalid @enderror" required>
+                                    <select name="leave_type_id" class="form-control select2 @error('leave_type_id') is-invalid @enderror" required style="width: 100%;">
                                         <option value="">Select Leave Type</option>
                                         @foreach($leaveTypes as $type)
                                             <option value="{{ $type->leave_type_id }}" {{ old('leave_type_id') == $type->leave_type_id ? 'selected' : '' }}>
@@ -79,7 +79,7 @@
 
                                 <div class="form-group">
                                     <label>Relief/Substitute Staff (Optional)</label>
-                                    <select name="relief_staff_id" class="form-control">
+                                    <select name="relief_staff_id" class="form-control select2" style="width: 100%;">
                                         <option value="">Select Relief Staff</option>
                                         @foreach($reliefStaff as $staff)
                                             <option value="{{ $staff->staff_id }}" {{ old('relief_staff_id') == $staff->staff_id ? 'selected' : '' }}>
@@ -166,3 +166,16 @@
         </div>
     </section>
 @endsection
+
+@push('page_scripts')
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            placeholder: 'Select an option',
+            allowClear: true
+        });
+    });
+</script>
+@endpush

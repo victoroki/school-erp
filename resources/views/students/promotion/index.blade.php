@@ -142,13 +142,15 @@
 @push('page_scripts')
 <script>
     $(function() {
-        $('#checkAll, #selectAll').click(function() {
-            $('.student-checkbox').prop('checked', true);
-            $('#checkAll').prop('checked', true);
-        });
-
         $('#checkAll').change(function() {
             $('.student-checkbox').prop('checked', $(this).is(':checked'));
+        });
+
+        $('#selectAll').click(function(e) {
+            e.preventDefault();
+            var allChecked = $('.student-checkbox').length === $('.student-checkbox:checked').length;
+            $('.student-checkbox').prop('checked', !allChecked);
+            $('#checkAll').prop('checked', !allChecked);
         });
     });
 </script>

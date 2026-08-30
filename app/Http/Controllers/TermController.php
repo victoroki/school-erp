@@ -20,10 +20,13 @@ class TermController extends AppBaseController
 
     public function index(Request $request)
     {
+        $currentYear = AcademicYear::where('is_current', true)->first();
+        $selectedYearId = $request->get('academic_year_id') ?: ($currentYear?->academic_year_id);
+
         $query = Term::with('academicYear')->orderBy('display_order')->orderBy('start_date');
 
-        if ($request->filled('academic_year_id')) {
-            $query->where('academic_year_id', $request->academic_year_id);
+        if ($selectedYearId) {
+            $query->where('academic_year_id', $selectedYearId);
         }
 
         if ($request->filled('status')) {
@@ -33,7 +36,7 @@ class TermController extends AppBaseController
         $terms = $query->paginate(20);
         $academicYears = AcademicYear::orderBy('start_date', 'desc')->pluck('name', 'academic_year_id');
 
-        return view('fee_management.terms.index', compact('terms', 'academicYears'));
+        return view('fee_management.terms.index', compact('terms', 'academicYears', 'selectedYearId'));
     }
 
     public function create()

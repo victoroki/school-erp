@@ -108,7 +108,15 @@ class FeeManagementController extends Controller
             'studentClassEnrollments.classSection.schoolClass'
         ])->findOrFail($id);
 
-        return view('fee_management.show', compact('student'));
+        $ledgerService = app(\App\Services\LedgerService::class);
+
+        // Bootstrap a ledger for students whose fees predate the ledger system.
+        $ledgerService->seedOpeningBalance($id);
+
+        // Load the chronological statement with running balance.
+        $statement = $ledgerService->getStudentStatement($id);
+
+        return view('fee_management.show', compact('student', 'statement'));
     }
 
     public function collectPayment($id)
@@ -134,28 +142,14 @@ class FeeManagementController extends Controller
                       ->whereRaw('COALESCE(paid_amount, 0) < final_amount');
                 }])->findOrFail($id);
 
-                $remainingAmount = $request->amount;
-
-                foreach ($student->feeAssignments as $feeAssignment) {
-                    if ($remainingAmount <= 0) break;
-
-                    $balance = $feeAssignment->balance;
-
-                    if ($balance > 0) {
-                        $paymentAmount = min($remainingAmount, $balance);
-
-                        $this->financeService->recordPayment([
-                            'student_fee_assignment_id' => $feeAssignment->id,
-                            'amount' => $paymentAmount,
-                            'payment_date' => $request->payment_date,
-                            'payment_method' => $request->payment_method,
-                            'transaction_id' => $request->transaction_id,
-                            'remarks' => $request->remarks . ' (Part of total payment)',
-                        ]);
-
-                        $remainingAmount -= $paymentAmount;
-                    }
-                }
+                $this->financeService->recordTotalPayment([
+                    'amount' => $request->amount,
+                    'payment_date' => $request->payment_date,
+                    'payment_method' => $request->payment_method,
+                    'transaction_id' => $request->transaction_id,
+                    'remarks' => $request->remarks,
+                    'allocation_strategy' => $request->allocation_strategy ?? 'oldest_first',
+                ], $student->feeAssignments);
 
                 AuditTrail::log('Fees', 'RECORD PAYMENT', $id, null, [
                     'student_id' => $id,
@@ -183,6 +177,45 @@ class FeeManagementController extends Controller
         }
 
         return redirect()->route('fee-management.show', $id);
+    }
+
+    public function reverseForm($payment)
+    {
+        $payment = \App\Models\FeePayment::with(['studentFeeAssignment.student', 'studentFeeAssignment.feeStructure.category'])->findOrFail($payment);
+        return view('fee_management.reverse_payment', compact('payment'));
+    }
+
+    public function reversePayment(Request $request, $payment)
+    {
+        $payment = \App\Models\FeePayment::find($payment);
+
+        if (!$payment) {
+            Flash::error('Payment not found.');
+            return redirect()->route('fee-management.index');
+        }
+
+        try {
+            $request->validate(['reason' => 'required|string|max:2000']);
+
+            app(\App\Services\LedgerService::class)->reversePayment($payment, $request->reason, auth()->id());
+
+            AuditTrail::log('Fees', 'REVERSE PAYMENT', $payment->payment_id, null, [
+                'student_id' => $payment->studentFeeAssignment?->student_id,
+                'amount' => $payment->amount,
+                'receipt_number' => $payment->receipt_number,
+                'reason' => $request->reason,
+            ]);
+
+            Flash::success('Payment reversed. The original record and reason are preserved for audit.');
+        } catch (\Exception $e) {
+            \Log::error('Payment reversal failed: ' . $e->getMessage());
+            Flash::error('Error reversing payment: ' . $e->getMessage());
+        }
+
+        $studentId = $payment->studentFeeAssignment?->student_id ?? $request->student_id;
+        return $studentId
+            ? redirect()->route('fee-management.show', $studentId)
+            : redirect()->route('fee-management.index');
     }
 
     public function print($id)

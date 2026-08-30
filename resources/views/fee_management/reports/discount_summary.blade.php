@@ -242,5 +242,35 @@
 .table-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); }
 
 @media (max-width: 1024px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+
+@media (max-width: 768px) {
+    .report-wrap { padding: 1rem; }
+    .d-flex.align-items-center.justify-content-between.mb-4 { flex-direction: column; align-items: flex-start !important; gap: 0.75rem; }
+    .d-flex.align-items-center.justify-content-between.mb-4 > .d-flex { width: 100%; flex-wrap: wrap; gap: 0.5rem; }
+    .d-flex.align-items-center.justify-content-between.mb-4 .btn-ghost-custom { flex: 1; justify-content: center; }
+    .page-title { font-size: 1.1rem; }
+    .filter-form { flex-direction: column; gap: 0.625rem; }
+    .filter-field { width: 100%; }
+    .filter-select { width: 100%; min-width: 0; }
+    .filter-actions { width: 100%; }
+    .filter-actions .btn-primary-custom { width: 100%; justify-content: center; }
+    .metrics-grid { grid-template-columns: 1fr 1fr; gap: 0.625rem; }
+    .metric-card { padding: 0.75rem 1rem; }
+    .metric-icon { width: 36px; height: 36px; font-size: 0.9rem; }
+    .metric-value { font-size: 0.9rem; }
+    .data-table { min-width: 600px; }
+    .data-table th:nth-child(4), .data-table td:nth-child(4),
+    .data-table th:nth-child(8), .data-table td:nth-child(8) { display: none; }
+    .data-table th { padding: 0.6rem 0.625rem; font-size: 0.6rem; }
+    .data-table td { padding: 0.6rem 0.625rem; font-size: 0.75rem; }
+    .report-table th { padding: 0.6rem 0.75rem; font-size: 0.6rem; }
+    .report-table td { padding: 0.6rem 0.75rem; font-size: 0.78rem; }
+}
+
+@media (max-width: 420px) {
+    .metrics-grid { grid-template-columns: 1fr; }
+    .icon-box { width: 34px; height: 34px; font-size: 0.85rem; }
+    .page-title { font-size: 1rem; }
+}
 </style>
 @endsection

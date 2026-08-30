@@ -86,8 +86,17 @@ class ExamResult extends Model
             $query = \App\Models\ExamSchedule::where('exam_id', $this->exam_id)
                 ->where('subject_id', $this->subject_id);
 
-            if ($this->class_section_id && $this->relationLoaded('classSection') && $this->classSection) {
-                $query->where('class_id', $this->classSection->class_id);
+            $classId = null;
+            if ($this->class_section_id) {
+                if ($this->relationLoaded('classSection') && $this->classSection) {
+                    $classId = $this->classSection->class_id;
+                } else {
+                    $classId = \App\Models\ClassSection::where('class_section_id', $this->class_section_id)->value('class_id');
+                }
+            }
+
+            if ($classId) {
+                $query->where('class_id', $classId);
             }
 
             $maxMarks = $query->min('max_marks');

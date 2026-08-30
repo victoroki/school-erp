@@ -82,7 +82,7 @@
                                     <td class="text-center font-weight-bold {{ $avgColor }}">{{ number_format($avgPct, 1) }}</td>
                                     <td class="small text-muted">{{ \Carbon\Carbon::parse($group->latest_entry)->diffForHumans() }}</td>
                                     <td class="text-right pr-3">
-                                        <a href="{{ route('exam-results.index', array_merge(request()->only(['exam_id', 'class_section_id']))) }}"
+                                        <a href="{{ route('exam-results.index', ['exam_id' => $group->exam_id, 'class_section_id' => $group->class_section_id]) }}"
                                            class="btn btn-outline-primary btn-sm shadow-sm">
                                             <i class="fas fa-list mr-1"></i> View Entries
                                         </a>

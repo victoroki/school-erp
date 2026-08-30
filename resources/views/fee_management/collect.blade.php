@@ -280,4 +280,39 @@
     .collect-grid { grid-template-columns: 1fr; }
     .student-row { flex-wrap: wrap; }
 }
+
+@media (max-width: 768px) {
+    .collect-fees-wrap { padding: 1rem; }
+
+    .d-flex.align-items-center.justify-content-between.mb-4 {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.75rem;
+    }
+    .d-flex.align-items-center.justify-content-between.mb-4 .btn-ghost-custom {
+        width: 100%;
+        justify-content: center;
+    }
+    .page-title { font-size: 1.1rem; }
+
+    .student-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem 0;
+    }
+    .student-balance { align-items: flex-start; }
+    .btn-collect { width: 100%; justify-content: center; }
+    .student-photo { width: 40px; height: 40px; }
+    .student-photo-placeholder { width: 40px; height: 40px; font-size: 0.9rem; }
+    .student-name { font-size: 0.85rem; }
+
+    .search-form { padding: 1rem; }
+    .results-body { padding: 0.5rem 1rem 1rem; }
+}
+
+@media (max-width: 420px) {
+    .icon-box { width: 34px; height: 34px; font-size: 0.85rem; }
+    .page-title { font-size: 1rem; }
+}
 </style>

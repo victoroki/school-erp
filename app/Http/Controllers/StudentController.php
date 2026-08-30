@@ -126,10 +126,40 @@ class StudentController extends AppBaseController
                 'student_id' => $student->student_id,
                 'class_section_id' => $request->class_section_id,
                 'academic_year_id' => $request->academic_year_id,
-                'roll_number' => $request->input('roll_number_enrollment'), // separate name in fields to avoid confusion with student's own roll number
+                'roll_number' => $request->input('roll_number_enrollment'),
                 'enrollment_date' => $request->admission_date ?? now(),
                 'status' => 'active',
                 'is_current' => true
+            ]);
+
+            // Auto-assign fee structures for the enrolled class
+            $feeService = app(\App\Services\FeeAssignmentService::class);
+            $feeService->autoAssignFeesToStudent($student, $request->academic_year_id);
+        }
+
+        // Auto-create transport registration if uses_transport is toggled
+        if ($request->boolean('uses_transport') && $request->input('route_id')) {
+            $currentYear = AcademicYear::where('is_current', true)->first();
+            \App\Models\TransportRegistration::create([
+                'student_id' => $student->student_id,
+                'route_id' => $request->input('route_id'),
+                'stop_id' => $request->input('stop_id'),
+                'fee_amount' => 0,
+                'payment_status' => 'unpaid',
+                'academic_year_id' => $currentYear?->academic_year_id,
+            ]);
+        }
+
+        // Auto-create hostel allocation if is_hosteller is toggled
+        if ($request->boolean('is_hosteller') && $request->input('hostel_id')) {
+            $currentYear = AcademicYear::where('is_current', true)->first();
+            \App\Models\HostelAllocation::create([
+                'student_id' => $student->student_id,
+                'hostel_id' => $request->input('hostel_id'),
+                'room_id' => $request->input('room_id'),
+                'allocation_date' => $request->admission_date ?? now(),
+                'status' => 'pending',
+                'academic_year_id' => $currentYear?->academic_year_id,
             ]);
         }
 
@@ -142,7 +172,7 @@ class StudentController extends AppBaseController
 
     public function show($id)
     {
-        $student = $this->studentRepository->find($id);
+        $student = $this->resolveStudent($id);
 
         if (empty($student)) {
             Flash::error('Student not found');
@@ -175,7 +205,7 @@ class StudentController extends AppBaseController
      */
     public function edit($id)
     {
-        $student = $this->studentRepository->find($id);
+        $student = $this->resolveStudent($id);
 
         if (empty($student)) {
             Flash::error('Student not found');
@@ -191,7 +221,7 @@ class StudentController extends AppBaseController
      */
     public function update($id, UpdateStudentRequest $request)
     {
-        $student = $this->studentRepository->find($id);
+        $student = $this->resolveStudent($id);
 
         if (empty($student)) {
             Flash::error('Student not found');
@@ -233,7 +263,7 @@ class StudentController extends AppBaseController
      */
     public function destroy($id)
     {
-        $student = $this->studentRepository->find($id);
+        $student = $this->resolveStudent($id);
 
         if (empty($student)) {
             Flash::error('Student not found');
@@ -258,6 +288,19 @@ class StudentController extends AppBaseController
         Flash::success('Student deleted successfully.');
 
         return redirect(route('students.index'));
+    }
+
+    /**
+     * Resolve a Student by id, returning null gracefully when the id is
+     * missing or non-numeric instead of throwing a TypeError.
+     */
+    private function resolveStudent($id)
+    {
+        if ($id === null || ! is_numeric($id)) {
+            return null;
+        }
+
+        return $this->studentRepository->find((int) $id);
     }
 
     /**

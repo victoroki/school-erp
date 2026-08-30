@@ -25,7 +25,7 @@
                     <select name="academic_year_id" class="form-control form-control-sm" style="width: 200px; border-radius: 8px; border: 1px solid #d1d5db;">
                         <option value="">All Academic Years</option>
                         @foreach($academicYears as $id => $name)
-                            <option value="{{ $id }}" {{ request('academic_year_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                            <option value="{{ $id }}" {{ ($selectedYearId ?? request('academic_year_id')) == $id ? 'selected' : '' }}>{{ $name }}</option>
                         @endforeach
                     </select>
                     <button class="btn btn-sm btn-primary" type="submit" style="border-radius: 8px;">Filter</button>

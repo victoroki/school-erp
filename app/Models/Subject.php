@@ -15,6 +15,7 @@ class Subject extends Model
         'description',
         'is_elective',
         'grade_level',
+        'department_id',
     ];
 
     protected $casts = [

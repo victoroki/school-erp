@@ -39,7 +39,6 @@ Route::middleware(['auth', 'module'])->group(function () {
     Route::get('/dashboard/data', [App\Http\Controllers\DashboardController::class, 'getData'])->name('dashboard.data');
 
     Route::resource('roles', App\Http\Controllers\RoleController::class);
-    Route::resource('permissions', App\Http\Controllers\PermissionController::class);
     Route::resource('departments', App\Http\Controllers\DepartmentController::class);
     Route::resource('academic-years', App\Http\Controllers\AcademicYearController::class);
     Route::resource('school-classes', App\Http\Controllers\SchoolClassController::class);
@@ -200,6 +199,7 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
 
     // ID Card Routes
     Route::get('students/{id}/id-card', [App\Http\Controllers\StudentIdCardController::class, 'generate'])->name('students.id-card');
+    Route::get('students/bulk-id-cards', [App\Http\Controllers\StudentIdCardController::class, 'bulkForm'])->name('students.bulk-id-cards.form');
     Route::post('students/bulk-id-cards', [App\Http\Controllers\StudentIdCardController::class, 'bulk'])->name('students.bulk-id-cards');
 
     Route::resource('students', App\Http\Controllers\StudentController::class);
@@ -270,6 +270,21 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
     Route::get('student-reports/strength', [App\Http\Controllers\StudentReportController::class, 'studentStrength'])->name('student-reports.strength');
     Route::get('student-reports/gender', [App\Http\Controllers\StudentReportController::class, 'genderRatio'])->name('student-reports.gender');
     Route::get('student-reports/attendance', [App\Http\Controllers\StudentReportController::class, 'attendanceSummary'])->name('student-reports.attendance');
+    Route::get('student-reports/fee-status', [App\Http\Controllers\StudentReportController::class, 'feeStatus'])->name('student-reports.fee-status');
+    Route::get('student-reports/age-distribution', [App\Http\Controllers\StudentReportController::class, 'ageDistribution'])->name('student-reports.age-distribution');
+    Route::get('student-reports/enrollment-trends', [App\Http\Controllers\StudentReportController::class, 'enrollmentTrends'])->name('student-reports.enrollment-trends');
+    Route::get('student-reports/medical', [App\Http\Controllers\StudentReportController::class, 'medicalReport'])->name('student-reports.medical');
+    Route::get('student-reports/transport-hostel', [App\Http\Controllers\StudentReportController::class, 'transportHostelSummary'])->name('student-reports.transport-hostel');
+    Route::get('student-reports/fee-status/csv', [App\Http\Controllers\StudentReportController::class, 'feeStatusCsv'])->name('student-reports.fee-status.csv');
+    Route::get('student-reports/fee-status/pdf', [App\Http\Controllers\StudentReportController::class, 'feeStatusPdf'])->name('student-reports.fee-status.pdf');
+    Route::get('student-reports/age-distribution/csv', [App\Http\Controllers\StudentReportController::class, 'ageDistributionCsv'])->name('student-reports.age-distribution.csv');
+    Route::get('student-reports/age-distribution/pdf', [App\Http\Controllers\StudentReportController::class, 'ageDistributionPdf'])->name('student-reports.age-distribution.pdf');
+    Route::get('student-reports/enrollment-trends/csv', [App\Http\Controllers\StudentReportController::class, 'enrollmentTrendsCsv'])->name('student-reports.enrollment-trends.csv');
+    Route::get('student-reports/enrollment-trends/pdf', [App\Http\Controllers\StudentReportController::class, 'enrollmentTrendsPdf'])->name('student-reports.enrollment-trends.pdf');
+    Route::get('student-reports/medical/csv', [App\Http\Controllers\StudentReportController::class, 'medicalReportCsv'])->name('student-reports.medical.csv');
+    Route::get('student-reports/medical/pdf', [App\Http\Controllers\StudentReportController::class, 'medicalReportPdf'])->name('student-reports.medical.pdf');
+    Route::get('student-reports/transport-hostel/csv', [App\Http\Controllers\StudentReportController::class, 'transportHostelCsv'])->name('student-reports.transport-hostel.csv');
+    Route::get('student-reports/transport-hostel/pdf', [App\Http\Controllers\StudentReportController::class, 'transportHostelPdf'])->name('student-reports.transport-hostel.pdf');
 
 
     
@@ -363,9 +378,33 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
         Route::get('/reports/expected-revenue', [App\Http\Controllers\FeeReportsController::class, 'expectedRevenue'])->name('reports.expected-revenue');
         Route::get('/reports/assignment-status', [App\Http\Controllers\FeeReportsController::class, 'assignmentStatus'])->name('reports.assignment-status');
         Route::get('/reports/discount-summary', [App\Http\Controllers\FeeReportsController::class, 'discountSummary'])->name('reports.discount-summary');
+        Route::get('/reports/collections', [App\Http\Controllers\FeeReportsController::class, 'collections'])->name('reports.collections');
+        Route::get('/reports/payment-method', [App\Http\Controllers\FeeReportsController::class, 'paymentMethod'])->name('reports.payment-method');
+        Route::get('/reports/receipt-register', [App\Http\Controllers\FeeReportsController::class, 'receiptRegister'])->name('reports.receipt-register');
         Route::get('/reports/export/expected-revenue/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportExpectedRevenuePdf'])->name('reports.export.expected-revenue.pdf');
         Route::get('/reports/export/assignment-status/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportAssignmentStatusPdf'])->name('reports.export.assignment-status.pdf');
         Route::get('/reports/export/discount-summary/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportDiscountSummaryPdf'])->name('reports.export.discount-summary.pdf');
+
+        // Arrears
+        Route::get('/arrears', [App\Http\Controllers\FeeArrearsController::class, 'index'])->name('arrears.index');
+        Route::get('/arrears/export/pdf', [App\Http\Controllers\FeeArrearsController::class, 'exportPdf'])->name('arrears.export-pdf');
+        Route::get('/arrears/export/csv', [App\Http\Controllers\FeeArrearsController::class, 'exportCsv'])->name('arrears.export-csv');
+
+        // Payment Reversal
+        Route::get('/payments/{payment}/reverse', [App\Http\Controllers\FeeManagementController::class, 'reverseForm'])->name('payments.reverse-form');
+        Route::post('/payments/{payment}/reverse', [App\Http\Controllers\FeeManagementController::class, 'reversePayment'])->name('payments.reverse');
+
+        // Refunds
+        Route::get('/refunds', [App\Http\Controllers\RefundController::class, 'index'])->name('refunds.index');
+        Route::get('/refunds/create', [App\Http\Controllers\RefundController::class, 'create'])->name('refunds.create');
+        Route::post('/refunds', [App\Http\Controllers\RefundController::class, 'store'])->name('refunds.store');
+        Route::get('/refunds/{id}', [App\Http\Controllers\RefundController::class, 'show'])->name('refunds.show');
+        Route::post('/refunds/{id}/approve', [App\Http\Controllers\RefundController::class, 'approve'])->name('refunds.approve');
+        Route::post('/refunds/{id}/reject', [App\Http\Controllers\RefundController::class, 'reject'])->name('refunds.reject');
+        Route::post('/refunds/{id}/complete', [App\Http\Controllers\RefundController::class, 'complete'])->name('refunds.complete');
+        Route::get('/refunds/export/pdf', [App\Http\Controllers\RefundController::class, 'exportPdf'])->name('refunds.export-pdf');
+        Route::get('/refunds/export/csv', [App\Http\Controllers\RefundController::class, 'exportCsv'])->name('refunds.export-csv');
+        Route::get('/refunds/ajax/student-payments/{studentId}', [App\Http\Controllers\RefundController::class, 'studentPayments'])->name('refunds.ajax.student-payments');
     });
 
     // Legacy Fee Management (Collection) - Kept/Modified for integration
@@ -379,7 +418,7 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
 
     // Examination Management Enhanced Routes
     Route::get('exam-dashboard', [App\Http\Controllers\ExamDashboardController::class, 'index'])->name('exam-dashboard.index');
-    Route::resource('assessment-types', App\Http\Controllers\AssessmentTypeController::class);
+    // Assessment Types removed — table dropped
     Route::resource('exam-rooms', App\Http\Controllers\ExamRoomController::class);
     Route::get('grade-book', [App\Http\Controllers\GradeBookController::class, 'index'])->name('grade-book.index');
     Route::get('mark-sheets', [App\Http\Controllers\MarkSheetController::class, 'index'])->name('mark-sheets.index');

@@ -39,6 +39,7 @@ class RbacSeeder extends Seeder
             'communication.view', 'communication.manage', 'communication.dashboard', 'communication.compose', 'communication.send', 'communication.history.index', 'communication.history.show',
             'discipline.view', 'discipline.manage',
             'parents.view', 'parents.manage',
+            'audit-trail.index',
         ],
         'Super Admin' => [
             'users.view', 'users.manage',
@@ -59,6 +60,7 @@ class RbacSeeder extends Seeder
             'communication.view', 'communication.manage', 'communication.dashboard', 'communication.compose', 'communication.send', 'communication.history.index', 'communication.history.show',
             'discipline.view', 'discipline.manage',
             'parents.view', 'parents.manage',
+            'audit-trail.index',
         ],
         'Admin' => [
             'students.view', 'students.manage', 'students.import', 'students.export',
@@ -76,6 +78,7 @@ class RbacSeeder extends Seeder
             'communication.view', 'communication.manage', 'communication.dashboard', 'communication.compose', 'communication.send', 'communication.history.index', 'communication.history.show',
             'discipline.view', 'discipline.manage',
             'parents.view', 'parents.manage',
+            'audit-trail.index',
         ],
         'Teacher' => [
             'academics.view',

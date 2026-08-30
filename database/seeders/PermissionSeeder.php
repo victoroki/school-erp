@@ -77,9 +77,15 @@ class PermissionSeeder extends Seeder
         'transport.view'      => 'View routes, vehicles, assignments, registrations, reports',
         'transport.manage'    => 'Manage routes, vehicles, assignments, registrations',
 
-        // Communication (2)
+        // Communication (8)
         'communication.view'  => 'View communication dashboard, history, notifications, messages, templates',
-        'communication.manage'=> 'Compose messages, manage notifications, messages, SMS and email templates',
+        'communication.manage'=> 'Manage communication providers, templates and triggers',
+        'communication.dashboard' => 'View communication dashboard',
+        'communication.compose' => 'Compose and send messages',
+        'communication.send' => 'Execute sending of messages',
+        'communication.history.index' => 'View message history',
+        'communication.history.show' => 'View specific message details',
+        'audit-trail.index' => 'View system audit trails',
 
         // Discipline (2)
         'discipline.view'     => 'View disciplinary records and medical incidents',

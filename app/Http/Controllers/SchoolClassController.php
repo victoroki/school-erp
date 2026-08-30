@@ -30,7 +30,8 @@ class SchoolClassController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $schoolClasses = SchoolClass::withCount(['sections', 'classSubjects'])
+        $schoolClasses = SchoolClass::with('sections')
+            ->withCount(['sections', 'classSubjects'])
             ->orderBy('numeric_value')
             ->paginate(12);
 

@@ -100,10 +100,22 @@ class FeeAdjustment extends Model
             'details' => json_encode(['notes' => $notes]),
         ]);
 
+        $oldFinal = (float) $this->studentFeeAssignment()->value('final_amount');
         $this->studentFeeAssignment()->update([
             'final_amount' => $this->new_amount,
             'discount_amount' => $this->original_amount - $this->new_amount,
         ]);
+        $newFinal = (float) $this->new_amount;
+
+        // Post the financial effect to the source-of-truth ledger.
+        $delta = $newFinal - $oldFinal;
+        if (abs($delta) > 0.009) {
+            app(\App\Services\LedgerService::class)->postAdjustment(
+                $this->studentFeeAssignment()->first(),
+                $delta,
+                'Approved fee adjustment: ' . $this->reason
+            );
+        }
     }
 
     public function reject($userId, $reason)

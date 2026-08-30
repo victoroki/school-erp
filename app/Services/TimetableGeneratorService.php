@@ -69,12 +69,31 @@ class TimetableGeneratorService
 
             foreach ($subjectIds as $subjectId) {
                 // Teachers assigned to teach this subject to this class section.
+                // First try exact class_section_id match. If none found, fall back
+                // to any section of the same class_id (subjects are class-level,
+                // not section-level).
                 $candidates = [];
                 foreach ($teacherSubjects as $ts) {
                     if ((int) $ts['class_section_id'] === (int) $cs['id']
                         && (int) $ts['subject_id'] === $subjectId
                         && (int) $ts['academic_year_id'] === $academicYearId) {
                         $candidates[] = (int) $ts['staff_id'];
+                    }
+                }
+                if (empty($candidates)) {
+                    // Fallback: find teachers assigned to ANY section of the same class
+                    foreach ($teacherSubjects as $ts) {
+                        if ((int) $ts['subject_id'] === $subjectId
+                            && (int) $ts['academic_year_id'] === $academicYearId) {
+                            // Check if this teacher_subject's class_section belongs to the same class
+                            $tsCsId = (int) $ts['class_section_id'];
+                            foreach ($classSections as $otherCs) {
+                                if ((int) $otherCs['id'] === $tsCsId && (int) $otherCs['class_id'] === $classId) {
+                                    $candidates[] = (int) $ts['staff_id'];
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
                 $candidates = array_values(array_unique($candidates));

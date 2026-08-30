@@ -347,4 +347,89 @@ class FeeReportsController extends Controller
         $pdf->setPaper('A4', 'portrait');
         return $pdf->download('discount-summary-report-' . date('Y-m-d') . '.pdf');
     }
+
+    /**
+     * Daily / term / period collection report.
+     */
+    public function collections(Request $request)
+    {
+        $paymentQuery = FeePayment::query()
+            ->with(['studentFeeAssignment.student', 'studentFeeAssignment.feeStructure.category'])
+            ->when($request->filled('date'), function ($q) use ($request) {
+                return $q->whereDate('payment_date', $request->date);
+            })
+            ->when($request->filled('from'), function ($q) use ($request) {
+                return $q->whereDate('payment_date', '>=', $request->from);
+            })
+            ->when($request->filled('to'), function ($q) use ($request) {
+                return $q->whereDate('payment_date', '<=', $request->to);
+            })
+            ->when($request->filled('payment_method'), function ($q) use ($request) {
+                return $q->where('payment_method', $request->payment_method);
+            });
+
+        $totalCollected = (clone $paymentQuery)->sum('amount');
+        $paymentCount = (clone $paymentQuery)->count();
+        $payments = (clone $paymentQuery)->orderByDesc('payment_date')->paginate(25)->withQueryString();
+
+        // Payment method breakdown for the selected period.
+        $byMethod = FeePayment::query()
+            ->when($request->filled('date'), fn($q) => $q->whereDate('payment_date', $request->date))
+            ->when($request->filled('from'), fn($q) => $q->whereDate('payment_date', '>=', $request->from))
+            ->when($request->filled('to'), fn($q) => $q->whereDate('payment_date', '<=', $request->to))
+            ->select('payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(amount) as total'))
+            ->groupBy('payment_method')
+            ->orderByDesc('total')
+            ->get();
+
+        $todayTotal = FeePayment::whereDate('payment_date', today())->sum('amount');
+        $yesterdayTotal = FeePayment::whereDate('payment_date', today()->subDay())->sum('amount');
+        $growth = $yesterdayTotal > 0 ? round((($todayTotal - $yesterdayTotal) / $yesterdayTotal) * 100, 1) : 0;
+
+        return view('fee_management.reports.collections', compact(
+            'payments', 'totalCollected', 'paymentCount', 'byMethod', 'todayTotal', 'growth'
+        ));
+    }
+
+    /**
+     * Collections grouped by payment method (over a period or overall).
+     */
+    public function paymentMethod(Request $request)
+    {
+        $currentYear = AcademicYear::where('is_current', true)->first();
+        $yearId = $request->get('academic_year_id', $currentYear ? $currentYear->academic_year_id : null);
+
+        $byMethod = FeePayment::join('student_fee_assignments as sfa', 'fee_payments.student_fee_assignment_id', '=', 'sfa.id')
+            ->when($yearId, fn($q) => $q->where('sfa.academic_year_id', $yearId))
+            ->when($request->filled('from'), fn($q) => $q->whereDate('fee_payments.payment_date', '>=', $request->from))
+            ->when($request->filled('to'), fn($q) => $q->whereDate('fee_payments.payment_date', '<=', $request->to))
+            ->select('fee_payments.payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(fee_payments.amount) as total'))
+            ->groupBy('fee_payments.payment_method')
+            ->orderByDesc('total')
+            ->get();
+
+        $grandTotal = $byMethod->sum('total');
+        $academicYears = AcademicYear::pluck('name', 'academic_year_id');
+
+        return view('fee_management.reports.payment_method', compact('byMethod', 'grandTotal', 'academicYears', 'yearId'));
+    }
+
+    /**
+     * Receipt register — lists all receipts issued.
+     */
+    public function receiptRegister(Request $request)
+    {
+        $query = FeePayment::query()
+            ->with(['studentFeeAssignment.student', 'studentFeeAssignment.feeStructure.category', 'collectedBy'])
+            ->when($request->filled('date'), fn($q) => $q->whereDate('payment_date', $request->date))
+            ->when($request->filled('from'), fn($q) => $q->whereDate('payment_date', '>=', $request->from))
+            ->when($request->filled('to'), fn($q) => $q->whereDate('payment_date', '<=', $request->to))
+            ->when($request->filled('receipt_number'), fn($q) => $q->where('receipt_number', 'like', '%' . $request->receipt_number . '%'));
+
+        $receipts = (clone $query)->orderByDesc('payment_date')->paginate(25)->withQueryString();
+        $total = (clone $query)->sum('amount');
+        $count = (clone $query)->count();
+
+        return view('fee_management.reports.receipt_register', compact('receipts', 'total', 'count'));
+    }
 }

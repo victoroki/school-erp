@@ -246,8 +246,8 @@
             <p class="text-muted small mb-4">Complete this section if you want to enroll the student in a class immediately upon admission.</p>
             <div class="row">
                 <div class="form-group col-sm-6">
-                    {!! Form::label('class_section_id', 'Class Section:') !!}
-                    {!! Form::select('class_section_id', ['' => 'Select Class Section'] + $classSections, null, ['class' => 'form-control select2']) !!}
+                    {!! Form::label('class_section_id', 'Class Section:') !!} <span class="required-star">*</span>
+                    {!! Form::select('class_section_id', ['' => 'Select Class Section'] + $classSections, null, ['class' => 'form-control select2', 'required']) !!}
                 </div>
                 <div class="form-group col-sm-3">
                     {!! Form::label('academic_year_id', 'Academic Year:') !!}

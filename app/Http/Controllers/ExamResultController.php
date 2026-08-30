@@ -67,6 +67,7 @@ class ExamResultController extends AppBaseController
 
         $students = [];
         $existingResults = [];
+        $totalStudents = 0;
 
         // Real maximum marks from the exam schedule for this sitting (fallback 100)
         // Note: exam_schedules stores class_id, the request carries class_section_id.

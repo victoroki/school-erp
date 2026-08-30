@@ -30,7 +30,10 @@ class ClassTeacherController extends Controller
 
         $classSections = ClassSection::with(['class', 'section', 'classTeacher'])
             ->where('academic_year_id', $selectedAcademicYearId)
-            ->get();
+            ->orderBy('class_id')
+            ->orderBy('section_id')
+            ->paginate(15)
+            ->appends($request->query());
 
         $teachers = Staff::where('staff_type', 'teaching')
             ->active()

@@ -129,9 +129,18 @@
                     </tbody>
                 </table>
             </div>
+            @if($classSections->hasPages())
+            <div class="card-footer bg-white border-0 py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Pick a teacher to assign them. You'll be asked to confirm before the change is saved.</small>
+                    {{ $classSections->links('pagination::bootstrap-4') }}
+                </div>
+            </div>
+            @else
             <div class="card-footer bg-white border-0 py-3">
                 <small class="text-muted"><i class="fas fa-info-circle mr-1"></i>Pick a teacher to assign them. You'll be asked to confirm before the change is saved.</small>
             </div>
+            @endif
         </div>
     @endif
 </div>

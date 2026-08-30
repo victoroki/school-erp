@@ -243,5 +243,34 @@
 .empty-mini p { font-size: 0.82rem; font-weight: 600; color: var(--slate-400); margin: 0; }
 
 @media (max-width: 1024px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
+
+@media (max-width: 768px) {
+    .report-wrap { padding: 1rem; }
+    .d-flex.align-items-center.justify-content-between.mb-4 { flex-direction: column; align-items: flex-start !important; gap: 0.75rem; }
+    .d-flex.align-items-center.justify-content-between.mb-4 > .d-flex { width: 100%; flex-wrap: wrap; gap: 0.5rem; }
+    .d-flex.align-items-center.justify-content-between.mb-4 .btn-ghost-custom { flex: 1; justify-content: center; }
+    .page-title { font-size: 1.1rem; }
+    .filter-form { flex-direction: column; gap: 0.625rem; }
+    .filter-field { width: 100%; }
+    .filter-select { width: 100%; min-width: 0; }
+    .filter-actions { width: 100%; }
+    .filter-actions .btn-primary-custom { width: 100%; justify-content: center; }
+    .metrics-grid { grid-template-columns: 1fr 1fr; gap: 0.625rem; }
+    .metric-card { padding: 0.75rem 1rem; }
+    .metric-icon { width: 36px; height: 36px; font-size: 0.9rem; }
+    .metric-value { font-size: 0.9rem; }
+    .status-bar { height: 32px; }
+    .status-count { font-size: 0.7rem; }
+    .status-label { font-size: 0.6rem; }
+    .report-table th { padding: 0.6rem 0.75rem; font-size: 0.6rem; }
+    .report-table td { padding: 0.6rem 0.75rem; font-size: 0.78rem; }
+    .row.g-4 { gap: 0.75rem !important; }
+}
+
+@media (max-width: 420px) {
+    .metrics-grid { grid-template-columns: 1fr; }
+    .icon-box { width: 34px; height: 34px; font-size: 0.85rem; }
+    .page-title { font-size: 1rem; }
+}
 </style>
 @endsection

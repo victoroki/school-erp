@@ -319,6 +319,42 @@
 @media (max-width: 1024px) {
     .payment-grid { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 768px) {
+    .collect-payment-wrap { padding: 1rem; }
+
+    .d-flex.align-items-center.justify-content-between.mb-4 {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.75rem;
+    }
+    .d-flex.align-items-center.justify-content-between.mb-4 > .d-flex {
+        width: 100%;
+    }
+    .d-flex.align-items-center.justify-content-between.mb-4 .btn-ghost-custom {
+        width: 100%;
+        justify-content: center;
+        padding: 0.6rem;
+    }
+    .page-title { font-size: 1.1rem; }
+
+    .student-profile { gap: 0.75rem; }
+    .student-photo { width: 44px; height: 44px; }
+    .student-photo-placeholder { width: 44px; height: 44px; font-size: 1rem; }
+    .student-name { font-size: 0.9rem; }
+
+    .form-row { grid-template-columns: 1fr; gap: 0.75rem; }
+    .form-footer { flex-direction: column; gap: 0.75rem; }
+    .btn-submit { width: 100%; justify-content: center; }
+    .btn-cancel { width: 100%; text-align: center; }
+}
+
+@media (max-width: 420px) {
+    .icon-box { width: 34px; height: 34px; font-size: 0.85rem; }
+    .page-title { font-size: 1rem; }
+    .summary-body, .payment-form { padding: 1rem; }
+    .financial-row-highlight { padding: 0.625rem 0.75rem; margin: 0.5rem -0.75rem 0; }
+}
 </style>
 
 @push('page_scripts')

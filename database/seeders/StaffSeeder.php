@@ -4,150 +4,55 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Staff;
+use App\Models\Department;
 
 class StaffSeeder extends Seeder
 {
     public function run(): void
     {
-        $teachers = [
-            [
-                'employee_id' => 'T-1001',
-                'first_name' => 'Alice',
-                'last_name' => 'Nguyen',
-                'date_of_birth' => '1990-05-10',
-                'gender' => 'female',
-                'joining_date' => '2020-08-15',
-                'designation' => 'Senior Teacher',
-                'qualification' => 'B.Ed, M.Ed',
-                'experience' => 5,
-                'email' => 'alice.nguyen@school.edu',
-                'phone' => '555-1001',
-                'address' => '123 School Street',
-                'city' => 'Metro City',
-                'country' => 'Country',
-                'photo_url' => null,
-                'staff_type' => 'teaching',
-                'status' => 'active',
-            ],
-            [
-                'employee_id' => 'T-1002',
-                'first_name' => 'Bob',
-                'last_name' => 'Khan',
-                'date_of_birth' => '1988-03-20',
-                'gender' => 'male',
-                'joining_date' => '2019-08-01',
-                'designation' => 'Mathematics Teacher',
-                'qualification' => 'M.Sc, M.Ed',
-                'experience' => 7,
-                'email' => 'bob.khan@school.edu',
-                'phone' => '555-1002',
-                'address' => '456 Campus Avenue',
-                'city' => 'Metro City',
-                'country' => 'Country',
-                'photo_url' => null,
-                'staff_type' => 'teaching',
-                'status' => 'active',
-            ],
-            [
-                'employee_id' => 'T-1003',
-                'first_name' => 'Cara',
-                'last_name' => 'Lee',
-                'date_of_birth' => '1992-09-12',
-                'gender' => 'female',
-                'joining_date' => '2021-09-01',
-                'designation' => 'Science Teacher',
-                'qualification' => 'B.Sc, B.Ed',
-                'experience' => 4,
-                'email' => 'cara.lee@school.edu',
-                'phone' => '555-1003',
-                'address' => '789 Learning Road',
-                'city' => 'Metro City',
-                'country' => 'Country',
-                'photo_url' => null,
-                'staff_type' => 'teaching',
-                'status' => 'active',
-            ],
-            [
-                'employee_id' => 'T-1004',
-                'first_name' => 'David',
-                'last_name' => 'Martinez',
-                'date_of_birth' => '1985-11-25',
-                'gender' => 'male',
-                'joining_date' => '2018-01-10',
-                'designation' => 'English Teacher',
-                'qualification' => 'B.A, B.Ed',
-                'experience' => 9,
-                'email' => 'david.martinez@school.edu',
-                'phone' => '555-1004',
-                'address' => '321 Education Lane',
-                'city' => 'Metro City',
-                'country' => 'Country',
-                'photo_url' => null,
-                'staff_type' => 'teaching',
-                'status' => 'active',
-            ],
-            [
-                'employee_id' => 'T-1005',
-                'first_name' => 'Emma',
-                'last_name' => 'Johnson',
-                'date_of_birth' => '1991-07-08',
-                'gender' => 'female',
-                'joining_date' => '2022-02-15',
-                'designation' => 'Social Studies Teacher',
-                'qualification' => 'M.A, B.Ed',
-                'experience' => 3,
-                'email' => 'emma.johnson@school.edu',
-                'phone' => '555-1005',
-                'address' => '654 Academic Street',
-                'city' => 'Metro City',
-                'country' => 'Country',
-                'photo_url' => null,
-                'staff_type' => 'teaching',
-                'status' => 'active',
-            ],
-            [
-                'employee_id' => 'T-1006',
-                'first_name' => 'Frank',
-                'last_name' => 'Chen',
-                'date_of_birth' => '1987-04-14',
-                'gender' => 'male',
-                'joining_date' => '2020-09-05',
-                'designation' => 'Physical Education Teacher',
-                'qualification' => 'B.P.Ed, M.P.Ed',
-                'experience' => 6,
-                'email' => 'frank.chen@school.edu',
-                'phone' => '555-1006',
-                'address' => '987 Sports Complex',
-                'city' => 'Metro City',
-                'country' => 'Country',
-                'photo_url' => null,
-                'staff_type' => 'teaching',
-                'status' => 'active',
-            ],
+        $staff = [
+            // Administration
+            ['employee_number' => 'ADM-0001', 'first_name' => 'Grace', 'last_name' => 'Wanjiru', 'date_of_birth' => '1975-03-12', 'gender' => 'female', 'designation' => 'Principal', 'department' => 'Administration', 'staff_type' => 'administration', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2008-01-10', 'tsc_number' => '3010123', 'kra_pin' => 'A003456789J', 'nhif_number' => '1357902468', 'nssf_number' => '2468801135', 'basic_salary' => 180000, 'county' => 'Nairobi', 'phone_primary' => '0722111001', 'work_email' => 'g.wanjiru@shujaa.ac.ke'],
+            ['employee_number' => 'ADM-0002', 'first_name' => 'Peter', 'last_name' => 'Otieno', 'date_of_birth' => '1980-07-22', 'gender' => 'male', 'designation' => 'Deputy Principal (Academics)', 'department' => 'Administration', 'staff_type' => 'administration', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2012-05-01', 'tsc_number' => '4010456', 'kra_pin' => 'A003987654W', 'nhif_number' => '2468013579', 'nssf_number' => '3579912246', 'basic_salary' => 145000, 'county' => 'Kilifi', 'phone_primary' => '0722111002', 'work_email' => 'p.otieno@shujaa.ac.ke'],
+            ['employee_number' => 'ADM-0003', 'first_name' => 'Faith', 'last_name' => 'Mwende', 'date_of_birth' => '1984-11-03', 'gender' => 'female', 'designation' => 'Bursar', 'department' => 'Administration', 'staff_type' => 'non-teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2014-04-15', 'kra_pin' => 'A004112233V', 'nhif_number' => '3579113355', 'nssf_number' => '4680225531', 'basic_salary' => 90000, 'county' => 'Machakos', 'phone_primary' => '0722111003', 'work_email' => 'f.mwende@shujaa.ac.ke'],
+            ['employee_number' => 'ADM-0004', 'first_name' => 'Joseph', 'last_name' => 'Kioko', 'date_of_birth' => '1978-09-18', 'gender' => 'male', 'designation' => 'Dean of Students', 'department' => 'Administration', 'staff_type' => 'administration', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2010-08-01', 'tsc_number' => '5510789', 'kra_pin' => 'A004556677M', 'nhif_number' => '4680135791', 'nssf_number' => '5790426643', 'basic_salary' => 120000, 'county' => 'Makueni', 'phone_primary' => '0722111004', 'work_email' => 'j.kioko@shujaa.ac.ke'],
+            ['employee_number' => 'ADM-0005', 'first_name' => 'Jane', 'last_name' => 'Atieno', 'date_of_birth' => '1990-02-27', 'gender' => 'female', 'designation' => 'School Nurse', 'department' => 'Administration', 'staff_type' => 'non-teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2017-02-01', 'kra_pin' => 'A005667788R', 'nhif_number' => '5791357913', 'nssf_number' => '6800537754', 'basic_salary' => 60000, 'county' => 'Kisumu', 'phone_primary' => '0722111005', 'work_email' => 'j.atieno@shujaa.ac.ke'],
+
+            // Teaching staff
+            ['employee_number' => 'TCH-0001', 'first_name' => 'Samuel', 'last_name' => 'Kamau', 'date_of_birth' => '1986-06-15', 'gender' => 'male', 'designation' => 'HOD Mathematics', 'department' => 'Mathematics Department', 'staff_type' => 'teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2013-01-09', 'tsc_number' => '6723901', 'kra_pin' => 'A006778899B', 'nhif_number' => '6802468024', 'nssf_number' => '7900248865', 'basic_salary' => 78000, 'county' => 'Nyeri', 'phone_primary' => '0722111006', 'work_email' => 's.kamau@shujaa.ac.ke'],
+            ['employee_number' => 'TCH-0002', 'first_name' => 'Mary', 'last_name' => 'Achieng', 'date_of_birth' => '1991-12-02', 'gender' => 'female', 'designation' => 'Mathematics Teacher', 'department' => 'Mathematics Department', 'staff_type' => 'teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2016-05-03', 'tsc_number' => '7812340', 'kra_pin' => 'A007890123C', 'nhif_number' => '7913579135', 'nssf_number' => '8001359976', 'basic_salary' => 62000, 'county' => 'Siaya', 'phone_primary' => '0722111007', 'work_email' => 'm.achieng@shujaa.ac.ke'],
+            ['employee_number' => 'TCH-0003', 'first_name' => 'Brian', 'last_name' => 'Wekesa', 'date_of_birth' => '1988-04-09', 'gender' => 'male', 'designation' => 'HOD Languages', 'department' => 'Languages Department', 'staff_type' => 'teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2014-09-01', 'tsc_number' => '8901237', 'kra_pin' => 'A008901234K', 'nhif_number' => '8012345678', 'nssf_number' => '9112460087', 'basic_salary' => 76000, 'county' => 'Bungoma', 'phone_primary' => '0722111008', 'work_email' => 'b.wekesa@shujaa.ac.ke'],
+            ['employee_number' => 'TCH-0004', 'first_name' => 'Esther', 'last_name' => 'Njeri', 'date_of_birth' => '1993-08-30', 'gender' => 'female', 'designation' => 'English Teacher', 'department' => 'Languages Department', 'staff_type' => 'teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2018-01-08', 'tsc_number' => '9012345', 'kra_pin' => 'A009012345P', 'nhif_number' => '9013579135', 'nssf_number' => 'A0245790081', 'basic_salary' => 58000, 'county' => 'Muranga', 'phone_primary' => '0722111009', 'work_email' => 'e.njeri@shujaa.ac.ke'],
+            ['employee_number' => 'TCH-0005', 'first_name' => 'Kenneth', 'last_name' => 'Mboya', 'date_of_birth' => '1985-01-19', 'gender' => 'male', 'designation' => 'HOD Science', 'department' => 'Science Department', 'staff_type' => 'teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2012-03-01', 'tsc_number' => 'A0123456', 'kra_pin' => 'A010123456Y', 'nhif_number' => 'A0246802468', 'nssf_number' => 'B1356901192', 'basic_salary' => 82000, 'county' => 'Kisii', 'phone_primary' => '0722111010', 'work_email' => 'k.mboya@shujaa.ac.ke'],
+            ['employee_number' => 'TCH-0006', 'first_name' => 'Cynthia', 'last_name' => 'Kerubo', 'date_of_birth' => '1992-05-25', 'gender' => 'female', 'designation' => 'Biology Teacher', 'department' => 'Science Department', 'staff_type' => 'teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2017-07-03', 'tsc_number' => 'B1234567', 'kra_pin' => 'A011234567N', 'nhif_number' => 'B1357924680', 'nssf_number' => 'B2468122203', 'basic_salary' => 64000, 'county' => 'Nakuru', 'phone_primary' => '0722111011', 'work_email' => 'c.kerubo@shujaa.ac.ke'],
+            ['employee_number' => 'TCH-0007', 'first_name' => 'Dennis', 'last_name' => 'Ouma', 'date_of_birth' => '1987-10-11', 'gender' => 'male', 'designation' => 'Chemistry & Physics Teacher', 'department' => 'Science Department', 'staff_type' => 'teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2015-01-09', 'tsc_number' => 'B2345678', 'kra_pin' => 'A012345678E', 'nhif_number' => 'B2468024680', 'nssf_number' => 'B3579243314', 'basic_salary' => 68000, 'county' => 'Homabay', 'phone_primary' => '0722111012', 'work_email' => 'd.ouma@shujaa.ac.ke'],
+            ['employee_number' => 'TCH-0008', 'first_name' => 'Janet', 'last_name' => 'Wambui', 'date_of_birth' => '1994-03-07', 'gender' => 'female', 'designation' => 'HOD Humanities', 'department' => 'Humanities Department', 'staff_type' => 'teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2019-05-06', 'tsc_number' => 'B3456789', 'kra_pin' => 'A013456789Q', 'nhif_number' => 'B3579246802', 'nssf_number' => 'B4680354425', 'basic_salary' => 66000, 'county' => 'Kiambu', 'phone_primary' => '0722111013', 'work_email' => 'j.wambui@shujaa.ac.ke'],
+            ['employee_number' => 'TCH-0009', 'first_name' => 'Vincent', 'last_name' => 'Barasa', 'date_of_birth' => '1990-09-14', 'gender' => 'male', 'designation' => 'Geography & History Teacher', 'department' => 'Humanities Department', 'staff_type' => 'teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2016-01-04', 'tsc_number' => 'B4567890', 'kra_pin' => 'A014567890D', 'nhif_number' => 'B4680135792', 'nssf_number' => 'C1357915536', 'basic_salary' => 61000, 'county' => 'Trans Nzoia', 'phone_primary' => '0722111014', 'work_email' => 'v.barasa@shujaa.ac.ke'],
+            ['employee_number' => 'TCH-0010', 'first_name' => 'Mercy', 'last_name' => 'Chebet', 'date_of_birth' => '1993-06-21', 'gender' => 'female', 'designation' => 'Integrated Science Teacher', 'department' => 'Science Department', 'staff_type' => 'teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2018-08-01', 'tsc_number' => 'B5678901', 'kra_pin' => 'A015678901A', 'nhif_number' => 'B5791357913', 'nssf_number' => 'B1357912259', 'basic_salary' => 59000, 'county' => 'Uasin Gishu', 'phone_primary' => '0722111015', 'work_email' => 'm.chebet@shujaa.ac.ke'],
+            ['employee_number' => 'TCH-0011', 'first_name' => 'Lawrence', 'last_name' => 'Wanyonyi', 'date_of_birth' => '1989-11-05', 'gender' => 'male', 'designation' => 'HOD Business, ICT & Pre-Technical', 'department' => 'Business, ICT & Pre-Technical', 'staff_type' => 'teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2015-09-01', 'tsc_number' => 'B6789012', 'kra_pin' => 'A016789012J', 'nhif_number' => 'B6802468024', 'nssf_number' => 'B6802469970', 'basic_salary' => 70000, 'county' => 'Bungoma', 'phone_primary' => '0722111016', 'work_email' => 'l.wanyonyi@shujaa.ac.ke'],
+            ['employee_number' => 'TCH-0012', 'first_name' => 'Faith', 'last_name' => 'Nasimiyu', 'date_of_birth' => '1996-04-18', 'gender' => 'female', 'designation' => 'Pre-Technical Studies Teacher', 'department' => 'Business, ICT & Pre-Technical', 'staff_type' => 'teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2020-01-08', 'tsc_number' => 'B7890123', 'kra_pin' => 'A017890123V', 'nhif_number' => 'B7913579135', 'nssf_number' => 'B7913571981', 'basic_salary' => 55000, 'county' => 'Kakamega', 'phone_primary' => '0722111017', 'work_email' => 'f.nasimiyu@shujaa.ac.ke'],
+            ['employee_number' => 'TCH-0013', 'first_name' => 'Anthony', 'last_name' => 'Kipchoge', 'date_of_birth' => '1988-07-30', 'gender' => 'male', 'designation' => 'HOD Creative Arts & Sports', 'department' => 'Creative Arts & Sports', 'staff_type' => 'teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2014-01-10', 'tsc_number' => 'B8901234', 'kra_pin' => 'A018901234H', 'nhif_number' => 'B8024680246', 'nssf_number' => 'B8024680092', 'basic_salary' => 65000, 'county' => 'Nandi', 'phone_primary' => '0722111018', 'work_email' => 'a.kipchoge@shujaa.ac.ke'],
+            ['employee_number' => 'TCH-0014', 'first_name' => 'Diana', 'last_name' => 'Moraa', 'date_of_birth' => '1995-01-12', 'gender' => 'female', 'designation' => 'Agriculture & Home Science Teacher', 'department' => 'Agriculture & Technical', 'staff_type' => 'teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2019-01-09', 'tsc_number' => 'B9012345', 'kra_pin' => 'A019012345C', 'nhif_number' => 'B9135791357', 'nssf_number' => 'B9135792203', 'basic_salary' => 58000, 'county' => 'Nakuru', 'phone_primary' => '0722111019', 'work_email' => 'd.moraa@shujaa.ac.ke'],
+
+            // Transport & support
+            ['employee_number' => 'SPT-0001', 'first_name' => 'Rashid', 'last_name' => 'Omar', 'date_of_birth' => '1986-02-14', 'gender' => 'male', 'designation' => 'Transport Manager / Driver', 'department' => 'Administration', 'staff_type' => 'non-teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2016-04-01', 'kra_pin' => 'A020123456X', 'nhif_number' => 'A0135791357', 'nssf_number' => 'A0135793314', 'basic_salary' => 48000, 'county' => 'Mombasa', 'phone_primary' => '0722111020', 'work_email' => 'r.omar@shujaa.ac.ke'],
+            ['employee_number' => 'SPT-0002', 'first_name' => 'Salim', 'last_name' => 'Hamisi', 'date_of_birth' => '1990-08-25', 'gender' => 'male', 'designation' => 'Driver', 'department' => 'Administration', 'staff_type' => 'non-teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2018-02-01', 'kra_pin' => 'A021234567B', 'nhif_number' => 'A0246802468', 'nssf_number' => 'A0246804425', 'basic_salary' => 38000, 'county' => 'Kwale', 'phone_primary' => '0722111021', 'work_email' => 's.hamisi@shujaa.ac.ke'],
+            ['employee_number' => 'SPT-0003', 'first_name' => 'Juma', 'last_name' => 'Mwinyi', 'date_of_birth' => '1992-03-19', 'gender' => 'male', 'designation' => 'Driver', 'department' => 'Administration', 'staff_type' => 'non-teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2019-08-01', 'kra_pin' => 'A022345678G', 'nhif_number' => 'A0357924680', 'nssf_number' => 'A0357915536', 'basic_salary' => 37000, 'county' => 'Kilifi', 'phone_primary' => '0722111022', 'work_email' => 'j.mwinyi@shujaa.ac.ke'],
+            ['employee_number' => 'SPT-0004', 'first_name' => 'Ali', 'last_name' => 'Khalid', 'date_of_birth' => '1993-10-05', 'gender' => 'male', 'designation' => 'Conductor / Assistant', 'department' => 'Administration', 'staff_type' => 'non-teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2020-01-06', 'kra_pin' => 'A023456789W', 'nhif_number' => 'A0468024680', 'nssf_number' => 'A0468026643', 'basic_salary' => 30000, 'county' => 'Mombasa', 'phone_primary' => '0722111023', 'work_email' => 'a.khalid@shujaa.ac.ke'],
+            ['employee_number' => 'SPT-0005', 'first_name' => 'Noah', 'last_name' => 'Kimutai', 'date_of_birth' => '1994-12-01', 'gender' => 'male', 'designation' => 'Conductor / Assistant', 'department' => 'Administration', 'staff_type' => 'non-teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2021-05-04', 'kra_pin' => 'A024567890T', 'nhif_number' => 'A0579246802', 'nssf_number' => 'A0579217754', 'basic_salary' => 29000, 'county' => 'Baringo', 'phone_primary' => '0722111024', 'work_email' => 'n.kimutai@shujaa.ac.ke'],
+            ['employee_number' => 'SPT-0006', 'first_name' => 'Harrison', 'last_name' => 'Munyao', 'date_of_birth' => '1987-05-28', 'gender' => 'male', 'designation' => 'Grounds & Maintenance', 'department' => 'Administration', 'staff_type' => 'non-teaching', 'employment_type' => 'full_time', 'employment_status' => 'active', 'date_of_joining' => '2015-06-01', 'kra_pin' => 'A025678901K', 'nhif_number' => 'A0680246802', 'nssf_number' => 'A0680248865', 'basic_salary' => 32000, 'county' => 'Makueni', 'phone_primary' => '0722111025', 'work_email' => 'h.munyao@shujaa.ac.ke'],
         ];
 
-        // Map legacy seed keys onto the current staff schema (post HR revamp).
-        $keyMap = [
-            'employee_id'  => 'employee_number',
-            'joining_date' => 'date_of_joining',
-            'email'        => 'work_email',
-            'phone'        => 'phone_primary',
-            'address'      => 'current_address',
-            'status'       => 'employment_status',
-        ];
+        foreach ($staff as $data) {
+            $department = Department::where('name', $data['department'])->first();
+            unset($data['department']);
 
-        foreach ($teachers as $data) {
-            foreach ($keyMap as $old => $new) {
-                if (array_key_exists($old, $data)) {
-                    $data[$new] = $data[$old];
-                    unset($data[$old]);
-                }
+            $record = Staff::firstOrCreate(['employee_number' => $data['employee_number']], $data);
+
+            if ($department && $record->department_id !== $department->department_id) {
+                $record->department_id = $department->department_id;
+                $record->save();
             }
-
-            Staff::firstOrCreate(
-                ['employee_number' => $data['employee_number']],
-                $data
-            );
         }
     }
 }
