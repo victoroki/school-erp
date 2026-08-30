@@ -181,13 +181,79 @@ try {
     $symlinkOk = null;
 }
 
-// Caches last so they always reflect the freshly uploaded code.
+// ── 5. Clear ALL caches BEFORE rebuilding ──────────────────────────────
+//  Old config, route, and view caches must be wiped first so that
+//  stale entries from the previous deploy don't linger.
+run_command('config:clear');
+run_command('route:clear');
+run_command('view:clear');
+run_command('cache:clear');
+
+// Now rebuild fresh caches from the newly uploaded code.
+// NOTE: route:cache is intentionally skipped — this project uses closure-based
+// routes (e.g. the dashboard and cache-clear routes) which Laravel cannot
+// serialize.  Route caching would throw "Routes must be using a serializable
+// Closure" and mark the deploy as failed.
 run_command('config:cache');
 run_command('view:cache');
 
-// Best-effort: flush OPcache so PHP stops serving stale bytecode.
+// ── 6. OPcache flush (multiple strategies for shared hosting) ───────────
+//  opcache_reset() often fails on shared hosting because the hosting
+//  provider restricts it via opcache.restrict_api or because PHP-FPM
+//  workers each maintain their own OPcache instance.  We try several
+//  approaches in order of effectiveness:
+//
+//  a) opcache_reset() — works when called from CLI or unrestricted web
+//  b) opcache_invalidate() on individual files — more targeted
+//  c) Touching compiled files — forces OPcache to re-read by mtime
+
+$opcacheWorked = false;
+
 if (function_exists('opcache_reset')) {
-    @opcache_reset();
+    $result = @opcache_reset();
+    $opcacheWorked = ($result === true);
+}
+
+if (!$opcacheWorked && function_exists('opcache_invalidate')) {
+    // Try invalidating specific high-impact cached files.
+    $targets = [
+        base_path('bootstrap/cache/config.php'),
+        base_path('bootstrap/cache/routes-v7.php'),
+        base_path('bootstrap/cache/routes.php'),
+    ];
+    foreach ($targets as $target) {
+        if (is_file($target)) {
+            @opcache_invalidate($target, true);
+        }
+    }
+    // Also invalidate compiled views.
+    $viewPath = storage_path('framework/views');
+    if (is_dir($viewPath)) {
+        foreach (glob($viewPath . '/*.php') as $compiledView) {
+            @opcache_invalidate($compiledView, true);
+        }
+    }
+}
+
+// Last resort: touch all compiled PHP files so OPcache sees them as
+// changed and re-reads them from disk.
+$touchPaths = [
+    base_path('bootstrap/cache'),
+    storage_path('framework/views'),
+];
+foreach ($touchPaths as $dir) {
+    if (is_dir($dir)) {
+        foreach (glob($dir . '/*.php') as $phpFile) {
+            @touch($phpFile);
+        }
+    }
+}
+
+if (!$opcacheWorked) {
+    $warnings[] = 'opcache_reset() did not execute (restricted by hosting). '
+        . 'File timestamps were touched as a fallback. If stale content '
+        . 'persists, ask your host to disable OPcache or add your domain '
+        . 'to the OPcache whitelist.';
 }
 
 $durationMs = (int) round((microtime(true) - $start) * 1000);

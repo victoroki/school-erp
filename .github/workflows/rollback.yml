@@ -11,34 +11,33 @@ on:
         description: 'Deploy tag to re-deploy (e.g. deploy-20241201-183000)'
         required: true
         default: ''
-  push:
-    branches: [feat/rbac-consolidated-permissions]
 
 concurrency:
   group: rollback-production
   cancel-in-progress: false
 
 jobs:
-  rollback:
-    name: Rollback to ${{ inputs.tag || 'last tag' }}
+  # ──────────────────────────────────────────────────────────────────────
+  # BUILD — one artifact shared by every school deploy
+  # ──────────────────────────────────────────────────────────────────────
+  build:
+    name: Build
     runs-on: ubuntu-latest
-    if: inputs.tag != ''
-    defaults:
-      run:
-        shell: bash
+    outputs:
+      vendor_changed: ${{ steps.deps.outputs.vendor_changed }}
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0        # full history so git describe/tags work
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
 
       - name: Resolve tag
         id: resolve-tag
         run: |
-          TAG="${INPUTS_TAG:-}"
+          TAG="${{ inputs.tag }}"
           if git rev-parse --quiet-verify "refs/tags/${TAG}" >/dev/null 2>&1; then
             echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           else
-            # fall back to most recent deploy tag
             LAST=$(git describe --tags --match='deploy-*' --abbrev=0 2>/dev/null || true)
             if [ -z "${LAST}" ]; then
               echo "::error::Tag ${TAG} not found and no prior deploy tag exists."
@@ -85,7 +84,7 @@ jobs:
         if: steps.deps.outputs.vendor_changed == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: app-build-${{ github.sha }}
+          name: rollback-build-${{ github.sha }}
           retention-days: 30
           include-hidden-files: true
           path: |
@@ -99,7 +98,7 @@ jobs:
         if: steps.deps.outputs.vendor_changed == 'false'
         uses: actions/upload-artifact@v4
         with:
-          name: app-build-${{ github.sha }}
+          name: rollback-build-${{ github.sha }}
           retention-days: 30
           include-hidden-files: true
           path: |
@@ -110,6 +109,22 @@ jobs:
             !tests/**
             !vendor/**
 
+  # ──────────────────────────────────────────────────────────────────────
+  # DEPLOY — matrix over the 3 school subdomains
+  # ──────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Rollback to ${{ inputs.tag || 'last tag' }} on ${{ matrix.key }}
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - key: SCHOOL1
+          - key: SCHOOL2
+          - key: SCHOOL3
+
+    steps:
       - name: Check configuration
         id: config-check
         env:
@@ -118,6 +133,7 @@ jobs:
           APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
           DB_PASSWORD: ${{ secrets[format('{0}_DB_PASSWORD', matrix.key)] }}
           HOOK_SECRET: ${{ secrets[format('{0}_DEPLOY_HOOK_SECRET', matrix.key)] }}
+          VENDOR_CHANGED: ${{ needs.build.outputs.vendor_changed }}
         run: |
           if [ -z "${FTP_SERVER}" ] || [ -z "${SERVER_DIR}" ] || [ -z "${APP_URL}" ] || [ -z "${DB_PASSWORD}" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
@@ -126,11 +142,8 @@ jobs:
             exit 0
           fi
 
-          # Mandatory: without the hook secret the generated server .env would
-          # carry DEPLOY_HOOK_SECRET='' and public/deploy-hook.php would 403
-          # every post-deploy call ("Invalid or missing X-Deploy-Token").
           if [ -z "${HOOK_SECRET}" ]; then
-            echo "::error::${{ matrix.key }}_DEPLOY_HOOK_SECRET is not set (or empty). Add it under Settings → Secrets → Actions — the post-deploy hook cannot authenticate without it."
+            echo "::error::${{ matrix.key }}_DEPLOY_HOOK_SECRET is not set (or empty)."
             exit 1
           fi
 
@@ -156,9 +169,9 @@ jobs:
 
           if [ "${VENDOR_CHANGED}" != "true" ]; then
             BASE_EXCLUDE=$(printf '%s\n%s' "${BASE_EXCLUDE}" '**/vendor/**')
-            echo "| ${{ matrix.key }} | deploying code only (vendor unchanged) |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| ${{ matrix.key }} | rollback: deploying code only (vendor unchanged) |" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "| ${{ matrix.key }} | deploying FULL build incl. vendor |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| ${{ matrix.key }} | rollback: deploying FULL build incl. vendor |" >> "$GITHUB_STEP_SUMMARY"
           fi
 
           {
@@ -173,7 +186,7 @@ jobs:
         if: steps.config-check.outputs.skip == 'false'
         uses: actions/download-artifact@v4
         with:
-          name: app-build-${{ github.sha }}
+          name: rollback-build-${{ github.sha }}
           path: .
 
       - name: Generate per-school .env from secrets
@@ -254,46 +267,11 @@ jobs:
           } > .env
           chmod 600 .env || true
 
-          # Belt & suspenders: log the LENGTH only — never the value.
           if [ -z "${DEPLOY_HOOK_SECRET}" ]; then
-            echo "::error::${KEY}_DEPLOY_HOOK_SECRET resolved to an empty string in the .env-generation step."
+            echo "::error::${KEY}_DEPLOY_HOOK_SECRET resolved to an empty string."
             exit 1
           fi
           echo ".env generated for ${KEY} ($(wc -l < .env) lines, hook secret ${#DEPLOY_HOOK_SECRET} chars)"
-
-      # Diagnose connection problems BEFORE the upload step: tries plain FTP,
-      # explicit FTPS (AUTH TLS), and implicit FTPS so a timeout tells us WHERE
-      # it broke (firewall vs TLS requirement vs wrong port).
-      - name: Probe FTP connectivity
-        if: steps.config-check.outputs.skip == 'false'
-        shell: bash
-        env:
-          FTP_SERVER: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
-          FTP_USERNAME: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
-          FTP_PASSWORD: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
-        run: |
-          set -uo pipefail
-          HOST="${FTP_SERVER}"
-          HOST="${HOST#*://}"
-          HOST="${HOST%%/*}"
-          HOST="${HOST%%:*}"
-          CREDS="${FTP_USERNAME}:${FTP_PASSWORD}"
-
-          probe() {
-            local label="$1"; shift
-            local out
-            if out=$(curl -sS --connect-timeout 15 --max-time 30 -u "$CREDS" "$@" -o /dev/null 2>&1); then
-              echo "$label -> OK"
-              return 0
-            fi
-            echo "$label -> FAIL: $(printf '%s' "$out" | tail -n 1)"
-          }
-
-          probe "plain FTP :21       " "ftp://${HOST}/"
-          probe "explicit FTPS :21   " --ssl-reqd "ftp://${HOST}/"
-          probe "implicit FTPS :990  " --ssl-reqd "ftps://${HOST}:990/"
-
-          echo "::notice::All three timed out => host firewall drops runner IPs (check cPanel CSF/cPHulkD, or allow-list GitHub Actions ranges). Plain FTP failed but explicit FTPS worked => set ${{ matrix.key }}_FTP_PROTOCOL=ftps."
 
       - name: FTP deploy to cPanel
         if: steps.config-check.outputs.skip == 'false'
@@ -305,11 +283,10 @@ jobs:
           protocol: ${{ secrets[format('{0}_FTP_PROTOCOL', matrix.key)] || 'ftp' }}
           port: ${{ secrets[format('{0}_FTP_PORT', matrix.key)] || '21' }}
           server-dir: ${{ steps.config-check.outputs.server_dir }}
-          state-name: ${{ matrix.key }}-ftp-state.json
+          state-name: ${{ matrix.key }}-rollback-ftp-state.json
           dangerous-clean-slate: false
           exclude: ${{ env.ftp_exclude }}
 
-      # ubuntu-latest does not ship lftp; install it before the listing probe.
       - name: Install lftp
         if: steps.config-check.outputs.skip == 'false'
         shell: bash
@@ -319,9 +296,6 @@ jobs:
             sudo apt-get install -y -qq lftp >/dev/null
           fi
 
-      # Proof of placement: shows the remote timestamps so a docroot mismatch
-      # (files landing in one folder while the domain serves another) is
-      # visible directly in the run log.
       - name: Verify uploaded files (FTP listing)
         if: steps.config-check.outputs.skip == 'false'
         shell: bash
@@ -349,12 +323,10 @@ jobs:
           echo "Calling ${HOOK_URL} ..."
           UA="Mozilla/5.0 (X11; Linux x86_64) SchoolERP-Deploy/1.0"
 
-          # 0) Sanity: is the site itself reachable at all?
           ROOT_RESULT=$(curl -sS -o /dev/null -w '%{http_code} -> %{redirect_url}' "${APP_URL%/}/" \
             -A "$UA" --max-time 60) || ROOT_RESULT="000"
           echo "Site root -> ${ROOT_RESULT}"
 
-          # 1) Pre-flight: the hook answers any token-less GET with 405 + JSON.
           PROBE_HEADERS="$(mktemp)"
           PROBE_CODE=$(curl -sS -o /dev/null -w '%{http_code}' -D "$PROBE_HEADERS" \
             "$HOOK_URL" \
@@ -362,11 +334,6 @@ jobs:
           echo "Pre-flight GET -> HTTP ${PROBE_CODE} (405 expected)"
           cat "$PROBE_HEADERS" || true
 
-          # 2) The actual authenticated POST. A Content-Type: application/json
-          #    header with an EMPTY body is a classic LiteSpeed anti-bot
-          #    signature and gets answered 406 before PHP runs (the hook itself
-          #    only ever returns 405/403/200/500). Send a tiny urlencoded body
-          #    instead — deploy-hook.php ignores the payload entirely.
           RESPONSE="$(mktemp)"
           RESP_HEADERS="$(mktemp)"
           HTTP_CODE=$(curl -sS -o "$RESPONSE" -w '%{http_code}' -D "$RESP_HEADERS" \
@@ -384,9 +351,6 @@ jobs:
           echo "--- Hook response (HTTP ${HTTP_CODE}) ---"
           cat "$RESPONSE" || true
 
-          # 3) WAF fallback: many shared hosts (ModSecurity/LiteSpeed) kill
-          # automated POSTs with 403/406 but leave plain GETs alone. The hook
-          # accepts ?token=… on GET for exactly this case.
           if [ "$HTTP_CODE" != "200" ]; then
             echo "POST returned ${HTTP_CODE} — retrying as authenticated GET..."
             sleep 2
@@ -410,29 +374,7 @@ jobs:
               echo "|---|---|---|"
               echo "| GET site root | ${ROOT_RESULT} | 200 |"
               echo "| GET deploy-hook.php | ${PROBE_CODE} | 405 |"
-              echo "| POST deploy-hook.php (or GET fallback) | ${HTTP_CODE} | 200 |"
-              echo ""
-              echo '```'
-              echo "--- GET deploy-hook.php headers ---"
-              cat "$PROBE_HEADERS" || true
-              echo "--- POST headers ---"
-              cat "$RESP_HEADERS" || true
-              echo "--- POST body ---"
-              head -c 4000 "$RESPONSE" || true
-              echo '```'
-              echo ""
-              echo "**Diagnosis guide:**"
-              echo "- Root redirects (302) to a working app while GET hook = 404 with"
-              echo "  Laravel headers → an OLD copy of the app is live and the freshly FTP'd"
-              echo "  tree is NOT what the domain serves. Check cPanel: domain document root"
-              echo "  must be SERVER_DIR/public, and deploy-hook.php must exist there."
-              echo "- GET hook = 405/403-JSON but POST = 403/406 → WAF blocks POSTs; the GET"
-              echo "  fallback should have handled it. If the fallback ALSO fails, ask the"
-              echo "  host to whitelist ${HOOK_URL}."
-              echo "- Fallback GET = 403 \"Invalid or missing X-Deploy-Token\" while the probe = 405"
-              echo "  means the hook is live but has NO usable expected token — almost always"
-              echo "  ${{ matrix.key }}_DEPLOY_HOOK_SECRET unset/empty (the pipeline writes the server"
-              echo "  .env FROM that secret). Verify it exists in Settings → Secrets → Actions."
+              echo "| POST/GET deploy-hook.php | ${HTTP_CODE} | 200 |"
             } >> "$GITHUB_STEP_SUMMARY"
             echo "Hook FAILED with HTTP ${HTTP_CODE}" >&2
             exit 1
