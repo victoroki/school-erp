@@ -67,6 +67,8 @@ Route::middleware(['auth', 'module'])->group(function () {
     Route::resource('student-parent-relationships', App\Http\Controllers\StudentParentRelationshipController::class);
     Route::resource('student-documents', App\Http\Controllers\StudentDocumentController::class);
     Route::get('student-documents/{id}/download', [App\Http\Controllers\StudentDocumentController::class, 'download'])->name('student-documents.download');
+    Route::get('staff-documents/search', [App\Http\Controllers\StaffDocumentController::class, 'searchStaff'])->name('staffDocuments.search-staff');
+    Route::get('staff-documents/{id}/download', [App\Http\Controllers\StaffDocumentController::class, 'download'])->name('staffDocuments.download');
     Route::resource('staff-documents', App\Http\Controllers\StaffDocumentController::class)->names('staffDocuments');
     Route::resource('class-sections', App\Http\Controllers\ClassSectionController::class);
     Route::post('class-subjects/bulk-delete', [App\Http\Controllers\ClassSubjectController::class, 'bulkDestroy'])->name('class-subjects.bulk-delete');
@@ -204,7 +206,14 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
 
     Route::resource('students', App\Http\Controllers\StudentController::class);
     Route::get('students/ajax/search', [App\Http\Controllers\StudentController::class, 'ajaxSearch'])->name('students.ajax.search');
-    Route::post('students/{id}/siblings', [App\Http\Controllers\StudentController::class, 'addSibling'])->name('students.add-sibling');
+      Route::post('students/{id}/siblings', [App\Http\Controllers\StudentController::class, 
+'addSibling'])->name('students.add-sibling');
+        Route::post('students/{id}/parents', [App\Http\Controllers\StudentController::class, 
+'addParent'])->name('students.add-parent');
+        Route::delete('students/{id}/parents/{parentId}', [App\Http\Controllers\StudentController::class, 
+'removeParent'])->name('students.remove-parent');
+        Route::get('students/ajax/search/parents', [App\Http\Controllers\StudentController::class, 
+'ajaxSearchParents'])->name('students.ajax.search-parents');
     Route::get('student-transfer', [App\Http\Controllers\StudentTransferController::class, 'index'])->name('student-transfer.index');
     Route::post('student-transfer', [App\Http\Controllers\StudentTransferController::class, 'store'])->name('student-transfer.store');
     Route::resource('student-class-enrollments', App\Http\Controllers\StudentClassEnrollmentController::class);

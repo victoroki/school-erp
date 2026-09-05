@@ -139,8 +139,7 @@
                     @forelse($arrears as $student)
                         @php
                             $name = trim($student->first_name . ' ' . $student->middle_name . ' ' . $student->last_name);
-                            $class = $student->studentClassEnrollments->first();
-                            $className = $class ? ($class->classSection->schoolClass->name ?? 'N/A') : 'N/A';
+                            $className = $student->studentClass ?? 'N/A';
                             $outstanding = $student->expected_total - $student->paid_total;
                         @endphp
                         <tr>

@@ -46,14 +46,29 @@
 </div>
 
 @push('page_scripts')
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script>
-        $(document).ready(function() {
-            $('.select2').select2({
-                theme: 'bootstrap4',
-                width: '100%',
-                placeholder: 'Select an option'
-            });
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            // Poll for jQuery + Select2 (loaded with defer in layouts/app) before
+            // initializing — matches the pattern used across the other dashboards.
+            var select2InitInterval = setInterval(function() {
+                if (window.jQuery && window.jQuery.fn.select2) {
+                    clearInterval(select2InitInterval);
+                    window.jQuery(function($) {
+                        $('.select2').select2({
+                            theme: 'bootstrap4',
+                            width: '100%',
+                            placeholder: 'Select an option'
+                        });
+
+                        $(document).on('select2:open', () => {
+                            let searchField = document.querySelector('.select2-search__field');
+                            if (searchField) searchField.focus();
+                        });
+                    });
+                }
+            }, 100);
+
+            setTimeout(function() { clearInterval(select2InitInterval); }, 5000);
         });
     </script>
 @endpush

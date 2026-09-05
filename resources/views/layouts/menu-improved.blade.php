@@ -228,7 +228,7 @@
             </a>
         </li>
         <li class="nav-item">
-            <a href="{{ route('leave-types.index') }}" class="nav-link {{ Request::is('leave-types*') ? 'active' : '' }}">
+            <a href="{{ route('leaveTypes.index') }}" class="nav-link {{ Request::is('leave-types*') ? 'active' : '' }}">
                 <i class="far fa-calendar-times nav-icon text-secondary"></i>
                 <p>Leave Types</p>
             </a>

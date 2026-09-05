@@ -48,7 +48,7 @@
         </div>
     </div>
 
-    @if(request()->filled(['exam_id', 'class_section_id', 'subject_id']))
+    @if(request()->filled(['exam_id', 'class_section_id', 'subject_id']) && auth()->user()->hasPermission('exams.import'))
         {{-- IMPORT TOOLS (collapsed by default to reduce clutter) --}}
         <div class="card dash-panel mb-4 no-print">
             <div class="card-header bg-white border-bottom-0 pt-3 px-4" data-toggle="collapse" data-target="#importTools" role="button" aria-expanded="false">

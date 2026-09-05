@@ -40,12 +40,23 @@ class FeeArrearsController extends Controller
             ->when($yearId, fn($q) => $q->where('academic_year_id', $yearId))
             ->when($termId, fn($q) => $q->where('term_id', $termId));
 
-        // Payment totals per assignment to compute balances in SQL.
-        $paidSub = DB::raw('(SELECT COALESCE(SUM(amount),0) FROM fee_payments fp WHERE fp.student_fee_assignment_id = student_fee_assignments.id)');
+        // Payment totals per assignment to compute balances in SQL (derived table
+        // avoids the ONLY_FULL_GROUP_BY issue caused by correlated subqueries).
+        $paidTotalsSub = DB::raw('(SELECT fp.student_fee_assignment_id,
+                COALESCE(SUM(fp.amount),0) AS paid_total
+            FROM fee_payments fp
+            GROUP BY fp.student_fee_assignment_id) AS paid_totals');
 
         // Per-student aggregation of expected vs paid.
-        $arrearsQuery = Student::query()
+        //
+        // The grouped aggregation is built as an inner subquery and then wrapped
+        // in an outer derived table. This keeps ORDER BY on the computed
+        // expected_total/paid_total columns outside of the GROUP BY, which would
+        // otherwise break under MySQL's sql_mode=only_full_group_by when the
+        // paginator adds a LIMIT (and its own count wrapper) on top.
+        $inner = Student::query()
             ->join('student_fee_assignments as sfa', 'sfa.student_id', '=', 'students.student_id')
+            ->leftJoin($paidTotalsSub, 'paid_totals.student_fee_assignment_id', '=', 'sfa.id')
             ->where('sfa.status', 'active')
             ->when($yearId, fn($q) => $q->where('sfa.academic_year_id', $yearId))
             ->when($termId, fn($q) => $q->where('sfa.term_id', $termId))
@@ -62,29 +73,48 @@ class FeeArrearsController extends Controller
             ->selectRaw('
                 students.student_id, students.first_name, students.middle_name, students.last_name, students.admission_no,
                 SUM(sfa.final_amount) as expected_total,
-                COALESCE(SUM((SELECT COALESCE(SUM(fp2.amount),0) FROM fee_payments fp2 WHERE fp2.student_fee_assignment_id = sfa.id)),0) as paid_total
+                COALESCE(SUM(paid_totals.paid_total),0) as paid_total
             ')
             ->groupBy('students.student_id', 'students.first_name', 'students.middle_name', 'students.last_name', 'students.admission_no')
             ->havingRaw('expected_total > paid_total');
 
         // Optional minimum outstanding amount filter.
         if ($request->filled('min_amount')) {
-            $arrearsQuery->havingRaw('(expected_total - paid_total) >= ?', [(float) $minAmount]);
+            $inner->havingRaw('(expected_total - paid_total) >= ?', [(float) $minAmount]);
         }
-
-        // Eager load the student's current class for display.
-        $arrearsQuery->with(['studentClassEnrollments.classSection.schoolClass', 'studentClassEnrollments.classSection.section']);
-
-        $arrearsQuery->getQuery()->orders = [];
 
         $sort = $request->get('sort', 'largest');
-        if ($sort === 'smallest') {
-            $arrearsQuery->orderByRaw('(expected_total - paid_total) asc');
-        } else {
-            $arrearsQuery->orderByRaw('(expected_total - paid_total) desc');
-        }
+        $orderDir = ($sort === 'smallest') ? 'asc' : 'desc';
+
+        $arrearsQuery = DB::table(DB::raw('(' . $inner->toSql() . ') as a'))
+            ->mergeBindings($inner->getQuery())
+            ->select(
+                'a.student_id',
+                'a.first_name',
+                'a.middle_name',
+                'a.last_name',
+                'a.admission_no',
+                'a.expected_total',
+                'a.paid_total'
+            )
+            ->orderByRaw('(a.expected_total - a.paid_total) ' . $orderDir);
 
         $arrears = $arrearsQuery->paginate(20)->withQueryString();
+
+        // Attach the student's current class stream for display (the arrears
+        // rows come from a derived-table query so the class relation isn't
+        // eager-loaded automatically).
+        $studentIds = collect($arrears->items())->pluck('student_id')->filter()->all();
+        $classMap = \App\Models\StudentClassEnrollment::with(['classSection.schoolClass', 'classSection.section'])
+            ->whereIn('student_id', $studentIds)
+            ->where('is_current', true)
+            ->get()
+            ->mapWithKeys(function ($enr) {
+                return [$enr->student_id => ($enr->classSection->schoolClass->name ?? 'N/A') . ($enr->classSection->section->name ? ' - ' . $enr->classSection->section->name : '')];
+            });
+        foreach ($arrears as $item) {
+            $item->studentClass = $classMap[$item->student_id] ?? 'N/A';
+        }
 
         // Summary metrics.
         $totalExpected = (clone $base)->sum('final_amount');
@@ -113,6 +143,7 @@ class FeeArrearsController extends Controller
     {
         $q = Student::query()
             ->join('student_fee_assignments as sfa', 'sfa.student_id', '=', 'students.student_id')
+            ->leftJoin(DB::raw('(SELECT fp.student_fee_assignment_id, COALESCE(SUM(fp.amount),0) AS paid_total FROM fee_payments fp GROUP BY fp.student_fee_assignment_id) AS paid_totals'), 'paid_totals.student_fee_assignment_id', '=', 'sfa.id')
             ->where('sfa.status', 'active')
             ->when($yearId, fn($qq) => $qq->where('sfa.academic_year_id', $yearId))
             ->when($termId, fn($qq) => $qq->where('sfa.term_id', $termId))
@@ -126,7 +157,7 @@ class FeeArrearsController extends Controller
             })
             ->selectRaw('students.student_id,
                 SUM(sfa.final_amount) as expected_total,
-                COALESCE(SUM((SELECT COALESCE(SUM(fp2.amount),0) FROM fee_payments fp2 WHERE fp2.student_fee_assignment_id = sfa.id)),0) as paid_total')
+                COALESCE(SUM(paid_totals.paid_total),0) as paid_total')
             ->groupBy('students.student_id')
             ->havingRaw('expected_total > paid_total');
 
@@ -187,8 +218,9 @@ class FeeArrearsController extends Controller
         $minAmount = $request->get('min_amount');
         $search = $request->get('search');
 
-        $query = Student::query()
+        $inner = Student::query()
             ->join('student_fee_assignments as sfa', 'sfa.student_id', '=', 'students.student_id')
+            ->leftJoin(DB::raw('(SELECT fp.student_fee_assignment_id, COALESCE(SUM(fp.amount),0) AS paid_total FROM fee_payments fp GROUP BY fp.student_fee_assignment_id) AS paid_totals'), 'paid_totals.student_fee_assignment_id', '=', 'sfa.id')
             ->where('sfa.status', 'active')
             ->when($yearId, fn($q) => $q->where('sfa.academic_year_id', $yearId))
             ->when($termId, fn($q) => $q->where('sfa.term_id', $termId))
@@ -205,15 +237,24 @@ class FeeArrearsController extends Controller
             ->selectRaw('
                 students.student_id, students.first_name, students.middle_name, students.last_name, students.admission_no,
                 SUM(sfa.final_amount) as expected_total,
-                COALESCE(SUM((SELECT COALESCE(SUM(fp2.amount),0) FROM fee_payments fp2 WHERE fp2.student_fee_assignment_id = sfa.id)),0) as paid_total
+                COALESCE(SUM(paid_totals.paid_total),0) as paid_total
             ')
             ->groupBy('students.student_id', 'students.first_name', 'students.middle_name', 'students.last_name', 'students.admission_no')
-            ->havingRaw('expected_total > paid_total')
-            ->orderByRaw('(expected_total - paid_total) desc');
+            ->havingRaw('expected_total > paid_total');
 
         if ($request->filled('min_amount')) {
-            $query->havingRaw('(expected_total - paid_total) >= ?', [(float) $minAmount]);
+            $inner->havingRaw('(expected_total - paid_total) >= ?', [(float) $minAmount]);
         }
+
+        // Wrap in a derived table so ORDER BY on the computed columns survives
+        // MySQL's sql_mode=only_full_group_by.
+        $query = DB::table(DB::raw('(' . $inner->toSql() . ') as a'))
+            ->mergeBindings($inner->getQuery())
+            ->select(
+                'a.student_id', 'a.first_name', 'a.middle_name', 'a.last_name', 'a.admission_no',
+                'a.expected_total', 'a.paid_total'
+            )
+            ->orderByRaw('(a.expected_total - a.paid_total) desc');
 
         $rows = [];
         foreach ($query->get() as $s) {

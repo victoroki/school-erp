@@ -39,7 +39,9 @@ class FeeAdjustmentController extends Controller
         }
 
         $adjustments = $query->paginate(20);
-        $students = Student::where('is_active', true)->pluck('full_name', 'student_id');
+        $students = Student::where('is_active', true)
+            ->get()
+            ->mapWithKeys(fn($s) => [$s->student_id => $s->full_name]);
 
         return view('fee_management.adjustments.index', compact('adjustments', 'students'));
     }

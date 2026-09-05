@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::model($staffDocument, ['route' => ['staff-documents.update', $staffDocument->id], 'method' => 'patch']) !!}
+            {!! Form::model($staffDocument, ['route' => ['staffDocuments.update', $staffDocument->document_id], 'method' => 'patch', 'files' => true]) !!}
 
             <div class="card-body">
                 <div class="row">

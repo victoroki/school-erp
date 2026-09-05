@@ -5,15 +5,25 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>
-Staff Document Details
-                    </h1>
+                    <h1><i class="fas fa-folder-open mr-2"></i>Staff Document Details</h1>
                 </div>
                 <div class="col-sm-6">
-                    <a class="btn btn-default float-right"
-                       href="{{ route('staffDocuments.index') }}">
-                                                    Back
-                                            </a>
+                    <div class="float-right">
+                        @if($staffDocument->file_path)
+                            <a class="btn btn-primary"
+                               href="{{ route('staffDocuments.download', [$staffDocument->document_id]) }}">
+                                <i class="fas fa-download mr-1"></i> Download
+                            </a>
+                        @endif
+                        <a class="btn btn-default mr-1"
+                           href="{{ route('staffDocuments.edit', [$staffDocument->document_id]) }}">
+                            <i class="far fa-edit mr-1"></i> Edit
+                        </a>
+                        <a class="btn btn-default"
+                           href="{{ route('staffDocuments.index') }}">
+                            <i class="fas fa-arrow-left mr-1"></i> Back
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

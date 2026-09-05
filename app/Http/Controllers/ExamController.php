@@ -20,8 +20,7 @@ class ExamController extends AppBaseController
     public function __construct(ExamRepository $examRepo)
     {
         $this->examRepository = $examRepo;
-        $this->middleware('can:exams.schedule.view')->only(['index', 'show']);
-        $this->middleware('can:academics.settings.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+        $this->middleware('can:academics.settings.manage')->only(['index', 'show', 'create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getDropdownData()

@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::open(['route' => 'leave-types.store']) !!}
+            {!! Form::open(['route' => 'leaveTypes.store']) !!}
 
             <div class="card-body">
 

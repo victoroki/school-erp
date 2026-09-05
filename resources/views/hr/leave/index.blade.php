@@ -10,7 +10,9 @@
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                        @if($viewAll)
                         <li class="breadcrumb-item"><a href="{{ route('hr.dashboard') }}">HR</a></li>
+                        @endif
                         <li class="breadcrumb-item active">Leave Applications</li>
                     </ol>
                 </div>
@@ -22,7 +24,7 @@
         <div class="container-fluid">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">All Leave Applications</h3>
+                    <h3 class="card-title">{{ $viewAll ? 'All Leave Applications' : 'My Leave Applications' }}</h3>
                     <div class="card-tools">
                         <a href="{{ route('leave-applications.create') }}" class="btn btn-success btn-sm">
                             <i class="fas fa-plus"></i> Apply for Leave
@@ -33,16 +35,25 @@
                     <!-- Filters -->
                     <form method="GET" class="mb-3">
                         <div class="row">
+                            @if($viewAll)
                             <div class="col-md-3">
-                                <select name="status" class="form-control form-control-sm">
+                                <select name="staff_id" class="form-select form-select-sm">
+                                    <option value="">All Staff</option>
+                                    @foreach($staff as $s)
+                                        <option value="{{ $s->staff_id }}" {{ request('staff_id') == $s->staff_id ? 'selected' : '' }}>{{ $s->full_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select name="status" class="form-select form-select-sm">
                                     <option value="">All Status</option>
                                     <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                                     <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
                                     <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <select name="leave_type_id" class="form-control form-control-sm">
+                            <div class="col-md-2">
+                                <select name="leave_type_id" class="form-select form-select-sm">
                                     <option value="">All Leave Types</option>
                                     @foreach($leaveTypes as $type)
                                         <option value="{{ $type->leave_type_id }}" {{ request('leave_type_id') == $type->leave_type_id ? 'selected' : '' }}>
@@ -55,6 +66,30 @@
                                 <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Filter</button>
                                 <a href="{{ route('leave-applications.index') }}" class="btn btn-secondary btn-sm">Clear</a>
                             </div>
+                            @else
+                            <div class="col-md-3">
+                                <select name="status" class="form-select form-select-sm">
+                                    <option value="">All Status</option>
+                                    <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                    <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                                    <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select name="leave_type_id" class="form-select form-select-sm">
+                                    <option value="">All Leave Types</option>
+                                    @foreach($leaveTypes as $type)
+                                        <option value="{{ $type->leave_type_id }}" {{ request('leave_type_id') == $type->leave_type_id ? 'selected' : '' }}>
+                                            {{ $type->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Filter</button>
+                                <a href="{{ route('leave-applications.index') }}" class="btn btn-secondary btn-sm">Clear</a>
+                            </div>
+                            @endif
                         </div>
                     </form>
 
@@ -63,7 +98,9 @@
                         <table class="table table-hover table-sm">
                             <thead>
                                 <tr>
+                                    @if($viewAll)
                                     <th>Staff</th>
+                                    @endif
                                     <th>Leave Type</th>
                                     <th>Start Date</th>
                                     <th>End Date</th>
@@ -77,7 +114,9 @@
                             <tbody>
                                 @forelse($applications as $app)
                                     <tr>
+                                        @if($viewAll)
                                         <td>{{ $app->staff->full_name ?? 'N/A' }}</td>
+                                        @endif
                                         <td>{{ $app->leaveType->name ?? 'N/A' }}</td>
                                         <td>{{ \Carbon\Carbon::parse($app->start_date)->format('M d, Y') }}</td>
                                         <td>{{ \Carbon\Carbon::parse($app->end_date)->format('M d, Y') }}</td>
@@ -115,7 +154,7 @@
                                             <a href="{{ route('leave-applications.show', $app->id) }}" class="btn btn-sm btn-info" title="View">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            @if($app->application_status == 'pending')
+                                            @if($app->application_status == 'pending' && auth()->user()->hasPermission('hr.approve'))
                                                 <form action="{{ route('leave-applications.approve', $app->id) }}" method="POST" style="display: inline-block;">
                                                     @csrf
                                                     <button type="submit" class="btn btn-sm btn-success" title="Approve">
@@ -127,7 +166,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="text-center text-muted">No leave applications found</td>
+                                        <td colspan="{{ $viewAll ? 9 : 8 }}" class="text-center text-muted">No leave applications found</td>
                                     </tr>
                                 @endforelse
                             </tbody>

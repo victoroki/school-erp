@@ -8,6 +8,10 @@ class StaffDocument extends Model
 {
     public $table = 'staff_documents';
 
+    protected $primaryKey = 'document_id';
+
+    public $timestamps = false;
+
     public $fillable = [
         'staff_id',
         'document_type',
@@ -23,11 +27,12 @@ class StaffDocument extends Model
         'uploaded_at' => 'datetime'
     ];
 
-    public static array $rules = [
+public static array $rules = [
         'staff_id' => 'nullable',
         'document_type' => 'required|string|max:50',
         'document_name' => 'required|string|max:100',
-        'file_path' => 'required|string|max:255',
+        'file_path' => 'nullable|string|max:255',
+        'document_file' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120',
         'uploaded_at' => 'nullable'
     ];
 

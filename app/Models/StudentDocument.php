@@ -39,7 +39,8 @@ class StudentDocument extends Model
         'document_type' => 'required|string|max:50',
         'document_category' => 'required|in:academic,medical,identification,financial,legal,certificates,other',
         'document_name' => 'required|string|max:100',
-        'file_path' => 'required|string|max:255',
+        'file_path' => 'nullable|string|max:255',
+        'document_file' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120',
         'is_verified' => 'boolean',
         'expiry_date' => 'nullable|date',
         'is_mandatory' => 'boolean'

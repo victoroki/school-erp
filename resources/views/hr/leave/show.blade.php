@@ -10,7 +10,9 @@
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                        @if(auth()->user()->hasPermission('hr.view'))
                         <li class="breadcrumb-item"><a href="{{ route('hr.dashboard') }}">HR</a></li>
+                        @endif
                         <li class="breadcrumb-item"><a href="{{ route('leave-applications.index') }}">Leave</a></li>
                         <li class="breadcrumb-item active">Details</li>
                     </ol>
@@ -168,7 +170,7 @@
                     </div>
 
                     <!-- Actions -->
-                    @if($leaveApplication->application_status == 'pending')
+                    @if($leaveApplication->application_status == 'pending' && auth()->user()->hasPermission('hr.approve'))
                         <div class="card">
                             <div class="card-header bg-warning">
                                 <h3 class="card-title">Actions</h3>

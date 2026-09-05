@@ -17,7 +17,7 @@ class ExamDashboardController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:exams.schedule.view');
+        $this->middleware('can:academics.settings.manage');
     }
 
     public function index()

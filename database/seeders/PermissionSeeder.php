@@ -59,6 +59,7 @@ class PermissionSeeder extends Seeder
         'hr.view'             => 'View staff, attendance, leave, payroll, onboarding, exit, reports',
         'hr.manage'           => 'Manage staff records, documents, attendance, leave, payroll, onboarding, exit',
         'hr.approve'          => 'Approve leave applications and finalize payroll',
+        'hr.leave.apply'      => 'Apply for leave and view own leave applications',
 
         // Inventory (3)
         'inventory.view'      => 'View inventory items, stock history, requisitions, purchase orders',

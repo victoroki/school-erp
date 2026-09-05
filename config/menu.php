@@ -132,9 +132,9 @@ return [
 
                 ['header' => 'Teacher Tools', 'color' => 'text-info'],
                 ['key' => 'my-timetable', 'label' => 'My Timetable', 'icon' => 'fas fa-calendar-alt', 'color' => 'text-info',
-                 'route' => 'timetables.teacher', 'active' => 'timetables/teacher*', 'permission' => ['academics.view', 'exams.schedule.view']],
+                 'route' => 'timetables.teacher', 'active' => 'timetables/teacher*', 'permission' => ['academics.view', 'exams.schedule.view'], 'roles' => ['Teacher']],
                 ['key' => 'leave-apply', 'label' => 'Apply for Leave', 'icon' => 'fas fa-calendar-plus', 'color' => 'text-info',
-                 'route' => 'leave-applications.create', 'active' => 'leave-applications*', 'permission' => ['hr.view', 'hr.manage']],
+                 'route' => 'leave-applications.create', 'active' => 'leave-applications*', 'permission' => ['hr.leave.apply'], 'roles' => ['Teacher']],
             ],
         ],
 
@@ -207,7 +207,7 @@ return [
                              'academics.settings.manage'],
             'children' => [
                 ['key' => 'exam-dashboard', 'label' => 'Dashboard', 'icon' => 'fas fa-chart-line', 'color' => 'text-danger',
-                 'route' => 'exam-dashboard.index', 'active' => 'exam-dashboard', 'permission' => ['exams.schedule.view', 'exams.results.view-own', 'exams.results.view-all']],
+                 'route' => 'exam-dashboard.index', 'active' => 'exam-dashboard', 'permission' => ['exams.schedule.view', 'exams.results.view-own', 'exams.results.view-all'], 'roles' => ['Owner', 'Super Admin', 'Admin']],
 
                 ['header' => 'Configuration', 'color' => 'text-danger'],
                 ['key' => 'exam-types', 'label' => 'Categories', 'icon' => 'fas fa-tags', 'color' => 'text-danger',
@@ -218,9 +218,9 @@ return [
 
                 ['header' => 'Management', 'color' => 'text-danger'],
                 ['key' => 'exams', 'label' => 'Sessions', 'icon' => 'fas fa-calendar-alt', 'color' => 'text-danger',
-                 'route' => 'exams.index', 'active' => 'exams*', 'permission' => ['exams.schedule.view', 'academics.settings.manage']],
+                 'route' => 'exams.index', 'active' => 'exams*', 'permission' => ['exams.schedule.view', 'academics.settings.manage'], 'roles' => ['Owner', 'Super Admin', 'Admin']],
                 ['key' => 'exam-schedules', 'label' => 'Timetables', 'icon' => 'fas fa-clock', 'color' => 'text-danger',
-                 'route' => 'exam-schedules.index', 'active' => 'exam-schedules*', 'permission' => ['exams.schedule.view', 'academics.settings.manage']],
+                 'route' => 'exam-schedules.index', 'active' => 'exam-schedules*', 'permission' => ['exams.schedule.view', 'academics.settings.manage'], 'roles' => ['Owner', 'Super Admin', 'Admin']],
                 ['key' => 'exam-rooms', 'label' => 'Rooms', 'icon' => 'fas fa-door-open', 'color' => 'text-danger',
                  'route' => 'exam-rooms.index', 'active' => 'exam-rooms*', 'permission' => ['academics.settings.manage']],
 

@@ -16,8 +16,15 @@
     <!-- Term Field -->
     <div class="form-group col-sm-6">
         {!! Form::label('term', 'Applicable Term') !!}
-        {!! Form::select('term', ['Term 1' => 'Term 1', 'Term 2' => 'Term 2', 'Term 3' => 'Term 3'], null, ['class' => 'form-control', 'placeholder' => 'Select Term', 'required']) !!}
-        <small class="text-muted">Select which term this fee applies to.</small>
+        <select name="term" class="form-control" required>
+            <option value="">Select Term</option>
+            @foreach($terms as $termOpt)
+                <option value="{{ $termOpt->code }}" {{ old('term', isset($feeStructure) ? $feeStructure->term : null) == $termOpt->code ? 'selected' : '' }}>
+                    {{ $termOpt->name }}
+                </option>
+            @endforeach
+        </select>
+        <small class="text-muted">Select which term this fee applies to. You can create a different fee structure for each term of the same year.</small>
     </div>
 
     <!-- Category Id Field -->

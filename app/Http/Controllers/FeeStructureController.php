@@ -88,7 +88,8 @@ class FeeStructureController extends AppBaseController
         return[
             'academicYear' => AcademicYear::pluck('name', 'academic_year_id'),
             'classes' => SchoolClass::pluck('name', 'class_id'),
-            'category' => FeeCategory::pluck('name', 'category_id')
+            'category' => FeeCategory::pluck('name', 'category_id'),
+            'terms' => \App\Models\Term::ordered()->get(['id', 'name', 'code']),
         ];
     }
 

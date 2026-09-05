@@ -56,7 +56,7 @@ class MenuService
             }
 
             if (empty($item['children'])) {
-                if (self::canSee($this->user, $item['permission'] ?? [], $item['owner_only'] ?? false)) {
+                if (self::canSee($this->user, $item['permission'] ?? [], $item['owner_only'] ?? false, $item['roles'] ?? null)) {
                     if ($pendingHeader !== null) {
                         $visible[] = $pendingHeader;
                         $pendingHeader = null;
@@ -118,7 +118,7 @@ class MenuService
                 continue;
             }
 
-            if (self::canSee($this->user, $child['permission'] ?? [], $child['owner_only'] ?? false)) {
+            if (self::canSee($this->user, $child['permission'] ?? [], $child['owner_only'] ?? false, $child['roles'] ?? null)) {
                 if ($pendingHeader !== null) {
                     $visible[] = $pendingHeader;
                     $pendingHeader = null;
@@ -139,8 +139,13 @@ class MenuService
      *   - No permission is required (always visible)
      *   - User holds a protected role (sees everything)
      *   - User holds ANY of the listed permissions
+     *
+     * An optional role whitelist can be provided (via the config `roles` key).
+     * When present, the user must ALSO hold one of those roles, regardless of
+     * permissions. This is used to gate items like "Teacher Tools" to the
+     * Teacher role only, even when admins share the same underlying permission.
      */
-    public static function canSee(?User $user, array|string|null $permissions, bool $ownerOnly = false): bool
+    public static function canSee(?User $user, array|string|null $permissions, bool $ownerOnly = false, ?array $roles = null): bool
     {
         if (! $user) {
             return false;
@@ -151,16 +156,27 @@ class MenuService
         }
 
         if (empty($permissions)) {
-            return true;
+            $canSee = true;
+        } else {
+            $required = (array) $permissions;
+
+            if ($user->canBypassProtection()) {
+                $canSee = true;
+            } else {
+                $canSee = $user->getAllPermissions()->intersect($required)->isNotEmpty();
+            }
         }
 
-        $required = (array) $permissions;
-
-        if ($user->canBypassProtection()) {
-            return true;
+        if (! $canSee) {
+            return false;
         }
 
-        return $user->getAllPermissions()->intersect($required)->isNotEmpty();
+        // When a role whitelist is defined, the user must hold one of those roles.
+        if (! empty($roles)) {
+            return $user->hasAnyRole((array) $roles);
+        }
+
+        return true;
     }
 
     /**

@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::model($leaveType, ['route' => ['leave-types.update', $leaveType->id], 'method' => 'patch']) !!}
+            {!! Form::model($leaveType, ['route' => ['leaveTypes.update', $leaveType->leave_type_id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">

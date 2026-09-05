@@ -27,7 +27,7 @@
                         <div class="row">
                             <div class="col-md-3">
                                 <label>Month</label>
-                                <select name="month" class="form-control">
+                                <select name="month" class="form-select">
                                     @for($m = 1; $m <= 12; $m++)
                                         <option value="{{ $m }}" {{ $month == $m ? 'selected' : '' }}>{{ \Carbon\Carbon::create()->month($m)->format('F') }}</option>
                                     @endfor
@@ -35,7 +35,7 @@
                             </div>
                             <div class="col-md-3">
                                 <label>Year</label>
-                                <select name="year" class="form-control">
+                                <select name="year" class="form-select">
                                     @for($y = date('Y'); $y >= date('Y') - 3; $y--)
                                         <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
                                     @endfor

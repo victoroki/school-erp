@@ -30,6 +30,7 @@
     <h3>Roles</h3>
     <div class="row">
         @foreach($roles as $role)
+            @if($role->role_name !== 'Owner')
             <div class="col-md-3">
                 <div class="checkbox">
                     <label>
@@ -38,6 +39,7 @@
                     </label>
                 </div>
             </div>
+            @endif
         @endforeach
     </div>
 </div>

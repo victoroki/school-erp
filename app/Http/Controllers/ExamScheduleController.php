@@ -23,8 +23,7 @@ class ExamScheduleController extends AppBaseController
     public function __construct(ExamScheduleRepository $examScheduleRepo)
     {
         $this->examScheduleRepository = $examScheduleRepo;
-        $this->middleware('can:exams.schedule.view')->only(['index', 'show']);
-        $this->middleware('can:academics.settings.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+        $this->middleware('can:academics.settings.manage')->only(['index', 'show', 'create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -127,6 +126,7 @@ class ExamScheduleController extends AppBaseController
             'sessions_per_day'  => 'required|in:1,2',
             'morning_start'     => 'required|date_format:H:i',
             'afternoon_start'   => 'nullable|required_if:sessions_per_day,2|date_format:H:i',
+            'session_minutes'   => 'required|integer|min:30|max:360',
             'skip_weekends'     => 'nullable|boolean',
             'assign_rooms'      => 'nullable|boolean',
             'replace_existing'  => 'nullable|boolean',
@@ -179,7 +179,7 @@ class ExamScheduleController extends AppBaseController
         }
 
         // Build session slots walking forward from start date
-        $sessionMinutes = 120;
+        $sessionMinutes = (int) $data['session_minutes'];
         $sessionsPerDay = (int) $data['sessions_per_day'];
         $skipWeekends   = !empty($data['skip_weekends']);
 
@@ -222,17 +222,18 @@ class ExamScheduleController extends AppBaseController
 
             foreach ($rows as $row) {
                 ExamSchedule::create([
-                    'exam_id'       => $exam->exam_id,
-                    'class_id'      => $row->class_id,
-                    'subject_id'    => $subjectId,
-                    'exam_date'     => $slot['date'],
-                    'start_time'    => $slot['start'],
-                    'end_time'      => $slot['end'],
-                    'room_id'       => ($data['assign_rooms'] && $rooms->isNotEmpty())
-                                        ? $rooms[$roomIdx++ % $rooms->count()]->classroom_id
-                                        : null,
-                    'max_marks'     => $data['max_marks'],
-                    'passing_marks' => $data['passing_marks'],
+                    'exam_id'           => $exam->exam_id,
+                    'class_id'          => $row->class_id,
+                    'subject_id'        => $subjectId,
+                    'exam_date'         => $slot['date'],
+                    'start_time'        => $slot['start'],
+                    'end_time'          => $slot['end'],
+                    'duration_minutes'  => $sessionMinutes,
+                    'room_id'           => ($data['assign_rooms'] && $rooms->isNotEmpty())
+                                            ? $rooms[$roomIdx++ % $rooms->count()]->classroom_id
+                                            : null,
+                    'max_marks'         => $data['max_marks'],
+                    'passing_marks'     => $data['passing_marks'],
                 ]);
                 $created++;
             }

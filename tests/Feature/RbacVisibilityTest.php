@@ -160,16 +160,17 @@ class RbacVisibilityTest extends TestCase
         // Student Management: only Student Attendance is visible (academics.attendance.manage)
         $this->assertSame(['Student Attendance'], $this->childLabels($menu, 'students'));
 
-        // Academic Management: only Dashboard + My Timetable are visible
-        // (academics.view); structural/admin children stay hidden.
-        $this->assertSame(['Dashboard', 'My Timetable'], $this->childLabels($menu, 'academics'));
+        // Academic Management: only Dashboard + My Timetable + Apply for Leave are visible
+        // (academics.view + hr.leave.apply); structural/admin children stay hidden.
+        $this->assertSame(['Dashboard', 'My Timetable', 'Apply for Leave'], $this->childLabels($menu, 'academics'));
 
         // Examinations: teacher has schedule.view, marks.enter-own, results.view-own
-        // Children: Dashboard, Sessions, Timetables, Enter Marks, Grade Book, Report Cards
+        // Admin/management items (Dashboard, Sessions, Timetables) are admin-role
+        // only and must NOT appear for an ordinary teacher.
         $examChildren = $this->childLabels($menu, 'exams');
-        $this->assertContains('Dashboard', $examChildren);
-        $this->assertContains('Sessions', $examChildren);
-        $this->assertContains('Timetables', $examChildren);
+        $this->assertNotContains('Dashboard', $examChildren);
+        $this->assertNotContains('Sessions', $examChildren);
+        $this->assertNotContains('Timetables', $examChildren);
         $this->assertContains('Enter Marks', $examChildren);
         $this->assertContains('Grade Book', $examChildren);
         $this->assertContains('Report Cards', $examChildren);
@@ -178,13 +179,14 @@ class RbacVisibilityTest extends TestCase
         $this->assertNotContains('Bulk Import Marks', $examChildren);
         $this->assertNotContains('Grading Systems', $examChildren);
 
-        // Sub-headers within Examinations: Management, Marks, Reports should render
+        // Sub-headers within Examinations: Management is admin-only and must not
+        // render; Marks and Reports (and CBE, via academics.view) should.
         $examHeaders = $this->childHeaders($menu, 'exams');
-        $this->assertContains('Management', $examHeaders);
+        $this->assertNotContains('Management', $examHeaders);
         $this->assertContains('Marks', $examHeaders);
         $this->assertContains('Reports', $examHeaders);
+        $this->assertContains('CBE Curriculum', $examHeaders);
         $this->assertNotContains('Configuration', $examHeaders);
-        $this->assertNotContains('CBC', $examHeaders);
     }
 
     public function test_zero_permission_role_sees_only_dashboard_link(): void

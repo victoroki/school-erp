@@ -6,7 +6,7 @@
     <div class="row align-items-center mb-4">
         <div class="col-md-7">
             <h1 class="dash-heading">
-                @if($isAdmin && $viewingStaff->staff_id != ($staff->staff_id ?? 0))
+                @if($isAdmin && $viewingStaff && $viewingStaff->staff_id != ($staff->staff_id ?? 0))
                     {{ $viewingStaff->full_name }}'s Schedule
                 @else
                     My Teaching Schedule
@@ -24,7 +24,7 @@
                 <button onclick="window.print()" class="btn-dash btn-ghost">
                     <i class="fas fa-print mr-2"></i> Print Schedule
                 </button>
-                @if($isAdmin)
+                @if($isAdmin && $viewingStaff)
                 <a href="{{ route('timetables.index') }}" class="btn-dash btn-primary-dash">
                     <i class="fas fa-plus mr-2"></i> Manage Lessons
                 </a>
@@ -44,7 +44,7 @@
                         <label class="filter-label">Teacher</label>
                         <select name="staff_id" class="filter-input" onchange="this.form.submit()">
                             @foreach($allTeachers as $t)
-                                <option value="{{ $t->staff_id }}" {{ $viewingStaff->staff_id == $t->staff_id ? 'selected' : '' }}>
+                                <option value="{{ $t->staff_id }}" {{ $viewingStaff && $viewingStaff->staff_id == $t->staff_id ? 'selected' : '' }}>
                                     {{ $t->full_name }} ({{ $t->employee_number }})
                                 </option>
                             @endforeach
@@ -66,6 +66,21 @@
             {!! Form::close() !!}
         </div>
     </div>
+
+    {{-- When no staff member can be resolved, show a friendly empty state --}}
+    @if(!$viewingStaff)
+        <div class="tt-empty" style="padding: 3rem 1rem; margin-bottom: 1rem;">
+            <i class="fas fa-user-slash"></i>
+            <p style="font-weight: 800; color: var(--text); margin-bottom: 0.25rem;">
+                @if($allTeachers->isEmpty())
+                    No teaching staff found.
+                @else
+                    Teacher records not found.
+                @endif
+            </p>
+            <p style="margin: 0;">Please contact your administrator or select a teacher from the filter above.</p>
+        </div>
+    @endif
 
     {{-- ③ METRIC CARDS --}}
     @php

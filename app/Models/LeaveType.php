@@ -8,6 +8,8 @@ class LeaveType extends Model
 {
     public $table = 'leave_types';
 
+    protected $primaryKey = 'leave_type_id';
+
     public $fillable = [
         'name',
         'days_allowed',

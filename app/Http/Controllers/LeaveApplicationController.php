@@ -17,14 +17,49 @@ class LeaveApplicationController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:hr.view')->only(['index', 'show']);
-        $this->middleware('can:hr.manage')->only(['create', 'store']);
         $this->middleware('can:hr.approve')->only(['approve']);
+    }
+
+    /**
+     * True when the user may apply for leave: either a full HR manager
+     * (hr.manage) or a staff member with the scoped hr.leave.apply permission
+     * (teachers applying for their own leave).
+     */
+    private function canApplyForLeave(): bool
+    {
+        $user = Auth::user();
+
+        return $user
+            && ($user->hasPermission('hr.manage') || $user->hasPermission('hr.leave.apply'));
+    }
+
+    /**
+     * True when the user may view all leave applications (HR manager).
+     */
+    private function canViewAllLeave(): bool
+    {
+        return (bool) Auth::user()?->hasPermission('hr.view');
     }
 
     public function index(Request $request)
     {
+        $user = Auth::user();
+
+        if (!$user || (!$user->hasPermission('hr.view') && !$user->hasPermission('hr.leave.apply'))) {
+            abort(403);
+        }
+
         $query = LeaveApplication::with(['staff', 'leaveType', 'reliefStaff']);
+
+        // Staff members who only hold hr.leave.apply see only their own applications.
+        $viewAll = $user->hasPermission('hr.view');
+        if (!$viewAll) {
+            $currentStaff = Staff::where('user_id', $user->id)->first();
+            if (!$currentStaff) {
+                abort(403);
+            }
+            $query->where('staff_id', $currentStaff->staff_id);
+        }
 
         // Filters
         if ($request->filled('status')) {
@@ -41,13 +76,15 @@ class LeaveApplicationController extends Controller
 
         $applications = $query->latest()->paginate(20);
         $leaveTypes = LeaveType::where('status', 'active')->get();
-        $staff = Staff::where('employment_status', 'active')->get();
+        $staff = $viewAll ? Staff::where('employment_status', 'active')->get() : collect();
 
-        return view('hr.leave.index', compact('applications', 'leaveTypes', 'staff'));
+        return view('hr.leave.index', compact('applications', 'leaveTypes', 'staff', 'viewAll'));
     }
 
     public function create()
     {
+        abort_unless($this->canApplyForLeave(), 403);
+
         $leaveTypes = LeaveType::where('status', 'active')->get();
         $currentYear = AcademicYear::where('is_current', true)->first();
         
@@ -76,6 +113,8 @@ class LeaveApplicationController extends Controller
 
     public function store(Request $request)
     {
+        abort_unless($this->canApplyForLeave(), 403);
+
         $request->validate([
             'leave_type_id' => 'required|exists:leave_types,leave_type_id',
             'start_date' => 'required|date|after_or_equal:today',
@@ -139,6 +178,14 @@ class LeaveApplicationController extends Controller
 
     public function show(LeaveApplication $leaveApplication)
     {
+        $user = Auth::user();
+
+        if (!$user->hasPermission('hr.view')) {
+            // Staff member with hr.leave.apply may only view their own applications.
+            $currentStaff = Staff::where('user_id', $user->id)->first();
+            abort_unless($currentStaff && $leaveApplication->staff_id == $currentStaff->staff_id, 403);
+        }
+
         $leaveApplication->load(['staff', 'leaveType', 'reliefStaff']);
         return view('hr.leave.show', compact('leaveApplication'));
     }

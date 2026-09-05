@@ -4,7 +4,9 @@
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 font-weight-bold"><i class="fas fa-user-friends mr-2 text-primary"></i> Parents / Guardians</h6>
-                <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-plus"></i> Add Parent</a>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#addParentModal">
+                    <i class="fas fa-plus"></i> Add Parent
+                </button>
             </div>
             <div class="card-body">
                 @if($student->parents->count() > 0)
@@ -13,9 +15,23 @@
                             <div class="col-md-6 mb-3">
                                 <div class="card border">
                                     <div class="card-body">
-                                        <h6 class="font-weight-bold">{{ $parent->first_name }} {{ $parent->last_name }}</h6>
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <h6 class="font-weight-bold">
+                                                {{ $parent->first_name }} {{ $parent->last_name }}
+                                                @if(!empty($parent->pivot->is_primary_contact))
+                                                    <span class="badge badge-primary ml-1">Primary</span>
+                                                @endif
+                                            </h6>
+                                            <form action="{{ route('students.remove-parent', [$student->student_id, $parent->parent_id]) }}" method="POST" onsubmit="return confirm('Remove this parent from the student?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Remove parent">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </div>
                                         <p class="text-muted small mb-2">
-                                            <i class="fas fa-link mr-1"></i> {{ $parent->pivot->relationship ?? 'Guardian' }}
+                                            <i class="fas fa-link mr-1"></i> {{ $parent->relationship ?? 'Guardian' }}
                                         </p>
                                         <table class="table table-sm table-borderless mb-0">
                                             @if($parent->phone)

@@ -308,14 +308,129 @@
     </div>
 </div>
 
+<!-- Add Parent Modal -->
+<div class="modal fade" id="addParentModal" tabindex="-1" role="dialog" aria-labelledby="addParentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title font-weight-bold" id="addParentModalLabel" style="font-family: 'Outfit', sans-serif;">Add Parent / Guardian</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{{ route('students.add-parent', $student->student_id) }}" method="POST">
+                @csrf
+                <div class="modal-body pt-3">
+                    <div class="form-group">
+                        <label style="font-weight:600; font-size: 0.9rem;">Link Method</label>
+                        <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
+                            <label class="btn btn-outline-primary active">
+                                <input type="radio" name="link_method" value="existing" id="linkMethodExisting" checked> Existing
+                            </label>
+                            <label class="btn btn-outline-primary">
+                                <input type="radio" name="link_method" value="new" id="linkMethodNew"> New Parent
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="existingParentFields">
+                        <div class="form-group">
+                            <label for="parent_id" style="font-weight:600; font-size: 0.9rem;">Select Parent</label>
+                            <select class="form-control" name="parent_id" id="parent_id">
+                                <option value="">-- Choose Parent --</option>
+                                @foreach(\App\Models\Parents::whereNotIn('parent_id', $student->parents->pluck('parent_id'))->get() as $p)
+                                    <option value="{{ $p->parent_id }}">{{ $p->full_name }} ({{ $p->phone ?? 'no phone' }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="newParentFields" style="display:none;">
+                        <div class="form-row">
+                            <div class="form-group col-6">
+                                <label for="first_name" style="font-weight:600; font-size: 0.9rem;">First Name</label>
+                                <input type="text" class="form-control" name="first_name" id="first_name" value="{{ old('first_name') }}">
+                            </div>
+                            <div class="form-group col-6">
+                                <label for="last_name" style="font-weight:600; font-size: 0.9rem;">Last Name</label>
+                                <input type="text" class="form-control" name="last_name" id="last_name" value="{{ old('last_name') }}">
+                            </div>
+                            <div class="form-group col-6">
+                                <label for="relationship" style="font-weight:600; font-size: 0.9rem;">Relationship</label>
+                                <select class="form-control" name="relationship" id="relationship" required>
+                                    <option value="Mother">Mother</option>
+                                    <option value="Father">Father</option>
+                                    <option value="Guardian">Guardian</option>
+                                    <option value="Grandparent">Grandparent</option>
+                                </select>
+                            </div>
+                            <div class="form-group col-6">
+                                <label for="phone" style="font-weight:600; font-size: 0.9rem;">Phone</label>
+                                <input type="text" class="form-control" name="phone" id="phone" value="{{ old('phone') }}">
+                            </div>
+                            <div class="form-group col-6">
+                                <label for="email" style="font-weight:600; font-size: 0.9rem;">Email</label>
+                                <input type="email" class="form-control" name="email" id="email" value="{{ old('email') }}">
+                            </div>
+                            <div class="form-group col-6">
+                                <label for="occupation" style="font-weight:600; font-size: 0.9rem;">Occupation</label>
+                                <input type="text" class="form-control" name="occupation" id="occupation" value="{{ old('occupation') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group form-check mt-1">
+                        <input type="checkbox" class="form-check-input" id="is_primary_contact" name="is_primary_contact" value="1">
+                        <label class="form-check-label" for="is_primary_contact" style="font-weight: 500;">Set as primary contact</label>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary-custom rounded-pill">Add Parent</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @push('page_scripts')
 <script>
     $(document    ).ready(function() {
         if('{{ session('active_tab') }}' == 'family') {
             $('#family-tab-link').tab('show');
         }
+
+        function toggleParentMethod(method) {
+            if (method === 'new') {
+                $('#existingParentFields').hide();
+                $('#newParentFields').show();
+                $('#parent_id').prop('required', false).prop('disabled', true).val('');
+                $('#first_name').prop('required', true);
+                $('#last_name').prop('required', true);
+                $('#phone').prop('required', true);
+            } else {
+                $('#existingParentFields').show();
+                $('#newParentFields').hide();
+                $('#parent_id').prop('required', true).prop('disabled', false);
+                $('#first_name').prop('required', false);
+                $('#last_name').prop('required', false);
+                $('#phone').prop('required', false);
+            }
+        }
+
+        $(document).on('change', 'input[name="link_method"]', function () {
+            toggleParentMethod($(this).val());
+        });
+        toggleParentMethod($('input[name="link_method"]:checked').val());
+
+        // Reset the modal each time it is opened so a fresh choice is always required.
+        $('#addParentModal').on('hidden.bs.modal', function () {
+            $('form', this)[0].reset();
+            toggleParentMethod('existing');
+        });
     });
 </script>
 @endpush
+
 
 @endsection

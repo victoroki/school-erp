@@ -31,7 +31,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Month <span class="text-danger">*</span></label>
-                                    <select name="month" class="form-control" required>
+                                    <select name="month" class="form-select" required>
                                         @for($m = 1; $m <= 12; $m++)
                                             <option value="{{ $m }}" {{ date('n') == $m ? 'selected' : '' }}>
                                                 {{ date('F', mktime(0, 0, 0, $m, 1)) }}
@@ -43,7 +43,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Year <span class="text-danger">*</span></label>
-                                    <select name="year" class="form-control" required>
+                                    <select name="year" class="form-select" required>
                                         @for($y = date('Y') - 1; $y <= date('Y') + 1; $y++)
                                             <option value="{{ $y }}" {{ date('Y') == $y ? 'selected' : '' }}>{{ $y }}</option>
                                         @endfor

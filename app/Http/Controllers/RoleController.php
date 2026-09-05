@@ -28,7 +28,8 @@ class RoleController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $query = \App\Models\Role::orderBy('role_name');
+        $query = \App\Models\Role::orderBy('role_name')
+            ->where('role_name', '!=', 'Owner');
 
         if (! auth()->user() || ! auth()->user()->canBypassProtection()) {
             $query->where('is_hidden', false);

@@ -229,6 +229,22 @@ class TimetableController extends AppBaseController
     }
 
     /**
+     * Ordered day-of-week labels shared by the teacher timetable view.
+     */
+    protected static function daysOfWeek(): array
+    {
+        return [
+            'monday' => 'Monday',
+            'tuesday' => 'Tuesday',
+            'wednesday' => 'Wednesday',
+            'thursday' => 'Thursday',
+            'friday' => 'Friday',
+            'saturday' => 'Saturday',
+            'sunday' => 'Sunday',
+        ];
+    }
+
+    /**
      * Display the teacher's personal timetable.
      */
     public function teacherTimetable(Request $request)
@@ -254,18 +270,26 @@ class TimetableController extends AppBaseController
             }
         } else {
             if (!$staff) {
-                Flash::error('You are not registered as a staff member.');
-                return redirect(route('home'));
+                Flash::error('You are not registered as a staff member. Contact your administrator.');
+                return view('timetables.teacher_timetable', [
+                    'staff' => null,
+                    'viewingStaff' => null,
+                    'allTeachers' => collect(),
+                    'timetables' => collect(),
+                    'periods' => collect(),
+                    'daysOfWeek' => self::daysOfWeek(),
+                    'schedule' => [],
+                    'academicYearOptions' => ['' => 'Select Year'],
+                    'selectedAcademicYearId' => null,
+                    'todayClasses' => collect(),
+                    'assignments' => collect(),
+                    'isAdmin' => false,
+                ]);
             }
             $selectedStaffId = $staff->staff_id;
         }
 
         $viewingStaff = Staff::with('department')->find($selectedStaffId);
-
-        if (!$viewingStaff) {
-            Flash::error('Teacher records not found.');
-            return redirect(route('home'));
-        }
 
         $academicYears = AcademicYear::orderBy('start_date', 'desc')->get();
         $selectedAcademicYearId = $request->get('academic_year_id');
@@ -288,15 +312,7 @@ class TimetableController extends AppBaseController
         ->get();
 
         $periods = Period::orderBy('start_time')->get();
-        $daysOfWeek = [
-            'monday' => 'Monday',
-            'tuesday' => 'Tuesday',
-            'wednesday' => 'Wednesday',
-            'thursday' => 'Thursday',
-            'friday' => 'Friday',
-            'saturday' => 'Saturday',
-            'sunday' => 'Sunday',
-        ];
+        $daysOfWeek = self::daysOfWeek();
 
         $schedule = [];
         foreach ($timetables as $entry) {

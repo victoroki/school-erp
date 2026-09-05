@@ -121,8 +121,8 @@
                                             <label class="custom-control-label font-weight-bold" for="skipWeekends">Skip weekends</label>
                                         </div>
                                     </div>
-                                    <div class="form-group col-md-12">
-                                        <label class="filter-label">Sessions Per Day <small class="text-muted font-weight-normal">(each session = 2 hours)</small></label>
+                                    <div class="form-group col-md-8">
+                                        <label class="filter-label">Sessions Per Day</label>
                                         <div class="btn-group btn-group-toggle w-100" data-toggle="buttons">
                                             <label class="btn btn-outline-secondary active">
                                                 <input type="radio" name="sessions_per_day" value="1" {{ old('sessions_per_day', '1') == '1' ? 'checked' : '' }}> 1 (Morning only)
@@ -131,6 +131,14 @@
                                                 <input type="radio" name="sessions_per_day" value="2" {{ old('sessions_per_day') == '2' ? 'checked' : '' }}> 2 (Morning + Afternoon)
                                             </label>
                                         </div>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label class="filter-label">Session Duration (min) <span class="text-danger">*</span></label>
+                                        <div class="filter-field">
+                                            <i class="fas fa-hourglass-half"></i>
+                                            <input type="number" name="session_minutes" value="{{ old('session_minutes', 120) }}" min="30" max="360" step="15" required>
+                                        </div>
+                                        <small class="text-muted font-weight-normal">Exam length per subject; the end time is computed automatically.</small>
                                     </div>
                                     <div class="form-group col-md-6">
                                         <label class="filter-label">Morning Start</label>

@@ -283,7 +283,7 @@ class RoleProtectionTest extends TestCase
         $this->actingAs($owner)->get('/audit-trail')->assertOk();
         $this->actingAs($owner)->get('/modules')->assertOk();
 
-        // Owner is hidden from non-bypass role listings but visible to bypass.
+        // Owner is hidden from all role listings (exists but not displayed).
         $this->actingAs($this->manager)
             ->get(route('roles.index'))
             ->assertOk()
@@ -291,7 +291,7 @@ class RoleProtectionTest extends TestCase
         $this->actingAs($this->superAdmin)
             ->get(route('roles.index'))
             ->assertOk()
-            ->assertSee('Owner');
+            ->assertDontSee('Owner');
 
         // Owner can toggle a core module (B6 decision: privileged users toggle everything).
         $this->seed(\Database\Seeders\ModuleSeeder::class);

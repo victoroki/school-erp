@@ -76,19 +76,17 @@ class MarksApprovalController extends Controller
             $genderQuery->where('exam_results.class_section_id', $request->class_section_id);
         }
 
-        $batches = $batchQuery->orderBy('oldest_entry')->paginate(15)->appends($request->query());
+        $paginator = $batchQuery->orderBy('oldest_entry')->paginate(15)->appends($request->query());
         $genders = $genderQuery->get();
 
-        $batches = $batches->map(function ($batch) use ($genders, $exams, $classSections) {
-            $key = [$batch->exam_id, $batch->class_section_id];
-
+        $batches = $paginator->setCollection($paginator->getCollection()->map(function ($batch) use ($genders, $exams, $classSections) {
             $batch->exam_name = $exams[$batch->exam_id] ?? 'Unknown Exam';
             $batch->class_name = $classSections[$batch->class_section_id] ?? 'Unknown Class';
             $batch->girls = (int) ($genders->where('exam_id', $batch->exam_id)->where('class_section_id', $batch->class_section_id)->firstWhere('gender', 'female')->learners_count ?? 0);
             $batch->boys = (int) ($genders->where('exam_id', $batch->exam_id)->where('class_section_id', $batch->class_section_id)->firstWhere('gender', 'male')->learners_count ?? 0);
 
             return $batch;
-        });
+        }));
 
         $totalPending = (int) $batches->sum('pending_count');
         $totalLearners = (int) $batches->sum('learners_count');
