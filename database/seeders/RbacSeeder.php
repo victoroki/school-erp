@@ -38,6 +38,7 @@ class RbacSeeder extends Seeder
             'transport.view', 'transport.manage',
             'communication.view', 'communication.manage', 'communication.dashboard', 'communication.compose', 'communication.send', 'communication.history.index', 'communication.history.show',
             'discipline.view', 'discipline.manage',
+            'homework.view', 'homework.manage',
             'parents.view', 'parents.manage',
             'audit-trail.index',
         ],
@@ -59,6 +60,7 @@ class RbacSeeder extends Seeder
             'transport.view', 'transport.manage',
             'communication.view', 'communication.manage', 'communication.dashboard', 'communication.compose', 'communication.send', 'communication.history.index', 'communication.history.show',
             'discipline.view', 'discipline.manage',
+            'homework.view', 'homework.manage',
             'parents.view', 'parents.manage',
             'audit-trail.index',
         ],
@@ -77,6 +79,7 @@ class RbacSeeder extends Seeder
             'transport.view', 'transport.manage',
             'communication.view', 'communication.manage', 'communication.dashboard', 'communication.compose', 'communication.send', 'communication.history.index', 'communication.history.show',
             'discipline.view', 'discipline.manage',
+            'homework.view', 'homework.manage',
             'parents.view', 'parents.manage',
             'audit-trail.index',
         ],
@@ -87,6 +90,7 @@ class RbacSeeder extends Seeder
             'exams.schedule.view',
             'exams.results.view-own',
             'hr.leave.apply',
+            'homework.view', 'homework.manage',
         ],
         'Accountant' => [
             'finance.view',
@@ -98,8 +102,12 @@ class RbacSeeder extends Seeder
             'fees.collect',
             'fees.print',
         ],
-        'Parent' => [],
-        'Student' => [],
+        'Parent' => [
+            'homework.view',
+        ],
+        'Student' => [
+            'homework.view',
+        ],
     ];
 
     public function run(): void

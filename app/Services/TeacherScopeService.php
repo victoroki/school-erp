@@ -68,6 +68,37 @@ class TeacherScopeService
     }
 
     /**
+     * True when the teacher may enter marks/assessments for a given
+     * (class section, subject) pair. Allowed when either:
+     *   - the teacher is assigned to teach that subject in that section
+     *     (teacher_subjects pivot), OR
+     *   - the teacher is the class teacher (homeroom) of that section,
+     *     which grants access to every subject in the class.
+     */
+    public function canManageSubjectInSection(User $user, int $classSectionId, int $subjectId): bool
+    {
+        $staff = $this->resolveStaff($user);
+        if (!$staff) {
+            return false;
+        }
+
+        // Class teachers (homeroom) can enter marks for any subject in their class.
+        $isClassTeacher = ClassSection::where('class_section_id', $classSectionId)
+            ->where('class_teacher_id', $staff->staff_id)
+            ->exists();
+
+        if ($isClassTeacher) {
+            return true;
+        }
+
+        // Otherwise the subject must be assigned via the teacher_subjects pivot.
+        return TeacherSubject::where('staff_id', $staff->staff_id)
+            ->where('subject_id', $subjectId)
+            ->where('class_section_id', $classSectionId)
+            ->exists();
+    }
+
+    /**
      * Scope an Exam query to only the exams scheduled for the teacher's classes.
      * Exams with no schedules at all remain visible.
      */

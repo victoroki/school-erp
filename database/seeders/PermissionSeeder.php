@@ -92,6 +92,10 @@ class PermissionSeeder extends Seeder
         'discipline.view'     => 'View disciplinary records and medical incidents',
         'discipline.manage'   => 'Manage disciplinary records and medical incidents',
 
+        // Homework (2)
+        'homework.view'       => 'View homework assignments',
+        'homework.manage'     => 'Create and manage homework assignments',
+
         // Parents (2)
         'parents.view'        => 'View parents and student-parent relationships',
         'parents.manage'      => 'Manage parents and student-parent relationships',
