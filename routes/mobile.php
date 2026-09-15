@@ -30,6 +30,7 @@ use App\Http\Controllers\Mobile\MobileTeacherClassController;
 use App\Http\Controllers\Mobile\MobileAdminDashboardController;
 use App\Http\Controllers\Mobile\MobileChildController;
 use App\Http\Controllers\Mobile\MobileFinanceSummaryController;
+use App\Http\Controllers\Mobile\MobileLeaveController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -190,11 +191,22 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('abilities:mobile:access');
 
     // Staff Attendance
+    Route::get('/attendance/staff/my-status', [MobileStaffAttendanceController::class, 'myStatus'])
+        ->middleware('abilities:mobile:access');
     Route::post('/attendance/staff/clock-in', [MobileStaffAttendanceController::class, 'clockIn'])
         ->middleware('abilities:mobile:access');
     Route::post('/attendance/staff/clock-out', [MobileStaffAttendanceController::class, 'clockOut'])
         ->middleware('abilities:mobile:access');
     Route::get('/attendance/staff/my-history', [MobileStaffAttendanceController::class, 'myHistory'])
+        ->middleware('abilities:mobile:access');
+
+    // PHASE 5 — Leave self-service (own applications only; approvals stay
+    // web-only). Business rules mirror LeaveApplicationController exactly.
+    Route::get('/hr/leave', [MobileLeaveController::class, 'index'])
+        ->middleware('abilities:mobile:access');
+    Route::get('/hr/leave/types', [MobileLeaveController::class, 'types'])
+        ->middleware('abilities:mobile:access');
+    Route::post('/hr/leave', [MobileLeaveController::class, 'store'])
         ->middleware('abilities:mobile:access');
 
     // Library
@@ -209,12 +221,30 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/payroll/latest', [MobilePayrollController::class, 'latest'])
         ->middleware('abilities:mobile:access');
 
-    // Communication
+    // Communication — DIRECT MESSAGES (PHASE 5: this is the whole real
+    // contract; the fictional /messages/rooms + /messages/room/{id} the old
+    // mobile build called never existed server-side). Staff-to-staff only;
+    // rules enforced in MobileCommunicationController.
     Route::get('/messages', [MobileCommunicationController::class, 'index'])
+        ->middleware('abilities:mobile:access');
+    Route::get('/messages/threads', [MobileCommunicationController::class, 'threads'])
+        ->middleware('abilities:mobile:access');
+    Route::get('/messages/contacts', [MobileCommunicationController::class, 'contacts'])
+        ->middleware('abilities:mobile:access');
+    Route::get('/messages/thread/{userId}', [MobileCommunicationController::class, 'thread'])
         ->middleware('abilities:mobile:access');
     Route::post('/messages/send', [MobileCommunicationController::class, 'send'])
         ->middleware('abilities:mobile:access');
+    Route::post('/messages/{id}/read', [MobileCommunicationController::class, 'markMessageRead'])
+        ->middleware('abilities:mobile:access');
+
+    // Notifications — personal feed with REAL read state (pivot fan-out +
+    // per-user read marking; no fake unread counts).
     Route::get('/notifications', [MobileCommunicationController::class, 'notifications'])
+        ->middleware('abilities:mobile:access');
+    Route::post('/notifications/read-all', [MobileCommunicationController::class, 'markAllNotificationsRead'])
+        ->middleware('abilities:mobile:access');
+    Route::post('/notifications/{id}/read', [MobileCommunicationController::class, 'markNotificationRead'])
         ->middleware('abilities:mobile:access');
 
     // Student notices (teacher posts, parent/student views)
