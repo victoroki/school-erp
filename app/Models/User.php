@@ -52,6 +52,15 @@ class User extends Authenticatable
     }
 
     /**
+     * The parent record linked to this user account (if any).
+     * Parent accounts use this to scope queries to their linked children.
+     */
+    public function parent(): HasOne
+    {
+        return $this->hasOne(\App\Models\Parents::class, 'user_id');
+    }
+
+    /**
      * The student record linked to this user account (if any).
      * Student accounts use this to scope queries to their own data.
      */

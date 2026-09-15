@@ -185,6 +185,12 @@ return [
                 ['key' => 'medical', 'label' => 'Medical Records', 'icon' => 'fas fa-notes-medical', 'color' => 'text-warning',
                  'route' => 'medical-incidents.index', 'active' => 'medical-incidents*', 'permission' => ['students.view', 'students.manage']],
 
+                ['key' => 'homework', 'label' => 'Homework', 'icon' => 'fas fa-book-open', 'color' => 'text-warning',
+                 'route' => 'homework.index', 'active' => 'homework*', 'permission' => ['homework.view', 'homework.manage']],
+
+                ['key' => 'student-notices', 'label' => 'Student Notices', 'icon' => 'fas fa-bullhorn', 'color' => 'text-warning',
+                 'route' => 'student-notices.index', 'active' => 'student-notices*', 'permission' => ['student-notices.view', 'student-notices.manage']],
+
                 ['header' => 'Reports', 'color' => 'text-warning'],
                 ['key' => 'student-reports', 'label' => 'Student Reports', 'icon' => 'fas fa-file-invoice', 'color' => 'text-warning',
                  'route' => 'student-reports.index', 'active' => 'student-reports*', 'permission' => ['students.view']],

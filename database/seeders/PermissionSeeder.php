@@ -96,6 +96,10 @@ class PermissionSeeder extends Seeder
         'homework.view'       => 'View homework assignments',
         'homework.manage'     => 'Create and manage homework assignments',
 
+        // Student Notices (2)
+        'student-notices.view'   => 'View student-specific notices',
+        'student-notices.manage' => 'Create and manage student-specific notices',
+
         // Parents (2)
         'parents.view'        => 'View parents and student-parent relationships',
         'parents.manage'      => 'Manage parents and student-parent relationships',

@@ -39,6 +39,7 @@ class RbacSeeder extends Seeder
             'communication.view', 'communication.manage', 'communication.dashboard', 'communication.compose', 'communication.send', 'communication.history.index', 'communication.history.show',
             'discipline.view', 'discipline.manage',
             'homework.view', 'homework.manage',
+            'student-notices.view', 'student-notices.manage',
             'parents.view', 'parents.manage',
             'audit-trail.index',
         ],
@@ -61,6 +62,7 @@ class RbacSeeder extends Seeder
             'communication.view', 'communication.manage', 'communication.dashboard', 'communication.compose', 'communication.send', 'communication.history.index', 'communication.history.show',
             'discipline.view', 'discipline.manage',
             'homework.view', 'homework.manage',
+            'student-notices.view', 'student-notices.manage',
             'parents.view', 'parents.manage',
             'audit-trail.index',
         ],
@@ -80,6 +82,7 @@ class RbacSeeder extends Seeder
             'communication.view', 'communication.manage', 'communication.dashboard', 'communication.compose', 'communication.send', 'communication.history.index', 'communication.history.show',
             'discipline.view', 'discipline.manage',
             'homework.view', 'homework.manage',
+            'student-notices.view', 'student-notices.manage',
             'parents.view', 'parents.manage',
             'audit-trail.index',
         ],
@@ -91,6 +94,7 @@ class RbacSeeder extends Seeder
             'exams.results.view-own',
             'hr.leave.apply',
             'homework.view', 'homework.manage',
+            'student-notices.view', 'student-notices.manage',
         ],
         'Accountant' => [
             'finance.view',
@@ -104,9 +108,11 @@ class RbacSeeder extends Seeder
         ],
         'Parent' => [
             'homework.view',
+            'student-notices.view',
         ],
         'Student' => [
             'homework.view',
+            'student-notices.view',
         ],
     ];
 

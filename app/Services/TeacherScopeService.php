@@ -68,6 +68,41 @@ class TeacherScopeService
     }
 
     /**
+     * The class_section_ids this teacher is explicitly assigned to teach a
+     * given subject (from teacher_subjects).
+     */
+    public function getClassSectionIdsForSubject(User $user, int $subjectId): Collection
+    {
+        $staff = $this->resolveStaff($user);
+        if (!$staff) {
+            return collect();
+        }
+
+        return TeacherSubject::where('staff_id', $staff->staff_id)
+            ->where('subject_id', $subjectId)
+            ->pluck('class_section_id')
+            ->unique()
+            ->values();
+    }
+
+    /**
+     * The subject_ids this teacher teaches in a given class section.
+     */
+    public function getSubjectIdsForClassSection(User $user, int $classSectionId): Collection
+    {
+        $staff = $this->resolveStaff($user);
+        if (!$staff) {
+            return collect();
+        }
+
+        return TeacherSubject::where('staff_id', $staff->staff_id)
+            ->where('class_section_id', $classSectionId)
+            ->pluck('subject_id')
+            ->unique()
+            ->values();
+    }
+
+    /**
      * True when the teacher may enter marks/assessments for a given
      * (class section, subject) pair. Allowed when either:
      *   - the teacher is assigned to teach that subject in that section
@@ -96,6 +131,34 @@ class TeacherScopeService
             ->where('subject_id', $subjectId)
             ->where('class_section_id', $classSectionId)
             ->exists();
+    }
+
+    /**
+     * All subject_ids the teacher may enter marks for — the union of subjects
+     * assigned via teacher_subjects and every subject offered in classes where
+     * they are the class teacher.
+     */
+    public function getAllManageableSubjectIds(User $user): Collection
+    {
+        $staff = $this->resolveStaff($user);
+        if (!$staff) {
+            return collect();
+        }
+
+        $assigned = TeacherSubject::where('staff_id', $staff->staff_id)
+            ->pluck('subject_id');
+
+        $classTeacherClassIds = ClassSection::where('class_teacher_id', $staff->staff_id)
+            ->pluck('class_id')
+            ->unique();
+
+        $classTeacherSubjects = $classTeacherClassIds->isEmpty()
+            ? collect()
+            : \App\Models\ClassSubject::whereIn('class_id', $classTeacherClassIds)
+                ->pluck('subject_id')
+                ->unique();
+
+        return $assigned->merge($classTeacherSubjects)->unique()->values();
     }
 
     /**

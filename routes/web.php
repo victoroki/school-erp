@@ -306,6 +306,23 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
     Route::get('medical-incidents', [App\Http\Controllers\MedicalIncidentController::class, 'index'])->name('medical-incidents.index');
     Route::get('medical-incidents/create', [App\Http\Controllers\MedicalIncidentController::class, 'create'])->name('medical-incidents.create');
     Route::post('medical-incidents', [App\Http\Controllers\MedicalIncidentController::class, 'store'])->name('medical-incidents.store');
+
+    // Homework
+    Route::get('homework', [App\Http\Controllers\HomeworkController::class, 'index'])->name('homework.index');
+    Route::get('homework/create', [App\Http\Controllers\HomeworkController::class, 'create'])->name('homework.create');
+    Route::post('homework', [App\Http\Controllers\HomeworkController::class, 'store'])->name('homework.store');
+    Route::get('homework/{id}', [App\Http\Controllers\HomeworkController::class, 'show'])->name('homework.show');
+    Route::get('homework/{id}/edit', [App\Http\Controllers\HomeworkController::class, 'edit'])->name('homework.edit');
+    Route::patch('homework/{id}', [App\Http\Controllers\HomeworkController::class, 'update'])->name('homework.update');
+    Route::delete('homework/{id}', [App\Http\Controllers\HomeworkController::class, 'destroy'])->name('homework.destroy');
+
+    // Student Notices
+    Route::get('student-notices', [App\Http\Controllers\StudentNoticeController::class, 'index'])->name('student-notices.index');
+    Route::get('student-notices/create', [App\Http\Controllers\StudentNoticeController::class, 'create'])->name('student-notices.create');
+    Route::post('student-notices', [App\Http\Controllers\StudentNoticeController::class, 'store'])->name('student-notices.store');
+    Route::get('student-notices/{id}', [App\Http\Controllers\StudentNoticeController::class, 'show'])->name('student-notices.show');
+    Route::patch('student-notices/{id}', [App\Http\Controllers\StudentNoticeController::class, 'update'])->name('student-notices.update');
+    Route::delete('student-notices/{id}', [App\Http\Controllers\StudentNoticeController::class, 'destroy'])->name('student-notices.destroy');
     
     // Academic Management Enhanced Routes
     Route::get('academic-dashboard', [App\Http\Controllers\AcademicDashboardController::class, 'index'])->name('academic-dashboard.index');
