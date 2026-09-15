@@ -16,7 +16,10 @@ class StaffAttendanceController extends Controller
     public function __construct()
     {
         $this->middleware('can:hr.view')->only(['index', 'show']);
-        $this->middleware('can:hr.manage')->only(['store', 'update']);
+        // PHASE 5 security fix: destroy() was not covered by any permission —
+        // any authenticated web session could delete attendance rows. Bulk
+        // changes stay with hr.manage.
+        $this->middleware('can:hr.manage')->only(['store', 'update', 'destroy']);
     }
 
     public function index(Request $request)

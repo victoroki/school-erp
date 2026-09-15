@@ -8,6 +8,19 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/**
+ * PHASE 5 — medical incident reads, server-authorized (STEP 16).
+ *
+ * Documented gap: the RBAC seed has NO medical-specific permission — the web
+ * controller uses students.view/.manage as the proxy, and there is no Nurse
+ * role (only a "School Nurse" staff designation). Rather than invent either,
+ * mobile mirrors the web's proxy: portal users see their own records
+ * (Parent→children, Student→self) and every other role must hold
+ * students.view — the old code let Accountant and Teacher see the entire
+ * medical table by fall-through. Mobile WRITE is not offered: no safe
+ * existing workflow (no nurse gating on the web side to reuse conservatively),
+ * so the screen is read-only and the gap is reported, not papered over.
+ */
 class MobileMedicalController extends Controller
 {
     public function index(Request $request): JsonResponse
@@ -23,9 +36,20 @@ class MobileMedicalController extends Controller
         } elseif ($user->hasRole('Student')) {
             // Student: scoped to self
             $studentId = $this->studentIdFromUser($user);
-            $query->where('student_id', $studentId);
+            $query->where('student_id', $studentId ?: 0);
+        } else {
+            // Staff: same proxy permission the web screen enforces…
+            if (!$user->hasPermission('students.view')) {
+                return response()->json(['message' => 'You are not authorised to view medical records.'], 403);
+            }
+            // …plus the student-scope clamp so a Teacher (who holds
+            // students.view via role grants on some installs) sees their own
+            // students, not the whole school infirmary log.
+            if (!$user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
+                $scoped = app(\App\Services\PortalScopeService::class)->visibleStudentIds($user);
+                $query->whereIn('student_id', $scoped ?: [0]);
+            }
         }
-        // Admin/Teacher/Owner see all (no scoping)
 
         $incidents = $query->orderByDesc('incident_date')->limit(50)->get();
 

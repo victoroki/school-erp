@@ -260,12 +260,24 @@ class LeaveApplicationController extends Controller
 
     public function reject($id, Request $request)
     {
+        // PHASE 5 security fix: reject() had no authorization at all — any
+        // authenticated web session could reject any application. Same rule
+        // as approve(): hr.approve holders or the applicant's HOD.
+        $user = Auth::user();
+        $leave = LeaveApplication::with('staff.department')->findOrFail($id);
+        $currentStaff = Staff::where('user_id', $user->id)->first();
+
+        $isHod = $currentStaff
+            && $leave->staff
+            && $leave->staff->department_id === $currentStaff->department_id
+            && optional($leave->staff->department)->hod_id === $currentStaff->staff_id;
+
+        abort_unless($user->hasPermission('hr.approve') || $isHod, 403);
+
         $request->validate([
             'rejection_reason' => 'required|string|min:10',
         ]);
 
-        $leave = LeaveApplication::findOrFail($id);
-        
         $leave->update([
             'application_status' => 'rejected',
             'final_status' => 'rejected',
