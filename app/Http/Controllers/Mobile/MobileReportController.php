@@ -79,7 +79,11 @@ class MobileReportController extends Controller
             foreach ($studentCards as $i => $studentCard) {
                 $rank++;
                 $blueprint = [
-                    'examName'     => $exam?->name ?? 'Exam',
+                    // PHASE 4: the student identity travels with the card so
+                    // the Parent Child screen filters by id, not by matching
+                    // names (two children can share a name; names change).
+                    'student_id'     => $studentCard['student_id'],
+                    'examName'       => $exam?->name ?? 'Exam',
                     'term'         => $termName,
                     'year'         => $exam?->academicYear?->name ?? '',
                     'student_name' => $studentCard['student_name'],

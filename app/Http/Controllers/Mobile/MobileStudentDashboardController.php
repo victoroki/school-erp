@@ -5,11 +5,10 @@ namespace App\Http\Controllers\Mobile;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
 use App\Models\StudentClassEnrollment;
-use App\Models\Timetable;
 use App\Models\Homework;
-use App\Models\StudentFeeAssignment;
 use App\Models\Notification;
-use App\Models\Period;
+use App\Models\Student;
+use App\Services\PortalScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,9 +17,15 @@ class MobileStudentDashboardController extends Controller
     /**
      * GET /api/mobile/dashboard
      *
-     * Aggregated data for the student's home screen.
+     * Aggregated data for the student's home screen. PHASE 4: the per-student
+     * rollup is PortalScopeService::childOverview computed for the caller's
+     * OWN record — a Student user can never steer it with a student_id from
+     * the device (STEP 3/20). The legacy keys (next_class, homework, fees,
+     * notifications) keep their shapes; fee arithmetic now covers ALL active
+     * assignments (previously one row, understating balances), and attendance,
+     * latest results and upcoming exams join the payload.
      */
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(Request $request, PortalScopeService $scope): JsonResponse
     {
         $user = $request->user();
 
@@ -33,47 +38,34 @@ class MobileStudentDashboardController extends Controller
             return response()->json(['error' => 'No current academic year set.'], 404);
         }
 
-        $enrollment = StudentClassEnrollment::where('student_id', $user->student?->student_id)
-            ->where('academic_year_id', $year->academic_year_id)
-            ->with(['classSection.class', 'classSection.section'])
-            ->first();
-
-        if (!$enrollment) {
-            return response()->json(['error' => 'No active class enrollment found.'], 404);
+        $student = PortalScopeService::selfStudent($user);
+        if (!$student) {
+            return response()->json(['error' => 'No student record for this account.'], 404);
         }
 
-        $classSection = $enrollment->classSection;
-        $className = trim(($classSection->class->name ?? '') . ' - ' . ($classSection->section->name ?? ''));
+        $overview = $scope->childOverview((int) $student->student_id);
 
-        // 1. Next Class
-        $dayOfWeek = strtolower(now()->format('l'));
-        $currentTime = now()->format('H:i:s');
-        $nextClass = Timetable::with(['subject', 'period', 'classroom'])
-            ->where('class_section_id', $classSection->class_section_id)
-            ->where('day_of_week', $dayOfWeek)
-            ->whereHas('period', fn($q) => $q->where('start_time', '>', $currentTime))
-            ->orderBy(
-                Period::select('start_time')
-                    ->whereColumn('periods.period_id', 'timetable.period_id'),
-                'asc'
-            )
-            ->first();
+        // Pending homework — same filter as the rollup, kept as its own block
+        // for the legacy contract (all due items, not just five).
+        $enrollment = PortalScopeService::enrollment($student->student_id);
+        $label = $enrollment ? PortalScopeService::normalizeLabel(PortalScopeService::className($enrollment) ?? '') : '';
+        $pendingHomework = collect();
+        if ($label !== '') {
+            $pendingHomework = Homework::where('status', 'active')
+                ->where('due_date', '>=', now()->toDateString())
+                ->orderBy('due_date', 'asc')
+                ->get()
+                ->filter(function ($h) use ($label) {
+                    if (!$h->class_name || trim($h->class_name) === '') {
+                        return true;
+                    }
 
-        // 2. Pending Homework
-        // Note: Homework model uses 'class_name'.
-        $pendingHomework = Homework::where('class_name', $className)
-            ->where('due_date', '>=', now()->toDateString())
-            ->orderBy('due_date', 'asc')
-            ->limit(3)
-            ->get();
+                    return PortalScopeService::normalizeLabel($h->class_name) === $label;
+                })
+                ->values();
+        }
 
-        // 3. Fee Balance
-        $feeAssignment = StudentFeeAssignment::where('student_id', $user->student?->student_id)
-            ->where('status', 'active')
-            ->first();
-        $balance = $feeAssignment ? (($feeAssignment->final_amount ?? 0) - $feeAssignment->paid_amount) : 0;
-
-        // 4. Recent Notices (delivered via NotificationRecipient rows)
+        // Recent Notices (delivered via NotificationRecipient rows)
         $notices = Notification::whereHas('recipients', function ($q) use ($user) {
             $q->where('recipient_id', $user->id);
         })
@@ -81,28 +73,52 @@ class MobileStudentDashboardController extends Controller
             ->limit(3)
             ->get();
 
+        // Latest published result summary (report cards for self only).
+        $cards = app(\App\Http\Controllers\Mobile\MobileReportController::class)
+            ->reportCards($request)
+            ->getData(true);
+        $own = collect($cards)
+            ->filter(fn ($c) => (int) ($c['student_id'] ?? -1) === (int) $student->student_id)
+            ->sortByDesc(fn ($c) => $c['year'] . '|' . ($c['examName'] ?? ''))
+            ->first();
+        $latestResult = $own ? [
+            'examName' => $own['examName'],
+            'term' => $own['term'],
+            'average' => $own['average'] ?? null,
+            'position' => $own['position'] ?? null,
+        ] : null;
+
         return response()->json([
             'student_name' => $user->name,
-            'current_class' => $className,
-            'next_class' => $nextClass ? [
-                'subject' => $nextClass->subject->name,
-                'time'    => $nextClass->period->start_time,
-                'room'    => $nextClass->classroom->room_number,
+            'current_class' => $overview['class'] ?? 'N/A',
+            'next_class' => $overview['timetable']['next_lesson'] ? [
+                'subject' => $overview['timetable']['next_lesson']['subject'],
+                'time'    => $overview['timetable']['next_lesson']['start_time'],
+                'room'    => $overview['timetable']['next_lesson']['room'],
             ] : null,
-            'homework' => $pendingHomework->map(fn($h) => [
+            'homework' => $pendingHomework->map(fn ($h) => [
                 'title' => $h->title,
                 'due'   => $h->due_date->toDateString(),
                 'subject' => $h->subject,
             ]),
             'fees' => [
-                'balance' => (float) $balance,
-                'status'  => $balance <= 0 ? 'Clear' : 'Pending',
+                'balance' => $overview['fees']['balance'],
+                'status'  => $overview['fees']['balance'] <= 0 ? 'Clear' : 'Pending',
             ],
-            'notifications' => $notices->map(fn($n) => [
+            'notifications' => $notices->map(fn ($n) => [
                 'title' => $n->title,
                 'body'  => $n->message,
                 'date'  => $n->created_at->diffForHumans(),
             ]),
+            // ── Phase 4 additions ──────────────────────────────────────────
+            'attendance' => $overview['attendance'],
+            'today' => [
+                'day' => $overview['timetable']['day'],
+                'lessons' => $overview['timetable']['lessons'],
+            ],
+            'upcoming_exams' => $overview['upcoming_exams'],
+            'latest_result' => $latestResult,
+            'student_id' => (int) $student->student_id,
         ]);
     }
 }

@@ -28,6 +28,7 @@ use App\Http\Controllers\Mobile\MobilePayrollController;
 use App\Http\Controllers\Mobile\MobileLogisticsController;
 use App\Http\Controllers\Mobile\MobileTeacherClassController;
 use App\Http\Controllers\Mobile\MobileAdminDashboardController;
+use App\Http\Controllers\Mobile\MobileChildController;
 use App\Http\Controllers\Mobile\MobileFinanceSummaryController;
 use Illuminate\Support\Facades\Route;
 
@@ -155,6 +156,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Parent Management
     Route::get('/parent/children', [MobileParentController::class, 'children'])
+        ->middleware('abilities:mobile:access');
+
+    // PHASE 4 — per-child portal reads (ownership enforced in the controller;
+    // Parent→own children, Student→self, staff→their existing scope).
+    Route::get('/child/{studentId}', [MobileChildController::class, 'show'])
+        ->middleware('abilities:mobile:access');
+    Route::get('/child/{studentId}/attendance', [MobileChildController::class, 'attendance'])
         ->middleware('abilities:mobile:access');
 
 // Homework

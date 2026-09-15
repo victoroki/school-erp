@@ -101,6 +101,14 @@ class MobileExamController extends Controller
 
         $user = $request->user();
 
+        // PHASE 4 privacy: the roster is a mark-entry tool — it names other
+        // students. Portal roles (Parent/Student) must not enumerate
+        // classmates; their results arrive via /reports/report-cards and
+        // /exams/my-marks, filtered to their own children/self.
+        if (! $user->hasAnyRole(['Owner', 'Super Admin', 'Admin', 'Teacher', 'Accountant'])) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
         $classSectionIds = ClassSection::where('class_id', $schedule->class_id)
             ->pluck('class_section_id');
 

@@ -7,11 +7,50 @@ use App\Models\Timetable;
 use App\Models\Staff;
 use App\Models\AcademicYear;
 use App\Models\StudentClassEnrollment;
+use App\Services\PortalScopeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class MobileTimetableController extends Controller
 {
+    public function __construct(private readonly PortalScopeService $scope)
+    {
+    }
+
+    /**
+     * Resolve the class section whose timetable the caller may see.
+     *
+     *  - Student: their own active enrollment (never a supplied id).
+     *  - Parent: the enrollment of a student_id ONLY if that child is theirs
+     *    (PortalScopeService membership; 403 otherwise) — STEP 11.
+     *  - Teacher: own lessons are selected by teacher_id instead (see below).
+     */
+    private function sectionForPortalUser(Request $request, ?AcademicYear $year): ?int
+    {
+        $user = $request->user();
+        if ($user->hasRole('Parent') && ! $user->hasRole('Student')) {
+            $studentId = (int) $request->query('student_id', 0);
+            if ($studentId <= 0 || ! in_array($studentId, $this->scope->visibleStudentIds($user), true)) {
+                return null; // caller guards with an explicit 403
+            }
+            $enrollment = StudentClassEnrollment::where('student_id', $studentId)
+                ->where('academic_year_id', $year->academic_year_id)
+                ->first();
+
+            return $enrollment?->class_section_id;
+        }
+
+        if ($user->user_type === 'student' || $user->hasRole('Student')) {
+            $enrollment = StudentClassEnrollment::where('student_id', $user->student?->student_id)
+                ->where('academic_year_id', $year->academic_year_id)
+                ->first();
+
+            return $enrollment?->class_section_id;
+        }
+
+        return null;
+    }
+
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -33,17 +72,23 @@ class MobileTimetableController extends Controller
                 ->where('teacher_id', $staff->staff_id)
                 ->where('academic_year_id', $year->academic_year_id)
                 ->get();
-        } elseif ($user->user_type === 'student' || $user->hasRole('Student')) {
-            $enrollment = StudentClassEnrollment::where('student_id', $user->student?->student_id)
+        } elseif ($user->hasRole('Parent')) {
+            $sectionId = $this->sectionForPortalUser($request, $year);
+            if ($sectionId === null) {
+                return response()->json(['error' => 'Provide a student_id linked to your account.'], 403);
+            }
+            $timetables = Timetable::with(['subject', 'teacher', 'period', 'classroom'])
+                ->where('class_section_id', $sectionId)
                 ->where('academic_year_id', $year->academic_year_id)
-                ->first();
-
-            if (!$enrollment) {
+                ->get();
+        } elseif ($user->user_type === 'student' || $user->hasRole('Student')) {
+            $sectionId = $this->sectionForPortalUser($request, $year);
+            if (!$sectionId) {
                 return response()->json(['error' => 'No active class enrollment found for this academic year.'], 404);
             }
 
             $timetables = Timetable::with(['subject', 'teacher', 'period', 'classroom'])
-                ->where('class_section_id', $enrollment->class_section_id)
+                ->where('class_section_id', $sectionId)
                 ->where('academic_year_id', $year->academic_year_id)
                 ->get();
         } else {
@@ -96,14 +141,23 @@ class MobileTimetableController extends Controller
                 ->where('academic_year_id', $year->academic_year_id)
                 ->where('day_of_week', $today)
                 ->get();
-        } elseif ($user->user_type === 'student' || $user->hasRole('Student')) {
-            $enrollment = StudentClassEnrollment::where('student_id', $user->student?->student_id)
+        } elseif ($user->hasRole('Parent')) {
+            // Parent: the selected child's section, ownership-checked server-side.
+            $sectionId = $this->sectionForPortalUser($request, $year);
+            if ($sectionId === null) {
+                return response()->json(['error' => 'Provide a student_id linked to your account.'], 403);
+            }
+            $timetables = Timetable::with(['subject', 'teacher', 'period', 'classroom'])
+                ->where('class_section_id', $sectionId)
                 ->where('academic_year_id', $year->academic_year_id)
-                ->first();
-            if (!$enrollment) return response()->json(['error' => 'No active enrollment found.'], 404);
+                ->where('day_of_week', $today)
+                ->get();
+        } elseif ($user->user_type === 'student' || $user->hasRole('Student')) {
+            $sectionId = $this->sectionForPortalUser($request, $year);
+            if (!$sectionId) return response()->json(['error' => 'No active enrollment found.'], 404);
 
             $timetables = Timetable::with(['subject', 'teacher', 'period', 'classroom'])
-                ->where('class_section_id', $enrollment->class_section_id)
+                ->where('class_section_id', $sectionId)
                 ->where('academic_year_id', $year->academic_year_id)
                 ->where('day_of_week', $today)
                 ->get();
