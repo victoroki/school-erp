@@ -9,6 +9,14 @@ class FeePayment extends Model
 {
     use HasFactory;
 
+    /**
+     * Payment methods the `payment_method` ENUM column actually supports
+     * (see 2025_06_17_100901_create_fee_payments_table). The mobile API
+     * validates against this list so no invalid value can reach the DB —
+     * MySQL silently coerces unknown ENUM values to ''.
+     */
+    public const PAYMENT_METHODS = ['cash', 'check', 'card', 'bank_transfer', 'online'];
+
     protected $table = 'fee_payments';
     protected $primaryKey = 'payment_id';
 
@@ -18,6 +26,7 @@ class FeePayment extends Model
         'payment_date',
         'payment_method',
         'transaction_id',
+        'client_reference',
         'receipt_number',
         'remarks',
         'collected_by',
