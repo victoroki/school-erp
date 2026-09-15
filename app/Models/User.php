@@ -52,6 +52,15 @@ class User extends Authenticatable
     }
 
     /**
+     * The student record linked to this user account (if any).
+     * Student accounts use this to scope queries to their own data.
+     */
+    public function student(): HasOne
+    {
+        return $this->hasOne(\App\Models\Student::class, 'user_id');
+    }
+
+    /**
      * Check if the user has a role with the given name.
      * Operates on the already-loaded roles collection (no extra query).
      */

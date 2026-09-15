@@ -17,3 +17,6 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Mobile API — token-based auth, served from routes/mobile.php.
+Route::prefix('mobile')->group(base_path('routes/mobile.php'));
