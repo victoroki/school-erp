@@ -52,7 +52,7 @@ class MobileStaffAttendanceController extends Controller
         $staff = Staff::where('user_id', $user->id)->first();
 
         if (!$staff) {
-            return response()->json(['error' => 'Staff record not found.'], 404);
+            return response()->json(['message' => 'Staff record not found.'], 404);
         }
 
         $today = now()->toDateString();
@@ -61,7 +61,7 @@ class MobileStaffAttendanceController extends Controller
             ->first();
 
         if ($record && $record->time_in) {
-            return response()->json(['error' => 'Already clocked in for today.'], 422);
+            return response()->json(['message' => 'Already clocked in for today.'], 422);
         }
 
         // PHASE 5 fix: `status` is a NOT NULL enum with no DB default — the
@@ -96,7 +96,7 @@ class MobileStaffAttendanceController extends Controller
         $staff = Staff::where('user_id', $user->id)->first();
 
         if (!$staff) {
-            return response()->json(['error' => 'Staff record not found.'], 404);
+            return response()->json(['message' => 'Staff record not found.'], 404);
         }
 
         $today = now()->toDateString();
@@ -105,11 +105,11 @@ class MobileStaffAttendanceController extends Controller
             ->first();
 
         if (!$record || !$record->time_in) {
-            return response()->json(['error' => 'You must clock in first.'], 422);
+            return response()->json(['message' => 'You must clock in first.'], 422);
         }
 
         if ($record->time_out) {
-            return response()->json(['error' => 'Already clocked out for today.'], 422);
+            return response()->json(['message' => 'Already clocked out for today.'], 422);
         }
 
         $record->update(['time_out' => now()]);
@@ -127,7 +127,7 @@ class MobileStaffAttendanceController extends Controller
         $user = $request->user();
         $staff = Staff::where('user_id', $user->id)->first();
 
-        if (!$staff) return response()->json(['error' => 'Staff record not found.'], 404);
+        if (!$staff) return response()->json(['message' => 'Staff record not found.'], 404);
 
         $history = StaffAttendance::where('staff_id', $staff->staff_id)
             ->orderBy('date', 'desc')
