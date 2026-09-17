@@ -108,11 +108,6 @@ class Student extends Model
         return $this->belongsTo(\App\Models\User::class, 'user_id');
     }
 
-    public function assignments(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
-    {
-        return $this->belongsToMany(\App\Models\Assignment::class, 'assignment_submissions');
-    }
-
     public function examResults(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(\App\Models\ExamResult::class, 'student_id');

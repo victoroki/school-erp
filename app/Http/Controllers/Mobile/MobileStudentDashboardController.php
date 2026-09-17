@@ -88,6 +88,10 @@ class MobileStudentDashboardController extends Controller
             'position' => $own['position'] ?? null,
         ] : null;
 
+        $ownStatuses = \App\Models\HomeworkSubmission::where('student_id', $student->student_id)
+            ->whereIn('homework_id', $pendingHomework->pluck('id'))
+            ->pluck('status', 'homework_id');
+
         return response()->json([
             'student_name' => $user->name,
             'current_class' => $overview['class'] ?? 'N/A',
@@ -97,9 +101,11 @@ class MobileStudentDashboardController extends Controller
                 'room'    => $overview['timetable']['next_lesson']['room'],
             ] : null,
             'homework' => $pendingHomework->map(fn ($h) => [
+                'id' => $h->id,
                 'title' => $h->title,
-                'due'   => $h->due_date->toDateString(),
+                'due'   => $h->due_date?->toDateString(),
                 'subject' => $h->subject,
+                'submission_status' => $ownStatuses[$h->id] ?? null,
             ]),
             'fees' => [
                 'balance' => $overview['fees']['balance'],

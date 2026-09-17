@@ -277,6 +277,10 @@ class PortalScopeService
                 ->values();
         }
 
+        // PHASE 6 — the child's own submission status per homework row
+        // (one query for the whole block; never fabricated).
+        $submissionStatus = self::submissionStatusMap($studentId, $homework);
+
         // Upcoming exams for the child's class.
         $upcomingExams = [];
         if ($enrollment?->classSection) {
@@ -340,8 +344,27 @@ class PortalScopeService
                 'title' => $h->title,
                 'subject' => $h->subject,
                 'due_date' => $h->due_date?->toDateString(),
+                'submission_status' => $submissionStatus[$h->id] ?? null,
             ])->all(),
             'upcoming_exams' => $upcomingExams,
         ];
+    }
+
+    /**
+     * PHASE 6 — map of "which status does THIS student have for THAT
+     * homework" for a whole rollup block. One grouped query, keyed by
+     * homework id; missing rows mean "not submitted" (null, never contrived).
+     */
+    private static function submissionStatusMap(int $studentId, Collection $homeworks): array
+    {
+        if ($homeworks->isEmpty()) {
+            return [];
+        }
+
+        return \App\Models\HomeworkSubmission::where('student_id', $studentId)
+            ->whereIn('homework_id', $homeworks->pluck('id'))
+            ->get(['homework_id', 'status'])
+            ->pluck('status', 'homework_id')
+            ->all();
     }
 }

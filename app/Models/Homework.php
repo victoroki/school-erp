@@ -28,4 +28,20 @@ class Homework extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function submissions()
+    {
+        return $this->hasMany(HomeworkSubmission::class, 'homework_id');
+    }
+
+    public function isLateSubmitted(\Illuminate\Support\Carbon $submittedAt = null): bool
+    {
+        $at = $submittedAt ?? now();
+        if ($this->due_date === null) {
+            return false;
+        }
+
+        // due_date is date-only; grace runs to the end of that day (23:59:59).
+        return $at->gt($this->due_date->copy()->endOfDay());
+    }
 }

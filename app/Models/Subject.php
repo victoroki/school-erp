@@ -40,11 +40,6 @@ class Subject extends Model
         return $this->belongsTo(\App\Models\Department::class, 'department_id');
     }
 
-    public function assignments(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(\App\Models\Assignment::class, 'subject_id');
-    }
-
     public function classSubjects(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(\App\Models\ClassSubject::class, 'subject_id');

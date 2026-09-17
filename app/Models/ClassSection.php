@@ -60,11 +60,6 @@ class ClassSection extends Model
         return $this->belongsTo(\App\Models\Classroom::class, 'classroom_id');
     }
 
-    public function assignments(): \Illuminate\Database\Eloquent\Relations\HasMany
-    {
-        return $this->hasMany(\App\Models\Assignment::class, 'class_section_id');
-    }
-
     public function examResults(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(\App\Models\ExamResult::class, 'class_section_id');

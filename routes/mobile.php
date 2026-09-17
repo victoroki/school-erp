@@ -169,6 +169,17 @@ Route::middleware('auth:sanctum')->group(function () {
 // Homework
     Route::get('/homework', [MobileHomeworkController::class, 'index'])
         ->middleware('abilities:mobile:access');
+    Route::get('/homework/{homeworkId}', [MobileHomeworkController::class, 'show'])
+        ->middleware('abilities:mobile:access');
+    Route::get('/homework/{homeworkId}/submissions', [MobileHomeworkController::class, 'submissions'])
+        ->middleware('abilities:mobile:access');
+    Route::post('/homework/{homeworkId}/submit', [MobileHomeworkController::class, 'submit'])
+        ->middleware('abilities:mobile:access');
+    // PHASE 6 — submission review + private attachment download.
+    Route::patch('/homework/submissions/{submissionId}/review', [MobileHomeworkController::class, 'review'])
+        ->middleware('abilities:mobile:access');
+    Route::get('/homework/submissions/{submissionId}/attachment', [MobileHomeworkController::class, 'attachment'])
+        ->middleware('abilities:mobile:access');
     Route::post('/homework', [MobileHomeworkController::class, 'store'])
         ->middleware('abilities:mobile:access');
 
