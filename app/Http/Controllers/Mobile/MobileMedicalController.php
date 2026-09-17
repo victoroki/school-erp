@@ -9,17 +9,15 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * PHASE 5 — medical incident reads, server-authorized (STEP 16).
+ * PHASE 5/6 — medical incident reads, server-authorized (STEP 16).
  *
- * Documented gap: the RBAC seed has NO medical-specific permission — the web
- * controller uses students.view/.manage as the proxy, and there is no Nurse
- * role (only a "School Nurse" staff designation). Rather than invent either,
- * mobile mirrors the web's proxy: portal users see their own records
- * (Parent→children, Student→self) and every other role must hold
- * students.view — the old code let Accountant and Teacher see the entire
- * medical table by fall-through. Mobile WRITE is not offered: no safe
- * existing workflow (no nurse gating on the web side to reuse conservatively),
- * so the screen is read-only and the gap is reported, not papered over.
+ * PHASE 6: the RBAC proxy is gone — the seed now defines explicit
+ * medical.view/medical.manage (granted to Owner/Super Admin/Admin only;
+ * Teacher is NOT granted medical access — a Nurse is a staff designation,
+ * not an invented role). Portal users see only their own records
+ * (Parent→children, Student→self); staff roles must hold medical.view.
+ * Mobile WRITE is not offered: no safe existing workflow, so the screen is
+ * read-only and the gap is reported, not papered over.
  */
 class MobileMedicalController extends Controller
 {
@@ -38,13 +36,13 @@ class MobileMedicalController extends Controller
             $studentId = $this->studentIdFromUser($user);
             $query->where('student_id', $studentId ?: 0);
         } else {
-            // Staff: same proxy permission the web screen enforces…
-            if (!$user->hasPermission('students.view')) {
+            // Staff: explicit medical permission (PHASE 6 — no more
+            // students.* proxy; Teacher is not granted medical.view).
+            if (!$user->hasPermission('medical.view')) {
                 return response()->json(['message' => 'You are not authorised to view medical records.'], 403);
             }
-            // …plus the student-scope clamp so a Teacher (who holds
-            // students.view via role grants on some installs) sees their own
-            // students, not the whole school infirmary log.
+            // …plus the student-scope clamp so a staff role with medical.view
+            // sees their own students, not the whole school infirmary log.
             if (!$user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
                 $scoped = app(\App\Services\PortalScopeService::class)->visibleStudentIds($user);
                 $query->whereIn('student_id', $scoped ?: [0]);

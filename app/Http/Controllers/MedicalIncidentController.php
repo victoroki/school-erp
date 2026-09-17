@@ -13,8 +13,10 @@ class MedicalIncidentController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:students.view')->only(['index', 'show']);
-        $this->middleware('can:students.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+        // PHASE 6: explicit medical permissions (seeded for Owner/Super
+        // Admin/Admin) — the students.* proxy was removed.
+        $this->middleware('can:medical.view')->only(['index', 'show']);
+        $this->middleware('can:medical.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     public function index()

@@ -8,7 +8,7 @@ use App\Models\Permission;
 class PermissionSeeder extends Seeder
 {
     /**
-     * The 43 consolidated permissions grouped by module.
+     * The 45 consolidated permissions grouped by module.
      * Uses insertOrIgnore for idempotency — safe to re-run.
      */
     private array $permissions = [
@@ -91,6 +91,10 @@ class PermissionSeeder extends Seeder
         // Discipline (2)
         'discipline.view'     => 'View disciplinary records and medical incidents',
         'discipline.manage'   => 'Manage disciplinary records and medical incidents',
+
+        // Medical (2)
+        'medical.view'        => 'View student medical incidents',
+        'medical.manage'      => 'Record and manage student medical incidents',
 
         // Homework (2)
         'homework.view'       => 'View homework assignments',
