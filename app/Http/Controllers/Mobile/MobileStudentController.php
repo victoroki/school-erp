@@ -27,6 +27,25 @@ class MobileStudentController extends Controller
 
         $query = Student::where('status', 'active');
 
+        // PHASE 7H/7I — incremental sync. When the app sends updated_after
+        // (a server timestamp from a previous response), only rows changed
+        // since that instant are returned. The response is wrapped with
+        // server_time — the cursor the app must use next time — so cursor
+        // arithmetic never relies on the phone clock.
+        $updatedAfter = $request->query('updated_after');
+        if (is_string($updatedAfter) && $updatedAfter !== '') {
+            try {
+                $since = \Carbon\Carbon::parse($updatedAfter)
+                    ->timezone(config('app.timezone'))
+                    ->format('Y-m-d H:i:s');
+                $query->where('students.updated_at', '>', $since);
+            } catch (\Throwable $e) {
+                return response()->json([
+                    'message' => 'The updated_after parameter is not a valid timestamp.',
+                ], 422);
+            }
+        }
+
         if ($user->hasAnyRole(['Owner', 'Super Admin', 'Admin'])) {
             // Full access — no additional filter.
         } elseif ($user->hasRole('Teacher')) {
@@ -106,6 +125,20 @@ class MobileStudentController extends Controller
             ];
         });
 
+        $result = $result->values();
+
+        if (is_string($updatedAfter) && $updatedAfter !== '') {
+            return response()->json([
+                'data' => $result,
+                // toIso8601String carries an explicit UTC offset — the app
+                // stores it opaquely and echoes it back; Carbon parses the
+                // offset above, so device/server clock skew cannot corrupt
+                // the cursor.
+                'server_time' => now()->toIso8601String(),
+            ]);
+        }
+
+        // Legacy shape (pre-Phase-7 app versions): a bare array.
         return response()->json($result);
     }
 }
