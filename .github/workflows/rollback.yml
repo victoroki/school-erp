@@ -3,6 +3,11 @@ name: Rollback
 # Tag-based re-deploy — re-uploads the tagged commit to the same 3 schools.
 # Uses the same FTP state tracking and post-deploy hook as the main pipeline.
 # Set the tag in `on: workflow_dispatch` or trigger via `gh workflow run`.
+#
+# `required` works exactly as it does in deploy.yml: a school marked required
+# whose secrets are incomplete FAILS the rollback, naming every missing secret.
+# Without it a rollback to an unconfigured school reported success while
+# restoring nothing, which is the worst possible outcome for a rollback.
 
 on:
   workflow_dispatch:
@@ -120,30 +125,55 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Same required/optional split as deploy.yml — set `required: true`
+          # once a school's secrets exist.
           - key: SCHOOL1
+            required: true
           - key: SCHOOL2
+            required: false
           - key: SCHOOL3
+            required: false
 
     steps:
       - name: Check configuration
         id: config-check
         env:
+          SCHOOL_KEY: ${{ matrix.key }}
+          SCHOOL_REQUIRED: ${{ matrix.required }}
           FTP_SERVER: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          FTP_USERNAME: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
+          FTP_PASSWORD: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
           SERVER_DIR: ${{ secrets[format('{0}_SERVER_DIR', matrix.key)] }}
           APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
           DB_PASSWORD: ${{ secrets[format('{0}_DB_PASSWORD', matrix.key)] }}
           HOOK_SECRET: ${{ secrets[format('{0}_DEPLOY_HOOK_SECRET', matrix.key)] }}
           VENDOR_CHANGED: ${{ needs.build.outputs.vendor_changed }}
         run: |
-          if [ -z "${FTP_SERVER}" ] || [ -z "${SERVER_DIR}" ] || [ -z "${APP_URL}" ] || [ -z "${DB_PASSWORD}" ]; then
+          MISSING=""
+          missing() { if [ -z "$2" ]; then MISSING="${MISSING}${1} "; fi; }
+          missing "${SCHOOL_KEY}_FTP_SERVER"   "${FTP_SERVER}"
+          missing "${SCHOOL_KEY}_FTP_USERNAME" "${FTP_USERNAME}"
+          missing "${SCHOOL_KEY}_FTP_PASSWORD" "${FTP_PASSWORD}"
+          missing "${SCHOOL_KEY}_SERVER_DIR"   "${SERVER_DIR}"
+          missing "${SCHOOL_KEY}_APP_URL"      "${APP_URL}"
+          missing "${SCHOOL_KEY}_DB_PASSWORD"  "${DB_PASSWORD}"
+          MISSING="${MISSING% }"
+
+          if [ -n "${MISSING}" ]; then
+            if [ "${SCHOOL_REQUIRED}" = "true" ]; then
+              echo "::error::${SCHOOL_KEY} is required but its deployment secrets are incomplete, so the tagged build would not be restored. Missing: ${MISSING}"
+              echo "| ${SCHOOL_KEY} | ❌ required — rollback did nothing (missing ${MISSING}) |" >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::${{ matrix.key }} has no deployment secrets configured — skipping."
-            echo "| ${{ matrix.key }} | ⏭️ skipped — secrets not set yet |" >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::${SCHOOL_KEY} was SKIPPED — not configured, so the tagged build was NOT restored there. Missing: ${MISSING}"
+            echo "| ${SCHOOL_KEY} | ⏭️ skipped — rollback did nothing (missing ${MISSING}) |" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
           if [ -z "${HOOK_SECRET}" ]; then
-            echo "::error::${{ matrix.key }}_DEPLOY_HOOK_SECRET is not set (or empty)."
+            echo "::error::${SCHOOL_KEY}_DEPLOY_HOOK_SECRET is not set (or empty)."
             exit 1
           fi
 

@@ -9,6 +9,21 @@ name: Build & Deploy
 #
 # vendor/ is only uploaded when composer.json/composer.lock changed since
 # the last successful deploy tag — UI-only pushes skip ~30MB of FTP time.
+#
+# REQUIRED vs OPTIONAL SCHOOLS
+# Each matrix entry carries `required`. It decides what an unconfigured school
+# does, and it exists because a skip used to be indistinguishable from a
+# deploy: the step reported "skip=true", every later step was skipped, and the
+# run concluded SUCCESS — so a school that received nothing looked exactly like
+# one that had been updated.
+#
+#   required: true   the school is live. Incomplete secrets FAIL the run, naming
+#                    every missing secret, and tag-release does not run.
+#   required: false  not provisioned yet. The deploy is skipped and reported as
+#                    a warning; the run stays green.
+#
+# Flip a school to `required: true` as soon as its secrets exist, so a future
+# silent skip cannot pass for a deploy.
 
 on:
   push:
@@ -193,30 +208,66 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false           # one school failing must not block others
+      fail-fast: false           # one school failing must not block the others
       matrix:
         include:
+          # SCHOOL2/SCHOOL3 have no deployment secrets yet, so they are marked
+          # optional: their deploy is skipped, loudly, without failing the run.
+          # Set `required: true` once their secrets are added under
+          # Settings → Secrets → Actions.
           - key: SCHOOL1
+            required: true
           - key: SCHOOL2
+            required: false
           - key: SCHOOL3
+            required: false
 
     steps:
-      # Schools without secrets yet are skipped gracefully; configured ones
-      # get a normalized server-dir and the right FTP exclusion list.
+      # Decides whether this school deploys at all: a configured school gets a
+      # normalized server-dir and the right FTP exclusion list, an optional
+      # school without secrets is skipped with a warning, and a REQUIRED school
+      # without secrets fails the run outright.
       - name: Check configuration
         id: config-check
         env:
+          SCHOOL_KEY: ${{ matrix.key }}
+          SCHOOL_REQUIRED: ${{ matrix.required }}
           FTP_SERVER: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          FTP_USERNAME: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
+          FTP_PASSWORD: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
           SERVER_DIR: ${{ secrets[format('{0}_SERVER_DIR', matrix.key)] }}
           APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
           DB_PASSWORD: ${{ secrets[format('{0}_DB_PASSWORD', matrix.key)] }}
           HOOK_SECRET: ${{ secrets[format('{0}_DEPLOY_HOOK_SECRET', matrix.key)] }}
           VENDOR_CHANGED: ${{ needs.build.outputs.vendor_changed }}
         run: |
-          if [ -z "${FTP_SERVER}" ] || [ -z "${SERVER_DIR}" ] || [ -z "${APP_URL}" ] || [ -z "${DB_PASSWORD}" ]; then
+          # Every secret the upload and the post-deploy hook genuinely need.
+          # The FTP credentials are checked here too: they were missing from
+          # this gate, so a school could pass configuration and only fail a few
+          # minutes later inside the FTP action, with a far less obvious message.
+          MISSING=""
+          missing() { if [ -z "$2" ]; then MISSING="${MISSING}${1} "; fi; }
+          missing "${SCHOOL_KEY}_FTP_SERVER"   "${FTP_SERVER}"
+          missing "${SCHOOL_KEY}_FTP_USERNAME" "${FTP_USERNAME}"
+          missing "${SCHOOL_KEY}_FTP_PASSWORD" "${FTP_PASSWORD}"
+          missing "${SCHOOL_KEY}_SERVER_DIR"   "${SERVER_DIR}"
+          missing "${SCHOOL_KEY}_APP_URL"      "${APP_URL}"
+          missing "${SCHOOL_KEY}_DB_PASSWORD"  "${DB_PASSWORD}"
+          MISSING="${MISSING% }"
+
+          if [ -n "${MISSING}" ]; then
+            if [ "${SCHOOL_REQUIRED}" = "true" ]; then
+              # A school that must ship but cannot is a FAILURE, not a skip.
+              # This is precisely the case that used to conclude SUCCESS while
+              # uploading nothing at all.
+              echo "::error::${SCHOOL_KEY} is required but its deployment secrets are incomplete, so nothing would be uploaded. Missing: ${MISSING}"
+              echo "| ${SCHOOL_KEY} | ❌ required — nothing uploaded (missing ${MISSING}) |" >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::${{ matrix.key }} has no deployment secrets configured — skipping."
-            echo "| ${{ matrix.key }} | ⏭️ skipped — secrets not set yet |" >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::${SCHOOL_KEY} was SKIPPED — no deployment is configured for it, so nothing was uploaded. Missing: ${MISSING}"
+            echo "| ${SCHOOL_KEY} | ⏭️ skipped — not configured (missing ${MISSING}) |" >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
@@ -225,7 +276,7 @@ jobs:
           # every post-deploy call ("Invalid or missing X-Deploy-Token").
           # Fail here, naming the exact secret, instead of five steps later.
           if [ -z "${HOOK_SECRET}" ]; then
-            echo "::error::${{ matrix.key }}_DEPLOY_HOOK_SECRET is not set (or empty). Add it under Settings → Secrets → Actions — the post-deploy hook cannot authenticate without it."
+            echo "::error::${SCHOOL_KEY}_DEPLOY_HOOK_SECRET is not set (or empty). Add it under Settings → Secrets → Actions — the post-deploy hook cannot authenticate without it."
             exit 1
           fi
 
@@ -559,7 +610,7 @@ jobs:
           TAG="deploy-$(date -u +%Y%m%d-%H%M%S)"
           git config user.name  "deploy-bot"
           git config user.email "actions@github.com"
-          git tag -a "${TAG}" -m "Deployed to all schools from commit ${GITHUB_SHA::7}"
+          git tag -a "${TAG}" -m "Deployed from commit ${GITHUB_SHA::7}. Every school marked required in the deploy matrix shipped. Any school reported as skipped was NOT updated by this run and is not running this commit."
           git push origin "${TAG}"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
@@ -568,5 +619,9 @@ jobs:
           {
             echo "## Release tagged 🏷️"
             echo ""
-            echo "`${{ steps.tag.outputs.tag }}` pushed — use this tag as the rollback input."
+            echo "\`${{ steps.tag.outputs.tag }}\` pushed — use this tag as the rollback input."
+            echo ""
+            echo "This tag exists only because every \`required\` school deployed successfully."
+            echo "Schools skipped for missing secrets are listed in this run's summary; those"
+            echo "schools were not updated by this run and are therefore not on this commit."
           } >> "$GITHUB_STEP_SUMMARY"
