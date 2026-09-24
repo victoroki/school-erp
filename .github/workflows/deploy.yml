@@ -459,7 +459,11 @@ jobs:
           protocol: ${{ secrets[format('{0}_FTP_PROTOCOL', matrix.key)] || 'ftp' }}
           port: ${{ secrets[format('{0}_FTP_PORT', matrix.key)] || '21' }}
           server-dir: ${{ steps.config-check.outputs.server_dir }}
-          state-name: ${{ matrix.key }}-ftp-state.json
+          # v2 state name: forces one full resync after the SERVER_DIR secret was
+          # corrected to the FTP-account root (so the artifact's public/ IS the
+          # subdomain docroot). A stale incremental state would otherwise think
+          # the (wrong) target folder already matches and upload nothing.
+          state-name: ${{ matrix.key }}-ftp-state-v2.json
           dangerous-clean-slate: false
           exclude: ${{ env.ftp_exclude }}
 
