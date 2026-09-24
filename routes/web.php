@@ -119,7 +119,9 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
     Route::resource('vehicles', App\Http\Controllers\VehicleController::class);
     Route::resource('transport-assignments', App\Http\Controllers\TransportAssignmentController::class);
     Route::resource('transport-registrations', App\Http\Controllers\TransportRegistrationController::class);
-    Route::resource('student-transport-assignments', App\Http\Controllers\StudentTransportAssignmentController::class);
+    // No show(): the controller has no show() method and the UI only links to
+    // index/edit, so the registered show route returned 500 for every user.
+    Route::resource('student-transport-assignments', App\Http\Controllers\StudentTransportAssignmentController::class)->except(['show']);
     Route::get('api/routes/{routeId}/stops', [App\Http\Controllers\StudentTransportAssignmentController::class, 'getStopsByRoute'])->name('api.routes.stops');
     
     Route::prefix('transportation')->name('transportation.')->group(function () {
@@ -343,7 +345,9 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
     // Academic Management Enhanced Routes
     Route::get('academic-dashboard', [App\Http\Controllers\AcademicDashboardController::class, 'index'])->name('academic-dashboard.index');
     Route::get('timetables/teacher', [App\Http\Controllers\TimetableController::class, 'teacherTimetable'])->name('timetables.teacher');
-    Route::resource('academic-calendar', App\Http\Controllers\AcademicCalendarController::class);
+    // No show(): the controller has no show() method; the calendar index is the
+    // detail surface, so the route is not registered rather than always 500ing.
+    Route::resource('academic-calendar', App\Http\Controllers\AcademicCalendarController::class)->except(['show']);
     Route::get('class-teachers', [App\Http\Controllers\ClassTeacherController::class, 'index'])->name('class-teachers.index');
     Route::patch('class-teachers/{id}', [App\Http\Controllers\ClassTeacherController::class, 'update'])->name('class-teachers.update');
     Route::get('teacher-workload', [App\Http\Controllers\TeacherWorkloadController::class, 'index'])->name('teacher-workload.index');
@@ -473,7 +477,8 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
     // Examination Management Enhanced Routes
     Route::get('exam-dashboard', [App\Http\Controllers\ExamDashboardController::class, 'index'])->name('exam-dashboard.index');
     // Assessment Types removed — table dropped
-    Route::resource('exam-rooms', App\Http\Controllers\ExamRoomController::class);
+    // No show(): the controller has no show() method and no view links to one.
+    Route::resource('exam-rooms', App\Http\Controllers\ExamRoomController::class)->except(['show']);
     Route::get('grade-book', [App\Http\Controllers\GradeBookController::class, 'index'])->name('grade-book.index');
     Route::get('mark-sheets', [App\Http\Controllers\MarkSheetController::class, 'index'])->name('mark-sheets.index');
     Route::get('marks-approval', [App\Http\Controllers\MarksApprovalController::class, 'index'])->name('marks-approval.index');
@@ -490,10 +495,12 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
     Route::get('exam-analysis/performance', [App\Http\Controllers\ExamAnalysisController::class, 'performance'])->name('exam-analysis.performance');
     Route::get('exam-analysis/subject', [App\Http\Controllers\ExamAnalysisController::class, 'subject'])->name('exam-analysis.subject');
     Route::get('exam-analysis/rankings', [App\Http\Controllers\ExamAnalysisController::class, 'rankings'])->name('exam-analysis.rankings');
-    Route::resource('learning-areas', App\Http\Controllers\LearningAreaController::class);
+    // No show(): the controllers below have no show() method and no view links
+    // to one — the CBC indexes are the detail surfaces.
+    Route::resource('learning-areas', App\Http\Controllers\LearningAreaController::class)->except(['show']);
     Route::post('learning-areas/seed-kenyan-curriculum', [App\Http\Controllers\LearningAreaController::class, 'seedDefaults'])->name('learning-areas.seed');
-    Route::resource('strands', App\Http\Controllers\StrandController::class);
-    Route::resource('sub-strands', App\Http\Controllers\SubStrandController::class);
+    Route::resource('strands', App\Http\Controllers\StrandController::class)->except(['show']);
+    Route::resource('sub-strands', App\Http\Controllers\SubStrandController::class)->except(['show']);
     Route::get('competency-assessment', [App\Http\Controllers\CompetencyAssessmentController::class, 'index'])->name('competency-assessment.index');
     // Human Resources Management Revamped Routes
     Route::prefix('hr')->name('hr.')->group(function () {

@@ -468,8 +468,15 @@ class FeeBalanceService
     }
 
     /**
-     * Outstanding value across a set of assignments (never negative per
-     * assignment, so an overpayment on one fee cannot mask arrears on another).
+     * Outstanding value across a set of assignments: charges − effective paid.
+     *
+     * The per-assignment total is deliberately NOT clamped at zero. Clamping hid
+     * an overpayment, so a student in credit was reported as owing nothing and
+     * the dashboard's Outstanding card disagreed with that student's own page —
+     * the exact cross-screen drift FeeReconciliationTest exists to catch. The
+     * unclamped form is also the rule the rest of the module states: outstanding
+     * = charges − effective paid. A negative result is a credit, which is real
+     * money the school is holding for the student.
      *
      * Uses effective paid, so a refunded assignment correctly shows the refunded
      * money as outstanding again.
@@ -481,12 +488,16 @@ class FeeBalanceService
         $assignments = StudentFeeAssignment::whereIn('id', $assignmentIds)
             ->get(['id', 'final_amount']);
 
+        if ($assignments->isEmpty()) {
+            return 0.0;
+        }
+
         $paid = $this->effectivePaidForAssignments($assignments->pluck('id')->all());
 
         $outstanding = 0.0;
 
         foreach ($assignments as $assignment) {
-            $outstanding += max(0, (float) $assignment->final_amount - ($paid[$assignment->id] ?? 0.0));
+            $outstanding += (float) $assignment->final_amount - ($paid[$assignment->id] ?? 0.0);
         }
 
         return round($outstanding, 2);

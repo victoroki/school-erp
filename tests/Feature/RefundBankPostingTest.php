@@ -5,10 +5,15 @@ namespace Tests\Feature;
 use App\Models\AcademicYear;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use App\Models\FeeCategory;
+use App\Models\FeePayment;
+use App\Models\FeeStructure;
 use App\Models\LedgerEntry;
 use App\Models\Refund;
 use App\Models\Role;
+use App\Models\SchoolClass;
 use App\Models\Student;
+use App\Models\StudentFeeAssignment;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RbacSeeder;
@@ -18,7 +23,7 @@ use Tests\TestCase;
 /**
  * Completing a refund must move real money: the payout decrements the
  * account it was paid from and leaves a matching withdrawal on
- * bank_transactions, in the same commit as the student-ledger credit.
+ * bank_transactions, in the same commit as the student-ledger entry.
  *
  * Regression: complete() only posted the student-ledger entry, so a refund
  * paid by "Bank Transfer" or "Cash" never appeared on the bank statement and
@@ -28,12 +33,25 @@ class RefundBankPostingTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected AcademicYear $year;
+
+    protected SchoolClass $class;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->seed(PermissionSeeder::class);
         $this->seed(RbacSeeder::class);
+
+        $this->year = AcademicYear::create([
+            'name' => 'AY-' . uniqid(),
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-12-31',
+            'is_current' => true,
+        ]);
+
+        $this->class = SchoolClass::create(['name' => 'Grade 7', 'numeric_value' => 7]);
     }
 
     private function accountant(): User
@@ -74,6 +92,54 @@ class RefundBankPostingTest extends TestCase
     }
 
     /**
+     * Give the learner a real charge and a real payment against it.
+     *
+     * A refund is only payable out of money the school is actually holding, and
+     * the refund cap is enforced on the server at completion. Without a payment
+     * behind it a refund is refused as an over-refund, so these tests would be
+     * asserting the anomaly instead of the payout they exist to prove.
+     */
+    private function fundStudent(User $user, Student $student, float $paid): StudentFeeAssignment
+    {
+        $category = FeeCategory::create(['name' => 'Tuition-' . uniqid(), 'type' => 'mandatory']);
+
+        $structure = FeeStructure::create([
+            'academic_year_id' => $this->year->academic_year_id,
+            'class_id' => $this->class->class_id,
+            'category_id' => $category->category_id,
+            'amount' => $paid,
+            'term' => 'T1',
+            'payment_frequency' => 'termly',
+            'due_date' => '2026-02-01',
+            'status' => 'active',
+            'created_by' => $user->id,
+        ]);
+
+        $assignment = StudentFeeAssignment::create([
+            'student_id' => $student->student_id,
+            'fee_structure_id' => $structure->fee_structure_id,
+            'academic_year_id' => $this->year->academic_year_id,
+            'term' => 'T1',
+            'amount' => $paid,
+            'final_amount' => $paid,
+            'paid_amount' => 0,
+            'assigned_by' => $user->id,
+            'assigned_date' => now(),
+            'status' => 'active',
+        ]);
+
+        FeePayment::create([
+            'student_fee_assignment_id' => $assignment->id,
+            'amount' => $paid,
+            'payment_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+            'receipt_number' => 'RCP-TEST-' . uniqid(),
+        ]);
+
+        return $assignment;
+    }
+
+    /**
      * Drive a refund through requested -> approved -> completed.
      */
     private function completeRefund(User $user, Student $student, float $amount, BankAccount $account): Refund
@@ -107,6 +173,7 @@ class RefundBankPostingTest extends TestCase
         $user = $this->accountant();
         $student = $this->student();
         $account = $this->account(50000);
+        $this->fundStudent($user, $student, 20000);
 
         $refund = $this->completeRefund($user, $student, 5000, $account);
 
@@ -132,21 +199,27 @@ class RefundBankPostingTest extends TestCase
         $this->assertSame('TRX-001', $transaction->reference_number);
         $this->assertSame('unreconciled', $transaction->status);
 
-        // The student ledger still receives the credit.
+        // The student ledger entry is a DEBIT. A refund is money leaving the
+        // school, so it raises what the learner owes again — the same direction
+        // as a charge, not a credit. See LedgerService::postRefund().
         $this->assertNotNull($refund->ledger_entry_id);
         $this->assertDatabaseHas('ledger_entries', [
             'id' => $refund->ledger_entry_id,
             'entry_type' => 'refund',
-            'credit' => 5000.00,
-            'debit' => 0.00,
+            'debit' => 5000.00,
+            'credit' => 0.00,
         ]);
     }
 
-    public function test_completion_is_rejected_when_the_account_covers_the_payout(): void
+    public function test_completion_is_rejected_when_the_account_cannot_cover_the_payout(): void
     {
         $user = $this->accountant();
         $student = $this->student();
         $account = $this->account(1000);
+
+        // Funded so the ONLY reason for refusal is the account balance, not the
+        // refund cap — otherwise this would pass on the wrong guard.
+        $this->fundStudent($user, $student, 20000);
 
         $refund = Refund::create([
             'student_id' => $student->student_id,
@@ -182,6 +255,7 @@ class RefundBankPostingTest extends TestCase
     {
         $user = $this->accountant();
         $student = $this->student();
+        $this->fundStudent($user, $student, 20000);
 
         $refund = Refund::create([
             'student_id' => $student->student_id,
@@ -206,6 +280,7 @@ class RefundBankPostingTest extends TestCase
         $user = $this->accountant();
         $student = $this->student();
         $account = $this->account(50000);
+        $this->fundStudent($user, $student, 20000);
 
         // Only the completed refund counts — requested money has not left yet.
         Refund::create([
