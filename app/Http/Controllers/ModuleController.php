@@ -50,8 +50,11 @@ class ModuleController extends AppBaseController
 
         try {
             $this->moduleManager->toggle($module->key, $request->boolean('is_active'));
-        } catch (\DomainException $e) {
-            Flash::error($e->getMessage());
+        } catch (\DomainException | \Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            // ModuleManager::toggle() throws ModelNotFoundException (firstOrFail)
+            // for an unknown key, not the DomainException the docblock promises,
+            // so this used to surface as an unhandled 500 instead of a message.
+            Flash::error('That module could not be found.');
 
             return redirect()->back();
         }

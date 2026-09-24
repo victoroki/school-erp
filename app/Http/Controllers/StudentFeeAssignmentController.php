@@ -22,32 +22,148 @@ class StudentFeeAssignmentController extends Controller
     public function __construct(FeeAssignmentService $feeAssignmentService)
     {
         $this->feeAssignmentService = $feeAssignmentService;
-        $this->middleware('can:fees.view')->only(['index', 'show']);
+        // Reads include the per-student summary, the unassigned-students list
+        // and the four AJAX lookups the assignment screens call. None of them
+        // had a gate, so a Teacher/Parent/Student could read the whole school
+        // fee structure and per-student assignment details by URL.
+        $this->middleware('can:fees.view')->only([
+            'index', 'show', 'studentSummary', 'unassigned',
+            'getFeesByClass', 'getFeesByClasses', 'getAutoAssignmentPreview', 'getAllFeeStructures',
+        ]);
         $this->middleware('can:fees.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
+    /**
+     * The list defaults to a ROLL-UP: one row per class + fee + term + year
+     * with the student count and money totals, instead of one raw row per
+     * student-fee pair (which buried everything in thousands of lines).
+     * Passing detail=1 — or searching by student name — switches to the
+     * per-student rows for a group.
+     */
     public function index(Request $request)
     {
-        $query = StudentFeeAssignment::with(['student.studentClassEnrollments.classSection.schoolClass', 'feeStructure.category', 'academicYear']);
+        $classes = SchoolClass::orderBy('name')->pluck('name', 'class_id');
+        $academicYears = AcademicYear::orderBy('academic_year_id', 'desc')->get(['academic_year_id', 'name']);
+        $terms = Term::orderBy('display_order')->get(['academic_year_id', 'code', 'name']);
 
-        if ($request->filled('class_id')) {
-            $query->whereHas('student.studentClassEnrollments.classSection', function($q) use ($request) {
-                $q->where('class_id', $request->class_id)
-                  ->where('is_current', true);
-            });
+        $detailMode = $request->boolean('detail') || $request->filled('student_name');
+
+        // ---- Aggregate metrics over the WHOLE filtered set. They used to be
+        // sum() calls on $assignments, i.e. the current 15-row page only, which
+        // made the cards change value as you paged.
+        $statusFilter = $request->filled('status') && $request->status !== 'all' ? $request->status : null;
+        $stats = StudentFeeAssignment::when($statusFilter, fn($q) => $q->where('status', $statusFilter))
+            ->when($request->filled('class_id'), function ($q) use ($request) {
+                $q->whereHas('student.studentClassEnrollments.classSection', function ($sq) use ($request) {
+                    $sq->where('class_id', $request->class_id)->where('is_current', true);
+                });
+            })
+            ->when($request->filled('academic_year_id'), fn($q) => $q->where('academic_year_id', $request->academic_year_id))
+            ->when($request->filled('term'), fn($q) => $q->where('term', $request->term))
+            ->selectRaw('COUNT(*) as assignments_total')
+            ->selectRaw('COUNT(DISTINCT student_id) as students_billed')
+            ->selectRaw('COALESCE(SUM(final_amount), 0) as total_net')
+            ->selectRaw('COALESCE(SUM(COALESCE(paid_amount, 0)), 0) as total_collected')
+            ->selectRaw('COUNT(DISTINCT CASE WHEN COALESCE(paid_amount, 0) < final_amount THEN student_id END) as students_owing')
+            ->first();
+
+        if ($detailMode) {
+            $query = StudentFeeAssignment::with(['student.studentClassEnrollments.classSection.schoolClass', 'feeStructure.category', 'academicYear'])
+                ->when($statusFilter, fn($q) => $q->where('status', $statusFilter), fn($q) => $q->where('status', 'active'));
+
+            if ($request->filled('class_id')) {
+                $query->whereHas('student.studentClassEnrollments.classSection', function($q) use ($request) {
+                    $q->where('class_id', $request->class_id)
+                      ->where('is_current', true);
+                });
+            }
+
+            if ($request->filled('fee_structure_id')) {
+                $query->where('fee_structure_id', $request->fee_structure_id);
+            }
+            if ($request->filled('academic_year_id')) {
+                $query->where('academic_year_id', $request->academic_year_id);
+            }
+            if ($request->filled('term')) {
+                $query->where('term', $request->term);
+            }
+
+            if ($request->filled('student_name')) {
+                $query->whereHas('student', function($q) use ($request) {
+                    $q->where(function ($nq) use ($request) {
+                        $nq->where('first_name', 'like', "%{$request->student_name}%")
+                           ->orWhere('last_name', 'like', "%{$request->student_name}%")
+                           ->orWhere('admission_no', 'like', "%{$request->student_name}%");
+                    });
+                });
+            }
+
+            $assignments = $query->orderBy('created_at', 'desc')->paginate(25)->withQueryString();
+            $groupFee = $request->filled('fee_structure_id')
+                ? FeeStructure::with(['category', 'schoolClass'])->find($request->fee_structure_id)
+                : null;
+
+            return view('fee_management.assignments.index', compact(
+                'assignments', 'classes', 'academicYears', 'terms', 'stats', 'detailMode', 'groupFee'
+            ) + ['rollups' => collect()]);
         }
-        
-        if ($request->filled('student_name')) {
-            $query->whereHas('student', function($q) use ($request) {
-                $q->where('first_name', 'like', "%{$request->student_name}%")
-                  ->orWhere('last_name', 'like', "%{$request->student_name}%");
-            });
-        }
 
-        $assignments = $query->orderBy('created_at', 'desc')->paginate(15);
-        $classes = SchoolClass::pluck('name', 'class_id');
+        // ---- Roll-up: group student_fee_assignments by fee structure + term + year.
+        // fs.class_id carries the target class; NULL means a global fee, which is
+        // shown as "All Classes" and kept when filtering by a specific class since
+        // those students were billed it too.
+        $rollupQuery = DB::table('student_fee_assignments as sfa')
+            ->join('fee_structures as fs', 'fs.fee_structure_id', '=', 'sfa.fee_structure_id')
+            ->join('fee_categories as fc', 'fc.category_id', '=', 'fs.category_id')
+            ->leftJoin('classes as c', 'c.class_id', '=', 'fs.class_id')
+            ->leftJoin('academic_years as ay', 'ay.academic_year_id', '=', 'sfa.academic_year_id')
+            ->leftJoin('terms as t', function ($j) {
+                $j->on('t.academic_year_id', '=', 'sfa.academic_year_id')
+                  ->on('t.code', '=', 'sfa.term');
+            })
+            ->when($statusFilter, fn($q) => $q->where('sfa.status', $statusFilter), fn($q) => $q->where('sfa.status', 'active'))
+            ->when($request->filled('class_id'), function ($q) use ($request) {
+                $q->where(function ($sq) use ($request) {
+                    $sq->where('fs.class_id', $request->class_id)->orWhereNull('fs.class_id');
+                });
+            })
+            ->when($request->filled('academic_year_id'), fn($q) => $q->where('sfa.academic_year_id', $request->academic_year_id))
+            ->when($request->filled('term'), fn($q) => $q->where('sfa.term', $request->term))
+            ->groupBy('fs.fee_structure_id', 'sfa.term', 'sfa.academic_year_id', 'fc.name', 'c.name', 't.name', 'ay.name')
+            ->orderByRaw("COALESCE(c.name, 'zzz')")
+            ->orderBy('fc.name')
+            ->orderBy('sfa.term')
+            ->selectRaw('fs.fee_structure_id')
+            ->selectRaw('fs.class_id')
+            ->selectRaw('fc.name as category_name')
+            ->selectRaw('fs.payment_frequency')
+            ->selectRaw('COALESCE(c.name, ?) as class_name', ['All Classes'])
+            ->selectRaw('sfa.term')
+            ->selectRaw('COALESCE(t.name, sfa.term) as term_name')
+            ->selectRaw('sfa.academic_year_id')
+            ->selectRaw('COALESCE(ay.name, ?) as year_name', ['—'])
+            ->selectRaw('COUNT(DISTINCT sfa.student_id) as student_count')
+            ->selectRaw('COUNT(DISTINCT CASE WHEN COALESCE(sfa.paid_amount, 0) >= sfa.final_amount THEN sfa.student_id END) as fully_paid_students')
+            ->selectRaw('COALESCE(SUM(sfa.final_amount), 0) as total_net')
+            ->selectRaw('COALESCE(SUM(COALESCE(sfa.paid_amount, 0)), 0) as total_collected')
+            ->selectRaw('COALESCE(SUM(sfa.final_amount - COALESCE(sfa.paid_amount, 0)), 0) as total_balance');
 
-        return view('fee_management.assignments.index', compact('assignments', 'classes'));
+        // COUNT(*) over a grouped query returns per-group counts, not the
+        // number of groups, so the paginator total comes from a subquery.
+        $perPage = 20;
+        $page = max(1, (int) $request->get('page', 1));
+        $total = DB::query()->fromSub($rollupQuery->clone(), 'rollup_groups')->count();
+        $rollups = new \Illuminate\Pagination\LengthAwarePaginator(
+            $rollupQuery->forPage($page, $perPage)->get(),
+            $total,
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view('fee_management.assignments.index', compact(
+            'rollups', 'classes', 'academicYears', 'terms', 'stats', 'detailMode'
+        ) + ['assignments' => collect()]);
     }
 
     public function create()
@@ -62,10 +178,26 @@ class StudentFeeAssignmentController extends Controller
 
     public function store(Request $request)
     {
+        // The term is validated against the codes that actually exist for the
+        // submitted academic year. It used to be accepted as a free string while
+        // the form offered "Term 1"/"Term 2"/"Term 3" and terms.code holds
+        // "T1".."T3" — so the resolver in assignFeesToStudents() never matched,
+        // and every assignment was written with term = 'Term 1' and
+        // term_id = NULL, dropping it out of every term-filtered arrears view.
+        $validTermCodes = Term::where('academic_year_id', $request->academic_year_id)
+            ->pluck('code')
+            ->all();
+
+        if ($validTermCodes === []) {
+            Flash::error('No terms are defined for the selected academic year, so fees cannot be assigned against a term.');
+
+            return redirect()->back()->withInput();
+        }
+
         $request->validate([
             'assignment_type' => 'required|in:bulk_class,bulk_all,auto_all_classes,individual',
             'academic_year_id' => 'required',
-            'term' => 'required',
+            'term' => 'required|in:' . implode(',', $validTermCodes),
         ]);
 
         try {
@@ -246,14 +378,15 @@ class StudentFeeAssignmentController extends Controller
         $totalDiscount = $assignments->sum('discount_amount');
         $netPayable = $assignments->sum('final_amount');
         
-        // Calculate payments directly from fee_payments table via assignments
-        $totalPaid = StudentFeeAssignment::where('student_id', $id)
-            ->with('payments')
-            ->get()
-            ->sum(function ($assignment) {
-                return $assignment->payments->sum('amount');
-            });
-        $balance = $netPayable - $totalPaid;
+        // Paid and balance come from the single balance authority, so this screen
+        // cannot disagree with the student profile, the fee list or the statement.
+        // Summing $assignment->payments counted reversed payments (the rows are
+        // deliberately kept for audit) and ignored payment_allocations, so a
+        // student whose receipt had been voided, or who had paid a total balance
+        // split across fees, was shown a different balance here.
+        $summary = app(\App\Services\FeeBalanceService::class)->summaryForStudent((int) $id);
+        $totalPaid = $summary['paid'];
+        $balance = $summary['balance'];
 
         return view('fee_management.assignments.student_summary', compact('student', 'assignments', 'totalAmount', 'totalDiscount', 'netPayable', 'totalPaid', 'balance'));
     }
@@ -295,6 +428,13 @@ class StudentFeeAssignmentController extends Controller
     protected function assignFeesToStudents($students, $fees, $academicYearId, $term, $count = 0, $isBulkAll = false)
     {
         $termId = \App\Models\Term::where('academic_year_id', $academicYearId)->where('code', $term)->value('id');
+
+        // Defence in depth. A NULL term_id silently removes the assignment from
+        // term-filtered arrears, statements and reports, so refuse rather than
+        // write an unscoped fee record.
+        if (! $termId) {
+            throw new \RuntimeException("The selected term ({$term}) does not exist for this academic year.");
+        }
 
         $studentChunks = $students->chunk(100);
 

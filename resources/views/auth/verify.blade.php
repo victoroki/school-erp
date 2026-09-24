@@ -17,9 +17,13 @@
                             the email,</p>
                             <a href="#"
                                onclick="event.preventDefault(); document.getElementById('resend-form').submit();">
-                                click here to request another.
-                            </a>
-                            <form id="resend-form" action="{{ route('verification.resend') }}" method="POST" class="d-none">
+                                 click here to request another.
+                             </a>
+                            {{-- verification.resend is registered only when Auth::routes()
+                                 enables email verification, which is also the only case in
+                                 which this view is reachable. Guarded so the reference can
+                                 never dangle if the two ever drift apart. --}}
+                            <form id="resend-form" action="{{ Route::has('verification.resend') ? route('verification.resend') : '' }}" method="POST" class="d-none">
                                 @csrf
                             </form>
                     </div>

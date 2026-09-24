@@ -20,7 +20,11 @@ class FeeCategoryController extends AppBaseController
     {
         $this->feeCategoryRepository = $feeCategoryRepo;
         $this->middleware('can:fees.view')->only(['index', 'show']);
-        $this->middleware('can:fees.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+        // generateAutoCode mints a category code for the create form, so it is
+        // part of the manage flow — it had no gate at all.
+        $this->middleware('can:fees.manage')->only([
+            'create', 'store', 'edit', 'update', 'destroy', 'generateAutoCode',
+        ]);
     }
 
     /**

@@ -22,7 +22,7 @@ class SchoolClass extends Model
 
     public static array $rules = [
         'name' => 'required|string|max:50',
-        'numeric_value' => 'nullable|integer',
+        'numeric_value' => 'nullable|integer|min:0|max:99',
         'description' => 'nullable|string|max:65535',
         'created_at' => 'nullable',
         'updated_at' => 'nullable'

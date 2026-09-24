@@ -121,10 +121,22 @@
                                             <i class="fas fa-layer-group"></i>
                                         </span>
                                     </div>
+                                    {{-- Populated from the terms table. The value must be the
+                                         term CODE ("T1"), not the label: the controller resolves
+                                         term_id by code, so hardcoding "Term 1" meant the lookup
+                                         never matched and every assignment was saved with
+                                         term_id = NULL. --}}
+                                    @php
+                                        $selectedTerm = old('term', $terms->firstWhere('status', 'active')->code ?? $terms->first()->code ?? null);
+                                    @endphp
                                     <select name="term" id="term" class="form-control" style="border: none; background: transparent; height: 100%; font-weight: 500; color: #1e293b;" required>
-                                        <option value="Term 1">Term 1</option>
-                                        <option value="Term 2">Term 2</option>
-                                        <option value="Term 3">Term 3</option>
+                                        @forelse($terms as $termOption)
+                                            <option value="{{ $termOption->code }}" @if($selectedTerm === $termOption->code) selected @endif>
+                                                {{ $termOption->name }}@if($termOption->status !== 'active') ({{ ucfirst($termOption->status) }})@endif
+                                            </option>
+                                        @empty
+                                            <option value="">No terms defined for the current academic year</option>
+                                        @endforelse
                                     </select>
                                 </div>
                             </div>

@@ -37,8 +37,8 @@
                             <div class="alert alert-warning border-left shadow-sm">
                                 <h5><i class="icon fas fa-exclamation-triangle"></i> Overdue Notice!</h5>
                                 This book is <strong>{{ $diff }} days overdue</strong>. 
-                                <br>Provisional Fine: <span class="badge badge-danger text-lg px-3 ml-2">KSh {{ number_format($fine, 2) }}</span>
-                                <p class="small mt-2 mb-0">Fine is calculated at KSh 50 per day.</p>
+                                <br>Provisional Fine: <span class="badge badge-danger text-lg px-3 ml-2">KES {{ number_format($fine, 2) }}</span>
+                                <p class="small mt-2 mb-0">Fine is calculated at KES 50 per day.</p>
                             </div>
                         @else
                             <div class="alert alert-success border-left shadow-sm">

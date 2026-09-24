@@ -134,7 +134,7 @@ class DashboardWidgetService
                 'permission' => ['fees.view', 'fees.manage', 'fees.collect'],
                 'route' => 'fee-management.index',
                 'summary' => fn () => [
-                    'count' => number_format(FeePayment::whereMonth('created_at', now()->month)->sum('amount') / 1000, 1) . 'k',
+                    'count' => number_format(FeePayment::notReversed()->whereMonth('created_at', now()->month)->sum('amount') / 1000, 1) . 'k',
                     'label' => 'Monthly Rev',
                     'status' => StudentFeeAssignment::where('status', 'active')
                         ->whereRaw('COALESCE(paid_amount, 0) < final_amount')->count() > 10 ? 'danger' : 'good',

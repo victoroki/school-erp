@@ -92,6 +92,11 @@ class TimetableController extends AppBaseController
                     ->where('class_section_id', $selectedClassSectionId)
                     ->get();
 
+                // Deliberately NOT filtered on type: the grid renders break periods
+                // as their own tt-break-col / tt-break cells, never as a "Free" slot,
+                // so they are information rather than schedulable periods. Every
+                // scheduling path (the generator, preview and AJAX helpers) does
+                // filter them out.
                 $periods = Period::orderBy('start_time')->get();
             }
         }
@@ -155,7 +160,7 @@ class TimetableController extends AppBaseController
     public function show($id)
     {
         $timetable = $this->timetableRepository->with([
-            'classSection.class',
+            'classSection.schoolClass',
             'classSection.section',
             'period',
             'subject',
@@ -311,6 +316,7 @@ class TimetableController extends AppBaseController
         ->where('academic_year_id', $selectedAcademicYearId)
         ->get();
 
+        // Deliberately NOT filtered on type — the view renders break rows. See index().
         $periods = Period::orderBy('start_time')->get();
         $daysOfWeek = self::daysOfWeek();
 
@@ -464,6 +470,11 @@ class TimetableController extends AppBaseController
             'classSubjectOptions' => $classSubjectOptions,
             'result' => $result,
             'preview' => $preview,
+            // So the confirmation step can state how many lessons it is about to
+            // replace — "all existing lessons" is much weaker than a number.
+            'existingLessonCount' => $selectedAcademicYearId
+                ? Timetable::where('academic_year_id', $selectedAcademicYearId)->count()
+                : 0,
         ]);
     }
 
@@ -526,32 +537,56 @@ class TimetableController extends AppBaseController
         $savedCount = 0;
         $validationErrors = [];
 
-        DB::transaction(function () use ($academicYearId, $result, &$savedCount, &$validationErrors) {
+        // Validate every generated row BEFORE deleting anything.
+        //
+        // The previous order deleted the year's lessons first and then skipped
+        // invalid rows with `continue`, so an invalid row silently dropped a
+        // lesson — while the timetable it belonged to had already been destroyed
+        // and the commit made that permanent. Validating up front means the
+        // replacement either happens completely or not at all.
+        $validatedPlacements = [];
+
+        foreach ($result->placements as $idx => $row) {
+            $timetable = new Timetable();
+            $timetable->fill($row);
+
+            $validator = \Illuminate\Support\Facades\Validator::make(
+                $timetable->toArray(),
+                [
+                    'class_section_id' => 'required|exists:class_sections,class_section_id',
+                    'day_of_week' => 'required|string|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+                    'period_id' => 'required|exists:periods,period_id',
+                    'subject_id' => 'required|exists:subjects,subject_id',
+                    'teacher_id' => 'required|exists:staff,staff_id',
+                    'classroom_id' => 'required|exists:classrooms,classroom_id',
+                    'academic_year_id' => 'required|exists:academic_years,academic_year_id',
+                ]
+            );
+
+            if ($validator->fails()) {
+                $validationErrors[] = 'Row ' . ($idx + 1) . ': ' . $validator->errors()->first();
+                continue;
+            }
+
+            $validatedPlacements[] = $row;
+        }
+
+        if ($validationErrors !== []) {
+            Flash::error(
+                'Nothing was changed. ' . count($validationErrors)
+                . ' generated row(s) are invalid, so the existing timetable was left untouched: '
+                . implode(' ', array_slice($validationErrors, 0, 3))
+            );
+
+            return redirect(route('timetables.auto-generate', ['academic_year_id' => $academicYearId]));
+        }
+
+        DB::transaction(function () use ($academicYearId, $validatedPlacements, &$savedCount) {
             Timetable::where('academic_year_id', $academicYearId)->delete();
 
-            foreach ($result->placements as $idx => $row) {
-                // Validate through the model before inserting
+            foreach ($validatedPlacements as $row) {
                 $timetable = new Timetable();
                 $timetable->fill($row);
-
-                $validator = \Illuminate\Support\Facades\Validator::make(
-                    $timetable->toArray(),
-                    [
-                        'class_section_id' => 'required|exists:class_sections,class_section_id',
-                        'day_of_week' => 'required|string|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
-                        'period_id' => 'required|exists:periods,period_id',
-                        'subject_id' => 'required|exists:subjects,subject_id',
-                        'teacher_id' => 'required|exists:staff,staff_id',
-                        'classroom_id' => 'required|exists:classrooms,classroom_id',
-                        'academic_year_id' => 'required|exists:academic_years,academic_year_id',
-                    ]
-                );
-
-                if ($validator->fails()) {
-                    $validationErrors[] = "Row " . ($idx + 1) . ": " . $validator->errors()->first();
-                    continue;
-                }
-
                 $timetable->save();
                 $savedCount++;
             }

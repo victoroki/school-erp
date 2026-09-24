@@ -45,8 +45,49 @@
     {!! Form::select('applicable_fee_categories[]', $feeCategories ?? [], null, ['class' => 'form-control select2 rounded-3', 'multiple' => 'multiple', 'placeholder' => 'Select Categories']) !!}
 </div>
 
-<!-- Eligibility Criteria Field -->
+ <!-- Eligibility Criteria Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('eligibility_criteria', 'Eligibility Criteria:', ['class' => 'form-label fw-bold small text-uppercase text-muted mb-1']) !!}
     {!! Form::select('eligibility_criteria', ['staff_child' => 'Staff Child', 'sibling' => 'Sibling', 'merit' => 'Merit Based', 'financial_aid' => 'Financial Aid', 'custom' => 'Custom'], 'custom', ['class' => 'form-control select2 rounded-3', 'required']) !!}
+</div>
+
+{{--
+    These five fields used to live only in create.blade.php, so a scheme could be
+    created with a validity window, approval requirement and auto-apply setting
+    that the edit screen never showed and could therefore never change. Keeping
+    them in this shared partial means the two forms cannot drift apart again.
+--}}
+
+<!-- Academic Year Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('academic_year_id', 'Academic Year:', ['class' => 'form-label fw-bold small text-uppercase text-muted mb-1']) !!}
+    {!! Form::select('academic_year_id', $academicYears ?? [], null, ['class' => 'form-control select2 rounded-3', 'placeholder' => 'Select Year']) !!}
+</div>
+
+<!-- Valid From Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('valid_from', 'Valid From:', ['class' => 'form-label fw-bold small text-uppercase text-muted mb-1']) !!}
+    {!! Form::date('valid_from', null, ['class' => 'form-control rounded-3']) !!}
+</div>
+
+<!-- Valid To Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('valid_to', 'Valid To:', ['class' => 'form-label fw-bold small text-uppercase text-muted mb-1']) !!}
+    {!! Form::date('valid_to', null, ['class' => 'form-control rounded-3']) !!}
+</div>
+
+<!-- Requires Approval Field -->
+<div class="form-group col-sm-6">
+    <div class="form-check">
+        {!! Form::checkbox('requires_approval', 1, null, ['class' => 'form-check-input']) !!}
+        {!! Form::label('requires_approval', 'Requires Approval', ['class' => 'form-check-label fw-600']) !!}
+    </div>
+</div>
+
+<!-- Auto Apply Field -->
+<div class="form-group col-sm-6">
+    <div class="form-check">
+        {!! Form::checkbox('auto_apply', 1, null, ['class' => 'form-check-input']) !!}
+        {!! Form::label('auto_apply', 'Auto Apply', ['class' => 'form-check-label fw-600']) !!}
+    </div>
 </div>

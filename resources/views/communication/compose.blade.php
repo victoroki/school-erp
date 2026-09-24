@@ -46,6 +46,7 @@
                                 'All Parents' => 'All Parents',
                                 'All Staff' => 'All Staff Members',
                                 'Class' => 'Specific Class',
+                                'Class Section' => 'Specific Class Section',
                                 // 'Custom' => 'Custom List (Coming Soon)'
                             ], null, ['class' => 'form-control select2', 'id' => 'recipient_group']) !!}
                         </div>
@@ -54,6 +55,12 @@
                         <div class="form-group d-none" id="class_selector">
                             <label>Select Class:</label>
                             {!! Form::select('class_id', $classes, null, ['class' => 'form-control select2', 'placeholder' => 'Select a Class']) !!}
+                        </div>
+
+                        <!-- Dynamic Class Section Selection -->
+                        <div class="form-group d-none" id="class_section_selector">
+                            <label>Select Class Section:</label>
+                            {!! Form::select('class_section_id', $classSections ?? [], null, ['class' => 'form-control select2', 'placeholder' => 'Select a Class Section', 'id' => 'class_section_id']) !!}
                         </div>
 
                         <!-- Template Selection -->
@@ -145,6 +152,7 @@
             function updateRecipientCount() {
                 var group = $('#recipient_group').val();
                 var classId = $('select[name="class_id"]').val();
+                var classSectionId = $('select[name="class_section_id"]').val();
                 var type = $('input[name="message_type"]:checked').val();
 
                 if (!group) {
@@ -160,6 +168,7 @@
                     data: {
                         recipient_group: group,
                         class_id: classId,
+                        class_section_id: classSectionId,
                         message_type: type,
                     },
                     success: function(response) {
@@ -176,15 +185,25 @@
             }
 
             $('#recipient_group').change(function() {
-                if($(this).val() === 'Class') {
+                var group = $(this).val();
+                if (group === 'Class') {
                     $('#class_selector').removeClass('d-none');
+                    $('#class_section_selector').addClass('d-none');
+                } else if (group === 'Class Section') {
+                    $('#class_section_selector').removeClass('d-none');
+                    $('#class_selector').addClass('d-none');
                 } else {
                     $('#class_selector').addClass('d-none');
+                    $('#class_section_selector').addClass('d-none');
                 }
                 updateRecipientCount();
             });
 
             $('select[name="class_id"]').change(function() {
+                updateRecipientCount();
+            });
+
+            $('select[name="class_section_id"]').change(function() {
                 updateRecipientCount();
             });
 

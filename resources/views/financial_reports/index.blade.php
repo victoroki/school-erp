@@ -35,7 +35,7 @@
                                 </a>
                             </li>
                             <li class="mb-3">
-                                <a href="#" class="d-flex align-items-center text-dark font-weight-bold text-decoration-none opacity-50">
+                                <a href="{{ route('financial-reports.balance-sheet') }}" class="d-flex align-items-center text-dark font-weight-bold text-decoration-none">
                                     <i class="fas fa-chevron-right mr-2 text-primary small"></i> Balance Sheet
                                 </a>
                             </li>
@@ -66,7 +66,7 @@
                                 </a>
                             </li>
                             <li class="mb-3">
-                                <a href="#" class="d-flex align-items-center text-dark font-weight-bold text-decoration-none opacity-50">
+                                <a href="{{ route('financial-reports.fee-collection-trends') }}" class="d-flex align-items-center text-dark font-weight-bold text-decoration-none">
                                     <i class="fas fa-chevron-right mr-2 text-success small"></i> Fee Collection Trends
                                 </a>
                             </li>

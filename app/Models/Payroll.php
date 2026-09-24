@@ -4,9 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * A per-employee payslip row.
+ *
+ * The 2026-02-07 HR revamp renamed the legacy `payroll` table to
+ * `payroll_details`; the columns kept their names, so this model now reads
+ * from `payroll_details` with `payroll_id` as the primary key. Querying the
+ * old `payroll` table name throws "table doesn't exist" on the live DB.
+ *
+ * Run-level totals for a whole month live in the separate `payrolls` table.
+ */
 class Payroll extends Model
 {
-    public $table = 'payroll';
+    public $table = 'payroll_details';
+
+    protected $primaryKey = 'payroll_id';
 
     public $fillable = [
         'staff_id',
@@ -27,7 +39,18 @@ class Payroll extends Model
         'payment_method',
         'reference_number',
         'remarks',
-        'status'
+        'status',
+        'payroll_id',
+        'total_allowances',
+        'paye_tax',
+        'nhif_deduction',
+        'nssf_deduction',
+        'total_statutory_deductions',
+        'total_other_deductions',
+        'overtime_pay',
+        'bonus',
+        'arrears',
+        'payslip_sent',
     ];
 
     protected $casts = [
@@ -41,7 +64,11 @@ class Payroll extends Model
         'payment_method' => 'string',
         'reference_number' => 'string',
         'remarks' => 'string',
-        'status' => 'string'
+        'status' => 'string',
+        'paye_tax' => 'decimal:2',
+        'nhif_deduction' => 'decimal:2',
+        'nssf_deduction' => 'decimal:2',
+        'payslip_sent' => 'boolean',
     ];
 
     public static array $rules = [

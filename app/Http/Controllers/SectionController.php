@@ -73,7 +73,7 @@ class SectionController extends AppBaseController
      */
     public function show($id)
     {
-        $section = $this->sectionRepository->find($id);
+        $section = \App\Models\Section::with('schoolClass')->find($id);
 
         if (empty($section)) {
             Flash::error('Section not found');

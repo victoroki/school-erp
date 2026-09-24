@@ -71,7 +71,7 @@ class JobPositionController extends AppBaseController
      */
     public function show($id)
     {
-        $jobPosition = $this->jobPositionRepository->find($id);
+        $jobPosition = \App\Models\JobPosition::with('department')->find($id);
 
         if (empty($jobPosition)) {
             Flash::error('Job Position not found');

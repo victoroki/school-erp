@@ -68,6 +68,7 @@
             <form action="{{ route('bank-reconciliations.update', $bankAccount->account_id) }}" method="POST" id="reconciliationForm">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="statement_balance" id="statement_balance_hidden" value="">
                 <div class="dash-panel">
                     <div class="dash-panel-header">
                         <div class="d-flex align-items-center gap-2">
@@ -266,6 +267,9 @@
         
         function calculateDifference() {
             let statementBal = parseFloat(statementInput.value) || 0;
+
+            const hidden = document.getElementById('statement_balance_hidden');
+            if (hidden) hidden.value = statementBal;
             
             // For a basic reconciliation view, you'd add/subtract checked transaction amounts 
             // to see if the modified system balance matches the statement balance.

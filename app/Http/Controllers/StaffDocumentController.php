@@ -27,8 +27,10 @@ class StaffDocumentController extends AppBaseController
         private function getDropdownData()
     {
         return [
-            'staffs' => Staff::selectRaw("staff_id, CONCAT(first_name, ' ', last_name, ' - ', staff_id) as full_name")
-                ->pluck('full_name', 'staff_id')
+            // `dropdown_name` alias: `full_name` would be shadowed by the
+            // Staff fullName accessor and resolve to empty strings.
+            'staffs' => Staff::selectRaw("staff_id, CONCAT(first_name, ' ', last_name, ' - ', staff_id) as dropdown_name")
+                ->pluck('dropdown_name', 'staff_id')
                 ->toArray(),
         ];
     }

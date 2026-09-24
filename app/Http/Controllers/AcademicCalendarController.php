@@ -14,7 +14,14 @@ class AcademicCalendarController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('can:academics.view')->only(['index']);
-        $this->middleware('can:academics.settings.manage')->only(['store', 'update', 'destroy']);
+
+        // 'create' and 'edit' render the calendar entry forms and were
+        // previously covered by `auth` only, so any signed-in user could open
+        // them. config/menu.php already advertises academics.settings.manage
+        // for this screen, so the guard now matches the menu.
+        $this->middleware('can:academics.settings.manage')->only([
+            'create', 'store', 'edit', 'update', 'destroy',
+        ]);
     }
 
     public function index(Request $request)

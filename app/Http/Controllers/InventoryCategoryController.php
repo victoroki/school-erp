@@ -37,7 +37,8 @@ class InventoryCategoryController extends AppBaseController
             ->with(['inventoryItems' => function($q) {
                 $q->select('item_id', 'category_id', 'quantity', 'cost_per_unit');
             }])
-            ->paginate(12);
+            ->paginate(12)
+            ->withQueryString();
 
         return view('inventory_categories.index')
             ->with('inventoryCategories', $inventoryCategories);

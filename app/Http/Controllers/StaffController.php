@@ -66,7 +66,7 @@ class StaffController extends AppBaseController
             $query->where('staff_type', $request->get('staff_type'));
         }
 
-        $staff = $query->with(['department', 'jobPosition'])->paginate(12);
+        $staff = $query->with(['department', 'jobPosition'])->paginate(12)->withQueryString();
 
         return view('staff.index')->with('staff', $staff);
     }
@@ -143,7 +143,7 @@ class StaffController extends AppBaseController
         //     abort(403, 'Unauthorized to view staff');
         // }
 
-        $staff = $this->staffRepository->find($id);
+        $staff = Staff::with(['department', 'jobPosition', 'user'])->find($id);
 
         if (empty($staff)) {
             Flash::error('Staff not found');

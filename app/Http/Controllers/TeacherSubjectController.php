@@ -161,7 +161,7 @@ class TeacherSubjectController extends AppBaseController
      */
     public function show($id)
     {
-        $teacherSubject = $this->teacherSubjectRepository->find($id);
+        $teacherSubject = \App\Models\TeacherSubject::with(['staff', 'subject', 'classSection.schoolClass', 'classSection.section', 'academicYear'])->find($id);
 
         if (empty($teacherSubject)) {
             Flash::error('Teacher Subject not found');

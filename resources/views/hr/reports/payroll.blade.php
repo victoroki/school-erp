@@ -56,7 +56,7 @@
                         <span class="info-box-icon bg-success"><i class="fas fa-coins"></i></span>
                         <div class="info-box-content">
                             <span class="info-box-text">Total Payroll Cost</span>
-                            <span class="info-box-number">KSh {{ number_format($totalPayrollCost, 2) }}</span>
+                            <span class="info-box-number">KES {{ number_format($totalPayrollCost, 2) }}</span>
                         </div>
                     </div>
                 </div>
@@ -74,7 +74,7 @@
                         <span class="info-box-icon bg-warning"><i class="fas fa-calculator"></i></span>
                         <div class="info-box-content">
                             <span class="info-box-text">Average Salary</span>
-                            <span class="info-box-number">KSh {{ number_format($byDepartment->sum('staff_count') > 0 ? $totalPayrollCost / $byDepartment->sum('staff_count') : 0, 2) }}</span>
+                            <span class="info-box-number">KES {{ number_format($byDepartment->sum('staff_count') > 0 ? $totalPayrollCost / $byDepartment->sum('staff_count') : 0, 2) }}</span>
                         </div>
                     </div>
                 </div>
@@ -101,8 +101,8 @@
                                 <tr>
                                     <td>{{ $dept['department'] }}</td>
                                     <td class="text-right"><span class="badge badge-secondary">{{ $dept['staff_count'] }}</span></td>
-                                    <td class="text-right">KSh {{ number_format($dept['total_salary'], 2) }}</td>
-                                    <td class="text-right">KSh {{ number_format($dept['average_salary'], 2) }}</td>
+                                    <td class="text-right">KES {{ number_format($dept['total_salary'], 2) }}</td>
+                                    <td class="text-right">KES {{ number_format($dept['average_salary'], 2) }}</td>
                                     <td class="text-right">
                                         @if($totalPayrollCost > 0)
                                             <span class="badge badge-info">{{ number_format(($dept['total_salary'] / $totalPayrollCost) * 100, 1) }}%</span>
@@ -117,8 +117,8 @@
                             <tr class="font-weight-bold">
                                 <td>Total</td>
                                 <td class="text-right">{{ $byDepartment->sum('staff_count') }}</td>
-                                <td class="text-right">KSh {{ number_format($totalPayrollCost, 2) }}</td>
-                                <td class="text-right">KSh {{ number_format($byDepartment->sum('staff_count') > 0 ? $totalPayrollCost / $byDepartment->sum('staff_count') : 0, 2) }}</td>
+                                <td class="text-right">KES {{ number_format($totalPayrollCost, 2) }}</td>
+                                <td class="text-right">KES {{ number_format($byDepartment->sum('staff_count') > 0 ? $totalPayrollCost / $byDepartment->sum('staff_count') : 0, 2) }}</td>
                                 <td class="text-right">100%</td>
                             </tr>
                         </tfoot>

@@ -167,7 +167,13 @@ return [
                  'route' => 'student-promotion.index', 'active' => 'student-promotion*', 'permission' => ['students.manage']],
                 ['key' => 'student-transfer', 'label' => 'Student Transfer', 'icon' => 'fas fa-exchange-alt', 'color' => 'text-warning',
                  'route' => 'student-transfer.index', 'active' => 'student-transfer*', 'permission' => ['students.manage']],
-                // Unassigned Students removed — not in use
+                // Restored: both routes work and both patterns are still listed in
+                // this section's `active` array, so these entries were meant to exist.
+                // Without them the features were unreachable from the navigation.
+                ['key' => 'student-enrollments', 'label' => 'Class Enrollments', 'icon' => 'fas fa-layer-group', 'color' => 'text-warning',
+                 'route' => 'student-class-enrollments.index', 'active' => 'student-class-enrollments*', 'permission' => ['students.view', 'students.manage']],
+                ['key' => 'student-unassigned', 'label' => 'Unassigned Students', 'icon' => 'fas fa-user-slash', 'color' => 'text-warning',
+                 'route' => 'student-unassigned.index', 'active' => 'student-unassigned*', 'permission' => ['students.manage']],
                 ['key' => 'emergency-contacts', 'label' => 'Emergency Contact', 'icon' => 'fas fa-hospital-user', 'color' => 'text-warning',
                  'route' => 'emergencyContacts.index', 'active' => 'emergency-contacts*', 'permission' => ['students.view', 'students.manage']],
 
@@ -279,7 +285,7 @@ return [
                 ['key' => 'inventory-categories', 'label' => 'Categories', 'icon' => 'fas fa-tags', 'color' => 'text-success',
                  'route' => 'inventory-categories.index', 'active' => 'inventory-categories*', 'permission' => ['inventory.view', 'inventory.manage']],
                 ['key' => 'suppliers', 'label' => 'Suppliers', 'icon' => 'fas fa-truck', 'color' => 'text-success',
-                 'route' => 'suppliers.index', 'active' => 'suppliers*', 'permission' => ['inventory.view', 'inventory.manage']],
+                 'route' => 'suppliers.index', 'active' => 'suppliers*', 'permission' => ['finance.view', 'finance.manage']],
 
                 ['header' => 'Operations'],
                 ['key' => 'requisitions', 'label' => 'My Requisitions', 'icon' => 'fas fa-file-signature', 'color' => 'text-info',
@@ -389,7 +395,7 @@ return [
                 ['header' => 'Organization', 'color' => 'text-secondary'],
                 ['key' => 'departments', 'label' => 'Departments', 'icon' => 'far fa-building', 'color' => 'text-secondary',
                  'route' => 'departments.index', 'active' => 'departments*', 'permission' => ['hr.view', 'hr.manage']],
-                ['key' => 'job-positions', 'label' => 'Job Positions', 'icon' => 'far fa-briefcase', 'color' => 'text-secondary',
+                ['key' => 'job-positions', 'label' => 'Job Positions', 'icon' => 'fas fa-briefcase', 'color' => 'text-secondary',
                  'route' => 'job-positions.index', 'active' => 'job-positions*', 'permission' => ['hr.view', 'hr.manage']],
 
                 ['header' => 'Time Off & Attendance', 'color' => 'text-secondary'],
@@ -425,8 +431,8 @@ return [
             'icon'     => 'fas fa-chart-line',
             'color'    => 'text-dark',
             'active'   => ['finance*', 'expenses*', 'income*', 'bank*', 'budgets*',
-                           'financial-reports*', 'financial-years*', 'budget-vs-actual*'],
-            'permission' => ['finance.view', 'finance.manage', 'finance.approve', 'finance.import', 'finance.export'],
+                           'financial-reports*', 'financial-years*', 'budget-vs-actual*', 'petty-cash*'],
+            'permission' => ['finance.view', 'finance.manage', 'finance.approve'],
             'children' => [
                 ['key' => 'finance-dashboard', 'label' => 'Dashboard', 'icon' => 'fas fa-tachometer-alt', 'color' => 'text-dark',
                  'route' => 'finance.dashboard', 'active' => 'finance/dashboard', 'permission' => ['finance.view']],
@@ -457,6 +463,12 @@ return [
                 ['key' => 'bank-reconciliation', 'label' => 'Bank Reconciliation', 'icon' => 'fas fa-balance-scale', 'color' => 'text-primary',
                  'route' => 'bank-reconciliations.index', 'active' => 'bank-reconciliations*', 'permission' => ['finance.view']],
 
+                ['header' => 'Petty Cash', 'color' => 'text-warning'],
+                ['key' => 'petty-cash', 'label' => 'Petty Cash Ledger', 'icon' => 'fas fa-coins', 'color' => 'text-warning',
+                 'route' => 'petty-cash.index', 'active' => 'petty-cash*', 'permission' => ['finance.view', 'finance.manage']],
+                ['key' => 'petty-cash-log', 'label' => 'Log Entry', 'icon' => 'fas fa-plus-circle', 'color' => 'text-warning',
+                 'route' => 'petty-cash.create', 'active' => 'petty-cash/create', 'permission' => ['finance.manage']],
+
                 ['header' => 'Budgeting', 'color' => 'text-info'],
                 ['key' => 'budgets', 'label' => 'Budget Planning', 'icon' => 'fas fa-clipboard-list', 'color' => 'text-info',
                  'route' => 'budgets.index', 'active' => 'budgets*', 'permission' => ['finance.view', 'finance.manage']],
@@ -465,9 +477,9 @@ return [
 
                 ['header' => 'Reports & Analysis', 'color' => 'text-dark'],
                 ['key' => 'financial-reports', 'label' => 'Financial Reports', 'icon' => 'fas fa-file-alt', 'color' => 'text-dark',
-                 'route' => 'financial-reports.index', 'active' => 'financial-reports*', 'permission' => ['finance.view', 'finance.export']],
+                 'route' => 'financial-reports.index', 'active' => 'financial-reports*', 'permission' => ['finance.view']],
                 ['key' => 'cashflow', 'label' => 'Cashflow Analysis', 'icon' => 'fas fa-chart-line', 'color' => 'text-dark',
-                 'route' => 'financial-reports.cashflow', 'active' => 'financial-reports/cashflow', 'permission' => ['finance.view', 'finance.export']],
+                 'route' => 'financial-reports.cashflow', 'active' => 'financial-reports/cashflow', 'permission' => ['finance.view']],
                 ['key' => 'profit-loss', 'label' => 'Profit & Loss', 'icon' => 'fas fa-calculator', 'color' => 'text-dark',
                  'route' => 'financial-reports.p-and-l', 'active' => 'financial-reports/p-and-l', 'permission' => ['finance.view']],
 
@@ -551,7 +563,7 @@ return [
                  'route' => 'communication.compose', 'active' => 'communication/compose', 'permission' => ['communication.manage']],
                 ['key' => 'comm-history', 'label' => 'Message History', 'icon' => 'fas fa-history', 'color' => 'text-secondary',
                  'route' => 'communication.history.index', 'active' => 'communication/history*', 'permission' => ['communication.view']],
-                ['key' => 'sms-templates', 'label' => 'SMS Templates', 'icon' => 'far fa-sms', 'color' => 'text-secondary',
+                ['key' => 'sms-templates', 'label' => 'SMS Templates', 'icon' => 'fas fa-sms', 'color' => 'text-secondary',
                  'route' => 'smsTemplates.index', 'active' => 'sms-templates*', 'permission' => ['communication.view', 'communication.manage']],
                 ['key' => 'email-templates', 'label' => 'Email Templates', 'icon' => 'far fa-envelope', 'color' => 'text-secondary',
                  'route' => 'emailTemplates.index', 'active' => 'email-templates*', 'permission' => ['communication.view', 'communication.manage']],

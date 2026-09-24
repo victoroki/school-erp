@@ -25,7 +25,7 @@
                         <span class="text-dark">{{ $feeStructure->category->name ?? 'N/A' }}</span>
                     </td>
                     <td class="text-right">
-                        <span class="text-lg font-weight-bold">KSh {{ number_format($feeStructure->amount, 2) }}</span>
+                        <span class="text-lg font-weight-bold">KES {{ number_format($feeStructure->amount, 2) }}</span>
                     </td>
                     <td>
                         <span class="text-muted"><i class="far fa-calendar-alt mr-1"></i> {{ $feeStructure->due_date ? $feeStructure->due_date->format('M d, Y') : 'N/A' }}</span>

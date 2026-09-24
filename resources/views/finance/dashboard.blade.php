@@ -38,7 +38,7 @@
                 <div class="stat-icon bg-emerald-light text-emerald"><i class="fas fa-arrow-down"></i></div>
                 <div class="stat-info w-100">
                     <span class="stat-label">Income (This Month)</span>
-                    <span class="stat-value text-emerald" style="font-size: 1.25rem;">KES {{ number_format($combinedIncomeThisMonth, 0) }}</span>
+                    <span class="stat-value text-emerald" style="font-size: 1.25rem;">{{ \App\Support\Money::format($combinedIncomeThisMonth) }}</span>
                     <span class="mt-1 d-block text-muted" style="font-size: .688rem; font-weight: 600;">
                         <i class="fas {{ $incomeChange >= 0 ? 'fa-arrow-up text-emerald' : 'fa-arrow-down text-rose' }} mr-1"></i>
                         <b class="{{ $incomeChange >= 0 ? 'text-emerald' : 'text-rose' }}">{{ abs(round($incomeChange, 1)) }}%</b> from last month
@@ -51,7 +51,7 @@
                 <div class="stat-icon bg-rose-light text-rose"><i class="fas fa-arrow-up"></i></div>
                 <div class="stat-info w-100">
                     <span class="stat-label">Expenses (This Month)</span>
-                    <span class="stat-value text-rose" style="font-size: 1.25rem;">KES {{ number_format($totalExpensesThisMonth, 0) }}</span>
+                    <span class="stat-value text-rose" style="font-size: 1.25rem;">{{ \App\Support\Money::format($totalExpensesThisMonth) }}</span>
                     <span class="mt-1 d-block text-muted" style="font-size: .688rem; font-weight: 600;">
                         <i class="fas {{ $expenseChange <= 0 ? 'fa-arrow-down text-emerald' : 'fa-arrow-up text-rose' }} mr-1"></i>
                         <b class="{{ $expenseChange <= 0 ? 'text-emerald' : 'text-rose' }}">{{ abs(round($expenseChange, 1)) }}%</b> from last month
@@ -64,7 +64,7 @@
                 <div class="stat-icon bg-blue-light text-blue"><i class="fas fa-chart-line"></i></div>
                 <div class="stat-info w-100">
                     <span class="stat-label">Net Cash Flow</span>
-                    <span class="stat-value {{ $netCashFlow >= 0 ? 'text-emerald' : 'text-rose' }}" style="font-size: 1.25rem;">KES {{ number_format($netCashFlow, 0) }}</span>
+                    <span class="stat-value {{ $netCashFlow >= 0 ? 'text-emerald' : 'text-rose' }}" style="font-size: 1.25rem;">{{ \App\Support\Money::format($netCashFlow) }}</span>
                     <span class="mt-1 d-block text-muted" style="font-size: .688rem; font-weight: 600;">
                         <b>{{ round($cashFlowPercentage, 1) }}%</b> of total income
                     </span>
@@ -76,7 +76,7 @@
                 <div class="stat-icon bg-amber-light text-amber"><i class="fas fa-university"></i></div>
                 <div class="stat-info w-100">
                     <span class="stat-label">Total Bank Balance</span>
-                    <span class="stat-value {{ $totalBankBalance > 100000 ? 'text-dark' : 'text-amber-dark' }}" style="font-size: 1.25rem;">KES {{ number_format($totalBankBalance, 0) }}</span>
+                    <span class="stat-value {{ $totalBankBalance > 100000 ? 'text-dark' : 'text-amber-dark' }}" style="font-size: 1.25rem;">{{ \App\Support\Money::format($totalBankBalance) }}</span>
                     <span class="mt-1 d-block {{ $lowBalanceAccounts > 0 ? 'text-rose' : 'text-muted' }}" style="font-size: .688rem; font-weight: 600;">
                         <i class="fas fa-exclamation-circle mr-1"></i>
                         <b>{{ $lowBalanceAccounts }}</b> Accounts low balance
@@ -133,7 +133,8 @@
                                         <div class="text-muted" style="font-size: .688rem;">{{ $expense->payment_method }} • {{ $expense->reference_number ?: 'N/A' }}</div>
                                     </td>
                                     <td><span class="badge-soft">{{ $expense->category ? $expense->category->name : 'General' }}</span></td>
-                                    <td class="text-right text-rose font-weight-bold" style="font-size: .875rem;">- KES {{ number_format($expense->amount, 0) }}</td>
+                                    {{-- Sign sits inside the amount, matching the fee screens. --}}
+                                    <td class="text-right text-rose font-weight-bold" style="font-size: .875rem;">{{ \App\Support\Money::format(-1 * $expense->amount) }}</td>
                                     <td class="text-center pr-3">
                                         @php
                                             $statusBadge = [
@@ -156,7 +157,7 @@
                                         <div class="text-muted" style="font-size: .688rem;">{{ $income->description ?: 'Other Income' }}</div>
                                     </td>
                                     <td><span class="badge-soft">{{ $income->category ? $income->category->name : 'General' }}</span></td>
-                                    <td class="text-right text-emerald font-weight-bold" style="font-size: .875rem;">+ KES {{ number_format($income->amount, 0) }}</td>
+                                    <td class="text-right text-emerald font-weight-bold" style="font-size: .875rem;">{{ \App\Support\Money::format($income->amount) }}</td>
                                     <td class="text-center pr-3">
                                         <span class="badge-pill-soft bg-emerald-light text-emerald">Active</span>
                                     </td>
@@ -181,7 +182,7 @@
                 <div class="dash-panel-body text-center py-4">
                     <h2 class="font-weight-bold mb-0 text-dark" style="font-size: 2.5rem; line-height: 1;">{{ $pendingApprovalsCount }}</h2>
                     <p class="text-muted mb-3 font-weight-bold text-uppercase" style="font-size: .688rem; letter-spacing: 0.05em;">Expenses awaiting approval</p>
-                    <h4 class="text-amber-dark font-weight-bold mb-4">KES {{ number_format($pendingApprovalsAmount, 0) }}</h4>
+                    <h4 class="text-amber-dark font-weight-bold mb-4">{{ \App\Support\Money::format($pendingApprovalsAmount) }}</h4>
                     <a href="{{ route('expenses.pending') }}" class="btn-dash btn-amber-dash w-100 d-block">
                         <i class="fas fa-check-circle me-1"></i> Review Requests
                     </a>
@@ -218,11 +219,28 @@
                                 <span class="text-muted" style="font-size: .75rem;">Enough cash to operate for approx. <b class="text-dark">{{ round($runway, 1) }} months</b> at current burn rate.</span>
                             </div>
                         </div>
-                        <div class="insight-item d-flex gap-3 p-3">
+                        <div class="insight-item d-flex gap-3 p-3 border-bottom">
                             <div class="insight-icon bg-blue-light text-blue"><i class="fas fa-info-circle"></i></div>
                             <div>
                                 <b class="d-block text-dark" style="font-size: .813rem;">Fee Collection Status</b>
-                                <span class="text-muted" style="font-size: .75rem;">Total fees collected this month: KES {{ number_format($combinedIncomeThisMonth - $totalIncomeThisMonth, 0) }}.</span>
+                                <span class="text-muted" style="font-size: .75rem;">Total fees collected this month: {{ \App\Support\Money::format($combinedIncomeThisMonth - $totalIncomeThisMonth) }}.</span>
+                            </div>
+                        </div>
+                        <div class="insight-item d-flex gap-3 p-3">
+                            <div class="insight-icon {{ $budgetUtilization['count'] > 0 && $budgetUtilization['percent'] >= 80 ? 'bg-rose-light text-rose' : ($budgetUtilization['count'] > 0 ? 'bg-indigo-light text-indigo' : 'bg-slate-light text-slate') }}">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <b class="d-block text-dark" style="font-size: .813rem;">Budget Utilization</b>
+                                @if($budgetUtilization['count'] > 0)
+                                    <div class="progress mb-1" style="height: 6px;">
+                                        <div class="progress-bar {{ $budgetUtilization['percent'] >= 100 ? 'bg-danger' : ($budgetUtilization['percent'] >= 80 ? 'bg-warning' : 'bg-success') }}"
+                                             role="progressbar" style="width: {{ min($budgetUtilization['percent'], 100) }}%;"></div>
+                                    </div>
+                                    <span class="text-muted" style="font-size: .75rem;"><b class="text-dark">{{ $budgetUtilization['percent'] }}%</b> of the open year's {{ \App\Support\Money::format($budgetUtilization['budget']) }} budget used.</span>
+                                @else
+                                    <span class="text-muted" style="font-size: .75rem;">No budgets set for the open financial year.</span>
+                                @endif
                             </div>
                         </div>
                     </div>

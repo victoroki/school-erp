@@ -92,6 +92,26 @@ class SendBulkMessage implements ShouldQueue
                         }
                     }
                 }
+            } elseif ($group == 'Class Section') {
+                if (isset($input['class_section_id'])) {
+                    $students = \App\Models\StudentClassEnrollment::where('class_section_id', $input['class_section_id'])
+                        ->with(['student', 'classSection.schoolClass'])
+                        ->get();
+
+                    foreach ($students as $enrollment) {
+                        $student = $enrollment->student;
+                        if ($student) {
+                            $recipients[] = [
+                                'type' => 'Student',
+                                'id' => $student->student_id,
+                                'name' => $student->full_name,
+                                'contact' => $this->sentMessage->message_type == 'SMS' ? $student->phone : $student->email,
+                                'student_name' => $student->full_name,
+                                'student_class' => $enrollment->classSection?->schoolClass?->name ?? '',
+                            ];
+                        }
+                    }
+                }
             }
 
             $count = 0;
@@ -122,7 +142,16 @@ class SendBulkMessage implements ShouldQueue
                         Log::error('SMS send failed', ['contact' => $formattedContact, 'error' => $e->getMessage()]);
                     }
                 } else {
-                    $deliveryStatus = 'Sent';
+                    // Email branch — actually send via the configured SMTP provider.
+                    try {
+                        $emailProvider = app(\App\Services\Communication\EmailProviderInterface::class);
+                        $subject = $this->sentMessage->subject ?? 'Message from ' . config('app.name');
+                        $success = $emailProvider->send($formattedContact, $subject, $rendered);
+                        $deliveryStatus = $success ? 'Sent' : 'Failed';
+                    } catch (\Exception $e) {
+                        $deliveryStatus = 'Failed';
+                        Log::error('Email send failed', ['contact' => $formattedContact, 'error' => $e->getMessage()]);
+                    }
                 }
 
                 MessageRecipient::create([

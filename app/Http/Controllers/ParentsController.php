@@ -74,7 +74,7 @@ class ParentsController extends AppBaseController
      */
     public function show($id)
     {
-        $parents = $this->parentsRepository->find($id);
+        $parents = Parents::with('user')->find($id);
 
         if (empty($parents)) {
             Flash::error('Parents not found');

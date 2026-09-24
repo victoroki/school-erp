@@ -27,12 +27,9 @@
                     </td>
                     <td class="text-center">
                         @php
-                            $gradeBadge = 'badge-secondary';
-                            if($examResult->grade) {
-                                if(in_array($examResult->grade->name, ['A', 'A+', 'B'])) $gradeBadge = 'badge-success';
-                                elseif(in_array($examResult->grade->name, ['C', 'D'])) $gradeBadge = 'badge-warning';
-                                else $gradeBadge = 'badge-danger';
-                            }
+                            // Shared resolver — this map listed only a few KCSE letters and
+                            // sent every CBE code (EE1..BE2) and every unlisted letter to red.
+                            $gradeBadge = \App\Support\GradeBadge::for($examResult->grade->name ?? null);
                         @endphp
                         <span class="badge {{ $gradeBadge }} px-3 py-2" style="font-size: 0.9rem;">
                             {{ $examResult->grade->name ?? 'N/A' }}

@@ -21,7 +21,7 @@
         <div class="field-group p-3 border rounded-3 bg-light-soft h-100">
             <span class="label-title"><i class="fas fa-tags me-2 text-amber"></i> Fee Category</span>
             <span class="value-text">{{ optional($feeStructure->category)->name ?? 'N/A' }}</span>
-            <small class="text-muted">Category ID: {{ $feeStructure->category_id }}</small>
+            <small class="text-muted">Category Code: {{ optional($feeStructure->category)->code ?? '—' }}</small>
         </div>
     </div>
 

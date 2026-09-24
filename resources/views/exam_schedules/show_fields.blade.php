@@ -19,7 +19,7 @@
 <!-- Exam Date Field -->
 <div class="col-sm-12">
     {!! Form::label('exam_date', 'Exam Date:') !!}
-    <p>{{ $examSchedule->exam_date }}</p>
+    <p>{{ $examSchedule->exam_date ? \Carbon\Carbon::parse($examSchedule->exam_date)->format('d/m/Y') : '—' }}</p>
 </div>
 
 <!-- Start Time Field -->
@@ -36,8 +36,8 @@
 
 <!-- Room Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('room_id', 'Room Id:') !!}
-    <p>{{ $examSchedule->room_id }}</p>
+    {!! Form::label('room_id', 'Room:') !!}
+    <p>{{ $examSchedule->room->name ?? 'Not assigned' }}</p>
 </div>
 
 <!-- Max Marks Field -->

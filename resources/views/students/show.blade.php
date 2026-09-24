@@ -188,7 +188,7 @@
                 <div class="stat-title">FEE BALANCE</div>
             </div>
             <div>
-                <div class="stat-value text-{{ $student->balance_fee > 0 ? 'dark' : 'success' }}">KES {{ number_format($student->balance_fee) }}</div>
+                <div class="stat-value text-{{ $student->balance_fee > 0 ? 'dark' : 'success' }}">{{ \App\Support\Money::format($student->balance_fee) }}</div>
                 <div class="stat-subtitle {{ $student->balance_fee > 0 ? 'text-danger' : 'text-success' }}">
                     {{ $student->balance_fee > 0 ? 'Due' : 'Cleared' }}
                 </div>
@@ -285,9 +285,16 @@
                     </div>
                     <div class="form-group mb-2">
                         <label for="relationship_type" style="font-weight:600; font-size: 0.9rem;">Relationship Type</label>
+                        {{-- Mirrors the student_siblings.relationship_type enum exactly.
+                             Only brother/sister were offered before, so the half and step
+                             relationships the schema supports could not be recorded. --}}
                         <select class="form-control" name="relationship_type" id="relationship_type" required>
                             <option value="brother">Brother</option>
                             <option value="sister">Sister</option>
+                            <option value="half_brother">Half brother</option>
+                            <option value="half_sister">Half sister</option>
+                            <option value="step_brother">Step brother</option>
+                            <option value="step_sister">Step sister</option>
                         </select>
                     </div>
                     <div class="form-group form-check mt-3">

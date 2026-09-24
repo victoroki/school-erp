@@ -233,6 +233,22 @@
 </style>
 
 <div class="fee-dash-wrap">
+    {{-- Fee data that needs a human decision. Surfaced, never auto-corrected: the
+         balances already reflect these rows, and only the posted history needs a
+         ruling from whoever owns the accounts. --}}
+    @if(!empty($integrityFindings))
+        <div class="alert alert-warning d-flex align-items-start mb-4" role="alert">
+            <i class="fas fa-exclamation-triangle mr-2 mt-1"></i>
+            <div>
+                <strong>Fee data needs review.</strong>
+                {{ count($integrityFindings) }} item{{ count($integrityFindings) === 1 ? '' : 's' }} found that the
+                system has deliberately not corrected on its own, because changing posted financial history is an
+                accounting decision.
+                <a href="{{ route('fees.integrity') }}" class="alert-link">Open the fee integrity report</a>.
+            </div>
+        </div>
+    @endif
+
     {{-- ① HEADER --}}
     <div class="row align-items-center mb-4">
         <div class="col-md-7">
@@ -271,12 +287,22 @@
             <div class="summary-card grad-blue" onclick="window.location='{{ route('fees.reports.expected-revenue') }}'" tabindex="0">
                 <i class="fas fa-money-check-alt summary-card-bg"></i>
                 <div class="summary-card-label">Expected Revenue</div>
-                <div class="summary-card-value">KES {{ number_format($expectedRevenue) }}</div>
+                <div class="summary-card-value">{{ \App\Support\Money::format($expectedRevenue) }}</div>
                 <div class="summary-card-progress">
-                    <div class="summary-card-progress-bar" style="width: {{ $expectedRevenue > 0 ? ($metrics['total_collected'] / $expectedRevenue) * 100 : 0 }}%"></div>
-                </div>
-                <div class="summary-card-footer">
-                    <span>Collected: KES {{ number_format($metrics['total_collected'], 0) }}</span>
+                     <div class="summary-card-progress-bar" style="width: {{ $collectionRate }}%"></div>
+                 </div>
+                 <div class="summary-card-footer">
+                     {{-- Outstanding is the figure a bursar actually chases, and it
+                          was the one number missing from this dashboard: Expected
+                          and Collected were shown, leaving staff to subtract by
+                          hand.
+
+                          It now comes from the balance engine rather than from
+                          `Expected − total_collected`. That subtraction used gross
+                          payments received, so a completed refund still counted as
+                          money held and the dashboard reported less outstanding
+                          than the student's own page. --}}
+                     <span>Outstanding: {{ \App\Support\Money::format($outstanding) }}</span>
                     <a href="{{ route('fees.reports.expected-revenue') }}" class="summary-card-link">View Report <i class="fas fa-arrow-right ms-1"></i></a>
                 </div>
             </div>
@@ -285,13 +311,16 @@
         <div class="col-xl-3 col-sm-6">
             <div class="summary-card grad-green" onclick="window.location='{{ route('fee-management.index') }}'" tabindex="0">
                 <i class="fas fa-check-circle summary-card-bg"></i>
+                {{-- Rate and figure both net of refunds, from the same two
+                     numbers as the Outstanding figure beside them, so the
+                     percentage always matches the shillings printed under it. --}}
                 <div class="summary-card-label">Collection Rate</div>
-                <div class="summary-card-value">{{ $metrics['collection_rate'] }}%</div>
+                <div class="summary-card-value">{{ $collectionRate }}%</div>
                 <div class="summary-card-progress">
-                    <div class="summary-card-progress-bar" style="width: {{ $metrics['collection_rate'] }}%"></div>
+                    <div class="summary-card-progress-bar" style="width: {{ $collectionRate }}%"></div>
                 </div>
                 <div class="summary-card-footer">
-                    <span>KES {{ number_format($metrics['total_collected'], 0) }} collected</span>
+                    <span>{{ \App\Support\Money::format($collected) }} collected</span>
                     <a href="{{ route('fee-management.index') }}" class="summary-card-link">Collect <i class="fas fa-arrow-right ms-1"></i></a>
                 </div>
             </div>
@@ -301,7 +330,7 @@
             <div class="summary-card grad-yellow" onclick="window.location='{{ route('fees.reports.discount-summary') }}'" tabindex="0">
                 <i class="fas fa-tags summary-card-bg"></i>
                 <div class="summary-card-label">Total Discounts</div>
-                <div class="summary-card-value">KES {{ number_format($totalDiscounts) }}</div>
+                <div class="summary-card-value">{{ \App\Support\Money::format($totalDiscounts) }}</div>
                 <div class="summary-card-progress">
                     <div class="summary-card-progress-bar" style="width: {{ $expectedRevenue > 0 ? ($totalDiscounts / $expectedRevenue) * 100 : 0 }}%"></div>
                 </div>
@@ -313,7 +342,22 @@
         </div>
         
         <div class="col-xl-3 col-sm-6">
-            <div class="summary-card grad-red" onclick="window.location='{{ route('fees.assignments.unassigned') }}'" tabindex="0">
+            <div class="summary-card grad-red" onclick="window.location='{{ route('fees.refunds.index') }}'" tabindex="0">
+                <i class="fas fa-hand-holding-usd summary-card-bg"></i>
+                <div class="summary-card-label">Total Refunded</div>
+                <div class="summary-card-value">{{ \App\Support\Money::format($metrics['total_refunded'] ?? 0) }}</div>
+                <div class="summary-card-progress">
+                    <div class="summary-card-progress-bar" style="width: {{ $metrics['total_collected'] > 0 ? min(100, (($metrics['total_refunded'] ?? 0) / $metrics['total_collected']) * 100) : 0 }}%"></div>
+                </div>
+                <div class="summary-card-footer">
+                    <span>Completed Refunds</span>
+                    <a href="{{ route('fees.refunds.index') }}" class="summary-card-link">Refund Register <i class="fas fa-arrow-right ms-1"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-sm-6">
+            <div class="summary-card grad-yellow" onclick="window.location='{{ route('fees.assignments.unassigned') }}'" tabindex="0">
                 <i class="fas fa-user-clock summary-card-bg"></i>
                 <div class="summary-card-label">Pending Setup</div>
                 <div class="summary-card-value">{{ $notAssignedCount }}</div>
@@ -429,7 +473,7 @@
                                             </div>
                                         </td>
                                         <td class="text-end fw-bold">
-                                            KES {{ number_format($row->total) }}
+                                            {{ \App\Support\Money::format($row->total) }}
                                         </td>
                                     </tr>
                                 @empty

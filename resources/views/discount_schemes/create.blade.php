@@ -26,40 +26,6 @@
         <div class="card-body">
             <div class="row g-3">
                 @include('discount_schemes.fields')
-                
-                <!-- Academic Year Field -->
-                <div class="form-group col-sm-6">
-                    {!! Form::label('academic_year_id', 'Academic Year:', ['class' => 'form-label fw-bold small text-uppercase text-muted mb-1']) !!}
-                    {!! Form::select('academic_year_id', $academicYears ?? [], null, ['class' => 'form-control select2 rounded-3', 'placeholder' => 'Select Year']) !!}
-                </div>
-
-                <!-- Valid From Field -->
-                <div class="form-group col-sm-6">
-                    {!! Form::label('valid_from', 'Valid From:', ['class' => 'form-label fw-bold small text-uppercase text-muted mb-1']) !!}
-                    {!! Form::date('valid_from', null, ['class' => 'form-control rounded-3']) !!}
-                </div>
-
-                <!-- Valid To Field -->
-                <div class="form-group col-sm-6">
-                    {!! Form::label('valid_to', 'Valid To:', ['class' => 'form-label fw-bold small text-uppercase text-muted mb-1']) !!}
-                    {!! Form::date('valid_to', null, ['class' => 'form-control rounded-3']) !!}
-                </div>
-
-                <!-- Requires Approval Field -->
-                <div class="form-group col-sm-6">
-                    <div class="form-check">
-                        {!! Form::checkbox('requires_approval', 1, null, ['class' => 'form-check-input']) !!}
-                        {!! Form::label('requires_approval', 'Requires Approval', ['class' => 'form-check-label fw-600']) !!}
-                    </div>
-                </div>
-
-                <!-- Auto Apply Field -->
-                <div class="form-group col-sm-6">
-                    <div class="form-check">
-                        {!! Form::checkbox('auto_apply', 1, null, ['class' => 'form-check-input']) !!}
-                        {!! Form::label('auto_apply', 'Auto Apply', ['class' => 'form-check-label fw-600']) !!}
-                    </div>
-                </div>
             </div>
         </div>
 

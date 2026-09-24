@@ -33,11 +33,11 @@
             </div>
             <div class="summary-row">
                 <span class="info-label">Method</span>
-                <span class="info-value">{{ ucwords(str_replace('_',' ', $payment->payment_method)) }}</span>
+                <span class="info-value">{{ $payment->payment_method ? ucwords(str_replace('_',' ', $payment->payment_method)) : 'Unspecified' }}</span>
             </div>
             <div class="summary-row amount-row">
                 <span class="info-label">Amount</span>
-                <span class="amount-value">KSh {{ number_format($payment->amount, 2) }}</span>
+                <span class="amount-value">KES {{ number_format($payment->amount, 2) }}</span>
             </div>
         </div>
 

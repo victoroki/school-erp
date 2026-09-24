@@ -27,8 +27,14 @@
 
         <form action="{{ route('marks-approval.approve') }}" method="POST" id="batch-form">
             @csrf
-            <input type="hidden" name="exam_id" value="{{ $exam->exam_id }}">
-            <input type="hidden" name="class_section_id" value="{{ $classSection->class_section_id }}">
+                    <input type="hidden" name="exam_id" value="{{ $exam->exam_id }}">
+                    <input type="hidden" name="class_section_id" value="{{ $classSection->class_section_id }}">
+
+                    {{-- This form approves ONLY the learners ticked below. Without
+                         this marker the controller fell back to "whole batch", so
+                         submitting with nothing ticked approved every pending
+                         entry for the exam and class. --}}
+                    <input type="hidden" name="approval_scope" value="selected">
 
             <div class="card card-outline card-danger elevation-2 border-0">
                 <div class="card-header bg-white d-flex align-items-center">

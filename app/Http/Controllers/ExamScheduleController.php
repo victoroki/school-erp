@@ -276,7 +276,7 @@ class ExamScheduleController extends AppBaseController
      */
     public function show($id)
     {
-        $examSchedule = $this->examScheduleRepository->find($id);
+        $examSchedule = \App\Models\ExamSchedule::with(['exam', 'class', 'subject', 'room'])->find($id);
 
         if (empty($examSchedule)) {
             Flash::error('Exam Schedule not found');

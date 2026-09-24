@@ -79,8 +79,7 @@ class LibraryService
              // Calculate Fine
              $daysOverdue = 0;
              if ($issue->return_date->gt($issue->due_date)) {
-                 $daysOverdue = $issue->return_date->diffInDays($issue->due_date);
-                 $finePerDay = 50; // KSh 50 per day
+                 $daysOverdue = $issue->return_date->diffInDays($issue->due_date);                  $finePerDay = 50; // KES 50 per day
                  $issue->fine_amount = $daysOverdue * $finePerDay;
                  
                  if ($issue->fine_amount > 0) {

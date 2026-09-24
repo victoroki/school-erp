@@ -30,9 +30,15 @@
                 <label for="payment_method">Method</label>
                 <select name="payment_method" id="payment_method" class="filter-select">
                     <option value="">All Methods</option>
-                    @foreach(['cash','mpesa','bank_transfer','cheque','card','other'] as $m)
+                    {{-- The real ENUM values. The previous list offered mpesa,
+                         cheque and other — none of which the payment_method ENUM
+                         can hold, so those options matched zero rows — while
+                         omitting check and online, which could not be filtered.
+                         M-Pesa is recorded as "Online". --}}
+                    @foreach(\App\Models\FeePayment::PAYMENT_METHODS as $m)
                         <option value="{{ $m }}" {{ request('payment_method') == $m ? 'selected' : '' }}>{{ ucwords(str_replace('_',' ',$m)) }}</option>
                     @endforeach
+                    <option value="__unspecified" {{ request('payment_method') === '__unspecified' ? 'selected' : '' }}>Unspecified</option>
                 </select>
             </div>
             <div class="filter-actions">
@@ -42,12 +48,23 @@
         </form>
     </div>
 
+    @if($reversedCount > 0)
+        {{-- Disclosed rather than silently dropped: the money totals above exclude
+             these, so the report says so. --}}
+        <div class="alert alert-warning border-0 shadow-sm">
+            <i class="fas fa-ban me-2"></i>
+            {{ $reversedCount }} voided {{ \Illuminate\Support\Str::plural('payment', $reversedCount) }}
+            totalling KES {{ number_format($reversedTotal, 2) }} in this period
+            {{ $reversedCount === 1 ? 'is' : 'are' }} excluded from the collected total below.
+        </div>
+    @endif
+
     <div class="metrics-grid mb-4">
         <div class="metric-card">
             <div class="metric-icon bg-emerald-light text-emerald"><i class="fas fa-coins"></i></div>
             <div class="metric-content">
                 <span class="metric-label">Collected (Filtered)</span>
-                <span class="metric-value text-emerald">KSh {{ number_format($totalCollected, 2) }}</span>
+                <span class="metric-value text-emerald">KES {{ number_format($totalCollected, 2) }}</span>
             </div>
         </div>
         <div class="metric-card">
@@ -61,7 +78,7 @@
             <div class="metric-icon bg-amber-light text-amber"><i class="fas fa-calendar-day"></i></div>
             <div class="metric-content">
                 <span class="metric-label">Collected Today</span>
-                <span class="metric-value text-amber">KSh {{ number_format($todayTotal, 2) }}</span>
+                <span class="metric-value text-amber">KES {{ number_format($todayTotal, 2) }}</span>
             </div>
         </div>
         <div class="metric-card">
@@ -71,12 +88,22 @@
                 <span class="metric-value text-rose">{{ $growth }}%</span>
             </div>
         </div>
+        <div class="metric-card">
+            <div class="metric-icon bg-rose-light text-rose"><i class="fas fa-hand-holding-usd"></i></div>
+            <div class="metric-content">
+                <span class="metric-label">Refunded (Period)</span>
+                <span class="metric-value text-rose">KES {{ number_format($refundedTotal, 2) }}</span>
+                @if($refundedCount > 0)
+                    <span class="metric-sub text-rose">{{ $refundedCount }} completed refund{{ $refundedCount === 1 ? '' : 's' }}</span>
+                @endif
+            </div>
+        </div>
     </div>
 
     <div class="two-col mb-4">
         <div class="report-card">
             <div class="card-header-custom">
-                <div class="card-title-group"><i class="fas fa-pie-chart"></i><span>By Method (Filtered)</span></div>
+                <div class="card-title-group"><i class="fas fa-chart-pie"></i><span>By Method (Filtered)</span></div>
             </div>
             <div class="table-section">
                 <table class="data-table">
@@ -84,14 +111,28 @@
                     <tbody>
                         @forelse($byMethod as $m)
                             <tr>
-                                <td class="font-semibold">{{ ucwords(str_replace('_',' ', $m->payment_method)) }}</td>
+                                {{-- label, not the raw column: legacy rows carry '' and
+                                     previously rendered a blank Method cell. --}}
+                                <td class="font-semibold">{{ $m->label }}</td>
                                 <td class="text-right">{{ number_format($m->count) }}</td>
-                                <td class="text-right mono font-semibold">KSh {{ number_format($m->total, 2) }}</td>
+                                <td class="text-right mono font-semibold">KES {{ number_format($m->total, 2) }}</td>
                             </tr>
                         @empty
                             <tr><td colspan="3"><div class="empty-mini"><i class="fas fa-inbox"></i><p>No payments in this range.</p></div></td></tr>
                         @endforelse
                     </tbody>
+                    @if($byMethod->count())
+                        {{-- Reconciliation total: the bursar should not have to add the
+                             money column by hand. Voided receipts are already excluded
+                             from these method totals. --}}
+                        <tfoot>
+                            <tr>
+                                <td class="font-semibold" style="border-top: 2px solid #e2e8f0;">Total (valid payments)</td>
+                                <td class="text-right font-semibold" style="border-top: 2px solid #e2e8f0;">{{ number_format($byMethod->sum('count')) }}</td>
+                                <td class="text-right mono font-semibold" style="border-top: 2px solid #e2e8f0;">KES {{ number_format($byMethod->sum('total'), 2) }}</td>
+                            </tr>
+                        </tfoot>
+                    @endif
                 </table>
             </div>
         </div>
@@ -105,15 +146,34 @@
                     <thead><tr><th>Receipt</th><th>Student</th><th class="text-right">Amount</th></tr></thead>
                     <tbody>
                         @forelse($payments->take(10) as $p)
-                            <tr>
-                                <td class="mono-sm">{{ $p->receipt_number ?? 'RCP-'.$p->payment_id }}</td>
+                            <tr class="{{ $p->isReversed() ? 'opacity-50' : '' }}">
+                                <td class="mono-sm">
+                                    {{ $p->receipt_number ?? 'RCP-'.$p->payment_id }}
+                                    @if($p->isReversed())
+                                        <span class="badge bg-danger ms-1">VOID</span>
+                                    @endif
+                                </td>
                                 <td class="font-semibold">{{ $p->studentFeeAssignment->student->full_name ?? 'N/A' }}</td>
-                                <td class="text-right mono">KSh {{ number_format($p->amount, 2) }}</td>
+                                <td class="text-right mono {{ $p->isReversed() ? 'text-muted text-decoration-line-through' : '' }}">
+                                    KES {{ number_format($p->amount, 2) }}
+                                </td>
                             </tr>
                         @empty
                             <tr><td colspan="3"><div class="empty-mini"><i class="fas fa-inbox"></i><p>No payments found.</p></div></td></tr>
                         @endforelse
                     </tbody>
+                    @if($payments->count())
+                        {{-- Matches the ten rows shown above; voided receipts are listed
+                             for audit but are not money received, so they are excluded. --}}
+                        <tfoot>
+                            <tr>
+                                <td colspan="2" class="font-semibold" style="border-top: 2px solid #e2e8f0;">Total for the rows shown (valid receipts)</td>
+                                <td class="text-right mono font-semibold" style="border-top: 2px solid #e2e8f0;">
+                                    KES {{ number_format($payments->take(10)->reject(fn($p) => $p->isReversed())->sum('amount'), 2) }}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    @endif
                 </table>
             </div>
         </div>
@@ -130,13 +190,21 @@
                 </thead>
                 <tbody>
                     @forelse($payments as $p)
-                        <tr>
-                            <td class="mono-sm">{{ $p->receipt_number ?? 'RCP-'.$p->payment_id }}</td>
-                            <td>{{ $p->payment_date->format('d M Y') }}</td>
+                        <tr class="{{ $p->isReversed() ? 'opacity-50' : '' }}">
+                            <td class="mono-sm">
+                                {{ $p->receipt_number ?? 'RCP-'.$p->payment_id }}
+                                @if($p->isReversed())
+                                    <span class="badge bg-danger ms-1">VOID</span>
+                                @endif
+                            </td>
+                            {{-- Null-safe: payment_date is not guaranteed to be set. --}}
+                            <td>{{ $p->payment_date ? $p->payment_date->format('d M Y') : '—' }}</td>
                             <td class="font-semibold">{{ $p->studentFeeAssignment->student->full_name ?? 'N/A' }}</td>
-                            <td>{{ ucwords(str_replace('_',' ', $p->payment_method)) }}</td>
+                            {{-- Legacy rows store an empty method; show Unspecified rather
+                                 than a blank cell. --}}
+                            <td>{{ $p->payment_method ? ucwords(str_replace('_',' ', $p->payment_method)) : 'Unspecified' }}</td>
                             <td class="text-muted">{{ $p->studentFeeAssignment->feeStructure->category->name ?? '—' }}</td>
-                            <td class="text-right mono font-semibold">KSh {{ number_format($p->amount, 2) }}</td>
+                            <td class="text-right mono font-semibold">KES {{ number_format($p->amount, 2) }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="6"><div class="empty-mini"><i class="fas fa-inbox"></i><p>No payments found.</p></div></td></tr>

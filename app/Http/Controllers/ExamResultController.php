@@ -43,6 +43,15 @@ class ExamResultController extends AppBaseController
         $viewAll = $user->hasPermission('exams.results.view-all');
         $hasSettings = $user->hasPermission('academics.settings.manage');
 
+        // Same defect as MarkSheetController::index — the scope checks in this
+        // method are gated on the request carrying a full set of filters, so a
+        // request naming only class_section_id was never checked. Validate any
+        // supplied class_section_id up front.
+        if (! $viewAll && ! $hasSettings && $request->filled('class_section_id')
+            && ! $this->teacherScope->getClassSectionIds($user)->contains((int) $request->class_section_id)) {
+            abort(403, 'You are not authorized to enter marks for this class.');
+        }
+
         if ($viewAll || $hasSettings) {
             $exams = Exam::pluck('name', 'exam_id');
             $classSections = ClassSection::with(['schoolClass', 'section'])->get()->mapWithKeys(function ($cs) {
@@ -454,6 +463,15 @@ class ExamResultController extends AppBaseController
 
         $scopeIds = ($viewAll || $hasSettings) ? null : $this->teacherScope->getClassSectionIds($user);
 
+        // The dropdowns below are scoped, but nothing validated a class_section_id
+        // supplied in the URL, so this screen rendered for a class the teacher does
+        // not own. Scope has to depend on the request, not only on what the page
+        // chooses to render.
+        if ($scopeIds !== null && $request->filled('class_section_id')
+            && ! $scopeIds->contains((int) $request->class_section_id)) {
+            abort(403, 'You are not authorized to view results for this class.');
+        }
+
         // Filter dropdowns (scoped for class teachers).
         $examQuery = Exam::orderByDesc('exam_id');
         $classSectionQuery = ClassSection::with(['schoolClass', 'section']);
@@ -660,7 +678,7 @@ class ExamResultController extends AppBaseController
 
     public function show($id)
     {
-        $examResult = $this->examResultRepository->find($id);
+        $examResult = \App\Models\ExamResult::with(['exam', 'student', 'classSection.schoolClass', 'classSection.section', 'subject', 'grade'])->find($id);
 
         if (empty($examResult)) {
             Flash::error('Exam Result not found');

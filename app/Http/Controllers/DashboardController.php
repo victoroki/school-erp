@@ -140,7 +140,10 @@ class DashboardController extends Controller
         }
 
         if ($this->moduleIsActive('fees') && MenuService::canSee($user, ['fees.view', 'fees.collect', 'finance.view'])) {
-            $statistics['monthly_revenue'] = FeePayment::whereMonth('created_at', now()->month)->sum('amount');
+            $statistics['monthly_revenue'] = FeePayment::notReversed()
+                ->whereMonth('payment_date', now()->month)
+                ->whereYear('payment_date', now()->year)
+                ->sum('amount');
         }
 
         return response()->json([
@@ -198,7 +201,14 @@ class DashboardController extends Controller
                     'icon' => 'fa-money-bill-wave', 'color' => 'ic-green',
                     'badge' => 'Today', 'badgeClass' => 'sb-none',
                     'title' => 'Daily Collections',
-                    'value' => fn() => 'KES ' . number_format(FeePayment::whereDate('created_at', today())->sum('amount'), 0),
+                    // payment_date is the business date every report filters on
+                    // (collections, payment methods, receipt register); created_at
+                    // is when the row was written, which for a back-dated or
+                    // synced payment is a different day. notReversed() is
+                    // mandatory for money — a voided receipt is not income.
+                    'value' => fn() => \App\Support\Money::format(
+                        FeePayment::whereDate('payment_date', today())->notReversed()->sum('amount')
+                    ),
                     'foot'  => 'Payments received today',
                 ],
                 [
@@ -208,7 +218,12 @@ class DashboardController extends Controller
                     'icon' => 'fa-calendar-check', 'color' => 'ic-blue',
                     'badge' => now()->format('M'), 'badgeClass' => 'sb-none',
                     'title' => 'Monthly Revenue',
-                    'value' => fn() => 'KES ' . number_format(FeePayment::whereMonth('created_at', now()->month)->sum('amount'), 0),
+                    'value' => fn() => \App\Support\Money::format(
+                        FeePayment::whereMonth('payment_date', now()->month)
+                            ->whereYear('payment_date', now()->year)
+                            ->notReversed()
+                            ->sum('amount')
+                    ),
                     'foot'  => 'Total collected this month',
                 ],
                 [
@@ -295,7 +310,15 @@ class DashboardController extends Controller
                     'icon' => 'fa-coins', 'color' => 'ic-yellow',
                     'badge' => now()->format('M'), 'badgeClass' => 'sb-none',
                     'title' => 'Monthly Rev',
-                    'value' => fn() => 'KES ' . number_format(FeePayment::whereMonth('created_at', now()->month)->sum('amount') / 1000, 1) . 'k',
+                    // Abbreviated to thousands for this compact tile, but the
+                    // figure must still be non-reversed and dated by payment_date.
+                    'value' => fn() => 'KES ' . number_format(
+                        FeePayment::whereMonth('payment_date', now()->month)
+                            ->whereYear('payment_date', now()->year)
+                            ->notReversed()
+                            ->sum('amount') / 1000,
+                        1
+                    ) . 'k',
                     'foot'  => fn() => 'Pending: ' . number_format(
                         StudentFeeAssignment::where('status', 'active')
                             ->whereRaw('COALESCE(paid_amount, 0) < final_amount')
@@ -365,8 +388,12 @@ class DashboardController extends Controller
         for ($i = 5; $i >= 0; $i--) {
             $month    = Carbon::today()->subMonths($i);
             $labels[] = $month->format('M');
-            $data[]   = (float) FeePayment::whereYear('created_at', $month->year)
-                ->whereMonth('created_at', $month->month)
+            // Revenue trend: payment_date (the business date every report uses)
+            // and reversals excluded, matching the collections report the same
+            // figures are reconciled against.
+            $data[]   = (float) FeePayment::notReversed()
+                ->whereYear('payment_date', $month->year)
+                ->whereMonth('payment_date', $month->month)
                 ->sum('amount');
         }
         return ['labels' => $labels, 'data' => $data];

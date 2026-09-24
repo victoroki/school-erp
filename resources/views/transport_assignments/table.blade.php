@@ -18,8 +18,8 @@
                 <tr>
                     <td>{{ $transportAssignment->route->name ?? 'N/A' }}</td>
                     <td>{{ $transportAssignment->vehicle->vehicle_number ?? 'N/A' }}</td>
-                    <td>{{ $transportAssignment->driver->name ?? 'N/A' }}</td>
-                    <td>{{ $transportAssignment->assistant->name ?? 'N/A' }}</td>
+                    <td>{{ $transportAssignment->driver->full_name ?? 'N/A' }}</td>
+                    <td>{{ $transportAssignment->assistant->full_name ?? '—' }}</td>
                     <td>{{ $transportAssignment->departure_time }}</td>
                     <td>{{ $transportAssignment->return_time }}</td>
                     <td>{{ $transportAssignment->status }}</td>

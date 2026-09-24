@@ -1,7 +1,7 @@
 <!-- User Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('user_id', 'User Id:') !!}
-    <p>{{ $parents->user_id }}</p>
+    {!! Form::label('user_id', 'Portal Account:') !!}
+    <p>{{ $parents->user->name ?? 'No portal account linked' }}</p>
 </div>
 
 <!-- First Name Field -->
@@ -19,7 +19,7 @@
 <!-- Relationship Field -->
 <div class="col-sm-12">
     {!! Form::label('relationship', 'Relationship:') !!}
-    <p>{{ $parents->relationship }}</p>
+    <p>{{ $parents->relationship ? ucfirst($parents->relationship) : '—' }}</p>
 </div>
 
 <!-- Email Field -->
@@ -31,18 +31,18 @@
 <!-- Phone Field -->
 <div class="col-sm-12">
     {!! Form::label('phone', 'Phone:') !!}
-    <p>{{ $parents->phone }}</p>
+    <p>{{ $parents->phone ? $parents->formatted_phone ?? $parents->phone : '—' }}</p>
 </div>
 
 <!-- Alternate Phone Field -->
 <div class="col-sm-12">
     {!! Form::label('alternate_phone', 'Alternate Phone:') !!}
-    <p>{{ $parents->alternate_phone }}</p>
+    <p>{{ $parents->alternate_phone ?? '—' }}</p>
 </div>
 
 <!-- Occupation Field -->
 <div class="col-sm-12">
     {!! Form::label('occupation', 'Occupation:') !!}
-    <p>{{ $parents->occupation }}</p>
+    <p>{{ $parents->occupation ?? '—' }}</p>
 </div>
 

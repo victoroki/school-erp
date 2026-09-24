@@ -51,6 +51,14 @@ class CommunicationTriggerSeeder extends Seeder
                 'channel' => 'sms',
             ],
             [
+                'trigger_type' => 'exam_result_approved',
+                'name' => 'Exam Results Approved & Sent to Parents',
+                'description' => 'Notify parents when exam results are approved and ready — includes a results summary',
+                'is_enabled' => true,
+                'requires_confirmation' => false,
+                'channel' => 'sms',
+            ],
+            [
                 'trigger_type' => 'manual',
                 'name' => 'Manual Message',
                 'description' => 'On-demand messages sent by staff via Compose',

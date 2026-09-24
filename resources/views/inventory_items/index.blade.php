@@ -30,7 +30,7 @@
                             </div>
                             <div>
                                 <h6 class="text-muted mb-0 small uppercase font-weight-bold">Total Inventory Value</h6>
-                                <h4 class="font-weight-bold mb-0">KES {{ number_format($stats['total_value'], 0) }}</h4>
+                                <h4 class="font-weight-bold mb-0">{{ \App\Support\Money::format($stats['total_value']) }}</h4>
                             </div>
                         </div>
                     </div>
@@ -193,8 +193,8 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="small"><b>Unit:</b> KES {{ number_format($item->cost_per_unit, 2) }}</div>
-                                        <div class="small text-primary font-weight-bold"><b>Total:</b> KES {{ number_format($item->quantity * $item->cost_per_unit, 0) }}</div>
+                                        <div class="small"><b>Unit:</b> {{ \App\Support\Money::format($item->cost_per_unit) }}</div>
+                                        <div class="small text-primary font-weight-bold"><b>Total:</b> {{ \App\Support\Money::format($item->quantity * $item->cost_per_unit) }}</div>
                                     </td>
                                     <td>
                                         <div class="small"><i class="fas fa-map-marker-alt text-muted mr-1"></i> {{ $item->location ?: 'N/A' }}</div>

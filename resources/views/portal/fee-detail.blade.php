@@ -70,10 +70,21 @@
                         </thead>
                         <tbody>
                             @foreach($assignment->payments as $payment)
-                            <tr>
-                                <td>{{ $payment->payment_date?->format('d/m/Y') ?? 'N/A' }}</td>
-                                <td>{{ number_format($payment->amount, 2) }}</td>
-                                <td>{{ ucfirst($payment->payment_method ?? 'N/A') }}</td>
+                            {{-- Same treatment as the portal receipt: a reversed payment
+                                 stays visible so the parent's statement reconciles, but
+                                 must be marked. This was the one payment surface without
+                                 a marker. --}}
+                            <tr style="{{ $payment->isReversed() ? 'opacity:0.55;' : '' }}">
+                                <td>
+                                    {{ $payment->payment_date?->format('d/m/Y') ?? 'N/A' }}
+                                    @if($payment->isReversed())
+                                        <strong style="color:#b91c1c;">VOID</strong>
+                                    @endif
+                                </td>
+                                <td style="{{ $payment->isReversed() ? 'text-decoration:line-through;color:#6b7280;' : '' }}">{{ number_format($payment->amount, 2) }}</td>
+                                {{-- Null-coalesce alone misses the ENUM error value left
+                                     by the 2026-09-06 import, which renders blank. --}}
+                                <td>{{ $payment->payment_method ? ucwords(str_replace('_', ' ', $payment->payment_method)) : 'Unspecified' }}</td>
                                 <td>{{ $payment->reference_number ?? '—' }}</td>
                             </tr>
                             @endforeach

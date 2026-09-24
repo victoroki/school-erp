@@ -25,6 +25,18 @@ class MarkSheetController extends Controller
         $viewAll = $user->hasPermission('exams.results.view-all');
         $hasSettings = $user->hasPermission('academics.settings.manage');
 
+        // The class/subject scope check below sits inside
+        // `if ($request->filled(['exam_id','class_section_id','subject_id']))`, so
+        // it only ran when the request carried all three filters at once. A request
+        // naming just class_section_id skipped it entirely and the sheet rendered.
+        // Validate any supplied class_section_id here, so the guard depends on what
+        // the request asks for rather than on how many other fields happen to be
+        // filled in.
+        if (! $viewAll && ! $hasSettings && $request->filled('class_section_id')
+            && ! $this->teacherScope->getClassSectionIds($user)->contains((int) $request->class_section_id)) {
+            abort(403, 'You are not authorized to view the mark sheet for this class.');
+        }
+
         if ($viewAll || $hasSettings) {
             $exams = Exam::pluck('name', 'exam_id');
             $classSections = ClassSection::with(['schoolClass', 'section'])->get()->mapWithKeys(function ($cs) {

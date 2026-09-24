@@ -20,15 +20,80 @@ class FeeArrearsController extends Controller
     }
 
     /**
+     * Paid-per-assignment, defined once in FeeBalanceService.
+     *
+     * Arrears paginates and sorts on the computed balance, so the totals have to
+     * be aggregated in SQL — but they must still be the SAME figures the student
+     * profile, the statement and the reports show. This previously inlined its
+     * own `SUM(fee_payments.amount)` grouped by the payment's direct assignment
+     * link, which counted reversed payments as collected money and credited a
+     * split "total balance" payment entirely to its first assignment. Bursars
+     * chase parents with this screen, so a figure that disagrees with the
+     * student's own statement is worse than no figure.
+     */
+    protected function paidTotals(): \Illuminate\Database\Query\Expression
+    {
+        return DB::raw(app(\App\Services\FeeBalanceService::class)->paidTotalsSubquery());
+    }
+
+    /**
      * Arrears dashboard & student list.
      *
      * Identifies students with outstanding balances, offers class/form/fee filters,
      * sorting by largest balance, export to PDF/CSV, and per-student statement links.
      */
+    /**
+     * Resolve the academic-year scope from the request.
+     *
+     * Three choices, and the DEFAULT IS UNCHANGED — the current academic year:
+     *
+     *   no parameter           -> the current academic year
+     *   academic_year_id=all   -> every year, but only when asked for explicitly
+     *   academic_year_id=<id>  -> that year
+     *
+     * "All years" is a deliberate choice rather than a fallback, because the
+     * student profile and the statement report the student's all-time position
+     * while this page reports a year: without a label saying which is which, the
+     * two look like they disagree about the same student.
+     *
+     * @return array{yearId: int|null, allYears: bool}
+     */
+    protected function resolveYearScope(Request $request): array
+    {
+        $requested = $request->get('academic_year_id');
+
+        if ($requested === 'all') {
+            return ['yearId' => null, 'allYears' => true];
+        }
+
+        $currentYear = AcademicYear::where('is_current', true)->first();
+
+        return [
+            'yearId' => $requested ?: ($currentYear?->academic_year_id),
+            'allYears' => false,
+        ];
+    }
+
+    /**
+     * How the active scope is named on screen, in the heading and under every
+     * figure that depends on it.
+     */
+    protected function scopeLabel(int $yearId = null, bool $allYears = false): string
+    {
+        if ($allYears) {
+            return 'All Years';
+        }
+
+        $name = $yearId ? AcademicYear::where('academic_year_id', $yearId)->value('name') : null;
+
+        return $name ? 'Academic Year ' . $name : 'Current Academic Year';
+    }
+
     public function index(Request $request)
     {
+        ['yearId' => $yearId, 'allYears' => $allYears] = $this->resolveYearScope($request);
         $currentYear = AcademicYear::where('is_current', true)->first();
-        $yearId = $request->get('academic_year_id', $currentYear ? $currentYear->academic_year_id : null);
+        $scopeLabel = $this->scopeLabel($yearId, $allYears);
         $classId = $request->get('class_id');
         $termId = $request->get('term_id');
         $minAmount = $request->get('min_amount');
@@ -42,10 +107,7 @@ class FeeArrearsController extends Controller
 
         // Payment totals per assignment to compute balances in SQL (derived table
         // avoids the ONLY_FULL_GROUP_BY issue caused by correlated subqueries).
-        $paidTotalsSub = DB::raw('(SELECT fp.student_fee_assignment_id,
-                COALESCE(SUM(fp.amount),0) AS paid_total
-            FROM fee_payments fp
-            GROUP BY fp.student_fee_assignment_id) AS paid_totals');
+        $paidTotalsSub = $this->paidTotals();
 
         // Per-student aggregation of expected vs paid.
         //
@@ -116,14 +178,23 @@ class FeeArrearsController extends Controller
             $item->studentClass = $classMap[$item->student_id] ?? 'N/A';
         }
 
-        // Summary metrics.
-        $totalExpected = (clone $base)->sum('final_amount');
-        $totalCollected = FeePayment::join('student_fee_assignments as sfa2', 'fee_payments.student_fee_assignment_id', '=', 'sfa2.id')
-            ->where('sfa2.status', 'active')
-            ->when($yearId, fn($q) => $q->where('sfa2.academic_year_id', $yearId))
-            ->when($termId, fn($q) => $q->where('sfa2.term_id', $termId))
-            ->sum('fee_payments.amount');
-        $totalOutstanding = $totalExpected - $totalCollected;
+        // Summary metrics — computed with the SAME scope and the SAME paid
+        // definition as the rows below, so the headline cannot contradict its own
+        // table. "Collected" here means money credited to these fee assignments
+        // (reversals excluded), which is what makes
+        // Outstanding = Expected − Collected equal to the sum of the row
+        // balances. The previous version summed raw fee_payments joined on the
+        // direct assignment link, so the headline and the rows were answered
+        // from two different definitions.
+        $scope = (clone $base)
+            ->leftJoin($this->paidTotals(), 'paid_totals.student_fee_assignment_id', '=', 'student_fee_assignments.id')
+            ->selectRaw('COALESCE(SUM(student_fee_assignments.final_amount), 0) as expected')
+            ->selectRaw('COALESCE(SUM(paid_totals.paid_total), 0) as paid')
+            ->first();
+
+        $totalExpected = round((float) $scope->expected, 2);
+        $totalCollected = round((float) $scope->paid, 2);
+        $totalOutstanding = round($totalExpected - $totalCollected, 2);
         $collectionRate = $totalExpected > 0 ? round(($totalCollected / $totalExpected) * 100, 1) : 0;
 
         // Count students in arrears from the same scoped query (before pagination).
@@ -135,7 +206,8 @@ class FeeArrearsController extends Controller
 
         return view('fee_management.arrears.index', compact(
             'arrears', 'totalExpected', 'totalCollected', 'totalOutstanding', 'collectionRate',
-            'academicYears', 'classes', 'terms', 'yearId', 'classId', 'termId', 'minAmount', 'sort', 'search', 'studentsInArrears'
+            'academicYears', 'classes', 'terms', 'yearId', 'classId', 'termId', 'minAmount', 'sort', 'search', 'studentsInArrears',
+            'allYears', 'scopeLabel', 'currentYear'
         ));
     }
 
@@ -143,7 +215,7 @@ class FeeArrearsController extends Controller
     {
         $q = Student::query()
             ->join('student_fee_assignments as sfa', 'sfa.student_id', '=', 'students.student_id')
-            ->leftJoin(DB::raw('(SELECT fp.student_fee_assignment_id, COALESCE(SUM(fp.amount),0) AS paid_total FROM fee_payments fp GROUP BY fp.student_fee_assignment_id) AS paid_totals'), 'paid_totals.student_fee_assignment_id', '=', 'sfa.id')
+            ->leftJoin($this->paidTotals(), 'paid_totals.student_fee_assignment_id', '=', 'sfa.id')
             ->where('sfa.status', 'active')
             ->when($yearId, fn($qq) => $qq->where('sfa.academic_year_id', $yearId))
             ->when($termId, fn($qq) => $qq->where('sfa.term_id', $termId))
@@ -211,8 +283,7 @@ class FeeArrearsController extends Controller
      */
     protected function arrearsDataset(Request $request)
     {
-        $currentYear = AcademicYear::where('is_current', true)->first();
-        $yearId = $request->get('academic_year_id', $currentYear ? $currentYear->academic_year_id : null);
+        ['yearId' => $yearId, 'allYears' => $allYears] = $this->resolveYearScope($request);
         $classId = $request->get('class_id');
         $termId = $request->get('term_id');
         $minAmount = $request->get('min_amount');
@@ -220,7 +291,7 @@ class FeeArrearsController extends Controller
 
         $inner = Student::query()
             ->join('student_fee_assignments as sfa', 'sfa.student_id', '=', 'students.student_id')
-            ->leftJoin(DB::raw('(SELECT fp.student_fee_assignment_id, COALESCE(SUM(fp.amount),0) AS paid_total FROM fee_payments fp GROUP BY fp.student_fee_assignment_id) AS paid_totals'), 'paid_totals.student_fee_assignment_id', '=', 'sfa.id')
+            ->leftJoin($this->paidTotals(), 'paid_totals.student_fee_assignment_id', '=', 'sfa.id')
             ->where('sfa.status', 'active')
             ->when($yearId, fn($q) => $q->where('sfa.academic_year_id', $yearId))
             ->when($termId, fn($q) => $q->where('sfa.term_id', $termId))
@@ -269,6 +340,7 @@ class FeeArrearsController extends Controller
 
         return [
             'rows' => $rows,
+            'scopeLabel' => $this->scopeLabel($yearId, $allYears),
             'totalExpected' => array_sum(array_column($rows, 'expected')),
             'totalCollected' => array_sum(array_column($rows, 'paid')),
             'totalOutstanding' => array_sum(array_column($rows, 'outstanding')),

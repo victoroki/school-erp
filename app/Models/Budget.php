@@ -12,6 +12,7 @@ class Budget extends Model
         'financial_year_id',
         'category_id',
         'category_type',
+        'include_fees',
         'amount',
         'alert_threshold',
         'created_by'
@@ -19,7 +20,8 @@ class Budget extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'alert_threshold' => 'decimal:2'
+        'alert_threshold' => 'decimal:2',
+        'include_fees' => 'boolean'
     ];
 
     public function financialYear()

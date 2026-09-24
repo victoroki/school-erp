@@ -151,12 +151,11 @@
                             <tbody>
                             @foreach($examResults as $examResult)
                                 @php
+                                    // Single shared resolver. This view used to list only the
+                                    // short CBE codes, so the 8-point codes the app actually
+                                    // stores (EE1..BE2) all fell through to red.
                                     $gradeName = $examResult->grade?->name;
-                                    $gradeBadge = 'badge-secondary';
-                                    if (in_array($gradeName, ['A', 'A+', 'E', 'EE'])) $gradeBadge = 'badge-success';
-                                    elseif (in_array($gradeName, ['B', 'B-', 'C+', 'C', 'ME'])) $gradeBadge = 'badge-primary';
-                                    elseif (in_array($gradeName, ['D', 'D-', 'AE'])) $gradeBadge = 'badge-warning';
-                                    else $gradeBadge = 'badge-danger';
+                                    $gradeBadge = \App\Support\GradeBadge::for($gradeName);
                                 @endphp
                                 <tr>
                                     <td>

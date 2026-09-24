@@ -35,13 +35,32 @@ class TimetableSeeder extends Seeder
         $periodCount = min(2, $periods->count());
         $yearId = $year->academic_year_id;
 
+        // Seed the slot guards from the rows already stored for this year.
+        // Starting empty made a reseed re-insert slots that already existed and
+        // violated one of the three composite uniques on this table
+        // (uniq_teacher_slot, uniq_classroom_slot, uniq_class_section_slot), so
+        // `php artisan db:seed` failed the second time it was run even though
+        // DatabaseSeeder documents that a reseed is always safe.
         $usedTeacherSlots = [];
         $usedClassroomSlots = [];
+        $usedClassSectionSlots = [];
+
+        foreach (Timetable::where('academic_year_id', $yearId)->get() as $existing) {
+            $usedTeacherSlots[$existing->teacher_id . '-' . $existing->day_of_week . '-' . $existing->period_id . '-' . $yearId] = true;
+            $usedClassroomSlots[$existing->classroom_id . '-' . $existing->day_of_week . '-' . $existing->period_id . '-' . $yearId] = true;
+            $usedClassSectionSlots[$existing->class_section_id . '-' . $existing->day_of_week . '-' . $existing->period_id . '-' . $yearId] = true;
+        }
 
         foreach ($classSections as $classSection) {
             foreach ($days as $day) {
                 for ($p = 0; $p < $periodCount; $p++) {
                     $period = $periods[$p];
+
+                    $classSectionKey = $classSection->class_section_id . '-' . $day . '-' . $period->period_id . '-' . $yearId;
+
+                    if (isset($usedClassSectionSlots[$classSectionKey])) {
+                        continue;
+                    }
 
                     $assigned = false;
                     foreach ($teachers as $teacher) {
@@ -67,6 +86,7 @@ class TimetableSeeder extends Seeder
 
                             $usedTeacherSlots[$teacherKey] = true;
                             $usedClassroomSlots[$classroomKey] = true;
+                            $usedClassSectionSlots[$classSectionKey] = true;
                             $assigned = true;
                             break 2;
                         }

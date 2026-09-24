@@ -31,9 +31,9 @@
 
     <div class="stats">
         <div class="stat-box"><div class="stat-value text-danger">{{ $studentsWithArrears }}</div><div class="stat-label">Students with Arrears</div></div>
-        <div class="stat-box"><div class="stat-value">KES {{ number_format($totalAssigned, 0) }}</div><div class="stat-label">Total Assigned</div></div>
-        <div class="stat-box"><div class="stat-value text-success">KES {{ number_format($totalPaid, 0) }}</div><div class="stat-label">Total Collected</div></div>
-        <div class="stat-box"><div class="stat-value text-danger">KES {{ number_format($totalBalance, 0) }}</div><div class="stat-label">Outstanding</div></div>
+        <div class="stat-box"><div class="stat-value">{{ \App\Support\Money::format($totalAssigned) }}</div><div class="stat-label">Total Assigned</div></div>
+        <div class="stat-box"><div class="stat-value text-success">{{ \App\Support\Money::format($totalPaid) }}</div><div class="stat-label">Total Collected</div></div>
+        <div class="stat-box"><div class="stat-value text-danger">{{ \App\Support\Money::format($totalBalance) }}</div><div class="stat-label">Outstanding</div></div>
     </div>
 
     <table>

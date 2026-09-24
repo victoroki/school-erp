@@ -133,9 +133,16 @@ class ExamResult extends Model
             // marks may be out of any maximum defined in the exam timetable.
             $percentage = $examResult->getPercentageAttribute();
 
-            $grade = \App\Models\GradingScale::where('min_percentage', '<=', $percentage)
-                ->where('max_percentage', '>=', $percentage)
-                ->first();
+            // Resolve against the learner's own curriculum, so a CBC learner is
+            // never graded on the 8-4-4 scale and vice versa. KCSE and CBC bands
+            // overlap on the same percentage (55% is both "C+" and "ME2"), and
+            // the previous un-ordered ->first() picked whichever row the
+            // database happened to return first. Untagged scales apply to all.
+            $system = $examResult->student_id
+                ? \App\Models\Student::whereKey($examResult->student_id)->value('education_system')
+                : null;
+
+            $grade = \App\Models\GradingScale::resolveForPercentage($percentage, $system);
 
             if ($grade) {
                 $examResult->grade_id = $grade->grade_id;

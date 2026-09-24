@@ -6,6 +6,7 @@ use App\Http\Requests\CreateBankAccountRequest;
 use App\Http\Requests\UpdateBankAccountRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\BankAccountRepository;
+use App\Models\BankAccount;
 use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
@@ -29,8 +30,19 @@ class BankAccountController extends AppBaseController
     {
         $bankAccounts = $this->bankAccountRepository->paginate(10);
 
+        $totals = [
+            'balance' => (float) BankAccount::sum('current_balance'),
+            'active' => BankAccount::where('status', 'active')->count(),
+            'inactive' => BankAccount::where('status', '!=', 'active')->count(),
+            'below_minimum' => BankAccount::where('status', 'active')
+                ->whereColumn('current_balance', '<', 'minimum_balance')
+                ->where('minimum_balance', '>', 0)
+                ->count(),
+        ];
+
         return view('bank_accounts.index')
-            ->with('bankAccounts', $bankAccounts);
+            ->with('bankAccounts', $bankAccounts)
+            ->with('totals', $totals);
     }
 
     /**

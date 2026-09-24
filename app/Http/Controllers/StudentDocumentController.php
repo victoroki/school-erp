@@ -30,8 +30,10 @@ class StudentDocumentController extends AppBaseController
     private function getDropdownData()
     {
         return [
-            'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' - ', student_id) as full_name")
-                ->pluck('full_name', 'student_id')
+            // `dropdown_name` alias: `full_name` would be shadowed by the
+            // Student fullName accessor and resolve to empty strings.
+            'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' - ', student_id) as dropdown_name")
+                ->pluck('dropdown_name', 'student_id')
                 ->toArray(),
             'documentTypes' => [
                 'birth_certificate' => 'Birth Certificate',
@@ -163,7 +165,7 @@ class StudentDocumentController extends AppBaseController
      */
     public function show($id)
     {
-        $studentDocument = $this->studentDocumentRepository->find($id);
+        $studentDocument = \App\Models\StudentDocument::with('student')->find($id);
 
         if (empty($studentDocument)) {
             Flash::error('Student Document not found');

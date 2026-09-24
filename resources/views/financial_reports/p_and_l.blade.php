@@ -16,13 +16,19 @@
             </div>
         </div>
         <div class="col-md-5 text-md-end mt-3 mt-md-0">
-            <form action="{{ route('financial-reports.p-and-l') }}" method="GET" class="d-flex justify-content-md-end gap-2">
+            <form action="{{ route('financial-reports.p-and-l') }}" method="GET" class="d-flex justify-content-md-end gap-2 flex-wrap">
                 <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $startDate }}" style="max-width: 140px;">
                 <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $endDate }}" style="max-width: 140px;">
                 <button type="submit" class="btn-dash btn-indigo-dash">
                     <i class="fas fa-filter me-1"></i> Filter
                 </button>
             </form>
+            <div class="mt-2">
+                <a href="{{ route('financial-reports.p-and-l-pdf', ['start_date' => $startDate, 'end_date' => $endDate]) }}"
+                   class="btn-dash btn-slate-dash">
+                    <i class="fas fa-file-pdf me-1"></i> Download PDF
+                </a>
+            </div>
         </div>
     </div>
 
@@ -183,5 +189,7 @@
 
 .btn-indigo-dash { background: var(--indigo); color: #fff; }
 .btn-indigo-dash:hover { background: #4338ca; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+.btn-slate-dash { background: var(--slate); color: #fff; border: 1px solid var(--slate); }
+.btn-slate-dash:hover { background: #475569; color: #fff; transform: translateY(-1px); }
 </style>
 @endsection

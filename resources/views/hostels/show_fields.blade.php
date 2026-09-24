@@ -18,8 +18,8 @@
 
 <!-- Warden Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('warden_id', 'Warden Id:') !!}
-    <p>{{ $hostel->warden_id }}</p>
+    {!! Form::label('warden_id', 'Warden:') !!}
+    <p>{{ $hostel->warden->full_name ?? 'Not assigned' }}</p>
 </div>
 
 <!-- Capacity Field -->

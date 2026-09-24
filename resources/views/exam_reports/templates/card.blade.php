@@ -7,9 +7,30 @@
     $classSection = $data['classSection'];
     $isCbe = $data['is_cbe'];
     $className = trim(($classSection?->schoolClass?->name ?? '') . ' ' . ($classSection?->section?->name ?? '')) ?: '—';
+
+    /*
+     * Approval state. The controller has always passed a per-row `approved`
+     * flag but nothing ever rendered it, so a report card built from entirely
+     * unapproved marks looked identical to a final, issued one. This card is
+     * still produced (schools that do not run the approval workflow must keep
+     * printing) but it is clearly marked provisional until the marks are
+     * approved — see docs/phase2-repair-log.md for the open product decision.
+     */
+    $approvalRows = collect($data['rows'] ?? []);
+    $rowsApproved = $approvalRows->isNotEmpty()
+        && $approvalRows->every(fn ($row) => ! empty($row['approved']));
 @endphp
 
 <div class="report-card">
+    @if($approvalRows->isNotEmpty() && ! $rowsApproved)
+        {{-- Self-styled: this partial is rendered both by the browser print page
+             and by DomPDF, which do not share a stylesheet. --}}
+        <div style="border:1px solid #b45309; background:#fffbeb; color:#92400e;
+                    padding:6px 10px; margin:6px 0; font-size:11px; text-align:center;">
+            <b>PROVISIONAL.</b> The marks on this report have not been approved and it is
+            <b>not</b> an official report card.
+        </div>
+    @endif
     {{-- ── School header ── --}}
     <table class="w-100 header-table">
         <tr>
@@ -136,7 +157,7 @@
                 @if($data['fee'])
                     <td colspan="2">
                         <span class="sum-lbl">FEE BALANCE</span>
-                        <span class="sum-val">KES {{ number_format($data['fee']['balance'], 0) }}</span>
+                        <span class="sum-val">{{ \App\Support\Money::format($data['fee']['balance']) }}</span>
                     </td>
                 @endif
             </tr>

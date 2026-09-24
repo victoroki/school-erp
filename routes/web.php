@@ -204,6 +204,11 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
     Route::get('students/bulk-id-cards', [App\Http\Controllers\StudentIdCardController::class, 'bulkForm'])->name('students.bulk-id-cards.form');
     Route::post('students/bulk-id-cards', [App\Http\Controllers\StudentIdCardController::class, 'bulk'])->name('students.bulk-id-cards');
 
+    // Must precede the resource so 'students/...' literal segments are not
+    // captured as a {student} id.
+    Route::post('students/{id}/restore', [App\Http\Controllers\StudentController::class, 'restore'])
+        ->name('students.restore');
+
     Route::resource('students', App\Http\Controllers\StudentController::class);
     Route::get('students/ajax/search', [App\Http\Controllers\StudentController::class, 'ajaxSearch'])->name('students.ajax.search');
       Route::post('students/{id}/siblings', [App\Http\Controllers\StudentController::class, 
@@ -238,13 +243,24 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
     Route::resource('bank-reconciliations', App\Http\Controllers\BankReconciliationController::class);
     Route::resource('budgets', App\Http\Controllers\BudgetController::class);
     Route::get('budget-vs-actual', [App\Http\Controllers\BudgetController::class, 'vsActual'])->name('budgets.vs-actual');
+
+    // Petty Cash — small cash fund management
+    Route::get('petty-cash', [App\Http\Controllers\PettyCashController::class, 'index'])->name('petty-cash.index');
+    Route::get('petty-cash/create', [App\Http\Controllers\PettyCashController::class, 'create'])->name('petty-cash.create');
+    Route::post('petty-cash', [App\Http\Controllers\PettyCashController::class, 'store'])->name('petty-cash.store');
+    Route::delete('petty-cash/{id}', [App\Http\Controllers\PettyCashController::class, 'destroy'])->name('petty-cash.destroy');
     
     Route::prefix('financial-reports')->name('financial-reports.')->group(function () {
         Route::get('/', [App\Http\Controllers\FinancialReportController::class, 'index'])->name('index');
         Route::get('/cashflow', [App\Http\Controllers\FinancialReportController::class, 'cashflow'])->name('cashflow');
+        Route::get('/cashflow/pdf', [App\Http\Controllers\FinancialReportController::class, 'cashflowPdf'])->name('cashflow-pdf');
         Route::get('/p-and-l', [App\Http\Controllers\FinancialReportController::class, 'pAndL'])->name('p-and-l');
+        Route::get('/p-and-l/pdf', [App\Http\Controllers\FinancialReportController::class, 'pAndLPdf'])->name('p-and-l-pdf');
+        Route::get('/balance-sheet', [App\Http\Controllers\FinancialReportController::class, 'balanceSheet'])->name('balance-sheet');
+        Route::get('/fee-collection-trends', [App\Http\Controllers\FinancialReportController::class, 'feeCollectionTrends'])->name('fee-collection-trends');
     });
 
+    Route::get('financial-years/{financialYear}/audit', [App\Http\Controllers\FinancialYearController::class, 'audit'])->name('financial-years.audit');
     Route::resource('financial-years', App\Http\Controllers\FinancialYearController::class);
     Route::get('audit-trail', [App\Http\Controllers\AuditTrailController::class, 'index'])->name('audit-trail.index');
     Route::get('audit-trail/export', [App\Http\Controllers\AuditTrailController::class, 'export'])->name('audit-trail.export');
@@ -376,16 +392,20 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
         Route::get('/assignments/ajax/all-fees', [App\Http\Controllers\StudentFeeAssignmentController::class, 'getAllFeeStructures'])->name('assignments.ajax.all-fees');
 
         // Fee Adjustments
+        // ORDER MATTERS: every literal segment must be registered before
+        // /adjustments/{id}. Previously /adjustments/{id} came first, so
+        // "pending" was captured as {id} and the pending-approvals screen was
+        // unreachable — Laravel matches routes in registration order.
         Route::get('/adjustments', [App\Http\Controllers\FeeAdjustmentController::class, 'index'])->name('adjustments.index');
         Route::get('/adjustments/create', [App\Http\Controllers\FeeAdjustmentController::class, 'create'])->name('adjustments.create');
+        Route::get('/adjustments/pending', [App\Http\Controllers\FeeAdjustmentController::class, 'pendingApprovals'])->name('adjustments.pending');
+        Route::get('/adjustments/student/{studentId}', [App\Http\Controllers\FeeAdjustmentController::class, 'studentAdjustments'])->name('adjustments.student-adjustments');
+        Route::get('/adjustments/ajax/student-fees', [App\Http\Controllers\FeeAdjustmentController::class, 'getFeeAssignmentsForStudent'])->name('adjustments.ajax.student-fees');
         Route::post('/adjustments', [App\Http\Controllers\FeeAdjustmentController::class, 'store'])->name('adjustments.store');
         Route::get('/adjustments/{id}', [App\Http\Controllers\FeeAdjustmentController::class, 'show'])->name('adjustments.show');
         Route::post('/adjustments/{id}/approve', [App\Http\Controllers\FeeAdjustmentController::class, 'approve'])->name('adjustments.approve');
         Route::post('/adjustments/{id}/reject', [App\Http\Controllers\FeeAdjustmentController::class, 'reject'])->name('adjustments.reject');
-        Route::get('/adjustments/pending', [App\Http\Controllers\FeeAdjustmentController::class, 'pendingApprovals'])->name('adjustments.pending');
-        Route::get('/adjustments/student/{studentId}', [App\Http\Controllers\FeeAdjustmentController::class, 'studentAdjustments'])->name('adjustments.student-adjustments');
         Route::get('/adjustments/{id}/audit-log', [App\Http\Controllers\FeeAdjustmentController::class, 'auditLog'])->name('adjustments.audit-log');
-        Route::get('/adjustments/ajax/student-fees', [App\Http\Controllers\FeeAdjustmentController::class, 'getFeeAssignmentsForStudent'])->name('adjustments.ajax.student-fees');
 
         // Terms
         Route::get('/terms', [App\Http\Controllers\TermController::class, 'index'])->name('terms.index');
@@ -407,6 +427,7 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
         Route::get('/reports/collections', [App\Http\Controllers\FeeReportsController::class, 'collections'])->name('reports.collections');
         Route::get('/reports/payment-method', [App\Http\Controllers\FeeReportsController::class, 'paymentMethod'])->name('reports.payment-method');
         Route::get('/reports/receipt-register', [App\Http\Controllers\FeeReportsController::class, 'receiptRegister'])->name('reports.receipt-register');
+        Route::get('/reports/export/receipt-register/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportReceiptRegisterPdf'])->name('reports.export.receipt-register.pdf');
         Route::get('/reports/export/expected-revenue/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportExpectedRevenuePdf'])->name('reports.export.expected-revenue.pdf');
         Route::get('/reports/export/assignment-status/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportAssignmentStatusPdf'])->name('reports.export.assignment-status.pdf');
         Route::get('/reports/export/discount-summary/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportDiscountSummaryPdf'])->name('reports.export.discount-summary.pdf');
@@ -431,9 +452,16 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
         Route::get('/refunds/export/pdf', [App\Http\Controllers\RefundController::class, 'exportPdf'])->name('refunds.export-pdf');
         Route::get('/refunds/export/csv', [App\Http\Controllers\RefundController::class, 'exportCsv'])->name('refunds.export-csv');
         Route::get('/refunds/ajax/student-payments/{studentId}', [App\Http\Controllers\RefundController::class, 'studentPayments'])->name('refunds.ajax.student-payments');
+
+        // Fee data needing an administrative decision. Read-only: it reports,
+        // it never corrects.
+        Route::get('/integrity', [App\Http\Controllers\FeeIntegrityController::class, 'index'])->name('integrity');
     });
 
     // Legacy Fee Management (Collection) - Kept/Modified for integration
+    // Must be registered before the fee-management/{id} routes so "receipt"
+    // is not captured as a student id.
+    Route::get('fee-management/payments/{payment}/receipt', [App\Http\Controllers\FeeManagementController::class, 'printReceipt'])->name('fee-management.receipt');
     Route::get('fee-management', [App\Http\Controllers\FeeManagementController::class, 'index'])->name('fee-management.index');
     Route::get('fee-management/{id}', [App\Http\Controllers\FeeManagementController::class, 'show'])->name('fee-management.show');
     Route::get('fee-management/{id}/collect-payment', [App\Http\Controllers\FeeManagementController::class, 'collectPayment'])->name('fee-management.collect-payment');
@@ -450,6 +478,7 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
     Route::get('mark-sheets', [App\Http\Controllers\MarkSheetController::class, 'index'])->name('mark-sheets.index');
     Route::get('marks-approval', [App\Http\Controllers\MarksApprovalController::class, 'index'])->name('marks-approval.index');
     Route::post('marks-approval/approve', [App\Http\Controllers\MarksApprovalController::class, 'approve'])->name('marks-approval.approve');
+    Route::post('marks-approval/send-to-parents', [App\Http\Controllers\MarksApprovalController::class, 'sendResultsToParents'])->name('marks-approval.send-to-parents');
     Route::get('marks-approval/{exam_id}/{class_section_id}', [App\Http\Controllers\MarksApprovalController::class, 'show'])->name('marks-approval.show');
     Route::get('cbc-assessments', [App\Http\Controllers\CompetencyAssessmentController::class, 'index'])->name('cbc-assessments.index');
     Route::post('cbc-assessments', [App\Http\Controllers\CompetencyAssessmentController::class, 'store'])->name('cbc-assessments.store');

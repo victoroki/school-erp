@@ -40,7 +40,7 @@ class LibraryMemberController extends AppBaseController
             });
         }
 
-        $libraryMembers = $query->paginate(10);
+        $libraryMembers = $query->paginate(10)->withQueryString();
 
         return view('library_members.index')
             ->with('libraryMembers', $libraryMembers);

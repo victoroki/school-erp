@@ -73,7 +73,7 @@
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Student ID</th>
+                                    <th>Admission No</th>
                                     <th>Name</th>
                                     <th>Pickup Stop</th>
                                     <th>Parent Contact</th>
@@ -83,10 +83,10 @@
                                 @forelse($students as $index => $assignment)
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
-                                        <td>{{ $assignment->student->student_id }}</td>
-                                        <td>{{ $assignment->student->first_name }} {{ $assignment->student->last_name }}</td>
+                                        <td>{{ $assignment->student->admission_no ?? '—' }}</td>
+                                        <td>{{ $assignment->student->full_name }}</td>
                                         <td>{{ $assignment->pickupStop->stop_name ?? 'N/A' }}</td>
-                                        <td>{{ $assignment->student->mobile_number ?? 'N/A' }}</td>
+                                        <td>{{ $assignment->student->formatted_phone ?? ($assignment->student->phone ?? 'N/A') }}</td>
                                     </tr>
                                 @empty
                                     <tr>

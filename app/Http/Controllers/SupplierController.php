@@ -19,8 +19,11 @@ class SupplierController extends AppBaseController
     public function __construct(SupplierRepository $supplierRepo)
     {
         $this->supplierRepository = $supplierRepo;
-        $this->middleware('can:inventory.view')->only(['index', 'show']);
-        $this->middleware('can:inventory.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+        // Suppliers feed the expense form (supplier_id references), so they
+        // belong to the finance module, not inventory — an Accountant with
+        // finance.* only must be able to maintain their own supplier list.
+        $this->middleware('can:finance.view')->only(['index', 'show']);
+        $this->middleware('can:finance.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -31,15 +34,17 @@ class SupplierController extends AppBaseController
         $query = Supplier::query();
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%')
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
                   ->orWhere('code', 'like', '%' . $request->search . '%');
+            });
         }
 
         if ($request->filled('status')) {
             $query->where('is_active', $request->status == 'active' ? 1 : 0);
         }
 
-        $suppliers = $query->paginate(12);
+        $suppliers = $query->paginate(12)->withQueryString();
 
         return view('suppliers.index')
             ->with('suppliers', $suppliers);

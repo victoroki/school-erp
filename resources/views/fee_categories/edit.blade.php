@@ -19,7 +19,11 @@
 
         <div class="card">
 
-            {!! Form::model($feeCategory, ['route' => ['fee-categories.update', $feeCategory->category_id], 'method' => 'patch']) !!}
+            {{-- The resource is registered as ->names('feeCategories') (routes/web.php),
+                 so the update route is feeCategories.update. 'fee-categories.update'
+                 does not exist and threw RouteNotFoundException when this form was
+                 rendered, which made fee categories impossible to edit. --}}
+            {!! Form::model($feeCategory, ['route' => ['feeCategories.update', $feeCategory->category_id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">

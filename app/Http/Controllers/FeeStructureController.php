@@ -50,7 +50,7 @@ class FeeStructureController extends AppBaseController
             $query->where('class_id', $request->class_id);
         }
 
-        $feeStructures = $query->paginate(50);
+        $feeStructures = $query->paginate(50)->withQueryString();
         $classes = SchoolClass::pluck('name', 'class_id');
 
         $years = AcademicYear::orderBy('start_date', 'desc')->get();

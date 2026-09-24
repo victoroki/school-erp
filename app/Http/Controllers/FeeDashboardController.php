@@ -45,6 +45,32 @@ class FeeDashboardController extends Controller
                 return $q->where('academic_year_id', $yearId);
             })->sum('discount_amount');
 
+        // Outstanding comes from the same engine every other screen uses, so the
+        // dashboard cannot disagree with a student's own balance. It deliberately
+        // replaces `expectedRevenue - total_collected`: that compared the
+        // receivable against gross payments received, so after a refund it still
+        // counted money the school had already handed back and reported less
+        // outstanding than the student's own page.
+        $outstanding = app(\App\Services\FeeBalanceService::class)->outstandingForAssignments(
+            StudentFeeAssignment::where('status', 'active')
+                ->when($yearId, function ($q) use ($yearId) {
+                    return $q->where('academic_year_id', $yearId);
+                })
+                ->pluck('id')
+                ->all()
+        );
+
+        // Collected net of refunds, derived from the two figures above rather
+        // than from a separate payment sum — so Expected − Collected =
+        // Outstanding holds by construction instead of usually holding.
+        $collected = round($expectedRevenue - $outstanding, 2);
+
+        // The rate uses the same net figures as the card beside it, or the
+        // percentage would not match the shillings printed underneath it.
+        $collectionRate = $expectedRevenue > 0
+            ? round(max(0, min(100, ($collected / $expectedRevenue) * 100)), 1)
+            : 0;
+
         // Pending Discount Approvals
         $pendingApprovals = StudentDiscount::where('approval_status', 'pending')
              ->when($yearId, function($q) use ($yearId) {
@@ -86,11 +112,20 @@ class FeeDashboardController extends Controller
             ->take(5)
             ->get();
 
+        // Fee data that needs a human decision (a refund paid out for more than
+        // the student paid, a refund ledger row posted in the old direction).
+        // Surfaced as a warning; never corrected automatically.
+        $integrityFindings = app(\App\Services\FeeIntegrityService::class)->findings();
+
         return view('fee_management.dashboard', compact(
             'currentYear',
             'metrics',
+            'integrityFindings',
             'totalFeeStructures',
             'expectedRevenue',
+            'outstanding',
+            'collected',
+            'collectionRate',
             'totalDiscounts',
             'pendingApprovals',
             'notAssignedCount',

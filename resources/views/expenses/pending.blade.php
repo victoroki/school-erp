@@ -39,20 +39,18 @@
                                         {{ $expense->requestedBy ? $expense->requestedBy->full_name : 'Staff' }}
                                     </td>
                                     <td class="py-3 align-middle text-right text-danger font-weight-bold">
-                                        KES {{ number_format($expense->amount, 2) }}
+                                        {{ \App\Support\Money::format($expense->amount) }}
                                     </td>
                                     <td class="py-3 align-middle text-center pr-4">
                                         <div class="btn-group">
                                             <a href="{{ route('expenses.show', [$expense->expense_id]) }}" class="btn btn-sm btn-outline-info rounded-circle mr-1" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            {!! Form::open(['route' => ['expenses.approve', $expense->expense_id], 'method' => 'post', 'class' => 'd-inline']) !!}
-                                            {!! Form::button('<i class="fas fa-check"></i>', ['type' => 'submit', 'class' => 'btn btn-sm btn-outline-success rounded-circle mr-1', 'title' => 'Approve']) !!}
-                                            {!! Form::close() !!}
-                                            
-                                            <button class="btn btn-sm btn-outline-danger rounded-circle reject-btn" data-id="{{ $expense->expense_id }}" title="Reject">
-                                                <i class="fas fa-times"></i>
-                                            </button>
+                                            @if(Auth::user()->hasPermission('finance.approve'))
+                                                {!! Form::open(['route' => ['expenses.approve', $expense->expense_id], 'method' => 'post', 'class' => 'd-inline']) !!}
+                                                {!! Form::button('<i class="fas fa-check"></i>', ['type' => 'submit', 'class' => 'btn btn-sm btn-outline-success rounded-circle mr-1', 'title' => 'Approve']) !!}
+                                                {!! Form::close() !!}
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

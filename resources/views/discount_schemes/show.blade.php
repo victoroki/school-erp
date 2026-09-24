@@ -33,9 +33,9 @@
             @if($discountScheme->type === 'full_waiver')
                 Full Waiver
             @elseif($discountScheme->type === 'percentage')
-                {{ number_format($discountScheme->value, 0) }}%
+                {{ rtrim(rtrim(number_format($discountScheme->value, 2), '0'), '.') }}%
             @else
-                {{ number_format($discountScheme->value, 2) }}
+                {{ \App\Support\Money::format($discountScheme->value) }}
             @endif
         </div>
         <div class="hero-label">

@@ -29,8 +29,8 @@
                     <div class="card-body p-0">
                         <div class="row text-center py-4">
                             <div class="col-md-3 border-right">
-                                <h2 class="text-info font-weight-bold mb-0">{{ $schoolClass->numeric_value }}</h2>
-                                <span class="text-muted text-uppercase small font-weight-bold">Numeric Value</span>
+                                <h2 class="text-info font-weight-bold mb-0">{{ $schoolClass->numeric_value ?? '&mdash;' }}</h2>
+                                <span class="text-muted text-uppercase small font-weight-bold">Level / Order</span>
                             </div>
                             <div class="col-md-3 border-right">
                                 <h2 class="text-success font-weight-bold mb-0">{{ $schoolClass->classSections->count() }}</h2>

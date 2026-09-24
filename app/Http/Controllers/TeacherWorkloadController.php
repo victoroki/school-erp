@@ -63,7 +63,7 @@ class TeacherWorkloadController extends Controller
         // Pagination
         $page = $request->get('page', 1);
         $perPage = 10;
-        $paginatedTeachers = $teacherQuery->paginate($perPage);
+        $paginatedTeachers = $teacherQuery->paginate($perPage)->withQueryString();
 
         // Process workload ONLY for paginated teachers for better performance
         $workloadData = [];

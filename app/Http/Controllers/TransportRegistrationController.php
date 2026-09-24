@@ -85,7 +85,7 @@ class TransportRegistrationController extends AppBaseController
      */
     public function show($id)
     {
-        $transportRegistration = $this->transportRegistrationRepository->find($id);
+        $transportRegistration = \App\Models\TransportRegistration::with(['student', 'route', 'stop', 'academicYear'])->find($id);
 
         if (empty($transportRegistration)) {
             Flash::error('Transport Registration not found');

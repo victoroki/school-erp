@@ -125,9 +125,22 @@
                     {{ $students->withQueryString()->links() }}
                 </div>
                 <small class="text-muted pt-2 d-inline-block">
-                    Showing {{ $students->count() }} of {{ $students->total() }} learners ·
-                    Performance levels: EE ≥75 · ME 41–74 · AE 21–40 · BE ≤20 (KJSEA scale)
+                    Showing {{ $students->count() }} of {{ $students->total() }} learners
                 </small>
+                {{-- Rendered from the one authoritative CBE scale. This footer
+                     previously hardcoded four hand-written boundaries that
+                     matched neither the stored grading scale nor the achievement
+                     levels used everywhere else in the application. --}}
+                <div class="pt-2">
+                    <small class="text-muted d-block">
+                        CBE achievement levels:
+                        @foreach(\App\Services\CbeGradingService::LEVELS as $level)
+                            <span class="badge {{ \App\Support\GradeBadge::for($level['code']) }} mr-1">
+                                {{ $level['code'] }} &ge; {{ (int) $level['min'] }}%
+                            </span>
+                        @endforeach
+                    </small>
+                </div>
             </div>
         </div>
         @elseif(request()->filled(['exam_id', 'class_section_id']))

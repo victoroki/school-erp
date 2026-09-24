@@ -102,15 +102,66 @@ class ExamController extends AppBaseController
             return redirect(route('exams.index'));
         }
 
-        // Basic Stats
-        $totalResults = $exam->examResults()->count();
-        $averageScore = $exam->examResults()->avg('marks_obtained') ?: 0;
-        
-        // Pass rate (Assuming 40% as pass mark if not defined)
-        $passCount = $exam->examResults()->where('marks_obtained', '>=', 40)->count();
-        $passPercentage = $totalResults > 0 ? round(($passCount / $totalResults) * 100, 1) : 0;
+        // Statistics are computed on the PERCENTAGE each learner scored, not on
+        // raw marks. Raw marks are out of whatever maximum the paper defines, so
+        // averaging them is not a mean score and "marks >= 40" is not a 40% pass.
+        //
+        // exam_results has no max_marks column — the per-paper maximum lives on
+        // exam_schedules, keyed by class and subject. Build the whole map once
+        // rather than letting the percentage accessor fire a query per result
+        // (249 results on the largest live exam).
+        $scheduleBySubject = $exam->examSchedules->groupBy('subject_id');
 
-        return view('exams.show', compact('exam', 'totalResults', 'averageScore', 'passPercentage'));
+        $maxMarksBySubject = $scheduleBySubject
+            ->map(fn ($rows) => (float) $rows->min('max_marks'));
+
+        // The paper's own pass mark lives on the schedule as a RAW mark, so it
+        // has to be converted to a percentage to compare against a percentage.
+        // Previously the controller hardcoded `marks_obtained >= 40`, which is
+        // only a 40% pass when the paper happens to be out of 100.
+        $passPercentBySubject = $scheduleBySubject->map(function ($rows) {
+            $max = (float) $rows->min('max_marks');
+            $pass = (float) $rows->min('passing_marks');
+
+            if ($max <= 0) {
+                return 40.0;
+            }
+
+            return $pass > 0 ? round(($pass / $max) * 100, 2) : 40.0;
+        });
+
+        $results = $exam->examResults()->get(['result_id', 'student_id', 'subject_id', 'marks_obtained']);
+
+        $percentages = $results->map(function ($result) use ($maxMarksBySubject) {
+            $max = (float) ($maxMarksBySubject[$result->subject_id] ?? 100);
+
+            return $max > 0 ? round(((float) $result->marks_obtained / $max) * 100, 2) : 0.0;
+        });
+
+        $totalResults = $results->count();
+        $averageScore = $percentages->isNotEmpty() ? round($percentages->avg(), 2) : 0;
+        $highestScore = $percentages->isNotEmpty() ? round($percentages->max(), 1) : null;
+        $lowestScore = $percentages->isNotEmpty() ? round($percentages->min(), 1) : null;
+
+        $passPercentage = $percentages->isNotEmpty()
+            ? round(
+                $results->filter(function ($result, $index) use ($percentages, $passPercentBySubject) {
+                    $threshold = (float) ($passPercentBySubject[$result->subject_id] ?? 40.0);
+
+                    return $percentages[$index] >= $threshold;
+                })->count() / $percentages->count() * 100,
+                1
+            )
+            : 0;
+
+        return view('exams.show', compact(
+            'exam',
+            'totalResults',
+            'averageScore',
+            'highestScore',
+            'lowestScore',
+            'passPercentage'
+        ));
     }
 
     /**

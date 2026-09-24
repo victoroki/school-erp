@@ -1,276 +1,497 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="report-wrap">
-    {{-- Header --}}
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div class="d-flex align-items-center gap-3">
-            <div class="icon-box bg-indigo-light text-indigo">
-                <i class="fas fa-chart-line"></i>
-            </div>
-            <div>
-                <h1 class="page-title mb-0">Revenue Forecast</h1>
-                <p class="page-subtitle mb-0">Expected revenue, collection tracking, and breakdowns</p>
-            </div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-            <a href="{{ route('fees.dashboard') }}" class="btn-ghost-custom">
-                <i class="fas fa-arrow-left me-1"></i> Dashboard
-            </a>
-            <a href="{{ route('fees.reports.export.expected-revenue.pdf', request()->query()) }}" class="btn-ghost-custom">
-                <i class="fas fa-file-pdf me-1"></i> Export PDF
-            </a>
-        </div>
-    </div>
+<style>
+    .fa-er {
+        --fa-indigo-600: oklch(0.511 0.230 272);
+        --fa-indigo-500: oklch(0.555 0.210 272);
+        --fa-indigo-100: oklch(0.930 0.034 272);
+        --fa-indigo-50:  oklch(0.962 0.018 272);
+        --fa-slate-900:  oklch(0.206 0.010 264);
+        --fa-slate-700:  oklch(0.372 0.016 264);
+        --fa-slate-500:  oklch(0.554 0.018 264);
+        --fa-slate-400:  oklch(0.704 0.015 264);
+        --fa-slate-200:  oklch(0.928 0.008 264);
+        --fa-slate-100:  oklch(0.967 0.005 264);
+        --fa-slate-50:   oklch(0.984 0.003 264);
+        --fa-surface:    oklch(0.995 0.003 264);
+        --fa-emerald-600: oklch(0.596 0.145 163);
+        --fa-emerald-500: oklch(0.696 0.170 162);
+        --fa-emerald-50:  oklch(0.979 0.021 166);
+        --fa-rose-600:   oklch(0.575 0.210 22);
+        --fa-rose-50:    oklch(0.969 0.015 12);
+        --fa-amber-600:  oklch(0.666 0.179 58);
+        --fa-amber-50:   oklch(0.980 0.022 95);
+        --fa-ease-out:   cubic-bezier(0.23, 1, 0.32, 1);
+        --fa-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", Menlo, Consolas, monospace;
+    }
 
-    {{-- Filter Bar --}}
-    <div class="filter-bar mb-4">
-        <form action="{{ route('fees.reports.expected-revenue') }}" method="GET" class="filter-form">
-            <div class="filter-field">
-                <label for="academic_year_id">Academic Year</label>
-                <select name="academic_year_id" id="academic_year_id" class="filter-select">
-                    @foreach($academicYears as $id => $name)
-                        <option value="{{ $id }}" {{ $yearId == $id ? 'selected' : '' }}>{{ $name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="filter-actions">
-                <button type="submit" class="btn-primary-custom">
-                    <i class="fas fa-filter me-1"></i> Filter
-                </button>
-            </div>
-        </form>
-    </div>
+    .fa-head { padding: 0.25rem 0 1.25rem; }
+    .fa-head h1 { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; color: var(--fa-slate-900); margin: 0; }
+    .fa-head-sub { color: var(--fa-slate-500); font-size: 0.813rem; margin-top: 0.125rem; }
 
-    {{-- Metrics Grid --}}
-    <div class="metrics-grid mb-4">
-        <div class="metric-card">
-            <div class="metric-icon bg-indigo-light text-indigo"><i class="fas fa-file-invoice-dollar"></i></div>
-            <div class="metric-content">
-                <span class="metric-label">Gross Revenue</span>
-                <span class="metric-value">KSh {{ number_format($totalOriginal, 0) }}</span>
-            </div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-icon bg-amber-light text-amber"><i class="fas fa-percent"></i></div>
-            <div class="metric-content">
-                <span class="metric-label">Total Discounts</span>
-                <span class="metric-value text-amber">KSh {{ number_format($totalDiscounts, 0) }}</span>
-            </div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-icon bg-emerald-light text-emerald"><i class="fas fa-check-double"></i></div>
-            <div class="metric-content">
-                <span class="metric-label">Net Expected</span>
-                <span class="metric-value">KSh {{ number_format($totalExpected, 0) }}</span>
-            </div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-icon {{ $collectionRate >= 75 ? 'bg-emerald-light text-emerald' : ($collectionRate >= 50 ? 'bg-amber-light text-amber' : 'bg-rose-light text-rose') }}">
-                <i class="fas fa-coins"></i>
-            </div>
-            <div class="metric-content">
-                <span class="metric-label">Collected</span>
-                <span class="metric-value {{ $collectionRate >= 75 ? 'text-emerald' : ($collectionRate >= 50 ? 'text-amber' : 'text-rose') }}">KSh {{ number_format($totalCollected, 0) }}</span>
-                <span class="metric-rate">{{ $collectionRate }}% collection rate</span>
-            </div>
-        </div>
-    </div>
+    .fa-metric {
+        background: var(--fa-surface); border: 1px solid var(--fa-slate-200); border-radius: 14px;
+        box-shadow: 0 1px 2px oklch(0 0 0 / 0.04); padding: 1rem 1.125rem;
+        display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; height: 100%;
+    }
+    .fa-metric-label { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fa-slate-500); }
+    .fa-metric-value { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin-top: 0.25rem; font-variant-numeric: tabular-nums; color: var(--fa-slate-900); }
+    .fa-metric-value--mono { font-family: var(--fa-mono); }
+    .fa-metric-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
+    .fa-metric--indigo .fa-metric-icon  { background: var(--fa-indigo-50);  color: var(--fa-indigo-600); }
+    .fa-metric--indigo .fa-metric-value { color: var(--fa-indigo-600); }
+    .fa-metric--emerald .fa-metric-icon { background: var(--fa-emerald-50); color: var(--fa-emerald-600); }
+    .fa-metric--emerald .fa-metric-value{ color: var(--fa-emerald-600); }
+    .fa-metric--amber .fa-metric-icon   { background: var(--fa-amber-50);  color: var(--fa-amber-600); }
+    .fa-metric--amber .fa-metric-value  { color: var(--fa-amber-600); }
+    .fa-metric--rose .fa-metric-icon    { background: var(--fa-rose-50);   color: var(--fa-rose-600); }
+    .fa-metric--rose .fa-metric-value   { color: var(--fa-rose-600); }
+    .fa-sub-line { font-size: 0.75rem; color: var(--fa-slate-500); }
 
-    {{-- Payment Status --}}
-    <div class="status-bar mb-4">
-        <div class="status-segment status-paid-seg" style="width: {{ $paymentStatusBreakdown['paid'] + $paymentStatusBreakdown['partial'] + $paymentStatusBreakdown['unpaid'] > 0 ? ($paymentStatusBreakdown['paid'] / ($paymentStatusBreakdown['paid'] + $paymentStatusBreakdown['partial'] + $paymentStatusBreakdown['unpaid'])) * 100 : 0 }}%">
-            <span class="status-count">{{ $paymentStatusBreakdown['paid'] }}</span>
-            <span class="status-label">Paid</span>
-        </div>
-        <div class="status-segment status-partial-seg" style="width: {{ $paymentStatusBreakdown['paid'] + $paymentStatusBreakdown['partial'] + $paymentStatusBreakdown['unpaid'] > 0 ? ($paymentStatusBreakdown['partial'] / ($paymentStatusBreakdown['paid'] + $paymentStatusBreakdown['partial'] + $paymentStatusBreakdown['unpaid'])) * 100 : 0 }}%">
-            <span class="status-count">{{ $paymentStatusBreakdown['partial'] }}</span>
-            <span class="status-label">Partial</span>
-        </div>
-        <div class="status-segment status-unpaid-seg" style="width: {{ $paymentStatusBreakdown['paid'] + $paymentStatusBreakdown['partial'] + $paymentStatusBreakdown['unpaid'] > 0 ? ($paymentStatusBreakdown['unpaid'] / ($paymentStatusBreakdown['paid'] + $paymentStatusBreakdown['partial'] + $paymentStatusBreakdown['unpaid'])) * 100 : 0 }}%">
-            <span class="status-count">{{ $paymentStatusBreakdown['unpaid'] }}</span>
-            <span class="status-label">Unpaid</span>
-        </div>
-    </div>
+    .fa-panel .card-header { padding: 1.125rem 1.375rem; }
+    .fa-panel-title { font-weight: 700; font-size: 0.95rem; color: var(--fa-slate-900); display: flex; align-items: center; gap: 0.625rem; margin: 0; }
+    .fa-panel-title .fa-panel-mark {
+        width: 30px; height: 30px; border-radius: 8px; background: var(--fa-indigo-50); color: var(--fa-indigo-600);
+        display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; flex-shrink: 0;
+    }
 
-    <div class="row g-4">
-        {{-- Revenue by Class --}}
-        <div class="col-lg-6">
-            <div class="report-card">
-                <div class="report-card-header">
-                    <i class="fas fa-school"></i>
-                    <span>Revenue by Class</span>
+    .fa-filters { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .fa-filters select.form-control {
+        height: 38px !important; padding: 0 2rem 0 0.75rem !important; font-size: 0.8125rem !important;
+        line-height: 1.4 !important; background-color: #fff;
+        appearance: none; -webkit-appearance: none; -moz-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2364748b'%3E%3Cpath d='M4.5 6l3.5 4 3.5-4z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat; background-position: right 0.55rem center; background-size: 14px 14px; cursor: pointer;
+    }
+    .fa-filter-select { width: 190px; }
+
+    .fa-detailbar {
+        display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;
+        background: var(--fa-indigo-50); border-bottom: 1px solid var(--fa-indigo-100); padding: 0.75rem 1.375rem;
+    }
+    .fa-detailbar-text { font-size: 0.8125rem; color: var(--fa-indigo-600); font-weight: 600; }
+
+    .fa-table { margin: 0; }
+    .fa-table thead th {
+        background: var(--fa-slate-50); border-bottom: 1px solid var(--fa-slate-200); padding: 0.75rem 1rem;
+        font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+        color: var(--fa-slate-500); white-space: nowrap; vertical-align: middle;
+    }
+    .fa-table thead th:first-child { padding-left: 1.375rem; }
+    .fa-table tbody td { padding: 0.8125rem 1rem; border-color: var(--fa-slate-100); vertical-align: middle; }
+    .fa-table tbody td:first-child { padding-left: 1.375rem; }
+    .fa-table tbody tr { transition: background-color 0.15s var(--fa-ease-out); }
+    @media (hover: hover) and (pointer: fine) {
+        .fa-table tbody tr:hover { background: oklch(0.970 0.003 264); }
+    }
+    .fa-table-amount { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; font-family: var(--fa-mono); }
+    .amount-negative { color: var(--fa-rose-600); }
+    .value-muted { color: var(--fa-slate-400); }
+    .fa-main-line { color: var(--fa-slate-900); font-weight: 600; font-size: 0.875rem; }
+
+    .fa-chip { display: inline-flex; align-items: center; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.72rem; font-weight: 600; background: var(--fa-indigo-50); color: var(--fa-indigo-500); white-space: nowrap; }
+
+    .fa-pill { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.28rem 0.625rem; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+    .fa-pill--paid { background: var(--fa-emerald-50); border: 1px solid oklch(0.889 0.048 163); color: var(--fa-emerald-600); }
+    .fa-pill--paid::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--fa-emerald-500); }
+    .fa-pill--partial { background: var(--fa-amber-50); border: 1px solid oklch(0.900 0.065 70 / 0.6); color: var(--fa-amber-600); }
+    .fa-pill--partial::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--fa-amber-600); }
+    .fa-pill--unpaid { background: var(--fa-rose-50); border: 1px solid oklch(0.897 0.030 12 / 0.6); color: var(--fa-rose-600); }
+    .fa-pill--unpaid::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--fa-rose-500); }
+
+    .fa-progress { width: 120px; height: 5px; border-radius: 999px; background: var(--fa-slate-200); overflow: hidden; margin-top: 0.375rem; }
+    .fa-progress > span { display: block; height: 100%; border-radius: 999px; background: var(--fa-emerald-500); }
+    .fa-progress-label { font-size: 0.72rem; color: var(--fa-slate-500); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    .fa-drill { color: var(--fa-slate-400); flex: 0 0 auto; text-align: center; }
+    .fa-actions { display: inline-flex; gap: 0.375rem; justify-content: flex-end; }
+    .fa-action {
+        width: 34px; height: 34px; border-radius: 8px; border: none; background: var(--fa-slate-100);
+        color: oklch(0.446 0.018 264); display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.8rem; cursor: pointer; text-decoration: none;
+        transition: transform 0.16s var(--fa-ease-out), background-color 0.16s var(--fa-ease-out), color 0.16s var(--fa-ease-out);
+    }
+    .fa-action:active { transform: scale(0.96); }
+    @media (hover: hover) and (pointer: fine) {
+        .fa-action--view:hover { background: var(--fa-slate-200); color: var(--fa-slate-900); }
+    }
+
+    .fa-empty { padding: 4rem 1rem; text-align: center; color: var(--fa-slate-500); }
+
+    /* Status bar */
+    .fa-statusbar { display: flex; border-radius: 10px; overflow: hidden; height: 38px; box-shadow: 0 1px 2px oklch(0 0 0 / 0.06); }
+    .fa-statusseg { display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; overflow: hidden; }
+    .fa-statusseg--paid { background: var(--fa-emerald-500); color: #fff; }
+    .fa-statusseg--partial { background: var(--fa-amber-600); color: #fff; }
+    .fa-statusseg--unpaid { background: var(--fa-rose-500); color: #fff; }
+    .fa-statusseg .fa-statuscount { font-size: 0.8rem; font-weight: 800; }
+    .fa-statusseg .fa-statuslabel { font-size: 0.68rem; font-weight: 600; opacity: 0.9; }
+
+    @media (max-width: 768px) {
+        .fa-head .d-flex { flex-direction: column; align-items: stretch !important; gap: 0.625rem; }
+        .fa-filters { width: 100%; }
+        .fa-filter-select { width: 100%; }
+        .fa-table thead th:nth-child(n+4), .fa-table tbody td:nth-child(n+4) { display: none; }
+        .fa-table thead th:first-child, .fa-table tbody td:first-child { padding-left: 0.875rem; }
+        .fa-statusseg .fa-statuslabel { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .fa-action { transition: none; }
+    }
+</style>
+
+@php
+    $qs = array_diff_key(request()->query(), array_flip(['page', 'detail']));
+    $totalAssignments = ($stats->paid_count ?? 0) + ($stats->partial_count ?? 0) + ($stats->unpaid_count ?? 0);
+@endphp
+
+<div class="fa-er">
+    <section class="content-header">
+        <div class="container-fluid px-0">
+            <div class="fa-head d-flex justify-content-between align-items-start flex-wrap gap-3">
+                <div>
+                    <h1>Expected Revenue</h1>
+                    <p class="fa-head-sub">Billed vs collected, grouped per class — click a class to see its students</p>
                 </div>
-                <div class="report-card-body p-0">
-                    <table class="report-table">
+                <div class="d-flex gap-2">
+                    <a class="btn btn-outline-secondary" href="{{ route('fees.dashboard') }}" style="border-radius: 8px; font-weight: 600;">
+                        <i class="fas fa-arrow-left mr-1" style="font-size: 0.8rem;"></i> Dashboard
+                    </a>
+                    <a class="btn btn-primary" href="{{ route('fees.reports.export.expected-revenue.pdf', request()->query()) }}">
+                        <i class="fas fa-file-pdf mr-1"></i> Export PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="content px-0">
+        @include('flash::message')
+
+        {{-- Metric cards --}}
+        <div class="row mb-4">
+            <div class="col-lg-3 col-6 mb-3">
+                <div class="fa-metric fa-metric--indigo">
+                    <div>
+                        <div class="fa-metric-label">Net Expected (KES)</div>
+                        <div class="fa-metric-value fa-metric-value--mono">{{ \App\Support\Money::format($stats->total_expected ?? 0) }}</div>
+                        <div class="fa-sub-line">{{ \App\Support\Money::format($stats->total_original ?? 0) }} gross · {{ \App\Support\Money::format($stats->total_discounts ?? 0) }} discounts</div>
+                    </div>
+                    <div class="fa-metric-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6 mb-3">
+                <div class="fa-metric fa-metric--emerald">
+                    <div>
+                        <div class="fa-metric-label">Collected (KES)</div>
+                        <div class="fa-metric-value fa-metric-value--mono">{{ \App\Support\Money::format($stats->total_collected ?? 0) }}</div>
+                        <div class="fa-sub-line">{{ $collectionRate }}% collection rate</div>
+                    </div>
+                    <div class="fa-metric-icon"><i class="fas fa-hand-holding-usd"></i></div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6 mb-3">
+                <div class="fa-metric fa-metric--rose">
+                    <div>
+                        <div class="fa-metric-label">Outstanding (KES)</div>
+                        <div class="fa-metric-value fa-metric-value--mono">{{ \App\Support\Money::format($stats->total_pending ?? 0) }}</div>
+                        <div class="fa-sub-line">{{ \App\Support\Money::whole($stats->students_billed ?? 0) }} students billed</div>
+                    </div>
+                    <div class="fa-metric-icon"><i class="fas fa-balance-scale"></i></div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-6 mb-3">
+                <div class="fa-metric fa-metric--amber">
+                    <div>
+                        <div class="fa-metric-label">Payment Status</div>
+                        <div class="fa-metric-value">{{ \App\Support\Money::whole($stats->paid_count ?? 0) }} <span style="font-size: 0.9rem; font-weight: 600; color: var(--fa-slate-400);">paid</span></div>
+                        <div class="fa-sub-line">{{ \App\Support\Money::whole($stats->partial_count ?? 0) }} partial · {{ \App\Support\Money::whole($stats->unpaid_count ?? 0) }} unpaid</div>
+                    </div>
+                    <div class="fa-metric-icon"><i class="fas fa-chart-bar"></i></div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Payment status bar --}}
+        @if($totalAssignments > 0)
+        <div class="fa-statusbar mb-4" role="img" aria-label="Payment status: {{ $stats->paid_count }} paid, {{ $stats->partial_count }} partial, {{ $stats->unpaid_count }} unpaid">
+            <div class="fa-statusseg fa-statusseg--paid" style="width: {{ ($stats->paid_count / $totalAssignments) * 100 }}%;">
+                <span class="fa-statuscount">{{ \App\Support\Money::whole($stats->paid_count) }}</span><span class="fa-statuslabel">Paid</span>
+            </div>
+            <div class="fa-statusseg fa-statusseg--partial" style="width: {{ ($stats->partial_count / $totalAssignments) * 100 }}%;">
+                <span class="fa-statuscount">{{ \App\Support\Money::whole($stats->partial_count) }}</span><span class="fa-statuslabel">Partial</span>
+            </div>
+            <div class="fa-statusseg fa-statusseg--unpaid" style="width: {{ ($stats->unpaid_count / $totalAssignments) * 100 }}%;">
+                <span class="fa-statuscount">{{ \App\Support\Money::whole($stats->unpaid_count) }}</span><span class="fa-statuslabel">Unpaid</span>
+            </div>
+        </div>
+        @endif
+
+        {{-- Main table card --}}
+        <div class="card fa-panel">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 0.75rem;">
+                    <h3 class="fa-panel-title">
+                        <span class="fa-panel-mark"><i class="fas {{ $detailMode ? 'fa-list-ul' : 'fa-school' }}"></i></span>
+                        {{ $detailMode ? 'Assignment Lines' : 'Revenue by Class' }}
+                        @if(!$detailMode)
+                            <span style="font-weight: 500; color: var(--fa-slate-400); font-size: 0.8125rem;">
+                                · {{ \App\Support\Money::whole($rollups->total()) }} class{{ $rollups->total() === 1 ? '' : 'es' }}
+                            </span>
+                        @endif
+                    </h3>
+                    <form action="{{ route('fees.reports.expected-revenue') }}" method="GET" class="fa-filters">
+                        @if($detailMode)
+                            <input type="hidden" name="detail" value="1">
+                            @if(request()->filled('class_id'))<input type="hidden" name="class_id" value="{{ request('class_id') }}">@endif
+                        @endif
+                        <select name="class_id" class="form-control form-control-sm fa-filter-select" aria-label="Filter by class">
+                            <option value="">All Classes</option>
+                            @foreach($classes as $id => $name)
+                                <option value="{{ $id }}" {{ request('class_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                            @endforeach
+                        </select>
+                        <select name="academic_year_id" class="form-control form-control-sm fa-filter-select" aria-label="Filter by academic year">
+                            @foreach($academicYears as $id => $name)
+                                <option value="{{ $id }}" {{ $yearId == $id ? 'selected' : '' }}>{{ $name }}</option>
+                            @endforeach
+                        </select>
+                        <button class="btn btn-primary btn-sm" type="submit" style="height: 38px; border-radius: 8px; font-weight: 600;">
+                            <i class="fas fa-filter mr-1" style="font-size: 0.75rem;"></i> Filter
+                        </button>
+                        @if(request()->filled('class_id'))
+                            <a href="{{ route('fees.reports.expected-revenue', ['academic_year_id' => $yearId]) }}" class="btn btn-sm btn-link" style="color: var(--fa-slate-500); text-decoration: none; font-weight: 600;">
+                                Reset
+                            </a>
+                        @endif
+                    </form>
+                </div>
+            </div>
+
+            @if($detailMode)
+                <div class="fa-detailbar">
+                    <div class="fa-detailbar-text">
+                        Students billed in <strong>{{ $groupClass->name ?? 'All Classes' }}</strong>
+                        <span style="font-weight: 500; color: var(--fa-slate-500);">— {{ \App\Models\AcademicYear::find($yearId)->name ?? 'selected year' }}</span>
+                    </div>
+                    <a href="{{ route('fees.reports.expected-revenue', array_diff_key($qs, ['class_id' => ''])) }}"
+                       class="btn btn-sm" style="border-radius: 8px; font-weight: 600; background: #fff; color: var(--fa-indigo-600); border: 1px solid var(--fa-indigo-100);">
+                        <i class="fas fa-arrow-left mr-1" style="font-size: 0.7rem;"></i> Back to summary
+                    </a>
+                </div>
+            @endif
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    @if(!$detailMode)
+                    {{-- ── Roll-up: one row per class ── --}}
+                    <table class="table fa-table mb-0" style="min-width: 760px;">
                         <thead>
                             <tr>
                                 <th>Class</th>
-                                <th>Students</th>
-                                <th class="text-right">Expected</th>
-                                <th class="text-right">Collected</th>
+                                <th class="text-center">Students</th>
+                                <th class="fa-table-amount">Expected</th>
+                                <th class="fa-table-amount">Collected</th>
+                                <th class="fa-table-amount">Balance</th>
+                                <th>Collection</th>
+                                <th class="text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($revenueByClass as $row)
-                                <tr>
-                                    <td class="font-semibold">{{ $row->class_name }}</td>
-                                    <td class="text-muted-sm">{{ $row->student_count }}</td>
-                                    <td class="text-right mono">KSh {{ number_format($row->expected, 0) }}</td>
-                                    <td class="text-right mono text-emerald">KSh {{ number_format($row->collected ?? 0, 0) }}</td>
+                            @forelse($rollups as $row)
+                                @php
+                                    $collectionPct = $row->total_expected > 0 ? min(100, round(($row->total_collected / $row->total_expected) * 100)) : 0;
+                                    $detailUrl = route('fees.reports.expected-revenue', array_merge($qs, [
+                                        'detail' => 1,
+                                        'class_id' => $row->class_id,
+                                    ]));
+                                @endphp
+                                <tr style="cursor: pointer;" onclick="window.location='{{ $detailUrl }}'">
+                                    <td><div class="fa-main-line">{{ $row->class_name }}</div></td>
+                                    <td class="text-center">
+                                         <span style="font-weight: 700; color: var(--fa-slate-900); font-variant-numeric: tabular-nums;">{{ \App\Support\Money::whole($row->student_count) }}</span>
+                                         <div class="fa-sub-line">{{ \App\Support\Money::whole($row->fully_paid_students) }} fully paid</div>
+                                     </td>
+                                     <td class="fa-table-amount">{{ \App\Support\Money::format($row->total_expected) }}</td>
+                                     <td class="fa-table-amount" style="color: var(--fa-emerald-600); font-weight: 600;">{{ \App\Support\Money::format($row->total_collected) }}</td>
+                                     <td class="fa-table-amount">
+                                         @if($row->total_balance > 0)
+                                             <span class="amount-negative">{{ \App\Support\Money::format($row->total_balance) }}</span>
+                                        @else
+                                            <span class="value-muted">0</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div class="fa-progress-label">{{ $collectionPct }}%</div>
+                                        <div class="fa-progress"><span style="width: {{ $collectionPct }}%;"></span></div>
+                                    </td>
+                                    <td class="fa-drill" onclick="event.stopPropagation();">
+                                        <div class="fa-actions">
+                                            <a href="{{ $detailUrl }}" class="fa-action fa-action--view" title="View students" aria-label="View students for {{ $row->class_name }}">
+                                                <i class="far fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="4" class="empty-cell"><div class="empty-mini"><i class="fas fa-chart-bar"></i><p>No data</p></div></td></tr>
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="fa-empty">
+                                            <div style="width: 64px; height: 64px; background: var(--fa-slate-100); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                                                <i class="fas fa-chart-bar" style="font-size: 26px; color: var(--fa-slate-400);"></i>
+                                            </div>
+                                            <p style="font-size: 0.9375rem; font-weight: 600; color: var(--fa-slate-700); margin-bottom: 0.25rem;">No billed assignments found</p>
+                                            <p style="font-size: 0.8125rem; margin-bottom: 1rem;">Try a different academic year.</p>
+                                            <a href="{{ route('fees.reports.expected-revenue') }}" class="btn btn-primary">
+                                                <i class="fas fa-times mr-1"></i> Reset Filters
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>
+                    @else
+                    {{-- ── Detail: per-student lines for one class ── --}}
+                    <table class="table fa-table mb-0" style="min-width: 820px;">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Fee</th>
+                                <th>Term / Year</th>
+                                <th class="fa-table-amount">Amount</th>
+                                <th class="fa-table-amount">Paid</th>
+                                <th class="fa-table-amount">Balance</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($assignments as $a)
+                                @php
+                                    $balance = (float) $a->final_amount - (float) $a->paid_amount;
+                                    $classInfo = $a->student->studentClassEnrollments->first();
+                                    $className = $classInfo ? ($classInfo->classSection->schoolClass->name ?? '-') : '-';
+                                @endphp
+                                <tr>
+                                    <td>
+                                        <div class="fa-main-line">{{ $a->student->first_name ?? '' }} {{ $a->student->last_name ?? '' }}</div>
+                                        <div class="fa-sub-line">{{ $a->student->admission_no ?? '' }} · {{ $className }}</div>
+                                    </td>
+                                    <td class="value-muted">{{ $a->feeStructure->category->name ?? '-' }}</td>
+                                    <td>
+                                        <div class="fa-main-line">{{ $a->termModel->name ?? $a->term }}</div>
+                                        <div class="fa-sub-line">{{ $a->academicYear->name ?? '-' }}</div>
+                                    </td>
+                                     <td class="fa-table-amount">{{ \App\Support\Money::format($a->amount) }}</td>
+                                     <td class="fa-table-amount">
+                                         @if($a->paid_amount > 0)
+                                             <span style="color: var(--fa-emerald-600); font-weight: 600;">{{ \App\Support\Money::format($a->paid_amount) }}</span>
+                                         @else
+                                             <span class="value-muted">0.00</span>
+                                         @endif
+                                     </td>
+                                     <td class="fa-table-amount">
+                                         @if($balance > 0)
+                                             <span class="amount-negative">{{ \App\Support\Money::format($balance) }}</span>
+                                        @else
+                                            <span class="value-muted">0.00</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($a->payment_status === 'paid')
+                                            <span class="fa-pill fa-pill--paid">Paid</span>
+                                        @elseif($a->payment_status === 'partial')
+                                            <span class="fa-pill fa-pill--partial">Partial</span>
+                                        @else
+                                            <span class="fa-pill fa-pill--unpaid">Unpaid</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="fa-empty">
+                                            <div style="width: 64px; height: 64px; background: var(--fa-slate-100); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                                                <i class="fas fa-folder-open" style="font-size: 26px; color: var(--fa-slate-400);"></i>
+                                            </div>
+                                            <p style="font-size: 0.9375rem; font-weight: 600; color: var(--fa-slate-700); margin-bottom: 0.25rem;">No assignments in this view</p>
+                                            <p style="font-size: 0.8125rem; margin-bottom: 1rem;">Try widening the filters, or go back to the summary.</p>
+                                            <a href="{{ route('fees.reports.expected-revenue', array_diff_key($qs, ['class_id' => ''])) }}" class="btn btn-primary">
+                                                <i class="fas fa-arrow-left mr-1"></i> Back to summary
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                    @endif
                 </div>
             </div>
+
+            @php $paginator = $detailMode ? $assignments : $rollups; @endphp
+            @if($paginator->hasPages())
+                <div class="card-footer bg-white" style="border-top: 1px solid var(--fa-slate-100); padding: 0.875rem 1.375rem;">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap: 0.5rem;">
+                        <div style="color: var(--fa-slate-500); font-size: 0.8125rem;">
+                            Showing {{ $paginator->firstItem() ?? 0 }} to {{ $paginator->lastItem() ?? 0 }} of {{ \App\Support\Money::whole($paginator->total()) }}
+                            {{ $detailMode ? 'assignments' : 'classes' }}
+                        </div>
+                        <div>
+                            {{ $paginator->links('pagination::bootstrap-4') }}
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
 
-        {{-- Revenue by Category --}}
-        <div class="col-lg-6">
-            <div class="report-card">
-                <div class="report-card-header">
-                    <i class="fas fa-tags"></i>
-                    <span>Revenue by Fee Category</span>
-                </div>
-                <div class="report-card-body p-0">
-                    <table class="report-table">
+        {{-- Revenue by fee category (secondary panel, summary mode only) --}}
+        @if(!$detailMode && $categories->count())
+        <div class="card fa-panel mt-4">
+            <div class="card-header">
+                <h3 class="fa-panel-title">
+                    <span class="fa-panel-mark"><i class="fas fa-tags"></i></span>
+                    Revenue by Fee Category
+                </h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table fa-table mb-0" style="min-width: 560px;">
                         <thead>
                             <tr>
                                 <th>Category</th>
                                 <th>Type</th>
-                                <th class="text-right">Assignments</th>
-                                <th class="text-right">Expected</th>
+                                <th class="text-center">Assignments</th>
+                                <th class="fa-table-amount">Expected</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($revenueByCategory as $row)
+                            @foreach($categories as $row)
                                 <tr>
-                                    <td class="font-semibold">{{ $row->category_name }}</td>
-                                    <td><span class="type-badge {{ $row->category_type === 'mandatory' ? 'type-mandatory' : 'type-optional' }}">{{ ucfirst($row->category_type) }}</span></td>
-                                    <td class="text-right text-muted-sm">{{ $row->assignment_count }}</td>
-                                    <td class="text-right mono">KSh {{ number_format($row->total, 0) }}</td>
+                                    <td><div class="fa-main-line">{{ $row->category_name }}</div></td>
+                                    <td><span class="fa-chip">{{ ucfirst($row->category_type) }}</span></td>
+                                        <td class="text-center" style="font-variant-numeric: tabular-nums;">{{ \App\Support\Money::whole($row->assignment_count) }}</td>
+                                        <td class="fa-table-amount">{{ \App\Support\Money::format($row->total) }}</td>
                                 </tr>
-                            @empty
-                                <tr><td colspan="4" class="empty-cell"><div class="empty-mini"><i class="fas fa-chart-bar"></i><p>No data</p></div></td></tr>
-                            @endforelse
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+        @endif
     </div>
 </div>
 
-<style>
-:root {
-    --indigo: #4f46e5; --indigo-light: #eef2ff; --amber: #f59e0b; --amber-600: #d97706; --amber-light: #fffbeb;
-    --emerald: #10b981; --emerald-light: #ecfdf5; --rose: #f43f5e; --rose-light: #fff1f2;
-    --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0; --slate-300: #cbd5e1;
-    --slate-400: #94a3b8; --slate-500: #64748b; --slate-600: #475569; --slate-700: #334155;
-    --slate-800: #1e293b; --slate-900: #0f172a; --border: #e2e8f0;
-    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-.report-wrap { padding: 1.5rem 2rem; background: #f9fafb; min-height: 100vh; }
-.page-title { font-size: 1.25rem; font-weight: 900; color: var(--slate-900); letter-spacing: -0.02em; }
-.page-subtitle { color: var(--slate-400); font-size: 0.8rem; font-weight: 500; }
-.icon-box { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
-.bg-indigo-light { background: var(--indigo-light); } .text-indigo { color: var(--indigo); }
-.bg-amber-light { background: var(--amber-light); } .text-amber { color: var(--amber); }
-.bg-emerald-light { background: var(--emerald-light); } .text-emerald { color: var(--emerald); }
-.bg-rose-light { background: var(--rose-light); } .text-rose { color: var(--rose); }
-
-.btn-primary-custom { display: inline-flex; align-items: center; padding: 0.5rem 1.25rem; border-radius: 8px; font-size: 0.75rem; font-weight: 800; border: none; cursor: pointer; background: var(--indigo); color: #fff; transition: all 160ms var(--ease-out); }
-.btn-primary-custom:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
-.btn-primary-custom:active { transform: scale(0.97); }
-.btn-ghost-custom { display: inline-flex; align-items: center; padding: 0.5rem 1.25rem; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-decoration: none !important; cursor: pointer; background: #fff; border: 1px solid var(--border); color: var(--slate-700); transition: all 160ms var(--ease-out); }
-.btn-ghost-custom:hover { background: var(--slate-100); } .btn-ghost-custom:active { transform: scale(0.97); }
-
-.filter-bar { background: #fff; border-radius: 12px; border: 1px solid var(--border); padding: 1rem 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-.filter-form { display: flex; align-items: flex-end; gap: 1rem; }
-.filter-field { display: flex; flex-direction: column; gap: 4px; }
-.filter-field label { font-size: 0.7rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.04em; }
-.filter-select { height: 38px; padding: 0 2rem 0 0.75rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.8rem; font-weight: 600; color: var(--slate-700); background: #fff; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; min-width: 200px; }
-.filter-actions { display: flex; gap: 0.5rem; }
-
-.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-.metric-card { background: #fff; border-radius: 12px; border: 1px solid var(--border); padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: box-shadow 200ms var(--ease-out); }
-.metric-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-.metric-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
-.metric-content { display: flex; flex-direction: column; }
-.metric-label { font-size: 0.7rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.05em; }
-.metric-value { font-size: 1.2rem; font-weight: 900; color: var(--slate-900); letter-spacing: -0.02em; margin-top: 2px; }
-.metric-rate { font-size: 0.7rem; font-weight: 600; color: var(--slate-400); margin-top: 2px; }
-
-/* Status Bar */
-.status-bar { display: flex; border-radius: 8px; overflow: hidden; height: 40px; }
-.status-segment { display: flex; align-items: center; justify-content: center; gap: 4px; transition: width 400ms var(--ease-out); }
-.status-segment span { white-space: nowrap; }
-.status-count { font-size: 0.8rem; font-weight: 800; }
-.status-label { font-size: 0.7rem; font-weight: 600; opacity: 0.85; }
-.status-paid-seg { background: var(--emerald); color: #fff; }
-.status-partial-seg { background: var(--amber); color: #fff; }
-.status-unpaid-seg { background: var(--rose); color: #fff; }
-
-/* Report Cards */
-.report-card { background: #fff; border-radius: 12px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-.report-card-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--border); background: var(--slate-50); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--slate-400); }
-.report-card-header i { color: var(--indigo); font-size: 0.75rem; }
-.report-card-body { padding: 0.25rem 0; }
-
-.report-table { width: 100%; border-collapse: collapse; }
-.report-table thead { background: var(--slate-50); }
-.report-table th { padding: 0.75rem 1rem; font-size: 0.7rem; font-weight: 800; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; border-bottom: 1px solid var(--border); }
-.report-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--slate-100); vertical-align: middle; }
-.report-table tbody tr { transition: background 120ms var(--ease-out); }
-.report-table tbody tr:hover { background: var(--slate-50); }
-.report-table tbody tr:last-child td { border-bottom: none; }
-
-.text-right { text-align: right; } .text-center { text-align: center; }
-.mono { font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace; font-size: 0.8rem; }
-.font-semibold { font-weight: 700; } .text-muted-sm { font-size: 0.78rem; color: var(--slate-400); }
-
-.type-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; text-transform: capitalize; }
-.type-mandatory { background: var(--indigo-light); color: var(--indigo); }
-.type-optional { background: var(--slate-100); color: var(--slate-500); }
-
-.empty-cell { padding: 2.5rem 1rem !important; }
-.empty-mini { text-align: center; color: var(--slate-300); }
-.empty-mini i { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
-.empty-mini p { font-size: 0.82rem; font-weight: 600; color: var(--slate-400); margin: 0; }
-
-@media (max-width: 1024px) { .metrics-grid { grid-template-columns: repeat(2, 1fr); } }
-
-@media (max-width: 768px) {
-    .report-wrap { padding: 1rem; }
-    .d-flex.align-items-center.justify-content-between.mb-4 { flex-direction: column; align-items: flex-start !important; gap: 0.75rem; }
-    .d-flex.align-items-center.justify-content-between.mb-4 > .d-flex { width: 100%; flex-wrap: wrap; gap: 0.5rem; }
-    .d-flex.align-items-center.justify-content-between.mb-4 .btn-ghost-custom { flex: 1; justify-content: center; }
-    .page-title { font-size: 1.1rem; }
-    .filter-form { flex-direction: column; gap: 0.625rem; }
-    .filter-field { width: 100%; }
-    .filter-select { width: 100%; min-width: 0; }
-    .filter-actions { width: 100%; }
-    .filter-actions .btn-primary-custom { width: 100%; justify-content: center; }
-    .metrics-grid { grid-template-columns: 1fr 1fr; gap: 0.625rem; }
-    .metric-card { padding: 0.75rem 1rem; }
-    .metric-icon { width: 36px; height: 36px; font-size: 0.9rem; }
-    .metric-value { font-size: 0.9rem; }
-    .status-bar { height: 32px; }
-    .status-count { font-size: 0.7rem; }
-    .status-label { font-size: 0.6rem; }
-    .report-table th { padding: 0.6rem 0.75rem; font-size: 0.6rem; }
-    .report-table td { padding: 0.6rem 0.75rem; font-size: 0.78rem; }
-    .row.g-4 { gap: 0.75rem !important; }
-}
-
-@media (max-width: 420px) {
-    .metrics-grid { grid-template-columns: 1fr; }
-    .icon-box { width: 34px; height: 34px; font-size: 0.85rem; }
-    .page-title { font-size: 1rem; }
-}
-</style>
+<script>
+(function () {
+    var form = document.querySelector('.fa-filters');
+    if (form) {
+        form.querySelectorAll('select').forEach(function (sel) {
+            sel.addEventListener('change', function () { form.submit(); });
+        });
+    }
+})();
+</script>
 @endsection

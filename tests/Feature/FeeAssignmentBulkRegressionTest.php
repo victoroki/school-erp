@@ -12,6 +12,7 @@ use App\Models\Section;
 use App\Models\SentMessage;
 use App\Models\Student;
 use App\Models\StudentClassEnrollment;
+use App\Models\Term;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RbacSeeder;
@@ -46,6 +47,19 @@ class FeeAssignmentBulkRegressionTest extends TestCase
             'start_date' => '2026-01-01',
             'end_date' => '2026-12-31',
             'is_current' => true,
+        ]);
+
+        // Terms must exist for the year being billed: the controller validates
+        // the submitted term against the codes defined for that academic year and
+        // resolves term_id from it. The fixture previously omitted them, which the
+        // old code tolerated only by writing term_id = NULL.
+        $this->term = Term::create([
+            'academic_year_id' => $this->academicYear->academic_year_id,
+            'name' => 'Term 1',
+            'code' => 'T1',
+            'start_date' => '2026-01-05',
+            'end_date' => '2026-04-03',
+            'status' => 'active',
         ]);
 
         $this->category = FeeCategory::create([
@@ -129,7 +143,7 @@ class FeeAssignmentBulkRegressionTest extends TestCase
             ->post(route('fees.assignments.store'), [
                 'assignment_type' => 'bulk_all',
                 'academic_year_id' => $this->academicYear->academic_year_id,
-                'term' => 'Term 1',
+                'term' => 'T1',
                 'class_ids' => [$this->classOne->class_id],
                 'fees' => [$fee->fee_structure_id],
             ]);
@@ -141,7 +155,7 @@ class FeeAssignmentBulkRegressionTest extends TestCase
             'student_id' => $student->student_id,
             'fee_structure_id' => $fee->fee_structure_id,
             'academic_year_id' => $this->academicYear->academic_year_id,
-            'term' => 'Term 1',
+            'term' => 'T1',
             'amount' => '1000.00',
         ]);
     }
@@ -157,7 +171,7 @@ class FeeAssignmentBulkRegressionTest extends TestCase
             ->post(route('fees.assignments.store'), [
                 'assignment_type' => 'bulk_all',
                 'academic_year_id' => $this->academicYear->academic_year_id,
-                'term' => 'Term 1',
+                'term' => 'T1',
                 'class_ids' => [$this->classOne->class_id, $this->classTwo->class_id],
                 'fees' => [$fee->fee_structure_id],
             ]);

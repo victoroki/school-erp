@@ -74,7 +74,7 @@ class LeaveApplicationController extends Controller
             $query->where('leave_type_id', $request->leave_type_id);
         }
 
-        $applications = $query->latest()->paginate(20);
+        $applications = $query->latest()->paginate(20)->withQueryString();
         $leaveTypes = LeaveType::where('status', 'active')->get();
         $staff = $viewAll ? Staff::where('employment_status', 'active')->get() : collect();
 

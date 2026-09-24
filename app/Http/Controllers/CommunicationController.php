@@ -20,8 +20,27 @@ class CommunicationController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:communication.view')->only(['index', 'show', 'sentMessages']);
-        $this->middleware('can:communication.manage')->only(['compose', 'send', 'store']);
+        // This guard previously listed 'index', 'show' and 'sentMessages' —
+        // none of which exist on this controller. As a result
+        // can:communication.view protected nothing at all, and the message
+        // history, individual message detail (recipient names and numbers),
+        // template bodies and recipient counts were readable by ANY
+        // authenticated user, including Teachers and the parent portal.
+        //
+        // Method names below match the real actions, and the permissions match
+        // what config/menu.php already advertises for the same screens.
+        $this->middleware('can:communication.view')->only([
+            'history',
+            'showHistory',
+        ]);
+
+        // Compose-screen helpers: template payloads and recipient counts.
+        $this->middleware('can:communication.manage')->only([
+            'compose',
+            'send',
+            'getTemplate',
+            'getRecipientCount',
+        ]);
     }
 
     public function compose(Request $request)
@@ -30,6 +49,14 @@ class CommunicationController extends Controller
         $emailTemplates = EmailTemplate::where('status', 'active')->get();
         $classes = SchoolClass::pluck('name', 'class_id');
         $sections = Section::pluck('name', 'section_id');
+
+        // Build a keyed collection of ClassSection records for the section filter dropdown.
+        $classSections = \App\Models\ClassSection::with(['schoolClass', 'section'])
+            ->get()
+            ->mapWithKeys(function ($cs) {
+                $label = ($cs->schoolClass->name ?? 'Class') . ' - ' . ($cs->section->name ?? 'Section');
+                return [$cs->class_section_id => $label];
+            });
 
         $selectedTemplate = null;
         if ($request->filled('template_id')) {
@@ -40,7 +67,7 @@ class CommunicationController extends Controller
             }
         }
 
-        return view('communication.compose', compact('smsTemplates', 'emailTemplates', 'classes', 'sections', 'selectedTemplate'));
+        return view('communication.compose', compact('smsTemplates', 'emailTemplates', 'classes', 'sections', 'classSections', 'selectedTemplate'));
     }
 
     public function send(Request $request)
@@ -115,6 +142,7 @@ class CommunicationController extends Controller
     {
         $group = $request->input('recipient_group');
         $classId = $request->input('class_id');
+        $classSectionId = $request->input('class_section_id');
         $count = 0;
 
         switch ($group) {
@@ -132,6 +160,11 @@ class CommunicationController extends Controller
                     $count = \App\Models\StudentClassEnrollment::whereHas('classSection', function ($q) use ($classId) {
                         $q->where('class_id', $classId);
                     })->count();
+                }
+                break;
+            case 'Class Section':
+                if ($classSectionId) {
+                    $count = \App\Models\StudentClassEnrollment::where('class_section_id', $classSectionId)->count();
                 }
                 break;
         }

@@ -11,7 +11,7 @@ class FinancialYearController extends AppBaseController
 {
     public function __construct()
     {
-        $this->middleware('can:finance.view')->only(['index', 'show']);
+        $this->middleware('can:finance.view')->only(['index', 'show', 'audit']);
         $this->middleware('can:finance.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
@@ -51,12 +51,37 @@ class FinancialYearController extends AppBaseController
     public function update(Request $request, $id)
     {
         $financialYear = FinancialYear::findOrFail($id);
+
+        // Update takes the same shape as create: the old code wrote
+        // $request->all() unchecked, so a crafted request could inject
+        // arbitrary columns (including created_at) into the row.
+        $request->validate([
+            'name' => 'required|string|max:100',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+            'status' => 'required|in:open,closed',
+        ]);
+
         $oldData = $financialYear->toArray();
-        $financialYear->update($request->all());
+        $financialYear->update($request->only(['name', 'start_date', 'end_date', 'status']));
 
         AuditTrail::log('Financial Year', 'UPDATE', $financialYear->id, $oldData, $financialYear->toArray());
 
         Flash::success('Financial Year updated successfully.');
         return redirect(route('financial-years.index'));
+    }
+
+    public function audit($id)
+    {
+        $financialYear = FinancialYear::findOrFail($id);
+
+        $logs = AuditTrail::query()
+            ->where('module', 'Financial Year')
+            ->where('record_id', $id)
+            ->with('user:id,name')
+            ->latest()
+            ->paginate(20);
+
+        return view('financial_years.audit', compact('financialYear', 'logs'));
     }
 }

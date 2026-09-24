@@ -59,11 +59,14 @@ class RoleController extends AppBaseController
 
         $role = $this->roleRepository->create($input);
 
-        if ($request->has('permissions')) {
-            $role->permissions()->sync($request->input('permissions'));
-        }
+        $this->syncPermissions($role, $request);
 
-        AuditTrail::log('Role', 'CREATE', $role->role_id, null, $role->toArray());
+        $role->load('permissions');
+
+        AuditTrail::log('Role', 'CREATE', $role->role_id, null, [
+            'name' => $role->role_name,
+            'permissions' => $role->permissions->pluck('permission_id')->all(),
+        ]);
 
         Flash::success('Role saved successfully.');
 
@@ -120,15 +123,19 @@ class RoleController extends AppBaseController
         $this->authorize('update', $role);
 
         $oldData = $role->toArray();
+
+        $oldPermissionIds = $role->permissions->pluck('permission_id')->all();
+
         $role = $this->roleRepository->update($request->all(), $id);
 
-        if ($request->has('permissions')) {
-            $role->permissions()->sync($request->input('permissions'));
-        } else {
-            $role->permissions()->sync([]); // remove all if none selected
-        }
+        $this->syncPermissions($role, $request);
 
-        AuditTrail::log('Role', 'UPDATE', $role->role_id, $oldData, $role->toArray());
+        $role->load('permissions');
+
+        AuditTrail::log('Role', 'UPDATE', $role->role_id,
+            ['name' => $oldData['role_name'] ?? null, 'permissions' => $oldPermissionIds],
+            ['name' => $role->role_name, 'permissions' => $role->permissions->pluck('permission_id')->all()]
+        );
 
         Flash::success('Role updated successfully.');
 
@@ -160,5 +167,25 @@ class RoleController extends AppBaseController
         Flash::success('Role deleted successfully.');
 
         return redirect(route('roles.index'));
+    }
+
+    /**
+     * Apply the permission selection posted by the role form.
+     *
+     * The form always submits `permissions_submitted`, which lets an
+     * intentionally empty selection be told apart from a request that never
+     * carried the checkboxes at all. Previously any save that omitted the
+     * field ran sync([]) and silently wiped every permission on the role —
+     * including on roles the actor was not trying to re-permission.
+     */
+    protected function syncPermissions(\App\Models\Role $role, Request $request): void
+    {
+        if (! $request->has('permissions_submitted') && ! $request->has('permissions')) {
+            return;
+        }
+
+        $role->permissions()->sync(
+            array_map('intval', (array) $request->input('permissions', []))
+        );
     }
 }

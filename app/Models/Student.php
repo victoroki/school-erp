@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Student extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     public $table = 'students';
 
@@ -85,7 +86,9 @@ class Student extends Model
 
     public static array $rules = [
         'user_id' => 'nullable|exists:users,id',
-        'admission_no' => 'required|string|max:20',
+        // Optional on input: AdmissionNumberService fills it when the operator
+        // leaves it blank. Uniqueness is enforced by the DB index.
+        'admission_no' => 'nullable|string|max:20',
         'nemis_number' => 'nullable|string|max:50',
         'first_name' => 'required|string|max:50',
         'middle_name' => 'nullable|string|max:50',
@@ -106,6 +109,14 @@ class Student extends Model
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(\App\Models\User::class, 'user_id');
+    }
+
+    /**
+     * Transport route the student is registered on (students.route_id).
+     */
+    public function route(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Route::class, 'route_id', 'route_id');
     }
 
     public function examResults(): \Illuminate\Database\Eloquent\Relations\HasMany
@@ -132,6 +143,12 @@ class Student extends Model
     {
         return $this->hasMany(\App\Models\StudentClassEnrollment::class, 'student_id');
     }
+
+    // NOTE: the academic journey timeline is served by the
+    // getAcademicJourneyAttribute() accessor further down this class. Do not add
+    // a second `academicJourney` definition here — the accessor already resolves
+    // $student->academic_journey, and a duplicate accessor/relation pair makes
+    // the resolved value ambiguous.
 
     public function studentDocuments(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
@@ -174,19 +191,70 @@ class Student extends Model
     }
 
     // Helper Attributes for Fee Management
+
+    /**
+     * Fee summary for this student, resolved once per model instance.
+     *
+     * Fee figures must come from FeeBalanceService so that the student profile,
+     * fee dashboard, collection screen, statement, arrears report and parent
+     * portal all report the same numbers. Computing them independently here is
+     * what allowed a reversed payment to be excluded on one screen while still
+     * being counted on another.
+     *
+     * @var array{assigned: float, paid: float, balance: float}|null
+     */
+    protected ?array $feeSummaryCache = null;
+
+    protected function feeSummary(): array
+    {
+        if ($this->feeSummaryCache === null) {
+            $this->feeSummaryCache = app(\App\Services\FeeBalanceService::class)
+                ->summaryForStudent((int) $this->student_id);
+        }
+
+        return $this->feeSummaryCache;
+    }
+
+    /**
+     * Drop the cached summary. Call after a payment, reversal or refund.
+     */
+    public function forgetFeeSummary(): static
+    {
+        $this->feeSummaryCache = null;
+
+        return $this;
+    }
+
+    /**
+     * Eloquent's refresh() re-reads the row but leaves ordinary properties
+     * alone, so the cached fee summary survived it and a caller doing
+     *
+     *     $student->refresh();
+     *     $student->paid_fee;   // still the pre-payment figure
+     *
+     * read stale money after recording a payment. Dropping the cache here gives
+     * refresh() the meaning callers already expect.
+     */
+    public function refresh(): static
+    {
+        $this->feeSummaryCache = null;
+
+        return parent::refresh();
+    }
+
     public function getTotalFeeAttribute()
     {
-        return $this->feeAssignments()->where('status', 'active')->sum('final_amount');
+        return $this->feeSummary()['assigned'];
     }
 
     public function getPaidFeeAttribute()
     {
-        return $this->payments()->sum('fee_payments.amount');
+        return $this->feeSummary()['paid'];
     }
 
     public function getBalanceFeeAttribute()
     {
-        return $this->total_fee - $this->paid_fee;
+        return $this->feeSummary()['balance'];
     }
 
     public function getPaymentStatusAttribute()
@@ -487,15 +555,25 @@ class Student extends Model
         return $this->hasMany(\App\Models\StudentDiscount::class, 'student_id');
     }
 
-    public function getFeeSummaryAttribute()
+    /**
+     * Array form of this student's fee position.
+     *
+     * Routed through the same FeeBalanceService call as total_fee / paid_fee /
+     * balance_fee above, so the two forms can never disagree. It previously
+     * summed payments directly — `$this->payments()->sum('fee_payments.amount')`
+     * — which counted REVERSED payments as money received, so a student with a
+     * voided receipt had one balance here and a different one everywhere else.
+     *
+     * @return array{total_assigned: float, total_paid: float, balance: float}
+     */
+    public function getFeeSummaryAttribute(): array
     {
-        $totalAssigned = $this->feeAssignments()->where('status', 'active')->sum('final_amount');
-        $totalPaid = $this->payments()->sum('fee_payments.amount');
+        $summary = $this->feeSummary();
 
         return [
-            'total_assigned' => $totalAssigned,
-            'total_paid' => $totalPaid,
-            'balance' => $totalAssigned - $totalPaid,
+            'total_assigned' => $summary['assigned'],
+            'total_paid' => $summary['paid'],
+            'balance' => $summary['balance'],
         ];
     }
 }

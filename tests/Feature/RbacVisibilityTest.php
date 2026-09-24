@@ -157,8 +157,15 @@ class RbacVisibilityTest extends TestCase
             $this->assertNotContains($label, $this->topLabels($menu));
         }
 
-        // Student Management: only Student Attendance is visible (academics.attendance.manage)
-        $this->assertSame(['Student Attendance'], $this->childLabels($menu, 'students'));
+        // Student Management: the children the Teacher role's seeded permissions
+        // actually unlock. RbacSeeder::ROLE_PERMISSIONS grants Teacher
+        // academics.attendance.manage plus homework.view and student-notices.view,
+        // so Homework and Student Notices legitimately appear. This expectation
+        // predated those two menu entries.
+        $this->assertSame(
+            ['Student Attendance', 'Homework', 'Student Notices'],
+            $this->childLabels($menu, 'students')
+        );
 
         // Academic Management: only Dashboard + My Timetable + Apply for Leave are visible
         // (academics.view + hr.leave.apply); structural/admin children stay hidden.
@@ -189,9 +196,41 @@ class RbacVisibilityTest extends TestCase
         $this->assertNotContains('Configuration', $examHeaders);
     }
 
-    public function test_zero_permission_role_sees_only_dashboard_link(): void
+    /**
+     * The Student role is NOT permission-less. RbacSeeder grants it
+     * homework.view and student-notices.view, and those two entries live in the
+     * Student Management section, which sits under the EDUCATIONAL UNITS
+     * heading — so that heading rendering is correct, not a leak. The previous
+     * expectation (['CORE DASHBOARD'] / ['Dashboard']) was stale.
+     */
+    public function test_portal_role_sees_only_what_its_permissions_unlock(): void
     {
         $menu = $this->visibleMenuFor($this->userWithRole('Student'));
+
+        $this->assertSame(['CORE DASHBOARD', 'EDUCATIONAL UNITS'], $this->topHeaders($menu));
+        $this->assertSame(['Dashboard', 'Student Management'], $this->topLabels($menu));
+        $this->assertSame(['Homework', 'Student Notices'], $this->childLabels($menu, 'students'));
+
+        // Still locked out of every money, staff and administration section.
+        foreach (['Fee Management', 'Human Resources', 'Financial Management',
+                  'User Management', 'Inventory Management', 'Transportation'] as $label) {
+            $this->assertNotContains($label, $this->topLabels($menu));
+        }
+    }
+
+    /**
+     * A role holding no permissions at all must see the dashboard and nothing
+     * else, with no orphaned section heading left behind. This is the invariant
+     * the stale Student-based assertions above were originally trying to cover.
+     */
+    public function test_permission_less_role_sees_only_the_dashboard(): void
+    {
+        $role = new Role(['role_name' => 'Permissionless Probe']);
+        $role->setRelation('permissions', Permission::whereRaw('1 = 0')->get());
+        $user = new User(['name' => 'Permissionless', 'email' => 'permissionless@test.local']);
+        $user->setRelation('roles', collect([$role]));
+
+        $menu = $this->visibleMenuFor($user);
 
         $this->assertSame(['CORE DASHBOARD'], $this->topHeaders($menu));
         $this->assertSame(['Dashboard'], $this->topLabels($menu));
@@ -247,11 +286,13 @@ class RbacVisibilityTest extends TestCase
         $response->assertDontSee('GOVERNANCE');
     }
 
-    public function test_zero_permission_role_gets_minimal_unbroken_dashboard(): void
+    public function test_portal_role_gets_a_minimal_unbroken_dashboard(): void
     {
         $response = $this->actingAs($this->userWithRole('Student'))->get('/dashboard');
 
         $response->assertOk();
+
+        // The sensitive widgets a portal user must never see.
         $response->assertDontSee('Key Metrics');
         $response->assertDontSee('Module Dashboards');
         $response->assertDontSee('chartMain');
@@ -259,7 +300,11 @@ class RbacVisibilityTest extends TestCase
         $response->assertDontSee('Monthly Rev');
         $response->assertDontSee('OPERATIONS');
         $response->assertDontSee('GOVERNANCE');
-        $response->assertDontSee('EDUCATIONAL UNITS');
+
+        // EDUCATIONAL UNITS IS expected: the Student role holds homework.view and
+        // student-notices.view, both of which live under it. Asserting its absence
+        // was a stale expectation, not a leak.
+        $response->assertSee('EDUCATIONAL UNITS');
     }
 
     public function test_dashboard_data_endpoint_filters_statistics_by_permission(): void

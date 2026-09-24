@@ -68,32 +68,22 @@ class TimetableGeneratorService
             $subjectIds = array_values(array_unique($subjectIds));
 
             foreach ($subjectIds as $subjectId) {
-                // Teachers assigned to teach this subject to this class section.
-                // First try exact class_section_id match. If none found, fall back
-                // to any section of the same class_id (subjects are class-level,
-                // not section-level).
+                // Only teachers assigned to THIS class section for this subject.
+                //
+                // There used to be a fallback that accepted any teacher assigned to
+                // the subject anywhere in the same class, justified by the claim
+                // that "subjects are class-level, not section-level". That is not
+                // true of this schema: teacher_subjects.class_section_id exists and
+                // the assignment form labels it "Target Class & Section" and marks
+                // it required. The fallback therefore scheduled teachers for
+                // sections they were never assigned to, and it silently papered
+                // over assignment gaps instead of reporting them.
                 $candidates = [];
                 foreach ($teacherSubjects as $ts) {
                     if ((int) $ts['class_section_id'] === (int) $cs['id']
                         && (int) $ts['subject_id'] === $subjectId
                         && (int) $ts['academic_year_id'] === $academicYearId) {
                         $candidates[] = (int) $ts['staff_id'];
-                    }
-                }
-                if (empty($candidates)) {
-                    // Fallback: find teachers assigned to ANY section of the same class
-                    foreach ($teacherSubjects as $ts) {
-                        if ((int) $ts['subject_id'] === $subjectId
-                            && (int) $ts['academic_year_id'] === $academicYearId) {
-                            // Check if this teacher_subject's class_section belongs to the same class
-                            $tsCsId = (int) $ts['class_section_id'];
-                            foreach ($classSections as $otherCs) {
-                                if ((int) $otherCs['id'] === $tsCsId && (int) $otherCs['class_id'] === $classId) {
-                                    $candidates[] = (int) $ts['staff_id'];
-                                    break;
-                                }
-                            }
-                        }
                     }
                 }
                 $candidates = array_values(array_unique($candidates));

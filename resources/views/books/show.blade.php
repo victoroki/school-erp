@@ -109,7 +109,7 @@ Book Details
                                                 <strong><i class="fas fa-tag mr-1"></i> Condition & Price</strong>
                                                 <p class="text-muted">
                                                     Condition: <span class="badge badge-light border">{{ ucfirst($book->condition ?? 'Good') }}</span><br>
-                                                    Price: KSh {{ number_format($book->price, 2) }}
+                                                    Price: KES {{ number_format($book->price, 2) }}
                                                 </p>
                                                 <hr>
                                                  <strong><i class="fas fa-clock mr-1"></i> Added On</strong>

@@ -1,0 +1,97 @@
+name: Tests
+
+# Runs every migration from scratch against a real MySQL 8 database, then the
+# full PHPUnit suite. MySQL (not SQLite) because the migrations use MySQL
+# features (ALTER ... MODIFY, enum updates, FK-check toggles) — the exact way
+# public/deploy-hook.php runs them on the cPanel servers.
+#
+# A migration that fails here fails in CI — never on a school's live database.
+#
+# This workflow is also called by deploy.yml as the gate before build & FTP.
+
+on:
+  push:
+    branches: [feat/rbac-consolidated-permissions, main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:            # lets deploy.yml require this before deploying
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Migrations + PHPUnit
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: school_erp_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, bcmath, pdo_mysql, fileinfo, openssl, tokenizer, gd, zip
+          coverage: none
+
+      - name: Install Composer dependencies (with dev — PHPUnit lives there)
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      # Written inline (like deploy.yml does for production) rather than copied
+      # from .env.example — the template's [TEMPLATE] header is not valid Dotenv.
+      - name: Create .env for CI
+        run: |
+          mkdir -p storage/framework/cache/data storage/framework/sessions \
+                   storage/framework/views storage/logs storage/app/public bootstrap/cache
+          {
+            echo "APP_NAME='School ERP'"
+            echo "APP_ENV=testing"
+            echo "APP_KEY="
+            echo "APP_DEBUG=true"
+            echo "APP_URL=http://localhost"
+            echo ""
+            echo "LOG_CHANNEL=stack"
+            echo "LOG_LEVEL=error"
+            echo ""
+            echo "DB_CONNECTION=mysql"
+            echo "DB_HOST=127.0.0.1"
+            echo "DB_PORT=3306"
+            echo "DB_DATABASE=school_erp_test"
+            echo "DB_USERNAME=root"
+            echo "DB_PASSWORD=root"
+            echo ""
+            echo "CACHE_DRIVER=array"
+            echo "QUEUE_CONNECTION=sync"
+            echo "SESSION_DRIVER=array"
+            echo "MAIL_MAILER=array"
+          } > .env
+
+      - name: Generate app key
+        run: php artisan key:generate --force
+
+      # The explicit migration gate: every migration must apply cleanly to an
+      # empty database. Fails fast (~seconds) before the multi-minute suite.
+      - name: Run all migrations on a clean database
+        run: php artisan migrate --force
+
+      - name: Run seeders
+        run: php artisan db:seed --force
+
+      # phpunit.xml forces APP_ENV=testing + DB_DATABASE=school_erp_test;
+      # RefreshDatabase re-creates the schema per test class.
+      - name: Run test suite
+        run: php artisan test

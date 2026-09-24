@@ -16,8 +16,16 @@ class FeeManagementController extends Controller
     public function __construct(\App\Services\FinanceService $financeService)
     {
         $this->financeService = $financeService;
-        $this->middleware('can:fees.view')->only(['index', 'show', 'print']);
+        // Read-only screens, plus the whole-school ledger exports (they expose
+        // exactly what index already exposes, so they need the same gate).
+        $this->middleware('can:fees.view')->only(['index', 'show', 'print', 'exportPdf', 'exportExcel']);
+        $this->middleware('can:fees.print')->only(['printReceipt']);
         $this->middleware('can:fees.collect')->only(['collect', 'collectPayment', 'storePayment']);
+        // Reversal voids money that was already receipted, so it must not be
+        // reachable by whoever merely collects payments. It was previously in
+        // NO middleware list at all: any authenticated user — Teacher, Parent,
+        // Student — could POST to the reverse URL and void a real payment.
+        $this->middleware('can:fees.manage')->only(['reverseForm', 'reversePayment']);
     }
 
     public function index(Request $request)
@@ -65,7 +73,7 @@ class FeeManagementController extends Controller
             });
         }
 
-        $students = $query->paginate(10);
+        $students = $query->paginate(10)->withQueryString();
         $metrics = $this->financeService->getMetrics();
         $classes = \App\Models\SchoolClass::pluck('name', 'class_id');
 
@@ -108,13 +116,14 @@ class FeeManagementController extends Controller
             'studentClassEnrollments.classSection.schoolClass'
         ])->findOrFail($id);
 
-        $ledgerService = app(\App\Services\LedgerService::class);
-
-        // Bootstrap a ledger for students whose fees predate the ledger system.
-        $ledgerService->seedOpeningBalance($id);
-
         // Load the chronological statement with running balance.
-        $statement = $ledgerService->getStudentStatement($id);
+        //
+        // Opening balances are DERIVED inside getStudentStatement() rather than
+        // seeded into the table on first view — so opening a student's page no
+        // longer writes financial rows as a side effect of a GET, students who
+        // are never opened are still correct, and the statement's closing figure
+        // cannot disagree with the balance shown everywhere else.
+        $statement = app(\App\Services\LedgerService::class)->getStudentStatement($id);
 
         return view('fee_management.show', compact('student', 'statement'));
     }
@@ -129,51 +138,102 @@ class FeeManagementController extends Controller
         // Calculate total balance across all fee assignments
         $totalBalance = $student->feeAssignments->sum('balance');
 
-        return view('fee_management.collect_payment', compact('student', 'totalBalance'));
+        // One token per rendered form. A double-click resubmits the same token,
+        // which the payment service recognises as the same payment; a genuine
+        // second payment comes from a fresh page load with a new token.
+        $submissionToken = (string) \Illuminate\Support\Str::uuid();
+
+        return view('fee_management.collect_payment', compact('student', 'totalBalance', 'submissionToken'));
     }
 
     public function storePayment(Request $request, $id)
     {
+        // This endpoint previously accepted $request->all() with no validation
+        // at all, so an amount of 0, a negative amount, an arbitrary string, or
+        // a fee assignment belonging to a different student would all be
+        // accepted and written to the ledger.
+        $validated = $request->validate([
+            'student_fee_assignment_id' => 'required',
+            'amount' => 'required|numeric|min:0.01|max:100000000',
+            'payment_date' => 'required|date',
+            'payment_method' => 'required|in:' . implode(',', \App\Models\FeePayment::PAYMENT_METHODS),
+            'transaction_id' => 'nullable|string|max:100',
+            'client_reference' => 'nullable|string|max:64',
+            'remarks' => 'nullable|string|max:2000',
+            'allocation_strategy' => 'nullable|in:oldest_first,manual',
+        ]);
+
+        $isTotalPayment = (string) $validated['student_fee_assignment_id'] === 'total';
+
+        // After a successful payment the bursar is taken straight to the
+        // printable receipt, which auto-triggers the browser print dialog.
+        // "skip_print" (from the checkbox on the collect form) keeps the old
+        // behaviour of landing on the student's fee detail page.
+        $redirectToReceipt = ! $request->boolean('skip_print');
+
+        // The URL carries the student; the posted assignment must belong to that
+        // same student, otherwise a crafted POST could pay against another
+        // student's fees while the redirect claims student X.
+        if (! $isTotalPayment) {
+            $ownsAssignment = \App\Models\StudentFeeAssignment::where('id', $validated['student_fee_assignment_id'])
+                ->where('student_id', $id)
+                ->exists();
+
+            if (! $ownsAssignment) {
+                Flash::error('That fee assignment does not belong to this student.');
+
+                return redirect()->route('fee-management.show', $id);
+            }
+        }
+
         try {
-            // Handle "total" payment - distribute across all unpaid fee assignments
-            if ((string)$request->student_fee_assignment_id === 'total') {
+            if ($isTotalPayment) {
                 $student = Student::with(['feeAssignments' => function($q) {
                     $q->where('status', 'active')
                       ->whereRaw('COALESCE(paid_amount, 0) < final_amount');
                 }])->findOrFail($id);
 
-                $this->financeService->recordTotalPayment([
-                    'amount' => $request->amount,
-                    'payment_date' => $request->payment_date,
-                    'payment_method' => $request->payment_method,
-                    'transaction_id' => $request->transaction_id,
-                    'remarks' => $request->remarks,
-                    'allocation_strategy' => $request->allocation_strategy ?? 'oldest_first',
+                $payment = $this->financeService->recordTotalPayment([
+                    'amount' => $validated['amount'],
+                    'payment_date' => $validated['payment_date'],
+                    'payment_method' => $validated['payment_method'],
+                    'transaction_id' => $validated['transaction_id'] ?? null,
+                    'client_reference' => $validated['client_reference'] ?? null,
+                    'remarks' => $validated['remarks'] ?? null,
+                    'allocation_strategy' => $validated['allocation_strategy'] ?? 'oldest_first',
                 ], $student->feeAssignments);
 
                 AuditTrail::log('Fees', 'RECORD PAYMENT', $id, null, [
                     'student_id' => $id,
-                    'amount' => $request->amount,
-                    'payment_method' => $request->payment_method,
+                    'amount' => $validated['amount'],
+                    'payment_method' => $validated['payment_method'],
                     'type' => 'total',
                 ]);
 
-                Flash::success('Total payment recorded successfully across all fees.');
-                \Log::info('Total payment recorded successfully');
+                Flash::success('Total payment recorded successfully across all fees. Your receipt is ready to print.');
             } else {
-                // Single fee payment
-                $this->financeService->recordPayment($request->all());
+                $payment = $this->financeService->recordPayment($validated);
+
                 AuditTrail::log('Fees', 'RECORD PAYMENT', $id, null, [
                     'student_id' => $id,
-                    'student_fee_assignment_id' => $request->student_fee_assignment_id,
-                    'amount' => $request->amount,
-                    'payment_method' => $request->payment_method,
+                    'student_fee_assignment_id' => $validated['student_fee_assignment_id'],
+                    'amount' => $validated['amount'],
+                    'payment_method' => $validated['payment_method'],
                 ]);
+
                 Flash::success('Payment recorded successfully.');
             }
+            // A duplicate submission (idempotency token) returns the original
+            // payment, so re-printing its receipt is safe and shows the bursar
+            // the real receipt that was already issued.
+            if ($redirectToReceipt && isset($payment) && $payment instanceof \App\Models\FeePayment) {
+                return redirect()->route('fee-management.receipt', $payment->payment_id);
+            }
         } catch (\Exception $e) {
-            \Log::error('Payment recording failed: ' . $e->getMessage());
-            Flash::error('Error recording payment: ' . $e->getMessage());
+            // Log the detail, show the user something safe.
+            \Log::error('Payment recording failed for student ' . $id . ': ' . $e->getMessage());
+
+            Flash::error('The payment could not be recorded. No money has been moved. Please try again or contact the administrator.');
         }
 
         return redirect()->route('fee-management.show', $id);
@@ -227,6 +287,102 @@ class FeeManagementController extends Controller
         ])->findOrFail($id);
 
         return view('fee_management.print', compact('student'));
+    }
+
+    /**
+     * Printable receipt for a single fee payment.
+     *
+     * Shown automatically after a payment is recorded (storePayment redirects
+     * here) and reachable again from the student's payment history for
+     * reprints. A reversed payment still prints — for audit — but with a
+     * VOID watermark, matching how the receipt register and the student fees
+     * tab treat reversed receipts.
+     */
+    public function printReceipt($payment)
+    {
+        $payment = \App\Models\FeePayment::with([
+            'studentFeeAssignment.student.studentClassEnrollments.classSection.schoolClass',
+            'studentFeeAssignment.feeStructure.category',
+            'studentFeeAssignment.feeStructure.academicYear',
+            'allocations.studentFeeAssignment.feeStructure.category',
+            'collectedBy',
+        ])->findOrFail($payment);
+
+        $student = $payment->studentFeeAssignment->student;
+
+        return view('fee_management.receipt', [
+            'payment' => $payment,
+            'student' => $student,
+            'amountInWords' => $this->amountInWords((float) $payment->amount),
+        ]);
+    }
+
+    /**
+     * Spell an amount in words (Kenyan Shillings) for the receipt's legal line.
+     */
+    private function amountInWords(float $amount): string
+    {
+        $shillings = (int) floor($amount);
+        $cents = (int) round(($amount - $shillings) * 100);
+
+        if ($cents === 100) {
+            $shillings++;
+            $cents = 0;
+        }
+
+        $words = $this->numberToWords($shillings) . ' shilling' . ($shillings === 1 ? '' : 's');
+
+        if ($cents > 0) {
+            $words .= ' and ' . $this->numberToWords($cents) . ' cent' . ($cents === 1 ? '' : 's');
+        }
+
+        return ucfirst($words . ' only');
+    }
+
+    private function numberToWords(int $number): string
+    {
+        if ($number === 0) {
+            return 'zero';
+        }
+
+        $ones = [
+            '', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
+            'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen',
+            'seventeen', 'eighteen', 'nineteen',
+        ];
+        $tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+        $chunks = [
+            ['value' => 1000000000, 'label' => 'billion'],
+            ['value' => 1000000, 'label' => 'million'],
+            ['value' => 1000, 'label' => 'thousand'],
+            ['value' => 100, 'label' => 'hundred'],
+        ];
+
+        $parts = [];
+
+        foreach ($chunks as $chunk) {
+            if ($number >= $chunk['value']) {
+                $count = intdiv($number, $chunk['value']);
+                $parts[] = trim($this->numberToWords($count) . ' ' . $chunk['label']);
+                $number %= $chunk['value'];
+            }
+        }
+
+        if ($number >= 20) {
+            $part = $tens[intdiv($number, 10)];
+            if ($number % 10 > 0) {
+                $part .= '-' . $ones[$number % 10];
+            }
+            $parts[] = $part;
+            $number = 0;
+        }
+
+        if ($number > 0) {
+            $parts[] = $ones[$number];
+        }
+
+        return implode(' ', array_filter($parts));
     }
 
     public function exportPdf(Request $request)

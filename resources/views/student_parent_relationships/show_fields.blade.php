@@ -1,18 +1,18 @@
 <!-- Student Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('student_id', 'Student Id:') !!}
-    <p>{{ $studentParentRelationship->student_id }}</p>
+    {!! Form::label('student_id', 'Student:') !!}
+    <p>{{ $studentParentRelationship->student->full_name ?? 'N/A' }}</p>
 </div>
 
 <!-- Parent Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('parent_id', 'Parent Id:') !!}
-    <p>{{ $studentParentRelationship->parent_id }}</p>
+    {!! Form::label('parent_id', 'Parent/Guardian:') !!}
+    <p>{{ $studentParentRelationship->parent->full_name ?? 'N/A' }}</p>
 </div>
 
 <!-- Is Primary Contact Field -->
 <div class="col-sm-12">
     {!! Form::label('is_primary_contact', 'Is Primary Contact:') !!}
-    <p>{{ $studentParentRelationship->is_primary_contact }}</p>
+    <p>{{ $studentParentRelationship->is_primary_contact ? 'Yes' : 'No' }}</p>
 </div>
 

@@ -43,7 +43,7 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-success shadow-sm">
                     <div class="inner">
-                        <h3>KES {{ number_format($totalValue, 0) }}</h3>
+                        <h3>{{ \App\Support\Money::format($totalValue) }}</h3>
                         <p>Total Category Value</p>
                     </div>
                     <div class="icon"><i class="fas fa-money-bill-wave"></i></div>

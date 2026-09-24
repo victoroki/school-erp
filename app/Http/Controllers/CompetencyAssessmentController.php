@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\CbcAssessment;
 use App\Models\CbcLearningArea;
+use App\Support\CbcStage;
 use App\Models\ClassSection;
 use App\Models\AuditTrail;
 use Illuminate\Http\Request;
@@ -22,7 +23,31 @@ class CompetencyAssessmentController extends Controller
 
     public function index(Request $request)
     {
-        $learningAreas = CbcLearningArea::where('status', true)->pluck('name', 'id');
+        // Learning areas are grouped by CBC stage, not by individual grade, so the
+        // stage has to be derived from the chosen class. Without this the dropdown
+        // listed every learning area in the school — a Grade 4 teacher was offered
+        // Junior School areas — because nothing related cbc_learning_areas.level
+        // (a stage name) to the class's grade.
+        $learningAreasQuery = CbcLearningArea::where('status', true);
+
+        if ($request->filled('class_section_id')) {
+            $selectedClassSection = ClassSection::with('schoolClass')->find($request->class_section_id);
+
+            $stage = CbcStage::forClass(
+                $selectedClassSection?->schoolClass?->name,
+                $selectedClassSection?->schoolClass?->numeric_value
+            );
+
+            if ($stage !== null) {
+                // Areas with no level stay available, matching how
+                // ClassSubjectController treats subjects with no grade_level.
+                $learningAreasQuery->where(function ($q) use ($stage) {
+                    $q->where('level', $stage)->orWhereNull('level');
+                });
+            }
+        }
+
+        $learningAreas = $learningAreasQuery->orderBy('name')->pluck('name', 'id');
         $classSections = ClassSection::with(['schoolClass', 'section'])->get()->mapWithKeys(function ($cs) {
             return [$cs->class_section_id => ($cs->schoolClass->name ?? '') . ' - ' . ($cs->section->name ?? '')];
         });

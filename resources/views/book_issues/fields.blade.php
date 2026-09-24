@@ -40,7 +40,7 @@
 
     <!-- Fine Amount Field -->
     <div class="form-group col-sm-6">
-        {!! Form::label('fine_amount', 'Fine Amount (KSh):') !!}
+        {!! Form::label('fine_amount', 'Fine Amount (KES):') !!}
         {!! Form::number('fine_amount', null, ['class' => 'form-control', 'step' => '0.01', 'min' => '0']) !!}
     </div>
 @endif

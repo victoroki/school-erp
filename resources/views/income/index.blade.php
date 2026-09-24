@@ -84,7 +84,7 @@
                                         <span class="text-muted">{{ ucfirst($income->payment_method) }}</span>
                                     </td>
                                     <td class="py-3 align-middle text-right text-success font-weight-bold">
-                                        KES {{ number_format($income->amount, 2) }}
+                                        {{ \App\Support\Money::format($income->amount) }}
                                     </td>
                                     <td class="py-3 align-middle text-center pr-4">
                                         <div class="btn-group">

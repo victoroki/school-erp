@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\NotificationTriggered;
 use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\ClassSection;
 use App\Models\AuditTrail;
 use App\Services\TeacherScopeService;
+use App\Services\Communication\NotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Flash;
@@ -152,6 +154,16 @@ class MarksApprovalController extends Controller
             return redirect()->back();
         }
 
+        // The batch drill-down form approves only the learners the user ticked
+        // and says so on the button. Because the narrowing below used when(),
+        // an empty selection used to be skipped entirely and the WHOLE batch
+        // was approved instead. Treat that as "nothing selected".
+        if ($request->input('approval_scope') === 'selected' && !$request->filled('student_ids') && !$hasIds) {
+            Flash::error('Select at least one learner to approve.');
+
+            return redirect()->back();
+        }
+
         [$viewAll, $scopeIds] = $this->accessContext();
 
         // Match EITHER the explicit ids OR the whole/narrowed batch —
@@ -193,6 +205,19 @@ class MarksApprovalController extends Controller
             ]
         );
 
+        // Fire result notifications to parents for every approved result,
+        // but only when the exam has publish_result = true.
+        if ($approvedCount > 0 && $request->filled('exam_id')) {
+            $exam = Exam::find($request->exam_id);
+            if ($exam && $exam->publish_result) {
+                $this->notifyParentsOfApprovedResults(
+                    $request->exam_id,
+                    $request->class_section_id,
+                    $request->input('student_ids')
+                );
+            }
+        }
+
         Flash::success($approvedCount . ' mark entries approved successfully.');
 
         return redirect()->route('marks-approval.index');
@@ -217,6 +242,83 @@ class MarksApprovalController extends Controller
 
         if (!$viewAll && !($scopeIds && $scopeIds->contains($classSectionId))) {
             abort(403, 'You are not authorized to approve marks for this class.');
+        }
+    }
+
+    /**
+     * Manually trigger "Send Results to Parents" for an already-approved batch.
+     * Useful when the exam was approved before publish_result was switched on,
+     * or when the admin wants to resend notifications.
+     */
+    public function sendResultsToParents(Request $request)
+    {
+        $this->middleware('can:exams.approve');
+
+        $request->validate([
+            'exam_id'          => 'required|integer',
+            'class_section_id' => 'nullable|integer',
+        ]);
+
+        $exam = Exam::findOrFail($request->exam_id);
+
+        $this->notifyParentsOfApprovedResults(
+            $request->exam_id,
+            $request->class_section_id
+        );
+
+        AuditTrail::log('Exam Result', 'NOTIFY_PARENTS', $exam->exam_id, null, [
+            'exam_id'          => $request->exam_id,
+            'class_section_id' => $request->class_section_id,
+            'triggered_by'     => Auth::id(),
+        ]);
+
+        Flash::success('Result notifications queued for parents of approved learners.');
+        return redirect()->back();
+    }
+
+    /**
+     * Fire a NotificationTriggered event for every approved result in the batch.
+     * The QueueAutoNotification listener will look up templates and dispatch SMS/email.
+     */
+    private function notifyParentsOfApprovedResults(int $examId, ?int $classSectionId, ?array $studentIds = null): void
+    {
+        $query = ExamResult::with(['subject', 'grade'])
+            ->where('exam_id', $examId)
+            ->where('is_approved', true);
+
+        if ($classSectionId) {
+            $query->where('class_section_id', $classSectionId);
+        }
+
+        if ($studentIds) {
+            $query->whereIn('student_id', $studentIds);
+        }
+
+        $results = $query->get();
+
+        // Group by student so we fire one notification per student (not one per subject row).
+        $byStudent = $results->groupBy('student_id');
+
+        foreach ($byStudent as $studentId => $rows) {
+            $first = $rows->first();
+
+            // Build a compact summary: "Maths:85, English:72, …"
+            $summary = $rows->map(function ($r) {
+                $subjectName = $r->subject?->name ?? 'Subject';
+                return $subjectName . ':' . $r->marks_obtained;
+            })->implode(', ');
+
+            event(new NotificationTriggered(
+                triggerType: 'exam_result_approved',
+                studentId: (int) $studentId,
+                triggerModel: ExamResult::class,
+                triggerId: $first->result_id,
+                context: [
+                    'exam_name'      => $first->exam?->name ?? '',
+                    'result_summary' => $summary,
+                    'approved_at'    => now()->format('d M Y'),
+                ]
+            ));
         }
     }
 }

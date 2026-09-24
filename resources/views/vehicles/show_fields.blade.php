@@ -37,7 +37,7 @@
 <!-- Driver Id Field -->
 <div class="col-sm-12">
     {!! Form::label('driver_id', 'Driver:') !!}
-    <p>{{ $vehicle->driver->name ?? 'Not Assigned' }}</p>
+    <p>{{ $vehicle->driver->full_name ?? 'Not Assigned' }}</p>
 </div>
 
 <!-- Status Field -->
@@ -49,5 +49,5 @@
 <!-- Insurance Expiry Date Field -->
 <div class="col-sm-12">
     {!! Form::label('insurance_expiry_date', 'Insurance Expiry Date:') !!}
-    <p>{{ $vehicle->insurance_expiry_date }}</p>
+    <p>{{ $vehicle->insurance_expiry_date ? \Carbon\Carbon::parse($vehicle->insurance_expiry_date)->format('d/m/Y') : '—' }}</p>
 </div>

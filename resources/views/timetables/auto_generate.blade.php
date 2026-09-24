@@ -437,8 +437,18 @@
                     <div class="da-body">
                         <p class="da-title">This replaces the current timetable for this year</p>
                         <p class="da-desc">
-                            Saving will <strong>delete all existing timetable lessons for {{ $selectedAcademicYearId ? $academicYears->firstWhere('academic_year_id', $selectedAcademicYearId)->name ?? 'this year' : 'this year' }}</strong> and
+                            Saving will <strong>delete
+                            @if(($existingLessonCount ?? 0) > 0)
+                                the {{ number_format($existingLessonCount) }} existing timetable
+                                {{ Str::plural('lesson', $existingLessonCount) }}
+                            @else
+                                all existing timetable lessons
+                            @endif
+                            for {{ $selectedAcademicYearId ? $academicYears->firstWhere('academic_year_id', $selectedAcademicYearId)->name ?? 'this year' : 'this year' }}</strong> and
                             replace them with the {{ $result->placedCount() }} lessons above.
+                            @if(($existingLessonCount ?? 0) > 0)
+                                The deleted lessons are recorded in the audit trail.
+                            @endif
                             @if($result->unplacedCount() > 0)
                                 The {{ $result->unplacedCount() }} unplaced requirements will <strong>not</strong> be saved.
                             @endif

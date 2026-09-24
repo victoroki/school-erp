@@ -6,6 +6,7 @@ use App\Http\Requests\CreatePayrollRequest;
 use App\Http\Requests\UpdatePayrollRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\PayrollRepository;
+use App\Models\Payroll;
 use App\Models\Staff;
 use App\Models\AuditTrail;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +30,7 @@ class PayrollController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $payrolls = $this->payrollRepository->paginate(10);
+        $payrolls = Payroll::with('staff')->latest('payroll_id')->paginate(10);
 
         return view('payrolls.index')
             ->with('payrolls', $payrolls);
@@ -41,14 +42,16 @@ class PayrollController extends AppBaseController
     public function create()
     {
         // Get data for dropdowns
-        $staff = Staff::selectRaw("staff_id, CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name, ' (', employee_id, ')') as full_name")
-                     ->where('status', 'active')
-                     ->pluck('full_name', 'staff_id')
+        // `dropdown_name` alias: `full_name` would be shadowed by the Staff
+        // fullName accessor and resolve every option to an empty string.
+        $staff = Staff::selectRaw("staff_id, CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name, ' (', COALESCE(employee_number, 'NO-ID'), ')') as dropdown_name")
+                     ->where('employment_status', 'active')
+                     ->pluck('dropdown_name', 'staff_id')
                      ->prepend('Select Staff Member', '');
         
         $salaries = \DB::table('staff_salary')
                       ->join('staff', 'staff_salary.staff_id', '=', 'staff.staff_id')
-                      ->selectRaw("staff_salary.salary_id, CONCAT(staff.first_name, ' ', staff.last_name, ' - ₹', staff_salary.basic_salary) as salary_info")
+                      ->selectRaw("staff_salary.salary_id, CONCAT(staff.first_name, ' ', staff.last_name, ' - KES ', staff_salary.basic_salary) as salary_info")
                       ->pluck('salary_info', 'salary_id')
                       ->prepend('Select Salary Structure', '');
         
@@ -81,26 +84,25 @@ class PayrollController extends AppBaseController
             'paid' => 'Paid',
             'cancelled' => 'Cancelled',
             'processing' => 'Processing'
-        ];
-
-        // Get staff with their current salaries for auto-population
-        $staffWithSalaries = Staff::with(['currentSalary' => function($query) {
+        ];        // Get staff with their current salaries for auto-population
+        $staffWithSalaries = Staff::with(['salary' => function($query) {
                                 $query->latest('effective_from');
                             }])
-                            ->where('status', 'active')
+                            ->where('employment_status', 'active')
                             ->get()
                             ->map(function($staff) {
                                 return [
                                     'staff_id' => $staff->staff_id,
-                                    'name' => trim($staff->first_name . ' ' . ($staff->middle_name ?? '') . ' ' . $staff->last_name) . ' (' . $staff->employee_id . ')',
-                                    'current_salary' => $staff->currentSalary ? [
-                                        'salary_id' => $staff->currentSalary->salary_id,
-                                        'basic_salary' => $staff->currentSalary->basic_salary,
-                                        'allowances' => $staff->currentSalary->allowances,
-                                        'deductions' => $staff->currentSalary->deductions,
+                                    'name' => trim($staff->first_name . ' ' . ($staff->middle_name ?? '') . ' ' . $staff->last_name) . ' (' . ($staff->employee_number ?? 'NO-ID') . ')',
+                                    'current_salary' => $staff->salary ? [
+                                        'salary_id' => $staff->salary->salary_id,
+                                        'basic_salary' => $staff->salary->basic_salary,
+                                        'allowances' => $staff->salary->allowances,
+                                        'deductions' => $staff->salary->deductions,
                                     ] : null
                                 ];
                             });
+
 
         return view('payrolls.create', compact('staff', 'salaries', 'months', 'years', 'paymentMethods', 'statusOptions', 'staffWithSalaries'));
     }
@@ -114,7 +116,7 @@ class PayrollController extends AppBaseController
 
         $payroll = $this->payrollRepository->create($input);
 
-        AuditTrail::log('Payroll', 'CREATE', $payroll->id, null, $payroll->toArray());
+        AuditTrail::log('Payroll', 'CREATE', $payroll->payroll_id, null, $payroll->toArray());
 
         Flash::success('Payroll saved successfully.');
 
@@ -126,7 +128,7 @@ class PayrollController extends AppBaseController
      */
     public function show($id)
     {
-        $payroll = $this->payrollRepository->find($id);
+        $payroll = Payroll::with(['staff', 'salary'])->find($id);
 
         if (empty($payroll)) {
             Flash::error('Payroll not found');
@@ -151,14 +153,16 @@ class PayrollController extends AppBaseController
         }
 
         // Get data for dropdowns (same as create method)
-        $staff = Staff::selectRaw("staff_id, CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name, ' (', employee_id, ')') as full_name")
-                     ->where('status', 'active')
-                     ->pluck('full_name', 'staff_id')
+        // `dropdown_name` alias: `full_name` would be shadowed by the Staff
+        // fullName accessor and resolve every option to an empty string.
+        $staff = Staff::selectRaw("staff_id, CONCAT(first_name, ' ', COALESCE(middle_name, ''), ' ', last_name, ' (', COALESCE(employee_number, 'NO-ID'), ')') as dropdown_name")
+                     ->where('employment_status', 'active')
+                     ->pluck('dropdown_name', 'staff_id')
                      ->prepend('Select Staff Member', '');
         
-        $salaries = \DB::table('staff_salaries')
-                      ->join('staff', 'staff_salaries.staff_id', '=', 'staff.staff_id')
-                      ->selectRaw("staff_salaries.salary_id, CONCAT(staff.first_name, ' ', staff.last_name, ' - ₹', staff_salaries.basic_salary) as salary_info")
+        $salaries = \DB::table('staff_salary')
+                      ->join('staff', 'staff_salary.staff_id', '=', 'staff.staff_id')
+                      ->selectRaw("staff_salary.salary_id, CONCAT(staff.first_name, ' ', staff.last_name, ' - KES ', staff_salary.basic_salary) as salary_info")
                       ->pluck('salary_info', 'salary_id')
                       ->prepend('Select Salary Structure', '');
         
@@ -190,20 +194,20 @@ class PayrollController extends AppBaseController
         ];
 
         // Get staff with their current salaries for auto-population
-        $staffWithSalaries = Staff::with(['currentSalary' => function($query) {
+        $staffWithSalaries = Staff::with(['salary' => function($query) {
                                 $query->latest('effective_from');
                             }])
-                            ->where('status', 'active')
+                            ->where('employment_status', 'active')
                             ->get()
                             ->map(function($staff) {
                                 return [
                                     'staff_id' => $staff->staff_id,
-                                    'name' => trim($staff->first_name . ' ' . ($staff->middle_name ?? '') . ' ' . $staff->last_name) . ' (' . $staff->employee_id . ')',
-                                    'current_salary' => $staff->currentSalary ? [
-                                        'salary_id' => $staff->currentSalary->salary_id,
-                                        'basic_salary' => $staff->currentSalary->basic_salary,
-                                        'allowances' => $staff->currentSalary->allowances,
-                                        'deductions' => $staff->currentSalary->deductions,
+                                    'name' => trim($staff->first_name . ' ' . ($staff->middle_name ?? '') . ' ' . $staff->last_name) . ' (' . ($staff->employee_number ?? 'NO-ID') . ')',
+                                    'current_salary' => $staff->salary ? [
+                                        'salary_id' => $staff->salary->salary_id,
+                                        'basic_salary' => $staff->salary->basic_salary,
+                                        'allowances' => $staff->salary->allowances,
+                                        'deductions' => $staff->salary->deductions,
                                     ] : null
                                 ];
                             });
@@ -227,7 +231,7 @@ class PayrollController extends AppBaseController
         $oldData = $payroll->toArray();
         $payroll = $this->payrollRepository->update($request->all(), $id);
 
-        AuditTrail::log('Payroll', 'UPDATE', $payroll->id, $oldData, $payroll->toArray());
+        AuditTrail::log('Payroll', 'UPDATE', $payroll->payroll_id, $oldData, $payroll->toArray());
 
         Flash::success('Payroll updated successfully.');
 

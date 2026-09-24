@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::model($bankAccount, ['route' => ['bank-accounts.update', $bankAccount->id], 'method' => 'patch']) !!}
+            {!! Form::model($bankAccount, ['route' => ['bankAccounts.update', $bankAccount->account_id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">

@@ -1,7 +1,7 @@
 <!-- User Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('user_id', 'User Id:') !!}
-    <p>{{ $libraryMember->user_id }}</p>
+    {!! Form::label('user_id', 'Member:') !!}
+    <p>{{ $libraryMember->user->name ?? 'N/A' }}</p>
 </div>
 
 <!-- Member Type Field -->
@@ -19,7 +19,7 @@
 <!-- Membership Date Field -->
 <div class="col-sm-12">
     {!! Form::label('membership_date', 'Membership Date:') !!}
-    <p>{{ $libraryMember->membership_date }}</p>
+    <p>{{ $libraryMember->membership_date ? \Carbon\Carbon::parse($libraryMember->membership_date)->format('d/m/Y') : '—' }}</p>
 </div>
 
 <!-- Max Allowed Books Field -->

@@ -261,13 +261,24 @@
                                                     <span>Mean Score</span>
                                                     <b class="text-primary">{{ number_format($averageScore, 2) }}%</b>
                                                 </div>
+                                                {{-- These were hardcoded to 98.0% / 12.0% for every exam. --}}
                                                 <div class="d-flex justify-content-between mb-3 border-bottom pb-2">
                                                     <span>Highest Score</span>
-                                                    <b class="text-success">98.0%</b>
+                                                    <b class="text-success">
+                                                        {{ $highestScore !== null ? number_format($highestScore, 1) . '%' : '—' }}
+                                                    </b>
                                                 </div>
-                                                <div class="d-flex justify-content-between mb-3">
+                                                <div class="d-flex justify-content-between mb-3 border-bottom pb-2">
                                                     <span>Lowest Score</span>
-                                                    <b class="text-danger">12.0%</b>
+                                                    <b class="text-danger">
+                                                        {{ $lowestScore !== null ? number_format($lowestScore, 1) . '%' : '—' }}
+                                                    </b>
+                                                </div>
+                                                <div class="d-flex justify-content-between">
+                                                    {{-- Threshold comes from each paper's own
+                                                         passing_marks, not a hardcoded 40. --}}
+                                                    <span>Pass Rate</span>
+                                                    <b class="text-info">{{ number_format($passPercentage, 1) }}%</b>
                                                 </div>
                                             </div>
                                         </div>

@@ -46,15 +46,15 @@
 
                 <div class="financial-row">
                     <span class="financial-label">Total Fee</span>
-                    <span class="financial-value">KSh {{ number_format($student->total_fee, 2) }}</span>
+                    <span class="financial-value">KES {{ number_format($student->total_fee, 2) }}</span>
                 </div>
                 <div class="financial-row">
                     <span class="financial-label">Amount Paid</span>
-                    <span class="financial-value text-emerald">KSh {{ number_format($student->paid_fee, 2) }}</span>
+                    <span class="financial-value text-emerald">KES {{ number_format($student->paid_fee, 2) }}</span>
                 </div>
                 <div class="financial-row financial-row-highlight">
                     <span class="financial-label">Current Balance</span>
-                    <span class="financial-value text-rose">KSh {{ number_format($student->balance_fee, 2) }}</span>
+                    <span class="financial-value text-rose">KES {{ number_format($student->balance_fee, 2) }}</span>
                 </div>
 
                 @php
@@ -81,15 +81,20 @@
             <form action="{{ route('fee-management.store-payment', $student->student_id) }}" method="POST" class="payment-form">
                 @csrf
 
+                {{-- Identifies this rendered form. Submitting it twice (double
+                     click, refresh, resubmit) is treated as the same payment
+                     instead of creating a second payment and a second receipt. --}}
+                <input type="hidden" name="client_reference" value="{{ old('client_reference', $submissionToken) }}">
+
                 <div class="form-group">
                     <label for="student_fee_assignment_id" class="form-label-custom">Fee to Pay <span class="required">*</span></label>
                     <select name="student_fee_assignment_id" id="student_fee_assignment_id" class="form-select-custom" required>
                         <option value="total" data-balance="{{ $totalBalance }}" data-name="Total Balance">
-                            All Fees — Total Balance: KSh {{ number_format($totalBalance, 2) }}
+                            All Fees — Total Balance: KES {{ number_format($totalBalance, 2) }}
                         </option>
                         @foreach($student->feeAssignments as $fee)
                             <option value="{{ $fee->id }}" data-balance="{{ $fee->balance }}" data-name="{{ $fee->feeStructure->category->name }}">
-                                {{ $fee->feeStructure->category->name }} — Balance: KSh {{ number_format($fee->balance, 2) }}
+                                {{ $fee->feeStructure->category->name }} — Balance: KES {{ number_format($fee->balance, 2) }}
                             </option>
                         @endforeach
                     </select>
@@ -98,7 +103,7 @@
                 <div class="selected-fee-info" id="selected-fee-info">
                     <div class="info-row">
                         <span>Selected fee balance:</span>
-                        <span class="info-amount" id="fee-balance-display">KSh {{ number_format($totalBalance, 2) }}</span>
+                        <span class="info-amount" id="fee-balance-display">KES {{ number_format($totalBalance, 2) }}</span>
                     </div>
                 </div>
 
@@ -106,7 +111,7 @@
                     <div class="form-group">
                         <label for="amount" class="form-label-custom">Payment Amount <span class="required">*</span></label>
                         <div class="input-with-prefix">
-                            <span class="input-prefix">KSh</span>
+                            <span class="input-prefix">KES</span>
                             <input type="number" step="0.01" name="amount" id="amount" class="form-input-custom" required placeholder="0.00">
                         </div>
                     </div>
@@ -138,6 +143,13 @@
                 <div class="form-group">
                     <label for="remarks" class="form-label-custom">Remarks</label>
                     <textarea name="remarks" id="remarks" class="form-input-custom form-textarea" rows="2" placeholder="Any additional notes..."></textarea>
+                </div>
+
+                <div class="form-group form-check-row">
+                    <label class="form-check-custom">
+                        <input type="checkbox" name="skip_print" value="1">
+                        <span>Don't print receipt after saving</span>
+                    </label>
                 </div>
 
                 <div class="form-footer">
@@ -303,6 +315,13 @@
 .info-amount { font-size: 0.85rem; font-weight: 800; color: var(--indigo); font-family: monospace; }
 
 .form-footer { display: flex; align-items: center; gap: 1rem; padding-top: 0.5rem; }
+
+.form-check-row { margin-bottom: 1rem; }
+.form-check-custom {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    font-size: 0.78rem; font-weight: 600; color: var(--slate-500); cursor: pointer;
+}
+.form-check-custom input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--indigo); cursor: pointer; }
 .btn-submit {
     display: inline-flex; align-items: center; padding: 0.75rem 2rem; border-radius: 8px;
     font-size: 0.85rem; font-weight: 800; border: none; cursor: pointer;
@@ -395,7 +414,7 @@
                     $('#amount').attr('max', balance);
                     
                     // Update display
-                    $('#fee-balance-display').text('KSh ' + balance.toLocaleString('en-US', {
+                    $('#fee-balance-display').text('KES ' + balance.toLocaleString('en-US', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     }));
@@ -422,7 +441,7 @@
                     
                     if (amount > maxAmount) {
                         e.preventDefault();
-                        alert('Payment amount cannot exceed balance of KSh ' + maxAmount.toLocaleString('en-US', {
+                        alert('Payment amount cannot exceed balance of KES ' + maxAmount.toLocaleString('en-US', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
                         }));
@@ -440,7 +459,7 @@
                 $('#student_fee_assignment_id').on('change', function() {
                     var balance = parseFloat($(this).find(':selected').data('balance')) || 0;
                     $('#amount').val(balance);
-                    $('#fee-balance-display').text('KSh ' + balance.toLocaleString('en-US', {
+                    $('#fee-balance-display').text('KES ' + balance.toLocaleString('en-US', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     }));

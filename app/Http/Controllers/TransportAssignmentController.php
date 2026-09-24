@@ -77,7 +77,7 @@ class TransportAssignmentController extends AppBaseController
      */
     public function show($id)
     {
-        $transportAssignment = $this->transportAssignmentRepository->find($id);
+        $transportAssignment = \App\Models\TransportAssignment::with(['route', 'vehicle', 'driver', 'assistant'])->find($id);
 
         if (empty($transportAssignment)) {
             Flash::error('Transport Assignment not found');

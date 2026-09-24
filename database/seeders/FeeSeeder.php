@@ -193,7 +193,12 @@ class FeeSeeder extends Seeder
             ],
             [
                 'payment_date' => now()->subDays(7),
-                'payment_method' => 'mpesa',
+                // 'mpesa' is NOT a member of enum('cash','check','card','bank_transfer','online').
+                // Because DatabaseSeeder runs with sql_mode="", MySQL silently stored the
+                // empty-string error value instead of failing, which is how all 209 seeded
+                // payments ended up with payment_method = ''. M-PESA is mobile money, and
+                // the schema records that as 'online' (see the collections report).
+                'payment_method' => 'online',
                 'transaction_id' => 'MP' . str_pad((string)($assignment->id * 97 % 100000000), 8, '0', STR_PAD_LEFT),
                 'receipt_number' => 'RCP-' . strtoupper(dechex($assignment->id)) . '-' . str_pad((string)($amount * 100), 8, '0', STR_PAD_LEFT),
                 'remarks' => $remarks,

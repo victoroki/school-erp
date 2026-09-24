@@ -23,6 +23,9 @@
                             <div class="header-actions d-flex align-items-center gap-1">
                                 {!! Form::open(['route' => 'class-subjects.bulk-delete', 'method' => 'post', 'class' => 'm-0']) !!}
                                     {!! Form::hidden('class_id', $subjectsGroup->first()->class_id) !!}
+                                    {{-- Without a year the clear used to span every academic
+                                         year; scope it to the year this group belongs to. --}}
+                                    {!! Form::hidden('academic_year_id', $subjectsGroup->first()->academic_year_id) !!}
                                     {!! Form::button('<i class="far fa-trash-alt"></i>', [
                                         'type' => 'submit',
                                         'class' => 'action-btn btn-delete x-small',

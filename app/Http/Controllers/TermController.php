@@ -14,8 +14,13 @@ class TermController extends AppBaseController
 {
     public function __construct()
     {
-        $this->middleware('can:academics.settings.manage')->only(['index', 'show']);
-        $this->middleware('can:academics.settings.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+        // Every action on this controller is an academic-settings change, so
+        // one guard covers the lot. 'activate' was missing from the list, which
+        // let any authenticated user switch the school's active term by POSTing
+        // to the activate URL — changing what "current term" means everywhere.
+        $this->middleware('can:academics.settings.manage')->only([
+            'index', 'show', 'create', 'store', 'edit', 'update', 'destroy', 'activate',
+        ]);
     }
 
     public function index(Request $request)
@@ -33,7 +38,7 @@ class TermController extends AppBaseController
             $query->where('status', $request->status);
         }
 
-        $terms = $query->paginate(20);
+        $terms = $query->paginate(20)->withQueryString();
         $academicYears = AcademicYear::orderBy('start_date', 'desc')->pluck('name', 'academic_year_id');
 
         return view('fee_management.terms.index', compact('terms', 'academicYears', 'selectedYearId'));

@@ -16,8 +16,8 @@ class RbacSeeder extends Seeder
      * Admin:       all except users.*, roles.*, permissions.*
      * Teacher:     5 scoped/basic permissions (academics.view + attendance + marks enter + schedule view + own results)
      * Accountant:  finance.* + fees.* (8 permissions)
-     * Parent:      0 (portal, ownership-scoped via Policy)
-     * Student:     0 (portal, ownership-scoped via Policy)
+     * Parent:      2 scoped permissions (homework.view, student-notices.view)
+     * Student:     2 scoped permissions (homework.view, student-notices.view)
      */
     private array $rolePermissions = [
         'Owner' => [

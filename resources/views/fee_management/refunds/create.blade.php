@@ -1,6 +1,33 @@
 @extends('layouts.app')
 
 @section('content')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
+
+<style>
+/* Select2 sizing inside the refund form (bootstrap4 theme) */
+.report-wrap .select2-container .select2-selection--single {
+    height: 38px;
+    border-radius: 8px;
+    border-color: var(--border);
+}
+.report-wrap .select2-container--default .select2-selection--single .select2-selection__arrow { height: 36px; }
+.report-wrap .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 36px;
+    color: var(--slate-800);
+    font-size: 0.85rem;
+}
+.report-wrap .select2-container--default .select2-selection--single .select2-selection__placeholder { color: var(--slate-400); }
+.report-wrap .select2-container--default.select2-container--focus .select2-selection--single {
+    border-color: var(--indigo);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+.report-wrap .select2-dropdown { border-color: var(--border); border-radius: 8px; }
+.report-wrap .select2-results__option { font-size: 0.85rem; padding: 0.5rem 0.75rem; }
+.report-wrap .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background: var(--indigo);
+}
+</style>
+
 <div class="report-wrap">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div class="d-flex align-items-center gap-3">
@@ -33,9 +60,39 @@
                     <select name="student_id" id="student_id" class="form-control" required>
                         <option value="">Select Student</option>
                         @foreach($students as $s)
-                            <option value="{{ $s->student_id }}">{{ $s->full_name }} ({{ $s->admission_no }})</option>
+                            <option value="{{ $s->student_id }}" {{ old('student_id') == $s->student_id ? 'selected' : '' }}>{{ $s->full_name }} ({{ $s->admission_no }})</option>
                         @endforeach
                     </select>
+                </div>
+
+                {{-- Figures come from FeeBalanceService — the same source the
+                     server-side validation uses — so what is shown here is what
+                     the backend enforces. Hidden until a student is chosen. --}}
+                <div class="form-field form-field-full" id="refundablePanel" style="display:none;">
+                    <label>Refundable balance</label>
+                    <div class="refundable-box">
+                        <div class="refundable-row">
+                            <span>Total valid payments</span>
+                            <strong id="rfPaid">&mdash;</strong>
+                        </div>
+                        <div class="refundable-row">
+                            <span>Already refunded</span>
+                            <strong id="rfRefunded" class="rf-rose">&mdash;</strong>
+                        </div>
+                        <div class="refundable-row" id="rfPendingRow" style="display:none;">
+                            <span>Requested, not yet paid</span>
+                            <strong id="rfPending" class="rf-amber">&mdash;</strong>
+                        </div>
+                        <div class="refundable-row refundable-row--total">
+                            <span>Maximum refundable</span>
+                            <strong id="rfMax">&mdash;</strong>
+                        </div>
+                        <div class="refundable-row">
+                            <span>Requested refund amount</span>
+                            <strong id="rfRequested">&mdash;</strong>
+                        </div>
+                        <p class="refundable-note" id="rfNote"></p>
+                    </div>
                 </div>
 
                 <div class="form-field">
@@ -53,7 +110,7 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="amount">Amount (KSh) <span class="req">*</span></label>
+                    <label for="amount">Amount (KES) <span class="req">*</span></label>
                     <input type="number" step="0.01" min="0.01" name="amount" id="amount" class="form-control" value="{{ old('amount') }}" required>
                 </div>
 
@@ -101,6 +158,19 @@
 .form-field .form-control:focus { outline:2px solid var(--indigo-light); border-color:var(--indigo); }
 .form-actions { display:flex; gap:.75rem; align-items:center; }
 .alert-danger-box { background:var(--rose-light); border:1px solid #fecdd3; color:var(--rose); border-radius:10px; padding:1rem 1.25rem; font-size:.85rem; }
+
+/* What the student has available to refund. These are the figures the server
+   validates against, shown before submission so the number is never a surprise. */
+.refundable-box { background:var(--slate-50); border:1px solid var(--border); border-radius:10px; padding:.9rem 1.1rem; }
+.refundable-row { display:flex; justify-content:space-between; align-items:baseline; gap:1rem; font-size:.82rem; color:var(--slate-600); padding:.2rem 0; }
+.refundable-row strong { color:var(--slate-800); font-variant-numeric:tabular-nums; }
+.refundable-row--total { border-top:1px solid var(--border); margin-top:.4rem; padding-top:.55rem; font-weight:700; color:var(--slate-800); }
+.refundable-row--total strong { color:var(--emerald); font-size:.95rem; }
+.refundable-note { font-size:.75rem; margin:.55rem 0 0; color:var(--slate-500); }
+.refundable-note.is-over { color:var(--rose); font-weight:600; }
+.rf-rose { color:var(--rose); }
+.rf-amber { color:var(--amber-600); }
+.btn-primary-custom.is-disabled { opacity:.5; cursor:not-allowed; }
 @media (max-width:700px){ .form-grid{grid-template-columns:1fr;} }
 </style>
 @endsection
@@ -111,23 +181,130 @@
     var studentSel = document.getElementById('student_id');
     var paymentSel = document.getElementById('payment_id');
     var feeSel = document.getElementById('student_fee_assignment_id');
+    var amountInput = document.getElementById('amount');
+    var panel = document.getElementById('refundablePanel');
+    var form = document.getElementById('refundForm');
+    var submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+
+    /*
+     * The student's refundable position, as the backend computes it. Kept in a
+     * variable so typing in the amount field re-renders without another request.
+     */
+    var refundable = null;
+
+    /* Same shape as App\Support\Money::format() — symbol, separators, 2dp. */
+    function money(value) {
+        return 'KES ' + Number(value || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    /*
+     * Show the figures and gate the submit button. This is guidance only: the
+     * server re-checks the same rule on submission, and again when the money is
+     * actually paid out.
+     */
+    function renderRefundable() {
+        if (!panel) return;
+
+        if (!refundable) {
+            panel.style.display = 'none';
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.classList.remove('is-disabled'); }
+            return;
+        }
+
+        panel.style.display = '';
+
+        var max = Number(refundable.maxRefundable);
+        var requested = amountInput && amountInput.value !== '' ? Number(amountInput.value) : null;
+
+        document.getElementById('rfPaid').textContent = money(refundable.payments);
+        document.getElementById('rfRefunded').textContent = money(refundable.refunded);
+        document.getElementById('rfMax').textContent = money(max);
+        document.getElementById('rfRequested').textContent = requested === null ? '\u2014' : money(requested);
+
+        var pendingRow = document.getElementById('rfPendingRow');
+        if (Number(refundable.pending) > 0) {
+            pendingRow.style.display = '';
+            document.getElementById('rfPending').textContent = money(refundable.pending);
+        } else {
+            pendingRow.style.display = 'none';
+        }
+
+        var note = document.getElementById('rfNote');
+        var blocked = false;
+
+        if (max <= 0) {
+            note.textContent = 'This student has no refundable balance, so a refund cannot be submitted. '
+                + 'Only money actually received — not reversed — can be refunded, and refunds already made or '
+                + 'requested are not refundable a second time.';
+            blocked = true;
+        } else if (requested !== null && requested > max) {
+            note.textContent = 'That is ' + money(requested - max) + ' more than the maximum refundable. '
+                + 'Reduce the amount to ' + money(max) + ' or less.';
+            blocked = true;
+        } else {
+            note.textContent = 'Maximum refundable ' + money(max) + '. A refund cannot exceed this.';
+        }
+
+        note.classList.toggle('is-over', blocked);
+
+        if (submitBtn) {
+            submitBtn.disabled = blocked;
+            submitBtn.classList.toggle('is-disabled', blocked);
+        }
+
+        if (amountInput) {
+            amountInput.max = max > 0 ? max : 0;
+        }
+    }
+
+    /*
+     * Select2 init with polling — the app bundle (jQuery) loads as a deferred
+     * module, so it may not exist yet when this classic script runs. Native
+     * change listeners below keep the cascade working even before select2
+     * initializes.
+     */
+    function reinitSelect2(sel, placeholder, allowClear) {
+        var $ = window.jQuery;
+        if (!$ || !$.fn || !$.fn.select2) return;
+        var $sel = $(sel);
+        if ($sel.hasClass('select2-hidden-accessible')) {
+            $sel.select2('destroy');
+        }
+        $sel.select2({
+            theme: 'bootstrap4',
+            width: '100%',
+            placeholder: placeholder || (sel.options[0] ? sel.options[0].text : 'Select…'),
+            allowClear: !!allowClear,
+            minimumResultsForSearch: sel.id === 'student_id' ? 1 : 10
+        });
+    }
 
     function fetchPayments(){
         var studentId = studentSel.value;
         paymentSel.innerHTML = '<option value="">Select a payment to refund (optional)</option>';
         feeSel.innerHTML = '<option value="">Select charge (optional)</option>';
+        reinitSelect2(paymentSel, 'Select a payment to refund (optional)', true);
+        reinitSelect2(feeSel, 'Select charge (optional)', true);
+        // Clear the previous student's position rather than leaving it on screen.
+        refundable = null;
+        renderRefundable();
+
         if(!studentId) return;
 
         fetch('/fees/refunds/ajax/student-payments/' + studentId, {headers:{'Accept':'application/json'}})
             .then(function(r){ return r.json(); })
             .then(function(data){
-                (data || []).forEach(function(p){
+                refundable = (data && data.summary) ? data.summary : null;
+                renderRefundable();
+
+                ((data && data.payments) || []).forEach(function(p){
                     var opt = document.createElement('option');
                     opt.value = p.payment_id;
                     opt.textContent = p.label;
                     opt.setAttribute('data-fee', p.student_fee_assignment_id || '');
                     paymentSel.appendChild(opt);
                 });
+                reinitSelect2(paymentSel, 'Select a payment to refund (optional)', true);
             });
     }
 
@@ -136,10 +313,62 @@
         // If a payment's charge is known, pre-select it for clarity (still editable if needed).
         if(fee){
             feeSel.innerHTML = '<option value="'+fee+'">Payment charge (auto)</option>';
+            feeSel.value = fee;
+            var $ = window.jQuery;
+            if ($ && $.fn && $.fn.select2 && $(feeSel).hasClass('select2-hidden-accessible')) {
+                $(feeSel).val(fee).trigger('change.select2');
+            }
+            reinitSelect2(feeSel, 'Select charge (optional)', true);
         }
     });
 
     studentSel.addEventListener('change', fetchPayments);
+
+    // Typing the amount updates "Requested refund amount" and re-checks it
+    // against the maximum, from the figures already on screen.
+    if (amountInput) amountInput.addEventListener('input', renderRefundable);
+
+    // A refund must name the payment or charge it comes from, or it cannot be
+    // taken off a specific fee. The backend enforces this; catching it here saves
+    // the round trip.
+    if (form) {
+        form.addEventListener('submit', function(e){
+            if (!feeSel.value && !paymentSel.value) {
+                e.preventDefault();
+                alert('Select the payment or the fee this refund relates to, so the refund can be taken off that charge.');
+            }
+        });
+    }
+
+    renderRefundable();
+
+    function initSelect2() {
+        var $ = window.jQuery;
+        if (!($ && $.fn && $.fn.select2)) return false;
+
+        reinitSelect2(studentSel, 'Select Student');
+        reinitSelect2(paymentSel, 'Select a payment to refund (optional)', true);
+        reinitSelect2(feeSel, 'Select charge (optional)', true);
+
+        $(studentSel).on('change.select2', fetchPayments);
+        $(paymentSel).on('change.select2', function(){
+            var fee = this.options[this.selectedIndex] ? (this.options[this.selectedIndex].getAttribute('data-fee') || '') : '';
+            if (fee) {
+                feeSel.innerHTML = '<option value="'+fee+'">Payment charge (auto)</option>';
+                $(feeSel).val(fee).trigger('change.select2');
+            }
+        });
+
+        return true;
+    }
+
+    if (!initSelect2()) {
+        var attempts = 0;
+        var timer = setInterval(function () {
+            attempts++;
+            if (initSelect2() || attempts > 100) clearInterval(timer);
+        }, 50);
+    }
 })();
 </script>
 @endpush

@@ -87,7 +87,7 @@
 </div>
 
 <div class="form-group col-sm-4">
-    {!! Form::label('price', 'Price (KSh):') !!}
+    {!! Form::label('price', 'Price (KES):') !!}
     {!! Form::number('price', null, ['class' => 'form-control', 'step' => '0.01']) !!}
 </div>
 

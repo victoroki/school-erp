@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ExamResult;
 use App\Models\Exam;
 use App\Models\Student;
-use Illuminate\Http\Request;
+use App\Services\PortalScopeService;
 use Illuminate\Support\Facades\Auth;
 
 class PortalReportCardController extends Controller
@@ -17,11 +17,15 @@ class PortalReportCardController extends Controller
      */
     public function index()
     {
-        $user    = Auth::user();
-        $student = $this->resolveStudent($user);
+        $student = $this->resolveStudent(Auth::user());
 
-        if (!$student) {
-            return view('portal.report-cards', ['exams' => collect(), 'message' => 'No student profile found.']);
+        if (! $student) {
+            // This branch used to render the view with only `exams` and
+            // `message`, but the view reads `$student->full_name` in its own
+            // header, so every account with no linked learner got a
+            // "Undefined variable $student" 500 instead of an answer. An account
+            // with no learner attached to it has nothing to read here.
+            abort(403, 'No student is linked to this account.');
         }
 
         // Get exams that have results for this student
@@ -39,14 +43,18 @@ class PortalReportCardController extends Controller
 
     /**
      * Show the report card for a specific exam.
+     *
+     * The exam comes from the URL, but the learner never does: it is resolved
+     * from the authenticated user, and the results query is filtered by that
+     * learner. Swapping the exam id can therefore only ever 404 — it cannot make
+     * one learner's results appear under another's session.
      */
     public function show(Exam $exam)
     {
-        $user    = Auth::user();
-        $student = $this->resolveStudent($user);
+        $student = $this->resolveStudent(Auth::user());
 
-        if (!$student) {
-            abort(404, 'Student profile not found.');
+        if (! $student) {
+            abort(403, 'No student is linked to this account.');
         }
 
         $results = ExamResult::with(['subject', 'grade', 'classSection', 'exam'])
@@ -91,18 +99,29 @@ class PortalReportCardController extends Controller
     }
 
     /**
-     * Resolve the student record for the authenticated user.
+     * Resolve the learner this portal user is allowed to see.
+     *
+     * Ownership comes from PortalScopeService — the single place the
+     * parent/student rules live — rather than from a second implementation here.
+     *
+     * A student account resolves to itself only. A parent account resolves to one
+     * of its own linked children, and to nothing when it has none. Deliberately
+     * NOT the first student in the school: `visibleStudentIds()` returns every
+     * active learner for Owner/Super Admin/Admin/Accountant, so using it here
+     * would hand a staff account a pupil's report card through the parent portal.
      */
     protected function resolveStudent($user): ?Student
     {
-        if ($user->user_type === 'student' && $user->student) {
-            return $user->student;
+        if ($student = PortalScopeService::selfStudent($user)) {
+            return $student;
         }
 
-        if ($user->user_type === 'parent' && $user->parent) {
-            return $user->parent->students->first();
+        $ownChildren = app(PortalScopeService::class)->childrenFor($user);
+
+        if ($ownChildren->isEmpty()) {
+            return null;
         }
 
-        return null;
+        return Student::find($ownChildren->first()['student_id']);
     }
 }

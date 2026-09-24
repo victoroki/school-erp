@@ -9,8 +9,19 @@
                 <i class="fas fa-exclamation-triangle"></i>
             </div>
             <div>
-                <h1 class="page-title mb-0">Fee Arrears</h1>
-                <p class="page-subtitle mb-0">Students with outstanding balances</p>
+                {{-- The scope is part of the title. A student profile and a
+                     statement report the learner's all-time position while this
+                     page reports one year by default, so the active scope has to
+                     be readable without opening the filter. --}}
+                <h1 class="page-title mb-0">Arrears &mdash; {{ $scopeLabel }}</h1>
+                <p class="page-subtitle mb-0">
+                    Students with outstanding balances
+                    @if($allYears)
+                        &middot; every academic year, all-time position
+                    @else
+                        &middot; within {{ $scopeLabel }} only — switch to All Years for the all-time position
+                    @endif
+                </p>
             </div>
         </div>
         <div class="d-flex align-items-center gap-2">
@@ -33,8 +44,11 @@
                 <label for="academic_year_id">Academic Year</label>
                 <select name="academic_year_id" id="academic_year_id" class="filter-select">
                     @foreach($academicYears as $id => $name)
-                        <option value="{{ $id }}" {{ $yearId == $id ? 'selected' : '' }}>{{ $name }}</option>
+                        <option value="{{ $id }}" {{ !$allYears && $yearId == $id ? 'selected' : '' }}>
+                            {{ $name }}@if($currentYear && $currentYear->academic_year_id == $id) (current)@endif
+                        </option>
                     @endforeach
+                    <option value="all" {{ $allYears ? 'selected' : '' }}>All Years (all-time position)</option>
                 </select>
             </div>
             <div class="filter-field">
@@ -56,7 +70,7 @@
                 </select>
             </div>
             <div class="filter-field">
-                <label for="min_amount">Minimum Outstanding (KSh)</label>
+                <label for="min_amount">Minimum Outstanding (KES)</label>
                 <input type="number" name="min_amount" id="min_amount" value="{{ $minAmount }}" class="filter-select" placeholder="e.g. 500">
             </div>
             <div class="filter-field">
@@ -85,21 +99,21 @@
             <div class="metric-icon bg-indigo-light text-indigo"><i class="fas fa-file-invoice-dollar"></i></div>
             <div class="metric-content">
                 <span class="metric-label">Total Expected</span>
-                <span class="metric-value">KSh {{ number_format($totalExpected, 0) }}</span>
+                <span class="metric-value">{{ \App\Support\Money::format($totalExpected) }}</span>
             </div>
         </div>
         <div class="metric-card">
             <div class="metric-icon bg-emerald-light text-emerald"><i class="fas fa-check-double"></i></div>
             <div class="metric-content">
                 <span class="metric-label">Total Collected</span>
-                <span class="metric-value text-emerald">KSh {{ number_format($totalCollected, 0) }}</span>
+                <span class="metric-value text-emerald">{{ \App\Support\Money::format($totalCollected) }}</span>
             </div>
         </div>
         <div class="metric-card">
             <div class="metric-icon bg-rose-light text-rose"><i class="fas fa-exclamation-triangle"></i></div>
             <div class="metric-content">
                 <span class="metric-label">Outstanding</span>
-                <span class="metric-value text-rose">KSh {{ number_format($totalOutstanding, 0) }}</span>
+                <span class="metric-value text-rose">{{ \App\Support\Money::format($totalOutstanding) }}</span>
             </div>
         </div>
         <div class="metric-card">
@@ -146,9 +160,9 @@
                             <td><span class="mono-sm">{{ $student->admission_no }}</span></td>
                             <td class="font-semibold">{{ $name }}</td>
                             <td><span class="class-badge">{{ $className }}</span></td>
-                            <td class="text-right mono">KSh {{ number_format($student->expected_total, 2) }}</td>
-                            <td class="text-right mono text-emerald">KSh {{ number_format($student->paid_total, 2) }}</td>
-                            <td class="text-right mono text-rose font-semibold">KSh {{ number_format($outstanding, 2) }}</td>
+                            <td class="text-right mono">{{ \App\Support\Money::format($student->expected_total) }}</td>
+                            <td class="text-right mono text-emerald">{{ \App\Support\Money::format($student->paid_total) }}</td>
+                            <td class="text-right mono text-rose font-semibold">{{ \App\Support\Money::format($outstanding) }}</td>
                             <td class="text-center">
                                 <a href="{{ route('fee-management.show', $student->student_id) }}" class="btn-ghost-custom btn-xs">
                                     <i class="fas fa-receipt me-1"></i> Statement

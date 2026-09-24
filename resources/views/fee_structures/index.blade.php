@@ -107,7 +107,7 @@
                                 <div class="hub-fee-row d-flex justify-content-between align-items-center py-2 border-bottom-soft">
                                     <span class="text-truncate x-small fw-600 text-slate pe-2">{{ $fee->category->name }}</span>
                                     <div class="d-flex align-items-center gap-2">
-                                        <span class="fw-850 text-dark x-small">KSh {{ number_format($fee->amount, 0) }}</span>
+                                        <span class="fw-850 text-dark x-small">{{ \App\Support\Money::format($fee->amount) }}</span>
                                         <div class="hub-actions opacity-0">
                                             <a href="{{ route('fee-structures.edit', $fee->fee_structure_id) }}" class="text-amber x-small" title="Edit"><i class="fas fa-pencil-alt"></i></a>
                                         </div>
@@ -121,7 +121,7 @@
                     <div class="hub-card-footer px-3 py-3 bg-light-soft border-top mt-auto d-flex justify-content-between align-items-center">
                         <div class="d-flex flex-column">
                             <span class="x-small text-muted fw-bold text-uppercase" style="font-size: 0.6rem;">Total Commitment</span>
-                            <span class="fw-900 text-indigo" style="font-size: 1rem;">KSh {{ number_format($items->sum('amount'), 0) }}</span>
+                            <span class="fw-900 text-indigo" style="font-size: 1rem;">{{ \App\Support\Money::format($items->sum('amount')) }}</span>
                         </div>
                         <a href="{{ route('fee-structures.show', $items->first()->fee_structure_id) }}" class="btn-hub-link">
                             Details <i class="fas fa-arrow-right ms-1"></i>

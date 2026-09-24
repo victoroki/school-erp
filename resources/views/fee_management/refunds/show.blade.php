@@ -30,7 +30,7 @@
                 <span class="status-badge {{ $badge }}">{{ $refund->status_label }}</span>
                 <div class="amount-display">
                     <span class="amount-label">Amount</span>
-                    <span class="amount-value">KSh {{ number_format($refund->amount, 2) }}</span>
+                    <span class="amount-value">{{ \App\Support\Money::format($refund->amount) }}</span>
                 </div>
             </div>
 
@@ -39,6 +39,8 @@
                     <span class="info-value">{{ $refund->payment ? ($refund->payment->receipt_number ?? 'RCP-'.$refund->payment->payment_id) : 'General' }}</span></div>
                 <div class="info-row"><span class="info-label">Method</span>
                     <span class="info-value">{{ $refund->refund_method ? ucwords(str_replace('_',' ', $refund->refund_method)) : '—' }}</span></div>
+                <div class="info-row"><span class="info-label">Paid From</span>
+                    <span class="info-value">{{ $refund->bankAccount?->account_name ?? 'Not recorded' }}</span></div>
                 <div class="info-row"><span class="info-label">Reference</span>
                     <span class="info-value mono-sm">{{ $refund->refund_reference ?? '—' }}</span></div>
                 <div class="info-row"><span class="info-label">Requested By</span>
@@ -94,7 +96,11 @@
             @if($refund->status === 'approved' && auth()->user()->can('fees.manage'))
             <div class="workflow-card">
                 <h4 class="workflow-title">Complete Refund</h4>
-                <p class="wf-hint">Completing posts the refund to the student's ledger as a credit and records the payout.</p>
+                <p class="wf-hint">
+                    Completing pays the money out and records the refund against the student as a debit: they have taken
+                    money back, so they owe that amount again. The payout is re-checked against what the student still
+                    has available to refund before it is made.
+                </p>
                 <form action="{{ route('fees.refunds.complete', $refund->id) }}" method="POST" class="wf-form">
                     @csrf
                     <select name="refund_method" class="form-control" required>
@@ -105,8 +111,25 @@
                         <option value="cheque">Cheque</option>
                         <option value="other">Other</option>
                     </select>
+                    <select name="bank_account_id" class="form-control" required>
+                        <option value="">Pay from account</option>
+                        @foreach($bankAccounts as $account)
+                            <option value="{{ $account->account_id }}">
+                                {{ $account->account_name }} — {{ \App\Support\Money::format((float) $account->current_balance) }}
+                            </option>
+                        @endforeach
+                    </select>
                     <input type="text" name="refund_reference" class="form-control" placeholder="Transaction / reference (optional)">
-                    <button class="btn-complete"><i class="fas fa-check-circle me-1"></i> Complete Refund</button>
+                    {{-- Completing a refund withdraws real money from a bank account and
+                         posts a debit to the ledger. The rejection next to it already
+                         asked for confirmation; the step that actually pays out did not. --}}
+                    <button class="btn-complete"
+                            data-student="{{ $refund->student->full_name ?? 'N/A' }}"
+                            data-admission="{{ $refund->student->admission_no ?? '' }}"
+                            data-amount="{{ \App\Support\Money::format((float) $refund->amount) }}"
+                            onclick="return confirmRefundCompletion(this)">
+                        <i class="fas fa-check-circle me-1"></i> Complete Refund
+                    </button>
                 </form>
             </div>
             @endif
@@ -114,12 +137,51 @@
             @if($refund->status === 'completed' && $refund->ledgerEntry)
             <div class="info-card">
                 <div class="info-row"><span class="info-label">Ledger Entry</span>
-                    <span class="info-value mono-sm">#{{ $refund->ledgerEntry->id }} &middot; Balance KSh {{ number_format($refund->ledgerEntry->balance_after, 2) }}</span></div>
+                    <span class="info-value mono-sm">#{{ $refund->ledgerEntry->id }} &middot; Balance {{ \App\Support\Money::format($refund->ledgerEntry->balance_after) }}</span></div>
             </div>
             @endif
         </div>
     </div>
 </div>
+
+<script>
+/**
+ * Confirm before completing a refund.
+ *
+ * Completing a refund withdraws money from a bank account and posts a credit to
+ * the student's ledger. The user must be able to see what they are about to do:
+ * who the refund is for, how much, by which method and from which account.
+ *
+ * This is UX protection only — the server still enforces the fees.manage
+ * permission and re-validates the account balance in RefundController::complete().
+ */
+function confirmRefundCompletion(button) {
+    var form = button.form;
+    var methodSelect = form.refund_method;
+    var accountSelect = form.bank_account_id;
+
+    if (!methodSelect.value || !accountSelect.value) {
+        alert('Choose a refund method and the account to pay from before completing the refund.');
+        return false;
+    }
+
+    var method = methodSelect.options[methodSelect.selectedIndex].text.trim();
+    var account = accountSelect.options[accountSelect.selectedIndex].text.trim();
+    var reference = form.refund_reference.value.trim() || '(none)';
+    var student = button.dataset.student + (button.dataset.admission ? ' (' + button.dataset.admission + ')' : '');
+
+    return confirm(
+        'Complete this refund?\n\n' +
+        'Student:  ' + student + '\n' +
+        'Amount:   ' + button.dataset.amount + '\n' +
+        'Method:   ' + method + '\n' +
+        'Pay from: ' + account + '\n' +
+        'Reference: ' + reference + '\n\n' +
+        'This posts the refund to the student\'s ledger and withdraws the money from the account above. ' +
+        'It cannot be undone from this screen.'
+    );
+}
+</script>
 
 <style>
 :root{

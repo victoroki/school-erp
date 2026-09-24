@@ -1,7 +1,7 @@
 <!-- Class Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('class_id', 'Class Id:') !!}
-    <p>{{ $section->class_id }}</p>
+    {!! Form::label('class_id', 'Class:') !!}
+    <p>{{ $section->schoolClass->name ?? 'N/A' }}</p>
 </div>
 
 <!-- Name Field -->

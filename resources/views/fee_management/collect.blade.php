@@ -119,7 +119,7 @@
                                 <div class="student-balance">
                                     <span class="financial-label">Balance</span>
                                     <span class="financial-value {{ $student->balance_fee > 0 ? 'text-rose' : 'text-emerald' }}">
-                                        KSh {{ number_format($student->balance_fee, 2) }}
+                                        KES {{ number_format($student->balance_fee, 2) }}
                                     </span>
                                 </div>
                                 <a href="{{ route('fee-management.collect-payment', $student->student_id) }}"

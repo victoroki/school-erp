@@ -72,6 +72,7 @@ class StudentReportController extends Controller
         $currentYear = AcademicYear::where('is_current', true)->first();
         $yearId = $request->get('academic_year_id') ?: ($currentYear?->academic_year_id);
         $academicYears = AcademicYear::orderBy('start_date', 'desc')->get();
+        $balances = app(\App\Services\FeeBalanceService::class);
 
         // Students with their fee summaries
         $students = Student::where('status', 'active')
@@ -81,7 +82,7 @@ class StudentReportController extends Controller
             }])
             ->get()
             ->filter(fn ($s) => $s->studentClassEnrollments->isNotEmpty())
-            ->map(function ($student) use ($yearId) {
+            ->map(function ($student) use ($yearId, $balances) {
                 $enrollment = $student->studentClassEnrollments->first();
                 $classInfo = ($enrollment->classSection->schoolClass->name ?? 'N/A')
                     . ' - ' . ($enrollment->classSection->section->name ?? '');
@@ -92,10 +93,27 @@ class StudentReportController extends Controller
                     ->get();
 
                 $totalAssigned = $assignments->sum('final_amount');
-                $totalPaid = $student->payments()
-                    ->whereIn('student_fee_assignment_id', $assignments->pluck('student_fee_assignment_id'))
-                    ->sum('fee_payments.amount');
-                $balance = $totalAssigned - $totalPaid;
+
+                // Paid comes from the single balance authority, scoped to the
+                // assignments of the selected year.
+                //
+                // This previously ran
+                //     $student->payments()->whereIn('student_fee_assignment_id',
+                //         $assignments->pluck('student_fee_assignment_id'))->sum(...)
+                // and `student_fee_assignment_id` is not an attribute of
+                // StudentFeeAssignment (its primary key is `id`), so pluck()
+                // produced a list of NULLs, whereIn matched nothing and this
+                // report showed every learner as fully unpaid — total_paid 0.
+                // It also ignored reversed payments and payment_allocations.
+                // Effective paid, not payments received: a charge that was paid
+                // and later refunded is no longer settled, so this report's
+                // balance has to move with the refund exactly as the student's
+                // own page does.
+                $totalPaid = round(array_sum(
+                    $balances->effectivePaidForAssignments($assignments->pluck('id')->all())
+                ), 2);
+
+                $balance = round($totalAssigned - $totalPaid, 2);
 
                 return (object) [
                     'student_id' => $student->student_id,
@@ -257,6 +275,8 @@ class StudentReportController extends Controller
                   ->with(['classSection.schoolClass', 'classSection.section']);
             }])
             ->get()
+            ->with(['route'])
+            ->get()
             ->map(function ($student) {
                 $enrollment = $student->studentClassEnrollments->first();
                 return (object) [
@@ -264,7 +284,7 @@ class StudentReportController extends Controller
                     'admission_no' => $student->admission_no,
                     'class_info' => ($enrollment->classSection->schoolClass->name ?? 'N/A')
                         . ' - ' . ($enrollment->classSection->section->name ?? ''),
-                    'route_id' => $student->route_id,
+                    'route_name' => $student->route->name ?? null,
                     'pickup_point' => $student->pickup_point,
                 ];
             })
@@ -399,7 +419,7 @@ class StudentReportController extends Controller
             $file = fopen('php://output', 'w');
             fputcsv($file, ['Admission No', 'Student Name', 'Class', 'Service Type', 'Route', 'Pickup Point']);
             foreach ($data['transportStudents'] as $s) {
-                fputcsv($file, [$s->admission_no, $s->full_name, $s->class_info, 'Transport', $s->route_id ? 'Route #' . $s->route_id : '', $s->pickup_point ?? '']);
+                fputcsv($file, [$s->admission_no, $s->full_name, $s->class_info, 'Transport', $s->route_name ?? '', $s->pickup_point ?? '']);
             }
             foreach ($data['hostelStudents'] as $s) {
                 fputcsv($file, [$s->admission_no, $s->full_name, $s->class_info, 'Hostel', '', '']);
@@ -423,6 +443,7 @@ class StudentReportController extends Controller
         $currentYear = AcademicYear::where('is_current', true)->first();
         $yearId = $request->get('academic_year_id') ?: ($currentYear?->academic_year_id);
         $academicYears = AcademicYear::orderBy('start_date', 'desc')->get();
+        $balances = app(\App\Services\FeeBalanceService::class);
 
         $students = Student::where('status', 'active')
             ->with(['studentClassEnrollments' => function ($q) use ($yearId) {
@@ -430,14 +451,20 @@ class StudentReportController extends Controller
             }])
             ->get()
             ->filter(fn ($s) => $s->studentClassEnrollments->isNotEmpty())
-            ->map(function ($student) use ($yearId) {
+            ->map(function ($student) use ($yearId, $balances) {
                 $enrollment = $student->studentClassEnrollments->first();
                 $classInfo = ($enrollment->classSection->schoolClass->name ?? 'N/A') . ' - ' . ($enrollment->classSection->section->name ?? '');
                 $assignments = StudentFeeAssignment::where('student_id', $student->student_id)
                     ->where('academic_year_id', $yearId)->where('status', 'active')->get();
                 $totalAssigned = $assignments->sum('final_amount');
-                $totalPaid = $student->payments()->whereIn('student_fee_assignment_id', $assignments->pluck('student_fee_assignment_id'))->sum('fee_payments.amount');
-                return (object) ['student_id' => $student->student_id, 'full_name' => $student->full_name, 'admission_no' => $student->admission_no, 'class_info' => $classInfo, 'total_assigned' => $totalAssigned, 'total_paid' => $totalPaid, 'balance' => $totalAssigned - $totalPaid];
+                // Effective paid, not payments received: a charge that was paid
+                // and later refunded is no longer settled, so this report's
+                // balance has to move with the refund exactly as the student's
+                // own page does.
+                $totalPaid = round(array_sum(
+                    $balances->effectivePaidForAssignments($assignments->pluck('id')->all())
+                ), 2);
+                return (object) ['student_id' => $student->student_id, 'full_name' => $student->full_name, 'admission_no' => $student->admission_no, 'class_info' => $classInfo, 'total_assigned' => $totalAssigned, 'total_paid' => $totalPaid, 'balance' => round($totalAssigned - $totalPaid, 2)];
             })
             ->sortBy('balance', SORT_REGULAR, true)->values();
 

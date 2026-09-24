@@ -47,7 +47,7 @@ class TeacherManagementController extends Controller
             $query->where('employment_status', $request->get('status'));
         }
 
-        $teachers = $query->with(['department', 'jobPosition'])->paginate(12);
+        $teachers = $query->with(['department', 'jobPosition'])->paginate(12)->withQueryString();
 
         return view('teacher-management.index', compact('teachers'));
     }

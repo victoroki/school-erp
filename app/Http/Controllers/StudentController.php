@@ -31,7 +31,14 @@ class StudentController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $query = Student::query();
+        // Soft-deleted learners are excluded by default (SoftDeletes global
+        // scope), which is what keeps the active roster, attendance register and
+        // fee collection consistent. `?trashed=1` surfaces removed learners so
+        // they can be restored. Historical exam, attendance and ledger reports
+        // do not go through this query and still include them, by design.
+        $query = $request->boolean('trashed')
+            ? Student::onlyTrashed()
+            : Student::query();
 
         // Advanced Search & Filters
         if ($request->filled('q')) {
@@ -113,6 +120,19 @@ class StudentController extends AppBaseController
     public function store(CreateStudentRequest $request)
     {
         $input = $request->all();
+
+        // Generate an admission number when the operator leaves it blank, in the
+        // same format the import template documents. Nothing generated one
+        // before, so the field had to be typed by hand on the web form.
+        if (blank($input['admission_no'] ?? null)) {
+            $input['admission_no'] = app(\App\Services\AdmissionNumberService::class)
+                ->next($this->admissionYear($input['admission_date'] ?? null));
+        } elseif (\App\Models\Student::where('admission_no', $input['admission_no'])->exists()) {
+            // The DB index would reject this as a 500; give the operator a message.
+            Flash::error('That admission number is already in use.');
+
+            return redirect()->back()->withInput();
+        }
 
         if ($request->hasFile('photo')) {
             $input['photo_url'] = $this->storeStudentPhoto($request->file('photo'));
@@ -261,6 +281,36 @@ class StudentController extends AppBaseController
      *
      * @throws \Exception
      */
+    /**
+     * Restore a soft-deleted learner.
+     *
+     * Confirmed as the intended re-admission workflow: a returning learner is
+     * the same person, so their record is restored rather than a new one
+     * created — which is also what the unique indexes on admission_no,
+     * nemis_number and upi_number require, since a soft-deleted row still holds
+     * those values.
+     */
+    public function restore($id)
+    {
+        $student = Student::onlyTrashed()->find($id);
+
+        if (empty($student)) {
+            Flash::error('That learner is not removed, so there is nothing to restore.');
+
+            return redirect(route('students.index', ['trashed' => 1]));
+        }
+
+        $student->restore();
+
+        AuditTrail::log('Student', 'RESTORE', $student->student_id, null, [
+            'admission_no' => $student->admission_no,
+        ]);
+
+        Flash::success($student->full_name . ' has been restored.');
+
+        return redirect(route('students.index', ['trashed' => 1]));
+    }
+
     public function destroy($id)
     {
         $student = $this->resolveStudent($id);
@@ -271,16 +321,16 @@ class StudentController extends AppBaseController
             return redirect(route('students.index'));
         }
         
-        if ($student->photo_url) {
-            $photoPath = str_starts_with($student->photo_url, 'students/')
-                ? public_path($student->photo_url)
-                : public_path('uploads/' . $student->photo_url);
-            if (file_exists($photoPath)) {
-                @unlink($photoPath);
-            }
-        }
+        // The photo is deliberately NOT unlinked. Removal is now reversible, so
+        // destroying the file would silently break a restored learner's profile.
+        // Orphaned photos can be swept separately if storage becomes a concern.
 
         $oldData = $student->toArray();
+
+        // Soft delete. A hard delete either threw a QueryException (13 tables
+        // reference students with RESTRICT/NO ACTION) or, because 7 others
+        // cascade, destroyed the learner's fee ledger, refunds and fee
+        // adjustments along with them.
         $this->studentRepository->delete($id);
 
         AuditTrail::log('Student', 'DELETE', $id, $oldData, null);
@@ -333,9 +383,11 @@ class StudentController extends AppBaseController
             return redirect(route('students.index'));
         }
 
+        // relationship_type is stored in an ENUM, so validating it as a free
+        // string let any value through to the database.
         $request->validate([
             'sibling_id' => 'required|exists:students,student_id|different:'.$id,
-            'relationship_type' => 'required|string|max:50',
+            'relationship_type' => 'required|in:brother,sister,half_brother,half_sister,step_brother,step_sister',
         ]);
 
         $siblingId = $request->input('sibling_id');
@@ -348,10 +400,16 @@ class StudentController extends AppBaseController
                 'notes' => $request->input('notes')
             ]);
             
-            // Siblings are reciprocal
+            // Siblings are reciprocal. The enum is gendered, so the reverse side
+            // is derived from the other learner's gender rather than copied:
+            // this used to write the literal 'sibling' for half/step relations,
+            // which is not a valid enum value and fails the insert.
             $sibling = Student::find($siblingId);
             $sibling->siblings()->attach($id, [
-                'relationship_type' => $request->input('relationship_type') === 'brother' ? 'brother' : ($request->input('relationship_type') === 'sister' ? 'sister' : 'sibling'), 
+                'relationship_type' => $this->reciprocalSiblingType(
+                    $request->input('relationship_type'),
+                    $student->gender
+                ),
                 'is_twin' => $request->has('is_twin'),
                 'notes' => $request->input('notes')
             ]);
@@ -364,6 +422,45 @@ class StudentController extends AppBaseController
         }
 
         return redirect()->back()->with('active_tab', 'family');
+    }
+
+    /**
+     * The reciprocal sibling relationship type.
+     *
+     * `student_siblings.relationship_type` is
+     * enum(brother, sister, half_brother, half_sister, step_brother, step_sister)
+     * — gendered, with an optional half_/step_ prefix. The reverse of
+     * "X is Y's half_brother" therefore depends on Y's gender and can never be
+     * produced by copying the submitted value.
+     */
+    protected function reciprocalSiblingType(string $submitted, ?string $genderOfOtherStudent): string
+    {
+        $prefix = '';
+
+        if (str_starts_with($submitted, 'half_')) {
+            $prefix = 'half_';
+        } elseif (str_starts_with($submitted, 'step_')) {
+            $prefix = 'step_';
+        }
+
+        return $prefix . (strtolower((string) $genderOfOtherStudent) === 'female' ? 'sister' : 'brother');
+    }
+
+    /**
+     * Year used for admission-number sequencing: the year of the admission date
+     * when supplied, otherwise the current year.
+     */
+    protected function admissionYear(?string $admissionDate): int
+    {
+        if (blank($admissionDate)) {
+            return (int) date('Y');
+        }
+
+        try {
+            return (int) \Illuminate\Support\Carbon::parse($admissionDate)->year;
+        } catch (\Exception $e) {
+            return (int) date('Y');
+        }
     }
 
     public function ajaxSearch(Request $request)

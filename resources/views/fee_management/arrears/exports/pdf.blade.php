@@ -20,13 +20,13 @@
     </style>
 </head>
 <body>
-    <h1>Fee Arrears Report</h1>
-    <div class="sub">Generated {{ now()->format('d M Y H:i') }} &middot; Students with outstanding balances</div>
+    <h1>Fee Arrears Report &mdash; {{ $scopeLabel }}</h1>
+    <div class="sub">Generated {{ now()->format('d M Y H:i') }} &middot; Students with outstanding balances &middot; Scope: {{ $scopeLabel }}</div>
 
     <div class="metrics">
-        <div class="metric"><div class="label">Total Expected</div><div class="value">KSh {{ number_format($totalExpected, 2) }}</div></div>
-        <div class="metric"><div class="label">Total Collected</div><div class="value em">KSh {{ number_format($totalCollected, 2) }}</div></div>
-        <div class="metric"><div class="label">Outstanding</div><div class="value rose">KSh {{ number_format($totalOutstanding, 2) }}</div></div>
+        <div class="metric"><div class="label">Total Expected</div><div class="value">{{ \App\Support\Money::format($totalExpected) }}</div></div>
+        <div class="metric"><div class="label">Total Collected</div><div class="value em">{{ \App\Support\Money::format($totalCollected) }}</div></div>
+        <div class="metric"><div class="label">Outstanding</div><div class="value rose">{{ \App\Support\Money::format($totalOutstanding) }}</div></div>
     </div>
 
     <table>
@@ -44,9 +44,9 @@
                 <tr>
                     <td>{{ $row['admission_no'] }}</td>
                     <td>{{ $row['name'] }}</td>
-                    <td class="right">KSh {{ number_format($row['expected'], 2) }}</td>
-                    <td class="right em">KSh {{ number_format($row['paid'], 2) }}</td>
-                    <td class="right rose">KSh {{ number_format($row['outstanding'], 2) }}</td>
+                    <td class="right">{{ \App\Support\Money::format($row['expected']) }}</td>
+                    <td class="right em">{{ \App\Support\Money::format($row['paid']) }}</td>
+                    <td class="right rose">{{ \App\Support\Money::format($row['outstanding']) }}</td>
                 </tr>
             @empty
                 <tr><td colspan="5">No students in arrears.</td></tr>

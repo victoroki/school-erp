@@ -19,7 +19,9 @@
 
         <div class="card">
 
-            {!! Form::model($examType, ['route' => ['exam-types.update', $examType->id], 'method' => 'patch']) !!}
+            {{-- The primary key is exam_type_id; $examType->id is null, which built
+                 the update route with an empty id. --}}
+            {!! Form::model($examType, ['route' => ['exam-types.update', $examType->exam_type_id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">

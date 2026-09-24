@@ -1048,3 +1048,38 @@ select {
         padding: 0 !important;
     }
 }
+
+/* ===================================================================
+   FEE MODULE — CLASS NAMES THAT COLLIDE WITH FONT AWESOME
+   =================================================================== */
+
+/*
+ * The Fee Management views prefix their own cosmetic classes with `fa-`, which
+ * is also Font Awesome's namespace. Two of those names are real Font Awesome
+ * icon names, and Font Awesome declares one rule per icon shaped like
+ *
+ *     .fa-table:before { content: "\f0ce"; }
+ *
+ * That selector is (0,1,1) and it fires on ANY element carrying the class — it
+ * never checks whether the element is an icon. The fee module's table and its
+ * search-field wrapper are not icons and do not set the Font Awesome font, so
+ * the injected glyph is drawn in the inherited text font and appears as an empty
+ * box: a stray cell at the top of every fee table, and a second box sitting to
+ * the left of the search icon.
+ *
+ * These two rules cancel the pseudo-element on the elements the module actually
+ * puts those names on. A real icon in this application is always written
+ * <i class="fas fa-…">, so `fas fa-table` and `fas fa-search` elsewhere are
+ * untouched and keep their glyph.
+ *
+ * The element name in each selector is doing two jobs at once: it is what keeps
+ * a real <i class="fas fa-…"> icon out of scope, and it is what makes the
+ * cancellation outrank the library. `table.fa-table::before` is (0,1,2) against
+ * Font Awesome's (0,1,1) — the extra element selector — so this wins on
+ * specificity alone and does not depend on which stylesheet loads first.
+ */
+
+table.fa-table::before,
+div.fa-search::before {
+    content: none;
+}

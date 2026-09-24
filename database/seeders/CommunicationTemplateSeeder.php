@@ -55,6 +55,15 @@ class CommunicationTemplateSeeder extends Seeder
                 'is_active' => true,
                 'is_critical' => false,
             ],
+            [
+                'name' => 'Exam Results Approved',
+                'trigger_type' => 'exam_result_approved',
+                'channel' => 'sms',
+                'subject' => 'Results Ready - {student_name}',
+                'body' => 'Dear {parent_first_name}, {student_name} exam results ({exam_name}) have been approved. Results: {result_summary}. Approved on {approved_at}. Login to the parent portal to view full report card. - {school_name}',
+                'is_active' => true,
+                'is_critical' => false,
+            ],
         ];
 
         foreach ($templates as $template) {

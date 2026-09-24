@@ -46,7 +46,7 @@ class EmailTemplateController extends AppBaseController
             $query->where('status', $request->status);
         }
 
-        $emailTemplates = $query->paginate(10);
+        $emailTemplates = $query->paginate(10)->withQueryString();
         $dropdownData = $this->getDropdownData();
 
         return view('email_templates.index', compact('emailTemplates', 'dropdownData'));

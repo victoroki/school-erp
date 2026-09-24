@@ -64,9 +64,26 @@ class GradingScaleController extends AppBaseController
      */
     private function seedGrades(string $system)
     {
+        // The CBE bands are derived from CbeGradingService::LEVELS rather than
+        // repeated here. Previously this array carried its own boundaries
+        // (EE 76-100 / ME 51-75.99 / AE 26-50.99 / BE 0-25.99) which disagreed
+        // with the 8-point achievement scale the rest of the application used,
+        // so the same learner could be shown two different performance levels.
+        $cbeGrades = array_map(
+            fn (array $level) => [
+                $level['code'],
+                $level['min'],
+                $level['max'],
+                $level['points'],
+                $level['band'] . ' — ' . $level['descriptor'],
+            ],
+            \App\Services\CbeGradingService::LEVELS
+        );
+
         $scales = [
             'kcse' => [
                 'label' => 'KCSE (8-4-4)',
+                'education_system' => '8-4-4',
                 'grades' => [
                     // [grade, min %, max %, points, remark]
                     ['A',  80, 100,   12, 'Excellent'],
@@ -85,13 +102,10 @@ class GradingScaleController extends AppBaseController
             ],
             'cbc' => [
                 'label' => 'CBC / CBE',
-                'grades' => [
-                    // Performance levels under Kenya's competency-based curriculum
-                    ['EE', 76, 100,   4, 'Exceeding Expectation'],
-                    ['ME', 51, 75.99, 3, 'Meeting Expectation'],
-                    ['AE', 26, 50.99, 2, 'Approaching Expectation'],
-                    ['BE',  0, 25.99, 1, 'Below Expectation'],
-                ],
+                'education_system' => 'CBC',
+                // Single-sourced from CbeGradingService so the seeded scale and
+                // the scale used everywhere else cannot drift apart again.
+                'grades' => $cbeGrades,
             ],
         ];
 
@@ -100,13 +114,19 @@ class GradingScaleController extends AppBaseController
         $label = $scales[$system]['label'];
         $created = 0;
 
+        $educationSystem = $scales[$system]['education_system'] ?? null;
+
         foreach ($scales[$system]['grades'] as [$name, $min, $max, $points, $remark]) {
-            if (GradingScale::where('name', $name)->exists()) {
+            // Match on name AND curriculum: a school running both 8-4-4 and CBC
+            // must be able to hold both scales, which share no names but would
+            // otherwise be treated as already-present duplicates.
+            if (GradingScale::where('name', $name)->where('education_system', $educationSystem)->exists()) {
                 continue;
             }
 
             GradingScale::create([
                 'name' => $name,
+                'education_system' => $educationSystem,
                 'min_percentage' => $min,
                 'max_percentage' => $max,
                 'grade_point' => $points,

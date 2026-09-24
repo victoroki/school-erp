@@ -82,7 +82,7 @@
                             <th class="text-center">Learners</th>
                             <th class="text-center">Girls / Boys</th>
                             <th>Oldest Entry</th>
-                            <th class="text-right pr-3" style="width: 260px;">Actions</th>
+                            <th class="text-right pr-3" style="width: 380px;">Actions</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -123,8 +123,19 @@
                                         @csrf
                                         <input type="hidden" name="exam_id" value="{{ $batch->exam_id }}">
                                         <input type="hidden" name="class_section_id" value="{{ $batch->class_section_id }}">
+                                        {{-- Deliberate whole-batch approval; the button reads "Approve All". --}}
+                                        <input type="hidden" name="approval_scope" value="batch">
                                         <button type="submit" class="btn btn-success btn-sm shadow-sm">
                                             <i class="fas fa-check-double mr-1"></i> Approve All
+                                        </button>
+                                    </form>
+                                    <form action="{{ route('marks-approval.send-to-parents') }}" method="POST" class="d-inline"
+                                          onsubmit="return confirm('Send approved results for {{ $batch->class_name }} — {{ $batch->exam_name }} to parents?')">
+                                        @csrf
+                                        <input type="hidden" name="exam_id" value="{{ $batch->exam_id }}">
+                                        <input type="hidden" name="class_section_id" value="{{ $batch->class_section_id }}">
+                                        <button type="submit" class="btn btn-info btn-sm shadow-sm">
+                                            <i class="fas fa-paper-plane mr-1"></i> Send Results to Parents
                                         </button>
                                     </form>
                                 </td>

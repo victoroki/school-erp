@@ -355,6 +355,54 @@ class MobileAdminDashboardTest extends TestCase
             ->assertJsonPath('recent_payments.1.student_name', 'Jane Doe');
     }
 
+    public function test_finance_today_excludes_reversed_payments(): void
+    {
+        $admin = $this->staffUser('Admin');
+        ['year' => $year, 'cs' => $cs] = $this->section();
+        $student = $this->enroll($cs, $year);
+
+        $structure = FeeStructure::create([
+            'academic_year_id' => $year->academic_year_id,
+            'class_id' => $cs->class_id,
+            'category_id' => FeeCategory::create(['name' => 'Tuit-' . uniqid(), 'type' => 'mandatory'])->category_id,
+            'amount' => 3000, 'term' => 'Term 1', 'payment_frequency' => 'termly',
+            'due_date' => now()->addDays(30), 'status' => 'active',
+        ]);
+
+        // paid_amount stays 0 because LedgerService rebuilds it from the single
+        // source of truth on reversal, and FeeBalanceService excludes reversed.
+        $assignment = StudentFeeAssignment::create([
+            'student_id' => $student->student_id, 'fee_structure_id' => $structure->fee_structure_id,
+            'academic_year_id' => $year->academic_year_id, 'term' => 'Term 1',
+            'amount' => 3000, 'final_amount' => 3000, 'paid_amount' => 0,
+            'assigned_date' => now(), 'status' => 'active',
+        ]);
+
+        // Sized so the voided payment would flip the arrears verdict if it were
+        // counted: 4000 >= the 3000 due. The array-scope figures and the raw
+        // paid_totals subquery must both ignore it.
+        FeePayment::create([
+            'student_fee_assignment_id' => $assignment->id,
+            'amount' => 4000,
+            'payment_date' => now()->toDateString(),
+            'payment_method' => 'cash',
+            'receipt_number' => 'RCP-VOIDED',
+            'reversed_at' => now(),
+        ]);
+
+        $res = $this->withToken($this->mobileToken($admin))
+            ->getJson('/api/mobile/admin/dashboard')
+            ->assertOk();
+
+        $res->assertJsonPath('finance.collected_today', 0)
+            ->assertJsonPath('finance.payments_today', 0)
+            ->assertJsonCount(0, 'finance.by_method')
+            ->assertJsonPath('finance.students_in_arrears', 1);
+
+        // Field names and types are unchanged — data correctness only.
+        $res->assertJsonStructure(['finance' => ['collected_today', 'payments_today', 'by_method', 'students_in_arrears']]);
+    }
+
     public function test_upcoming_events_and_empty_states_are_honest(): void
     {
         $admin = $this->staffUser('Admin');

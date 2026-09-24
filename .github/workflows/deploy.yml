@@ -15,6 +15,10 @@ on:
     branches: [feat/rbac-consolidated-permissions]   # change to main when you go live
   workflow_dispatch:
 
+# Same trigger as test.yml: a push runs both workflows in parallel. The deploy
+# still gates on the test job below, so the FTP upload only starts once the
+# migrations + suite have passed in this run.
+
 concurrency:
   group: deploy-production
   cancel-in-progress: false   # never kill a mid-deploy to one school
@@ -25,10 +29,86 @@ permissions:
 
 jobs:
   # ──────────────────────────────────────────────────────────────────────
+  # TEST — gate: migrations + PHPUnit must pass before anything ships
+  # (runs the same steps as test.yml, inline, inside this pipeline so the
+  # deploy is blocked in the SAME run — a workflow_call dependency would be
+  # fine too, but inline keeps the run log in one place)
+  # ──────────────────────────────────────────────────────────────────────
+  test:
+    name: Tests (migrations + PHPUnit)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: school_erp_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, bcmath, pdo_mysql, fileinfo, openssl, tokenizer, gd, zip
+          coverage: none
+
+      - name: Install Composer dependencies (with dev)
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Create .env for CI
+        run: |
+          mkdir -p storage/framework/cache/data storage/framework/sessions \
+                   storage/framework/views storage/logs storage/app/public bootstrap/cache
+          {
+            echo "APP_NAME='School ERP'"
+            echo "APP_ENV=testing"
+            echo "APP_KEY="
+            echo "APP_DEBUG=true"
+            echo "APP_URL=http://localhost"
+            echo ""
+            echo "LOG_CHANNEL=stack"
+            echo "LOG_LEVEL=error"
+            echo ""
+            echo "DB_CONNECTION=mysql"
+            echo "DB_HOST=127.0.0.1"
+            echo "DB_PORT=3306"
+            echo "DB_DATABASE=school_erp_test"
+            echo "DB_USERNAME=root"
+            echo "DB_PASSWORD=root"
+            echo ""
+            echo "CACHE_DRIVER=array"
+            echo "QUEUE_CONNECTION=sync"
+            echo "SESSION_DRIVER=array"
+            echo "MAIL_MAILER=array"
+          } > .env
+
+      - name: Generate app key
+        run: php artisan key:generate --force
+
+      # Fails fast on a bad migration before the multi-minute suite runs.
+      - name: Run all migrations on a clean database
+        run: php artisan migrate --force
+
+      - name: Run seeders
+        run: php artisan db:seed --force
+
+      - name: Run test suite
+        run: php artisan test
+
+  # ──────────────────────────────────────────────────────────────────────
   # BUILD — one artifact shared by every school deploy
   # ──────────────────────────────────────────────────────────────────────
   build:
     name: Build
+    needs: test
     runs-on: ubuntu-latest
     outputs:
       vendor_changed: ${{ steps.deps.outputs.vendor_changed }}

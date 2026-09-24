@@ -6,7 +6,8 @@ use App\Models\Expenses;
 use App\Models\Income;
 use App\Models\BankAccount;
 use App\Models\Budget;
-use App\Models\FeePayment;
+use App\Models\FinancialYear;
+use App\Services\FinancialMetrics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -20,43 +21,34 @@ class FinanceDashboardController extends AppBaseController
 
     public function index()
     {
-        $thisMonth = Carbon::now()->month;
-        $thisYear = Carbon::now()->year;
-        $lastMonth = Carbon::now()->subMonth()->month;
-        $lastMonthYear = Carbon::now()->subMonth()->year;
+        // Income Metrics — cash received this month (active Income + non-reversed fees)
+        $thisMonthStart = Carbon::now()->startOfMonth()->toDateString();
+        $thisMonthEnd = Carbon::now()->endOfMonth()->toDateString();
 
-        // Income Metrics
-        $totalIncomeThisMonth = Income::whereMonth('income_date', $thisMonth)
-            ->whereYear('income_date', $thisYear)
-            ->where('status', 'active')
-            ->sum('amount');
-        
-        // Include Fee Payments as income
-        $totalFeesThisMonth = FeePayment::whereMonth('payment_date', $thisMonth)
-            ->whereYear('payment_date', $thisYear)
-            ->sum('amount');
-        
+        $totalIncomeThisMonth = FinancialMetrics::incomeBaseTotalBetween($thisMonthStart, $thisMonthEnd);
+        $totalFeesThisMonth = FinancialMetrics::feeIncomeTotalBetween($thisMonthStart, $thisMonthEnd);
         $combinedIncomeThisMonth = $totalIncomeThisMonth + $totalFeesThisMonth;
 
-        $totalIncomeLastMonth = Income::whereMonth('income_date', $lastMonth)
-            ->whereYear('income_date', $lastMonthYear)
-            ->where('status', 'active')
-            ->sum('amount') + FeePayment::whereMonth('payment_date', $lastMonth)
-            ->whereYear('payment_date', $lastMonthYear)
-            ->sum('amount');
-        
+        $lastMonthStart = Carbon::now()->subMonth()->startOfMonth()->toDateString();
+        $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth()->toDateString();
+
+        $totalIncomeLastMonth = FinancialMetrics::incomeTotalBetween($lastMonthStart, $lastMonthEnd);
+
         $incomeChange = $totalIncomeLastMonth > 0 ? (($combinedIncomeThisMonth - $totalIncomeLastMonth) / $totalIncomeLastMonth) * 100 : 0;
 
-        // Expense Metrics
-        $totalExpensesThisMonth = Expenses::whereMonth('expense_date', $thisMonth)
-            ->whereYear('expense_date', $thisYear)
-            ->whereIn('status', ['approved', 'paid'])
-            ->sum('amount');
-        
-        $totalExpensesLastMonth = Expenses::whereMonth('expense_date', $lastMonth)
-            ->whereYear('expense_date', $lastMonthYear)
-            ->whereIn('status', ['approved', 'paid'])
-            ->sum('amount');
+        // Expense Metrics — cash basis: only paid expenses moved money, so an
+        // approved-but-unpaid expense must not overstate what the month cost.
+        $totalExpensesThisMonth = FinancialMetrics::expensesTotalBetween(
+            Carbon::now()->startOfMonth()->toDateString(),
+            Carbon::now()->endOfMonth()->toDateString(),
+            FinancialMetrics::BASIS_CASH
+        );
+
+        $totalExpensesLastMonth = FinancialMetrics::expensesTotalBetween(
+            Carbon::now()->subMonth()->startOfMonth()->toDateString(),
+            Carbon::now()->subMonth()->endOfMonth()->toDateString(),
+            FinancialMetrics::BASIS_CASH
+        );
         
         $expenseChange = $totalExpensesLastMonth > 0 ? (($totalExpensesThisMonth - $totalExpensesLastMonth) / $totalExpensesLastMonth) * 100 : 0;
 
@@ -76,9 +68,9 @@ class FinanceDashboardController extends AppBaseController
         $budgets = Budget::whereHas('financialYear', function($q) {
             $q->where('status', 'open');
         })->get();
-        
-        // This is simplified. Proper budget vs actual would need complex mapping.
-        $budgetUtilization = 0; // Calculated in view or service
+
+        $openYear = FinancialYear::where('status', 'open')->first();
+        $budgetUtilization = FinancialMetrics::budgetUtilization($openYear);
         
         // Recent Transactions
         $recentIncome = Income::with('category')->latest('income_date')->limit(10)->get();
@@ -94,7 +86,7 @@ class FinanceDashboardController extends AppBaseController
             'totalBankBalance', 'lowBalanceAccounts',
             'pendingApprovalsCount', 'pendingApprovalsAmount',
             'recentIncome', 'recentExpenses',
-            'chartData'
+            'chartData', 'budgetUtilization'
         ));
     }
 
@@ -107,19 +99,13 @@ class FinanceDashboardController extends AppBaseController
         for ($i = 5; $i >= 0; $i--) {
             $date = Carbon::now()->subMonths($i);
             $months[] = $date->format('M');
-            
-            $monthIncome = Income::whereMonth('income_date', $date->month)
-                ->whereYear('income_date', $date->year)
-                ->where('status', 'active')
-                ->sum('amount') + FeePayment::whereMonth('payment_date', $date->month)
-                ->whereYear('payment_date', $date->year)
-                ->sum('amount');
-            
-            $monthExpense = Expenses::whereMonth('expense_date', $date->month)
-                ->whereYear('expense_date', $date->year)
-                ->whereIn('status', ['approved', 'paid'])
-                ->sum('amount');
-            
+
+            $monthStart = $date->copy()->startOfMonth()->toDateString();
+            $monthEnd = $date->copy()->endOfMonth()->toDateString();
+
+            $monthIncome = FinancialMetrics::incomeTotalBetween($monthStart, $monthEnd);
+            $monthExpense = FinancialMetrics::expensesTotalBetween($monthStart, $monthEnd, FinancialMetrics::BASIS_CASH);
+
             $income[] = $monthIncome;
             $expenses[] = $monthExpense;
         }

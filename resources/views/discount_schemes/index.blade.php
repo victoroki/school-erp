@@ -46,7 +46,7 @@
                                         @if($discountScheme->type == 'percentage')
                                             {{ $discountScheme->value }}%
                                         @elseif($discountScheme->type == 'fixed')
-                                            KSh {{ number_format($discountScheme->value, 2) }}
+                                            KES {{ number_format($discountScheme->value, 2) }}
                                         @else
                                             Full Waiver
                                         @endif

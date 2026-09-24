@@ -12,7 +12,7 @@
 
 <!-- Hod Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('hod_id', 'Hod Id:') !!}
-    <p>{{ $department->hod_id }}</p>
+    {!! Form::label('hod_id', 'Head of Department:') !!}
+    <p>{{ $department->hod ? $department->hod->full_name : 'Not assigned' }}</p>
 </div>
 

@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateStudentClassEnrollmentRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Models\ClassSection;
 use App\Models\Student;
+use App\Models\StudentClassEnrollment;
 use App\Models\AcademicYear;
 use App\Repositories\StudentClassEnrollmentRepository;
 use App\Models\AuditTrail;
@@ -80,8 +81,11 @@ class StudentClassEnrollmentController extends AppBaseController
     public function store(CreateStudentClassEnrollmentRequest $request)
     {
         $input = $request->all();
+        $input['is_current'] = $request->boolean('is_current');
 
         $studentClassEnrollment = $this->studentClassEnrollmentRepository->create($input);
+
+        $this->enforceSingleCurrentEnrollment($studentClassEnrollment);
 
         AuditTrail::log('Student Enrollment', 'CREATE', $studentClassEnrollment->enrollment_id, null, $studentClassEnrollment->toArray());
 
@@ -95,7 +99,7 @@ class StudentClassEnrollmentController extends AppBaseController
      */
     public function show($id)
     {
-        $studentClassEnrollment = $this->studentClassEnrollmentRepository->find($id);
+        $studentClassEnrollment = \App\Models\StudentClassEnrollment::with(['student', 'classSection.schoolClass', 'classSection.section', 'academicYear'])->find($id);
 
         if (empty($studentClassEnrollment)) {
             Flash::error('Student Class Enrollment not found');
@@ -140,13 +144,38 @@ class StudentClassEnrollmentController extends AppBaseController
         }
 
         $oldData = $studentClassEnrollment->toArray();
-        $studentClassEnrollment = $this->studentClassEnrollmentRepository->update($request->all(), $id);
+
+        $input = $request->all();
+        $input['is_current'] = $request->boolean('is_current');
+
+        $studentClassEnrollment = $this->studentClassEnrollmentRepository->update($input, $id);
+
+        $this->enforceSingleCurrentEnrollment($studentClassEnrollment);
 
         AuditTrail::log('Student Enrollment', 'UPDATE', $studentClassEnrollment->enrollment_id, $oldData, $studentClassEnrollment->toArray());
 
         Flash::success('Student Class Enrollment updated successfully.');
 
         return redirect(route('student-class-enrollments.index'));
+    }
+
+    /**
+     * A learner has at most one current enrollment.
+     *
+     * The column defaults to true, and nothing cleared the flag on other rows,
+     * so creating or promoting an enrollment could leave a learner with several
+     * "current" classes at once — and the student list, attendance register and
+     * fee screens all read whichever one they happen to load first.
+     */
+    protected function enforceSingleCurrentEnrollment(StudentClassEnrollment $enrollment): void
+    {
+        if (! $enrollment->is_current) {
+            return;
+        }
+
+        StudentClassEnrollment::where('student_id', $enrollment->student_id)
+            ->where('enrollment_id', '!=', $enrollment->enrollment_id)
+            ->update(['is_current' => false]);
     }
 
     /**

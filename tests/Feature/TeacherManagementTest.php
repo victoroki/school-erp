@@ -291,8 +291,14 @@ class TeacherManagementTest extends TestCase
         // Sidebar child hidden; the rest of Academic Management stays.
         $labels = $this->academicsChildLabels($this->visibleMenuFor($admin));
         $this->assertNotContains('Teacher Management', $labels);
-        $this->assertContains('Teacher Onboarding', $labels);
         $this->assertContains('Academic Years', $labels);
+
+        // Teacher Onboarding is deliberately NOT a sidebar entry — the menu config
+        // records the decision ("covered by Teacher Management Add button") and the
+        // Teacher Management index links straight to the onboarding form, so the
+        // feature is reachable without its own nav item. This assertion used to
+        // require the child, contradicting that documented decision.
+        $this->assertNotContains('Teacher Onboarding', $labels);
 
         // Routes 404 while other modules keep working.
         $this->actingAs($admin)->get('/teacher-management')->assertNotFound();
@@ -303,7 +309,13 @@ class TeacherManagementTest extends TestCase
         $manager->toggle('academic-teacher-management', true);
 
         $this->assertContains('Teacher Management', $this->academicsChildLabels($this->visibleMenuFor($admin)));
-        $this->actingAs($admin)->get('/teacher-management')->assertOk();
+
+        // With the module back on, Teacher Management must still offer the
+        // onboarding path that replaced the removed sidebar entry.
+        $this->actingAs($admin)
+            ->get('/teacher-management')
+            ->assertOk()
+            ->assertSee(route('teacher-onboarding.create'));
     }
 
     public function test_non_teaching_staff_are_not_managed(): void

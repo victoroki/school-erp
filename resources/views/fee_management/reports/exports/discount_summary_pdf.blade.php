@@ -46,7 +46,7 @@
 
     <div class="summary-box">
         <div class="summary-label">Total Revenue Forgone (Discounts)</div>
-        <div class="summary-value">KSh {{ number_format($totalDiscounts, 2) }}</div>
+        <div class="summary-value">KES {{ number_format($totalDiscounts, 2) }}</div>
     </div>
 
     @if($discountSchemes->count() > 0)

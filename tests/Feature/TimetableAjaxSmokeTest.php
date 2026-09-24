@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\AcademicYear;
+use App\Models\ClassSection;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Database\Seeders\PermissionSeeder;
@@ -51,7 +52,20 @@ class TimetableAjaxSmokeTest extends TestCase
             ->getJson("/api/academic-years/{$year->academic_year_id}/class-sections");
 
         $response->assertOk();
-        $response->assertJsonCount(6);
+
+        // Derived rather than hardcoded. This asserted 6, which predates the
+        // seeder being widened to the full 14-class CBC set (PP1/PP2 plus Grades
+        // 1-12) with an A and B section each, i.e. 28 class-sections. Reading the
+        // expected count from the database keeps it honest as the seeder evolves,
+        // and the label assertion below still proves real rows reached the payload.
+        $expected = ClassSection::where('academic_year_id', $year->academic_year_id)->count();
+        $this->assertGreaterThan(0, $expected, 'The seeder defined no class sections for the current year.');
+
+        $response->assertJsonCount($expected);
         $response->assertJsonStructure([['id', 'label']]);
+
+        // A real "Class - Section" label, proving the join resolved.
+        $labels = array_column($response->json(), 'label');
+        $this->assertNotEmpty(array_filter($labels, fn ($l) => str_contains((string) $l, ' - ')));
     }
 }

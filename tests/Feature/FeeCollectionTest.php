@@ -206,7 +206,7 @@ class FeeCollectionTest extends TestCase
                 'transaction_id' => 'TXN-001',
                 'remarks' => 'First installment',
             ])
-            ->assertRedirect(route('fee-management.show', $student->student_id));
+            ->assertRedirect(route('fee-management.receipt', FeePayment::first()->payment_id));
 
         $this->assertDatabaseHas('fee_payments', [
             'student_fee_assignment_id' => $assignment->id,
@@ -234,7 +234,7 @@ class FeeCollectionTest extends TestCase
                 'payment_method' => 'online',
                 'remarks' => 'Total settlement',
             ])
-            ->assertRedirect(route('fee-management.show', $student->student_id));
+            ->assertRedirect(route('fee-management.receipt', FeePayment::first()->payment_id));
 
         $this->assertSame('12000.00', FeePayment::sum('amount'));
         $this->assertDatabaseHas('student_fee_assignments', ['id' => $first->id, 'paid_amount' => 10000]);
@@ -261,5 +261,88 @@ class FeeCollectionTest extends TestCase
             ->assertForbidden();
 
         $this->assertSame(0, FeePayment::count());
+    }
+
+    public function test_paying_fees_redirects_to_a_printable_receipt(): void
+    {
+        $accountant = $this->accountant();
+        $student = $this->createStudent();
+        $assignment = $this->createAssignment($student, 10000, $accountant);
+
+        $response = $this->actingAs($accountant)
+            ->post("/fee-management/{$student->student_id}/store-payment", [
+                'student_fee_assignment_id' => $assignment->id,
+                'amount' => 4000,
+                'payment_date' => now()->format('Y-m-d'),
+                'payment_method' => 'cash',
+            ]);
+
+        $payment = FeePayment::first();
+        $response->assertRedirect(route('fee-management.receipt', $payment->payment_id));
+
+        // The receipt page renders the paid amount and the RCP- number.
+        $this->actingAs($accountant)
+            ->get(route('fee-management.receipt', $payment->payment_id))
+            ->assertOk()
+            ->assertSee('Official Fee Receipt')
+            ->assertSee($payment->receipt_number)
+            ->assertSee('4,000.00')
+            ->assertSee('Four thousand shillings only');
+    }
+
+    public function test_receipt_can_be_skipped_and_reached_from_payment_history(): void
+    {
+        $accountant = $this->accountant();
+        $student = $this->createStudent();
+        $assignment = $this->createAssignment($student, 10000, $accountant);
+
+        // skip_print keeps the old behaviour of landing on the fee detail page.
+        $this->actingAs($accountant)
+            ->post("/fee-management/{$student->student_id}/store-payment", [
+                'student_fee_assignment_id' => $assignment->id,
+                'amount' => 2500.50,
+                'payment_date' => now()->format('Y-m-d'),
+                'payment_method' => 'online',
+                'skip_print' => '1',
+            ])
+            ->assertRedirect(route('fee-management.show', $student->student_id));
+
+        $payment = FeePayment::first();
+
+        // The payment history table links to the printable receipt.
+        $this->actingAs($accountant)
+            ->get(route('fee-management.show', $student->student_id))
+            ->assertOk()
+            ->assertSee(route('fee-management.receipt', $payment->payment_id), false);
+
+        // The receipt itself renders the cents amount.
+        $this->actingAs($accountant)
+            ->get(route('fee-management.receipt', $payment->payment_id))
+            ->assertOk()
+            ->assertSee('2,500.50')
+            ->assertSee('Two thousand five hundred shillings and fifty cents only');
+    }
+
+    public function test_receipt_requires_fees_print_permission(): void
+    {
+        $accountant = $this->accountant();
+        $student = $this->createStudent();
+        $assignment = $this->createAssignment($student, 10000, $accountant);
+
+        $this->actingAs($accountant)
+            ->post("/fee-management/{$student->student_id}/store-payment", [
+                'student_fee_assignment_id' => $assignment->id,
+                'amount' => 1000,
+                'payment_date' => now()->format('Y-m-d'),
+                'payment_method' => 'cash',
+                'skip_print' => '1',
+            ]);
+
+        $teacher = $this->teacher();
+        $payment = FeePayment::first();
+
+        $this->actingAs($teacher)
+            ->get(route('fee-management.receipt', $payment->payment_id))
+            ->assertForbidden();
     }
 }

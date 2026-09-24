@@ -68,10 +68,46 @@
                     <h3 class="card-title">Recent Payroll Runs</h3>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> No payroll runs found. Start by processing a new payroll above.
-                    </div>
+                    @if($payrolls->isEmpty())
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No payroll runs found. Start by processing a new payroll above.
+                        </div>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Staff</th>
+                                        <th>Period</th>
+                                        <th class="text-right">Basic Salary</th>
+                                        <th class="text-right">Gross</th>
+                                        <th class="text-right">Deductions</th>
+                                        <th class="text-right">Net Salary</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($payrolls as $payroll)
+                                        <tr>
+                                            <td>{{ $payroll->staff->full_name ?? 'N/A' }}</td>
+                                            <td>{{ \Carbon\Carbon::create($payroll->year, $payroll->month, 1)->format('M Y') }}</td>
+                                            <td class="text-right">{{ \App\Support\Money::format($payroll->basic_salary ?? 0) }}</td>
+                                            <td class="text-right">{{ \App\Support\Money::format($payroll->gross_salary ?? 0) }}</td>
+                                            <td class="text-right">{{ \App\Support\Money::format($payroll->deductions ?? 0) }}</td>
+                                            <td class="text-right font-weight-bold">{{ \App\Support\Money::format($payroll->net_salary ?? 0) }}</td>
+                                            <td><span class="badge badge-{{ $payroll->status === 'paid' ? 'success' : ($payroll->status === 'processing' ? 'warning' : 'secondary') }}">{{ ucfirst($payroll->status ?? 'draft') }}</span></td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
                 </div>
+                @if($payrolls->hasPages())
+                <div class="card-footer clearfix">
+                    <div class="float-right">{{ $payrolls->withQueryString()->links() }}</div>
+                </div>
+                @endif
             </div>
         </div>
     </section>

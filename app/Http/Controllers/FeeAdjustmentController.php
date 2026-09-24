@@ -16,9 +16,17 @@ class FeeAdjustmentController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:fees.view')->only(['index', 'show']);
+        // Reads: the list, one adjustment, the pending-approval queue, a
+        // student's adjustment history, the audit log and the AJAX fee lookup
+        // that feeds the create form. All of these previously had no gate.
+        $this->middleware('can:fees.view')->only([
+            'index', 'show', 'pendingApprovals', 'studentAdjustments', 'auditLog', 'getFeeAssignmentsForStudent',
+        ]);
         $this->middleware('can:fees.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
-        $this->middleware('can:fees.approve')->only(['approve']);
+        // Approving and rejecting are the two halves of one review decision.
+        // Only 'approve' was gated, so any authenticated user could kill a
+        // legitimate adjustment by POSTing to reject.
+        $this->middleware('can:fees.approve')->only(['approve', 'reject']);
     }
 
     public function index(Request $request)
@@ -38,7 +46,7 @@ class FeeAdjustmentController extends Controller
             $query->where('adjustment_type', $request->adjustment_type);
         }
 
-        $adjustments = $query->paginate(20);
+        $adjustments = $query->paginate(20)->withQueryString();
         $students = Student::where('is_active', true)
             ->get()
             ->mapWithKeys(fn($s) => [$s->student_id => $s->full_name]);
@@ -51,20 +59,38 @@ class FeeAdjustmentController extends Controller
         $student = null;
         $feeAssignments = collect();
 
-        if ($request->filled('student_id')) {
-            $student = Student::findOrFail($request->student_id);
-            $academicYearId = $request->academic_year_id ?? AcademicYear::where('is_current', true)->value('academic_year_id');
+        // After a validation error the form re-renders on a plain GET with no
+        // query string, so restore the student/year cascade from old() input —
+        // otherwise the fee-category dropdown repopulates empty.
+        $studentId = $request->input('student_id', old('student_id'));
+        $academicYearId = $request->input('academic_year_id', old('academic_year_id'))
+            ?? AcademicYear::where('is_current', true)->value('academic_year_id');
 
-            $feeAssignments = StudentFeeAssignment::with(['feeStructure.category'])
-                ->where('student_id', $student->student_id)
-                ->where('academic_year_id', $academicYearId)
-                ->where('status', 'active')
-                ->get();
+        if ($studentId) {
+            $student = Student::find($studentId);
+
+            if ($student) {
+                $feeAssignments = StudentFeeAssignment::with(['feeStructure.category'])
+                    ->where('student_id', $student->student_id)
+                    ->where('academic_year_id', $academicYearId)
+                    ->where('status', 'active')
+                    ->get();
+            }
         }
 
         $academicYears = AcademicYear::orderBy('start_date', 'desc')->pluck('name', 'academic_year_id');
+        $currentYearId = AcademicYear::where('is_current', true)->value('academic_year_id');
+        // Alias must not be `full_name`: Student::getFullNameAttribute() would
+        // shadow the SQL alias and, with first_name/last_name not selected,
+        // resolve every option to an empty string.
+        $students = Student::where('is_active', true)
+            ->selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' (', admission_no, ')') as dropdown_name")
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get()
+            ->pluck('dropdown_name', 'student_id');
 
-        return view('fee_management.adjustments.create', compact('student', 'feeAssignments', 'academicYears'));
+        return view('fee_management.adjustments.create', compact('student', 'feeAssignments', 'academicYears', 'currentYearId', 'students'));
     }
 
     public function store(Request $request)

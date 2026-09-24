@@ -42,7 +42,7 @@ class BookIssueController extends Controller
              });
         }
 
-        $bookIssues = $query->orderBy('created_at', 'desc')->paginate(10);
+        $bookIssues = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
         return view('book_issues.index', compact('bookIssues'));
     }
 

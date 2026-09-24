@@ -76,7 +76,7 @@ class InventoryItemController extends AppBaseController
             'out_of_stock' => InventoryItem::where('quantity', '<=', 0)->count(),
         ];
 
-        $inventoryItems = $query->paginate(15);
+        $inventoryItems = $query->paginate(15)->withQueryString();
         $dropdownData = $this->getdropdownData();
 
         return view('inventory_items.index')
@@ -136,7 +136,7 @@ class InventoryItemController extends AppBaseController
      */
     public function show($id)
     {
-        $inventoryItem = InventoryItem::with(['category', 'supplier', 'transactions.user'])->find($id);
+        $inventoryItem = InventoryItem::with(['category', 'supplier', 'transactions.handledBy'])->find($id);
 
         if (empty($inventoryItem)) {
             Flash::error('Inventory Item not found');

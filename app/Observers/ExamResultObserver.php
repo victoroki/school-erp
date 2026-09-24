@@ -2,33 +2,21 @@
 
 namespace App\Observers;
 
-use App\Events\NotificationTriggered;
 use App\Models\ExamResult;
 
+/**
+ * ExamResultObserver
+ *
+ * NOTE: Result notifications to parents are intentionally NOT fired here.
+ * Firing on `created` would notify parents on every raw mark entry before
+ * the marks have been reviewed and approved.
+ *
+ * The correct place to dispatch the `exam_result_approved` notification is
+ * MarksApprovalController::approve(), which runs only after an authorised
+ * user has explicitly approved the batch.  That controller checks the
+ * exam's `publish_result` flag before dispatching.
+ */
 class ExamResultObserver
 {
-    public function created(ExamResult $result): void
-    {
-        $exam = $result->exam;
-        if (!$exam || !$exam->publish_result) {
-            return;
-        }
-
-        $subject = $result->subject?->name ?? '';
-        $grade = $result->grade?->grade ?? '';
-        $remarks = $result->remarks ?? '';
-
-        event(new NotificationTriggered(
-            triggerType: 'exam_published',
-            studentId: $result->student_id,
-            triggerModel: ExamResult::class,
-            triggerId: $result->result_id,
-            context: [
-                'subject_name' => $subject,
-                'marks' => (string) $result->marks_obtained,
-                'grade' => $grade,
-                'remarks' => $remarks,
-            ]
-        ));
-    }
+    // Intentionally empty — see note above.
 }

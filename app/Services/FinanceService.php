@@ -92,6 +92,17 @@ class FinanceService
      */
     public function recordPayment(array $data)
     {
+        // Idempotency: an identical client_reference must never produce a second
+        // payment. The web collection form has no disable-on-submit guard, so a
+        // double-click previously created two payments and two receipts.
+        if (! empty($data['client_reference'])) {
+            $existing = FeePayment::where('client_reference', $data['client_reference'])->first();
+
+            if ($existing) {
+                return $existing;
+            }
+        }
+
         DB::beginTransaction();
         try {
             $assignment = StudentFeeAssignment::findOrFail($data['student_fee_assignment_id']);
@@ -132,6 +143,14 @@ class FinanceService
      */
     public function recordTotalPayment(array $data, $assignments)
     {
+        if (! empty($data['client_reference'])) {
+            $existing = FeePayment::where('client_reference', $data['client_reference'])->first();
+
+            if ($existing) {
+                return $existing;
+            }
+        }
+
         DB::beginTransaction();
         try {
             // Recommend allocation across the provided outstanding assignments.
@@ -173,11 +192,9 @@ class FinanceService
      */
     public function updateAssignmentPaymentStatus(StudentFeeAssignment $assignment)
     {
-        $paidAmount = $assignment->payments()->sum('amount');
-        
-        $assignment->update([
-            'paid_amount' => $paidAmount,
-        ]);
+        // Summing $assignment->payments() included reversed payments. Route the
+        // figure through the shared balance service instead.
+        return app(\App\Services\FeeBalanceService::class)->recomputeAssignment($assignment);
     }
 
     private function generateReceiptNumber()
@@ -190,24 +207,26 @@ class FinanceService
      */
     public function getMetrics()
     {
+        $balances = app(\App\Services\FeeBalanceService::class);
+
+        $activeAssignmentIds = StudentFeeAssignment::where('status', 'active')->pluck('id')->all();
+
+        // Money paid back out to parents/students. Only completed refunds have
+        // actually left the school; requested/approved ones are still pending.
+        $totalRefunded = (float) \App\Models\Refund::where('status', 'completed')->sum('amount');
+
         return [
-            'total_receivable' => StudentFeeAssignment::where('status', 'active')->sum('final_amount'),
-            'total_collected' => FeePayment::sum('amount'),
-            'total_pending' => StudentFeeAssignment::where('status', 'active')
-                ->whereRaw('COALESCE(paid_amount, 0) < final_amount')
-                ->get()
-                ->sum(function ($assignment) {
-                    return $assignment->final_amount - $assignment->paid_amount;
-                }),
-            'collection_rate' => $this->getCollectionRate()
+            'total_receivable' => $balances->totalAssigned(),
+            // Reversed payments no longer inflate "collected".
+            'total_collected' => $balances->totalCollected(),
+            'total_pending' => $balances->outstandingForAssignments($activeAssignmentIds),
+            'collection_rate' => $this->getCollectionRate(),
+            'total_refunded' => round($totalRefunded, 2),
         ];
     }
 
     private function getCollectionRate()
     {
-        $receivable = StudentFeeAssignment::where('status', 'active')->sum('final_amount');
-        if ($receivable == 0) return 0;
-        $collected = FeePayment::sum('amount');
-        return round(($collected / $receivable) * 100, 2);
+        return app(\App\Services\FeeBalanceService::class)->collectionRate();
     }
 }

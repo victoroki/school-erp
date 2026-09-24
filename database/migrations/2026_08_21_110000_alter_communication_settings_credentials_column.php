@@ -8,8 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Change credentials from json to text to support encrypted ciphertext
-        DB::statement('ALTER TABLE communication_settings MODIFY COLUMN credentials TEXT NOT NULL');
+        // Change credentials from json to text to support encrypted ciphertext.
+        // NULL is allowed so that rows with no credentials yet (e.g. a provider
+        // row inserted before credentials are configured) don't violate the
+        // NOT NULL constraint — the model accessor already handles NULL gracefully.
+        DB::statement('ALTER TABLE communication_settings MODIFY COLUMN credentials TEXT NULL DEFAULT NULL');
 
         // Drop the single-column unique on settings_key so we can have multiple
         // rows with the same key but different provider_name (e.g. 'sms_provider'

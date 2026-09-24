@@ -46,7 +46,7 @@ class SmsTemplateController extends AppBaseController
             $query->where('status', $request->status);
         }
 
-        $smsTemplates = $query->paginate(10);
+        $smsTemplates = $query->paginate(10)->withQueryString();
         $dropdownData = $this->getDropdownData();
 
         return view('sms_templates.index', compact('smsTemplates', 'dropdownData'));

@@ -12,8 +12,8 @@
 
 <!-- Category Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('category_id', 'Category Id:') !!}
-    <p>{{ $book->category_id }}</p>
+    {!! Form::label('category_id', 'Category:') !!}
+    <p>{{ $book->category->name ?? 'N/A' }}</p>
 </div>
 
 <!-- Isbn Field -->
@@ -43,7 +43,7 @@
 <!-- Price Field -->
 <div class="col-sm-12">
     {!! Form::label('price', 'Price:') !!}
-    <p>{{ $book->price }}</p>
+    <p>{{ \App\Support\Money::format($book->price ?? 0) }}</p>
 </div>
 
 <!-- Pages Field -->
@@ -73,12 +73,12 @@
 <!-- Added Date Field -->
 <div class="col-sm-12">
     {!! Form::label('added_date', 'Added Date:') !!}
-    <p>{{ $book->added_date }}</p>
+    <p>{{ $book->added_date ? \Carbon\Carbon::parse($book->added_date)->format('d/m/Y') : '—' }}</p>
 </div>
 
 <!-- Description Field -->
 <div class="col-sm-12">
     {!! Form::label('description', 'Description:') !!}
-    <p>{{ $book->description }}</p>
+    <p>{{ $book->description ?? '—' }}</p>
 </div>
 

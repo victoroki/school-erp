@@ -13,13 +13,13 @@
 <!-- Driver Id Field -->
 <div class="col-sm-12">
     {!! Form::label('driver_id', 'Driver:') !!}
-    <p>{{ $transportAssignment->driver->name ?? 'N/A' }}</p>
+    <p>{{ $transportAssignment->driver->full_name ?? 'N/A' }}</p>
 </div>
 
 <!-- Assistant Id Field -->
 <div class="col-sm-12">
     {!! Form::label('assistant_id', 'Assistant:') !!}
-    <p>{{ $transportAssignment->assistant->name ?? 'N/A' }}</p>
+    <p>{{ $transportAssignment->assistant->full_name ?? '—' }}</p>
 </div>
 
 <!-- Departure Time Field -->

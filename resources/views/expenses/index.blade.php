@@ -79,7 +79,7 @@
                                         </span>
                                     </td>
                                     <td class="py-3 align-middle text-right text-danger font-weight-bold">
-                                        KES {{ number_format($expense->amount, 2) }}
+                                        {{ \App\Support\Money::format($expense->amount) }}
                                     </td>
                                     <td class="py-3 align-middle text-center">
                                         @php
@@ -105,9 +105,21 @@
                                             @endif
                                             
                                             @if($expense->status == 'approved' && Auth::user()->hasPermission('finance.manage'))
-                                                {!! Form::open(['route' => ['expenses.pay', $expense->expense_id], 'method' => 'post', 'class' => 'd-inline']) !!}
-                                                {!! Form::button('<i class="fas fa-hand-holding-usd"></i>', ['type' => 'submit', 'class' => 'btn btn-sm btn-outline-primary rounded-circle mr-1', 'title' => 'Mark as Paid']) !!}
-                                                {!! Form::close() !!}
+                                                @if(!$expense->bank_account_id && $expense->payment_method !== 'cash')
+                                                    {!! Form::open(['route' => ['expenses.pay', $expense->expense_id], 'method' => 'post', 'class' => 'd-inline-flex align-items-center']) !!}
+                                                    <select name="bank_account_id" class="form-control form-control-sm mr-1" style="width: 150px; min-width: 150px;" required>
+                                                        <option value="">Select account</option>
+                                                        @foreach($bankAccounts as $value => $label)
+                                                            <option value="{{ $value }}">{{ $label }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                    {!! Form::button('<i class="fas fa-hand-holding-usd"></i>', ['type' => 'submit', 'class' => 'btn btn-sm btn-outline-primary rounded-circle', 'title' => 'Mark as Paid from this account']) !!}
+                                                    {!! Form::close() !!}
+                                                @else
+                                                    {!! Form::open(['route' => ['expenses.pay', $expense->expense_id], 'method' => 'post', 'class' => 'd-inline']) !!}
+                                                    {!! Form::button('<i class="fas fa-hand-holding-usd"></i>', ['type' => 'submit', 'class' => 'btn btn-sm btn-outline-primary rounded-circle mr-1', 'title' => 'Mark as Paid']) !!}
+                                                    {!! Form::close() !!}
+                                                @endif
                                             @endif
 
                                             {!! Form::open(['route' => ['expenses.destroy', $expense->expense_id], 'method' => 'delete', 'class' => 'd-inline']) !!}

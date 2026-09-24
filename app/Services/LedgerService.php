@@ -7,7 +7,6 @@ use App\Models\FeePayment;
 use App\Models\PaymentAllocation;
 use App\Models\StudentFeeAssignment;
 use App\Models\Refund;
-use App\Models\Student;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -165,12 +164,20 @@ class LedgerService
     {
         return DB::transaction(function () use ($payment, $allocations, $strategy) {
             $user = auth()->id();
+            $created = [];
+            $touched = [];
 
             foreach ($allocations as $alloc) {
                 $assignment = StudentFeeAssignment::findOrFail($alloc['id']);
-                $amount = (float) $alloc['amount'];
+                $amount = round((float) $alloc['amount'], 2);
 
-                PaymentAllocation::create([
+                if ($amount <= 0) {
+                    continue;
+                }
+
+                $touched[$assignment->id] = true;
+
+                $created[] = PaymentAllocation::create([
                     'payment_id' => $payment->payment_id,
                     'student_fee_assignment_id' => $assignment->id,
                     'amount' => $amount,
@@ -195,14 +202,17 @@ class LedgerService
                 ]);
             }
 
-            // Refresh paid_amount on all touched assignments.
-            $assignmentIds = array_column($allocations, 'id');
-            foreach (StudentFeeAssignment::whereIn('id', $assignmentIds)->get() as $assignment) {
-                $paid = PaymentAllocation::where('student_fee_assignment_id', $assignment->id)->sum('amount');
-                $assignment->update(['paid_amount' => $paid]);
+            // Refresh paid_amount from the single source of truth. Summing
+            // payment_allocations directly (as this used to) re-counted money
+            // that had already been reversed, because reversed allocations are
+            // left in place for audit.
+            $balances = app(FeeBalanceService::class);
+
+            foreach (array_keys($touched) as $assignmentId) {
+                $balances->recomputeAssignment($assignmentId);
             }
 
-            return $assignments ?? [];
+            return $created;
         });
     }
 
@@ -212,6 +222,10 @@ class LedgerService
      */
     public function reversePayment(FeePayment $payment, string $reason, ?int $byUserId = null): void
     {
+        if ($payment->isReversed()) {
+            throw new Exception('This payment has already been reversed.');
+        }
+
         DB::transaction(function () use ($payment, $reason, $byUserId) {
             $user = $byUserId ?? auth()->id();
 
@@ -225,16 +239,27 @@ class LedgerService
                 $this->reverseEntry($entry, $reason, $user);
             }
 
-            // Recompute paid_amount for affected assignments (exclude this payment).
-            $assignmentIds = PaymentAllocation::where('payment_id', $payment->payment_id)
-                ->pluck('student_fee_assignment_id')
-                ->unique();
+            // Mark the payment itself as reversed. Until this flag existed the
+            // reversal was invisible to every SUM(fee_payments.amount) figure,
+            // to the receipt, and to the receipt register.
+            $payment->update([
+                'reversed_at' => now(),
+                'reversal_reason' => $reason,
+                'reversed_by' => $user,
+            ]);
 
-            foreach (StudentFeeAssignment::whereIn('id', $assignmentIds)->get() as $assignment) {
-                $paid = PaymentAllocation::where('student_fee_assignment_id', $assignment->id)
-                    ->where('payment_id', '!=', $payment->payment_id)
-                    ->sum('amount');
-                $assignment->update(['paid_amount' => $paid]);
+            // Rebuild paid_amount from the single source of truth.
+            $balances = app(FeeBalanceService::class);
+
+            $assignmentIds = PaymentAllocation::where('payment_id', $payment->payment_id)
+                ->pluck('student_fee_assignment_id');
+
+            if ($payment->student_fee_assignment_id) {
+                $assignmentIds->push($payment->student_fee_assignment_id);
+            }
+
+            foreach ($assignmentIds->unique() as $assignmentId) {
+                $balances->recomputeAssignment((int) $assignmentId);
             }
         });
     }
@@ -262,18 +287,39 @@ class LedgerService
     }
 
     /**
-     * Post a completed refund as a credit to the student's ledger.
+     * Post a completed refund to the student's ledger as a DEBIT.
+     *
+     * A refund is cash leaving the school to hand back money the student had
+     * already paid, so afterwards the student owes that amount again: their
+     * account moves the same way a charge moves, not the way a payment moves.
+     * Posting it as a credit said the opposite — that giving money back settles
+     * a fee — and it disagreed with every balance in the application, none of
+     * which counted refunds at all. The disagreement stayed invisible only
+     * because the statement derives its opening line from the balance service,
+     * which silently absorbed it.
+     *
+     * Historical entries posted the old way are NOT rewritten. They are detected
+     * as legacy by FeeIntegrityService and raised for administrative review,
+     * because re-pointing a posted movement is an accounting decision, not a
+     * code change.
+     *
+     * The charge the money came out of is resolved exactly as FeeBalanceService
+     * attributes it: the refund's own assignment, else the assignment of the
+     * payment it refunds.
      */
     public function postRefund(Refund $refund): LedgerEntry
     {
+        $assignmentId = $refund->student_fee_assignment_id
+            ?: $refund->payment?->student_fee_assignment_id;
+
         return $this->addEntry([
             'student_id' => $refund->student_id,
-            'student_fee_assignment_id' => $refund->student_fee_assignment_id,
+            'student_fee_assignment_id' => $assignmentId,
             'entry_date' => now(),
             'description' => 'Refund #' . $refund->id . ': ' . $refund->reason,
             'entry_type' => 'refund',
-            'debit' => 0,
-            'credit' => (float) $refund->amount,
+            'debit' => (float) $refund->amount,
+            'credit' => 0,
             'reference_type' => Refund::class,
             'reference_id' => $refund->id,
             'source' => 'refund',
@@ -281,66 +327,79 @@ class LedgerService
     }
 
     /**
-     * Get the chronological statement (ledger with running balance) for a student.
-     * Adds an opening-balance pseudo entry if a start date is supplied.
+     * The chronological statement (ledger with running balance) for a student.
+     *
+     * THE OPENING LINE IS DERIVED, NOT STORED. It is computed as
+     *
+     *     opening = FeeBalanceService::balanceForStudent() − net(ledger movements)
+     *
+     * and the closing figure is therefore, by construction, exactly the balance
+     * every other screen shows. That is the whole point: the statement used to
+     * build its closing figure purely from ledger_entries, while the profile,
+     * arrears, dashboards and reports built theirs from assignments and
+     * payments. Because the ledger is only written by payments, adjustments and
+     * refunds — and never by a charge — a student whose fees predate the ledger
+     * had statements that disagreed with their own balance, sometimes by the
+     * entire amount billed.
+     *
+     * The opening line is what the statement honestly cannot itemise: fees
+     * charged before the ledger existed. It is labelled "carried forward" and
+     * deliberately NOT persisted, so no historical transaction is invented and
+     * nothing has to be backfilled. Movements written from now on (payments,
+     * charge postings, adjustments, refunds, reversals) appear as real lines
+     * beneath it.
+     *
+     * Legacy `opening_balance`/`bootstrap` rows from the old lazy seeding are
+     * folded into the derived opening rather than listed, so a student can never
+     * carry the same position twice.
+     *
+     * $from narrows which movements are listed. The closing figure remains the
+     * student's current balance either way, and the opening line adjusts to the
+     * window so the arithmetic still adds up.
      */
     public function getStudentStatement(int $studentId, ?string $from = null): array
     {
-        $openBalance = 0;
-        $query = LedgerEntry::where('student_id', $studentId);
+        $entries = LedgerEntry::where('student_id', $studentId)
+            ->orderBy('entry_date')
+            ->orderBy('id')
+            ->get();
+
+        // A bootstrap row is a carried-forward balancing figure, not a movement.
+        $movements = $entries
+            ->reject(fn ($entry) => $entry->entry_type === 'opening_balance' && $entry->source === 'bootstrap')
+            ->values();
+
+        $net = fn ($rows) => round($rows->reduce(
+            fn ($carry, $entry) => $carry + (float) $entry->debit - (float) $entry->credit,
+            0.0
+        ), 2);
+
+        $balanceNow = app(FeeBalanceService::class)->balanceForStudent($studentId);
+        $openingBeforeLedger = round($balanceNow - $net($movements), 2);
 
         if ($from) {
-            $before = (clone $query)->where('entry_date', '<', $from)->get();
-            $openBalance = (float) $before->reduce(fn ($c, $e) => $c + (float) $e->debit - (float) $e->credit, 0);
-            $query->where('entry_date', '>=', $from);
+            $cutoff = \Carbon\Carbon::parse($from);
+            $shown = $movements->filter(fn ($entry) => $entry->entry_date && $entry->entry_date->gte($cutoff))->values();
+            $earlier = $movements->filter(fn ($entry) => ! $entry->entry_date || $entry->entry_date->lt($cutoff))->values();
+        } else {
+            $shown = $movements;
+            $earlier = $movements->take(0);
         }
 
-        $entries = (clone $query)->orderBy('entry_date')->orderBy('id')->get();
+        $openBalance = round($openingBeforeLedger + $net($earlier), 2);
 
-        // Rebuild running balance from the opening balance.
+        // Rebuild the running balance from the opening line.
         $running = $openBalance;
-        foreach ($entries as $entry) {
+        foreach ($shown as $entry) {
             $running = round($running + (float) $entry->debit - (float) $entry->credit, 2);
             $entry->balance_after = $running;
         }
 
         $closing = $running;
-        $totalCharges = (float) $entries->sum('debit');
-        $totalCredits = (float) $entries->sum('credit');
+        $totalCharges = (float) $shown->sum('debit');
+        $totalCredits = (float) $shown->sum('credit');
 
-        return compact('openBalance', 'entries', 'closing', 'totalCharges', 'totalCredits', 'from');
-    }
-
-    /**
-     * Seed an opening ledger entry for a student from existing historical data
-     * (used to bootstrap the ledger without altering current balances).
-     */
-    public function seedOpeningBalance(int $studentId): void
-    {
-        if (LedgerEntry::where('student_id', $studentId)->exists()) {
-            return;
-        }
-
-        $student = Student::with('feeAssignments')->find($studentId);
-        if (!$student) {
-            return;
-        }
-
-        $totalCharged = (float) $student->feeAssignments->sum('final_amount');
-        $totalPaid = (float) $student->payments()->sum('fee_payments.amount');
-
-        if ($totalCharged == 0 && $totalPaid == 0) {
-            return;
-        }
-
-        $this->addEntry([
-            'student_id' => $studentId,
-            'entry_date' => now(),
-            'description' => 'Opening balance (carried forward)',
-            'entry_type' => 'opening_balance',
-            'debit' => max(0, $totalCharged - $totalPaid),
-            'credit' => 0,
-            'source' => 'bootstrap',
-        ]);
+        return compact('openBalance', 'closing', 'totalCharges', 'totalCredits', 'from')
+            + ['entries' => $shown, 'balanceNow' => $balanceNow];
     }
 }

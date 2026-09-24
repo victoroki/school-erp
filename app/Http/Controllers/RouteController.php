@@ -34,7 +34,7 @@ class RouteController extends AppBaseController
             $query->where('status', $request->status);
         }
 
-        $routes = $query->paginate(10);
+        $routes = $query->paginate(10)->withQueryString();
 
         return view('routes.index')
             ->with('routes', $routes);

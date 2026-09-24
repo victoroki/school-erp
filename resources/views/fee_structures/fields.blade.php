@@ -39,7 +39,7 @@
         {!! Form::label('amount', 'Base Amount') !!}
         <div class="input-group">
             <div class="input-group-prepend">
-                <span class="input-group-text">KSh</span>
+                <span class="input-group-text">KES</span>
             </div>
             {!! Form::number('amount', null, ['class' => 'form-control', 'required', 'step' => '0.01', 'placeholder' => '0.00']) !!}
         </div>

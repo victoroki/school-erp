@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Expenses extends Model
 {
     public $table = 'expenses';
+    protected $primaryKey = 'expense_id';
 
     public $fillable = [
         'category_id',
@@ -52,7 +53,7 @@ class Expenses extends Model
 
     public function createdBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(\App\Models\Staff::class, 'created_by');
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -62,7 +63,7 @@ class Expenses extends Model
 
     public function approvedBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(\App\Models\Staff::class, 'approved_by');
+        return $this->belongsTo(\App\Models\User::class, 'approved_by');
     }
 
     public function bankAccount(): \Illuminate\Database\Eloquent\Relations\BelongsTo

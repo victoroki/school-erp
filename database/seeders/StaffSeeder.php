@@ -47,6 +47,18 @@ class StaffSeeder extends Seeder
             $department = Department::where('name', $data['department'])->first();
             unset($data['department']);
 
+            // current_address, city and country are NOT NULL with no default on
+            // the staff table, and none of the rows above supply them. Without
+            // these defaults `php artisan db:seed` aborts on a fresh database
+            // with "Field 'current_address' doesn't have a default value".
+            // country is set rather than blank because every record here is
+            // Kenyan (counties, KRA/NHIF/NSSF numbers, .ac.ke addresses).
+            $data += [
+                'current_address' => '',
+                'city' => '',
+                'country' => 'Kenya',
+            ];
+
             $record = Staff::firstOrCreate(['employee_number' => $data['employee_number']], $data);
 
             if ($department && $record->department_id !== $department->department_id) {

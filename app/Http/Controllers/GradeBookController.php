@@ -29,6 +29,15 @@ class GradeBookController extends Controller
         $viewAll = $user->hasPermission('exams.results.view-all');
         $hasSettings = $user->hasPermission('academics.settings.manage');
 
+        // Same defect as MarkSheetController::index — the scope check below is
+        // nested inside `if ($request->filled(['exam_id','class_section_id']))`, so
+        // a request supplying only class_section_id bypassed it and the grade book
+        // rendered for a class the teacher does not own.
+        if (! $viewAll && ! $hasSettings && $request->filled('class_section_id')
+            && ! $this->teacherScope->getClassSectionIds($user)->contains((int) $request->class_section_id)) {
+            abort(403, 'You are not authorized to view the grade book for this class.');
+        }
+
         if ($viewAll || $hasSettings) {
             $exams = Exam::orderByDesc('exam_id')->pluck('name', 'exam_id');
             $classSections = ClassSection::with(['schoolClass', 'section'])->get()->mapWithKeys(function ($cs) {

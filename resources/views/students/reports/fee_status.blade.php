@@ -61,7 +61,7 @@
             <div class="stat-card border-left-primary">
                 <div class="stat-icon"><i class="fas fa-file-invoice-dollar text-primary"></i></div>
                 <div>
-                    <div class="stat-value text-primary">KES {{ number_format($totalAssigned, 0) }}</div>
+                    <div class="stat-value text-primary">{{ \App\Support\Money::format($totalAssigned) }}</div>
                     <div class="stat-label">Total Assigned</div>
                 </div>
             </div>
@@ -70,7 +70,7 @@
             <div class="stat-card border-left-success">
                 <div class="stat-icon"><i class="fas fa-check-circle text-success"></i></div>
                 <div>
-                    <div class="stat-value text-success">KES {{ number_format($totalPaid, 0) }}</div>
+                    <div class="stat-value text-success">{{ \App\Support\Money::format($totalPaid) }}</div>
                     <div class="stat-label">Total Collected</div>
                 </div>
             </div>
@@ -79,7 +79,7 @@
             <div class="stat-card border-left-warning">
                 <div class="stat-icon"><i class="fas fa-balance-scale text-warning"></i></div>
                 <div>
-                    <div class="stat-value text-warning">KES {{ number_format($totalBalance, 0) }}</div>
+                    <div class="stat-value text-warning">{{ \App\Support\Money::format($totalBalance) }}</div>
                     <div class="stat-label">Outstanding Balance</div>
                 </div>
             </div>

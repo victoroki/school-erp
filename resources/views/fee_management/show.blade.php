@@ -71,15 +71,15 @@
                 <div class="financial-card-body">
                     <div class="fin-row">
                         <span class="fin-label">Total Assigned</span>
-                        <span class="fin-value">KSh {{ number_format($student->total_fee, 2) }}</span>
+                        <span class="fin-value">KES {{ number_format($student->total_fee, 2) }}</span>
                     </div>
                     <div class="fin-row">
                         <span class="fin-label">Total Paid</span>
-                        <span class="fin-value text-emerald">KSh {{ number_format($student->paid_fee, 2) }}</span>
+                        <span class="fin-value text-emerald">KES {{ number_format($student->paid_fee, 2) }}</span>
                     </div>
                     <div class="fin-row fin-row-highlight">
                         <span class="fin-label">Outstanding Balance</span>
-                        <span class="fin-value text-rose">KSh {{ number_format($student->balance_fee, 2) }}</span>
+                        <span class="fin-value text-rose">KES {{ number_format($student->balance_fee, 2) }}</span>
                     </div>
                     <div class="fin-row">
                         <span class="fin-label">Status</span>
@@ -165,10 +165,11 @@
                                         <tr>
                                             <td class="font-semibold">{{ $fee->feeStructure->category->name ?? 'N/A' }}</td>
                                             <td class="text-muted-sm">{{ $fee->assigned_date ? $fee->assigned_date->format('d M Y') : 'N/A' }}</td>
-                                            <td class="text-right mono">KSh {{ number_format($fee->amount, 2) }}</td>
-                                            <td class="text-right mono text-emerald">-KSh {{ number_format($fee->discount_amount, 2) }}</td>
-                                            <td class="text-right mono font-semibold">KSh {{ number_format($fee->final_amount, 2) }}</td>
-                                            <td class="text-right mono {{ $fee->balance > 0 ? 'text-rose font-semibold' : 'text-muted' }}">KSh {{ number_format($fee->balance, 2) }}</td>
+                                            <td class="text-right mono">KES {{ number_format($fee->amount, 2) }}</td>
+                                            {{-- Sign moves inside the amount: the formatter writes the symbol first. --}}
+                                            <td class="text-right mono text-emerald">{{ \App\Support\Money::format(-1 * $fee->discount_amount) }}</td>
+                                            <td class="text-right mono font-semibold">KES {{ number_format($fee->final_amount, 2) }}</td>
+                                            <td class="text-right mono {{ $fee->balance > 0 ? 'text-rose font-semibold' : 'text-muted' }}">KES {{ number_format($fee->balance, 2) }}</td>
                                             <td class="text-center">
                                                 @php
                                                     $feeStatusClass = match($fee->payment_status) {
@@ -204,29 +205,55 @@
                                         <th>Date</th>
                                         <th>Receipt No</th>
                                         <th>Method</th>
-                                        <th class="text-right">Amount</th>
-                                        <th>Applied To</th>
-                                        <th>Collected By</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($student->payments as $payment)
-                                        <tr>
-                                            <td class="text-muted-sm">{{ $payment->payment_date ? $payment->payment_date->format('d M Y') : 'N/A' }}</td>
-                                            <td><span class="receipt-badge">{{ $payment->receipt_number }}</span></td>
-                                            <td>
-                                                <span class="method-badge">
-                                                    <i class="fas fa-{{ $payment->payment_method === 'cash' ? 'money-bill-wave' : ($payment->payment_method === 'online' ? 'mobile-alt' : ($payment->payment_method === 'bank_transfer' ? 'university' : ($payment->payment_method === 'check' ? 'money-check' : 'credit-card'))) }}"></i>
-                                                    {{ \Illuminate\Support\Str::title(str_replace('_', ' ', $payment->payment_method)) }}
-                                                </span>
-                                            </td>
-                                            <td class="text-right mono text-emerald font-semibold">KSh {{ number_format($payment->amount, 2) }}</td>
-                                            <td class="text-muted-sm">{{ $payment->studentFeeAssignment->feeStructure->category->name ?? 'N/A' }}</td>
-                                            <td class="text-muted-sm">{{ $payment->collectedBy->full_name ?? 'System' }}</td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="6" class="empty-cell">
+                                         <th class="text-right">Amount</th>
+                                         <th>Applied To</th>
+                                         <th>Collected By</th>
+                                         <th>Status</th>
+                                         <th></th>
+                                     </tr>
+                                 </thead>
+                                 <tbody>
+                                     @forelse($student->payments as $payment)
+                                         <tr class="{{ $payment->isReversed() ? 'opacity-50' : '' }}">
+                                             <td class="text-muted-sm">{{ $payment->payment_date ? $payment->payment_date->format('d M Y') : 'N/A' }}</td>
+                                             <td><span class="receipt-badge">{{ $payment->receipt_number }}</span></td>
+                                             <td>
+                                                 <span class="method-badge">
+                                                      {{-- An empty method is the ENUM error value left by the
+                                                           2026-09-06 import, so give it a neutral icon and a
+                                                           label instead of a card icon and a blank name. --}}
+                                                      <i class="fas fa-{{ $payment->payment_method === '' ? 'question-circle' : ($payment->payment_method === 'cash' ? 'money-bill-wave' : ($payment->payment_method === 'online' ? 'mobile-alt' : ($payment->payment_method === 'bank_transfer' ? 'university' : ($payment->payment_method === 'check' ? 'money-check' : 'credit-card')))) }}"></i>
+                                                      {{ $payment->payment_method ? \Illuminate\Support\Str::title(str_replace('_', ' ', $payment->payment_method)) : 'Unspecified' }}
+                                                 </span>
+                                             </td>
+                                             {{-- A reversed payment is retained for audit but is no
+                                                  longer money received, so it is struck through. --}}
+                                             <td class="text-right mono font-semibold {{ $payment->isReversed() ? 'text-muted text-decoration-line-through' : 'text-emerald' }}">
+                                                 KES {{ number_format($payment->amount, 2) }}
+                                             </td>
+                                             <td class="text-muted-sm">{{ $payment->studentFeeAssignment->feeStructure->category->name ?? 'N/A' }}</td>
+                                             <td class="text-muted-sm">{{ $payment->collectedBy->full_name ?? 'System' }}</td>
+                                             <td>
+                                                 @if($payment->isReversed())
+                                                     <span class="badge bg-danger">
+                                                         Void{{ $payment->reversed_at ? ' ' . $payment->reversed_at->format('d M Y') : '' }}
+                                                     </span>
+                                                     @if($payment->reversal_reason)
+                                                         <div class="text-muted-sm">{{ \Illuminate\Support\Str::limit($payment->reversal_reason, 40) }}</div>
+                                                     @endif
+                                                 @else
+                                                     <span class="badge bg-success">Valid</span>
+                                                 @endif
+                                             </td>
+                                             <td>
+                                                 <a href="{{ route('fee-management.receipt', $payment->payment_id) }}" target="_blank" class="btn-receipt-print" title="Print receipt {{ $payment->receipt_number }}">
+                                                     <i class="fas fa-print"></i>
+                                                 </a>
+                                             </td>
+                                         </tr>
+                                     @empty
+                                         <tr>
+                                             <td colspan="8" class="empty-cell">
                                                 <div class="empty-mini">
                                                     <i class="fas fa-receipt"></i>
                                                     <p>No payments recorded</p>
@@ -244,19 +271,19 @@
                         <div class="ledger-summary">
                             <div class="ledger-stat">
                                 <span class="ledger-stat-label">Opening Balance</span>
-                                <span class="ledger-stat-value">KSh {{ number_format($statement['openBalance'], 2) }}</span>
+                                <span class="ledger-stat-value">KES {{ number_format($statement['openBalance'], 2) }}</span>
                             </div>
                             <div class="ledger-stat">
                                 <span class="ledger-stat-label">Total Charges (Debits)</span>
-                                <span class="ledger-stat-value text-rose">KSh {{ number_format($statement['totalCharges'], 2) }}</span>
+                                <span class="ledger-stat-value text-rose">KES {{ number_format($statement['totalCharges'], 2) }}</span>
                             </div>
                             <div class="ledger-stat">
                                 <span class="ledger-stat-label">Total Credits</span>
-                                <span class="ledger-stat-value text-emerald">KSh {{ number_format($statement['totalCredits'], 2) }}</span>
+                                <span class="ledger-stat-value text-emerald">KES {{ number_format($statement['totalCredits'], 2) }}</span>
                             </div>
                             <div class="ledger-stat ledger-stat-highlight">
                                 <span class="ledger-stat-label">Closing Balance</span>
-                                <span class="ledger-stat-value {{ $statement['closing'] > 0 ? 'text-rose' : 'text-emerald' }}">KSh {{ number_format($statement['closing'], 2) }}</span>
+                                <span class="ledger-stat-value {{ $statement['closing'] > 0 ? 'text-rose' : 'text-emerald' }}">KES {{ number_format($statement['closing'], 2) }}</span>
                             </div>
                         </div>
 
@@ -278,9 +305,9 @@
                                             <td class="text-muted-sm">{{ $entry->entry_date ? \Carbon\Carbon::parse($entry->entry_date)->format('d M Y') : 'N/A' }}</td>
                                             <td class="font-semibold">{{ $entry->description }}</td>
                                             <td><span class="method-badge ledger-type-{{ $entry->entry_type }}">{{ ucwords(str_replace('_', ' ', $entry->entry_type)) }}</span></td>
-                                            <td class="text-right mono">{{ $entry->debit > 0 ? 'KSh ' . number_format($entry->debit, 2) : '—' }}</td>
-                                            <td class="text-right mono {{ $entry->credit > 0 ? 'text-emerald font-semibold' : '' }}">{{ $entry->credit > 0 ? 'KSh ' . number_format($entry->credit, 2) : '—' }}</td>
-                                            <td class="text-right mono {{ $entry->balance_after > 0 ? 'text-rose' : 'text-emerald' }} font-semibold">KSh {{ number_format($entry->balance_after, 2) }}</td>
+                                            <td class="text-right mono">{{ $entry->debit > 0 ? 'KES ' . number_format($entry->debit, 2) : '—' }}</td>
+                                            <td class="text-right mono {{ $entry->credit > 0 ? 'text-emerald font-semibold' : '' }}">{{ $entry->credit > 0 ? 'KES ' . number_format($entry->credit, 2) : '—' }}</td>
+                                            <td class="text-right mono {{ $entry->balance_after > 0 ? 'text-rose' : 'text-emerald' }} font-semibold">KES {{ number_format($entry->balance_after, 2) }}</td>
                                         </tr>
                                     @empty
                                         <tr>
@@ -496,6 +523,16 @@
     background: var(--slate-50); border: 1px solid var(--slate-200);
     font-size: 0.72rem; font-weight: 700; font-family: monospace; color: var(--slate-600);
 }
+
+/* Receipt Print Button */
+.btn-receipt-print {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 6px;
+    background: var(--slate-50); border: 1px solid var(--slate-200);
+    color: var(--slate-500); font-size: 0.72rem; text-decoration: none !important;
+    transition: all 160ms var(--ease-out);
+}
+.btn-receipt-print:hover { background: var(--emerald-light); border-color: var(--emerald); color: var(--emerald); }
 
 /* Method Badge */
 .method-badge {

@@ -60,7 +60,7 @@ class BookController extends AppBaseController
             }
         }
 
-        $books = $query->paginate(12);
+        $books = $query->paginate(12)->withQueryString();
         
         $categories = BookCategory::pluck('name', 'category_id')->prepend('All Categories', '');
 
@@ -99,7 +99,7 @@ class BookController extends AppBaseController
      */
     public function show($id)
     {
-        $book = $this->bookRepository->find($id);
+        $book = \App\Models\Book::with('category')->find($id);
 
         if (empty($book)) {
             Flash::error('Book not found');

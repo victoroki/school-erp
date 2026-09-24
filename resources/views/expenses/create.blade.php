@@ -53,7 +53,7 @@
                     <!-- Requested By Field -->
                     <div class="form-group col-sm-6">
                         <label class="font-weight-bold">Requested By</label>
-                        {!! Form::select('requested_by', ['' => 'Select Staff'] + $staff->toArray(), auth()->id(), ['class' => 'form-control border-0 bg-light rounded-lg']) !!}
+                        {!! Form::select('requested_by', ['' => 'Select Staff'] + $staff->toArray(), $requestedByDefault, ['class' => 'form-control border-0 bg-light rounded-lg']) !!}
                     </div>
 
                     <!-- Payment Method Field -->
@@ -69,8 +69,9 @@
 
                     <!-- Bank Account Id Field -->
                     <div class="form-group col-sm-6 d-none" id="bank_account_div">
-                        <label class="font-weight-bold">Bank Account (for non-cash payments)</label>
-                        {!! Form::select('bank_account_id', ['' => 'Select Account'] + $bankAccounts->toArray(), null, ['class' => 'form-control border-0 bg-light rounded-lg']) !!}
+                        <label class="font-weight-bold">Bank Account <span class="text-danger">*</span></label>
+                        {!! Form::select('bank_account_id', ['' => 'Select Account'] + $bankAccounts->toArray(), null, ['class' => 'form-control border-0 bg-light rounded-lg', 'required']) !!}
+                        <small class="text-muted">Required unless paying by cash.</small>
                     </div>
 
                     <!-- Reference Number Field -->
@@ -107,22 +108,31 @@
 
 @push('page_scripts')
     <script>
-        $(document).ready(function() {
-            function toggleBank() {
-                var method = $('#payment_method').val();
-                if (method === 'cash') {
-                    $('#bank_account_div').addClass('d-none');
-                } else {
-                    $('#bank_account_div').removeClass('d-none');
-                }
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.jQuery === 'undefined') {
+                console.error('jQuery is not loaded; payment method toggle disabled.');
+                return;
             }
 
-            $('#payment_method').change(toggleBank);
-            toggleBank();
+            window.jQuery(function($) {
+                function toggleBank() {
+                    var method = $('#payment_method').val();
+                    if (method === 'cash') {
+                        $('#bank_account_div').addClass('d-none');
+                        $('#bank_account_id').removeAttr('required');
+                    } else {
+                        $('#bank_account_div').removeClass('d-none');
+                        $('#bank_account_id').attr('required', true);
+                    }
+                }
 
-            $('.custom-file-input').on('change', function() {
-                var fileName = $(this).val().split('\\').pop();
-                $(this).next('.custom-file-label').addClass("selected").html(fileName);
+                $('#payment_method').change(toggleBank);
+                toggleBank();
+
+                $('.custom-file-input').on('change', function() {
+                    var fileName = $(this).val().split('\\').pop();
+                    $(this).next('.custom-file-label').addClass("selected").html(fileName);
+                });
             });
         });
     </script>

@@ -50,28 +50,28 @@
             <div class="metric-icon bg-amber-light text-amber"><i class="fas fa-hourglass-half"></i></div>
             <div class="metric-content">
                 <span class="metric-label">Requested</span>
-                <span class="metric-value text-amber">KSh {{ number_format($metrics['requested'], 0) }}</span>
+                <span class="metric-value text-amber">{{ \App\Support\Money::format($metrics['requested']) }}</span>
             </div>
         </div>
         <div class="metric-card">
             <div class="metric-icon bg-indigo-light text-indigo"><i class="fas fa-check-double"></i></div>
             <div class="metric-content">
                 <span class="metric-label">Approved</span>
-                <span class="metric-value text-indigo">KSh {{ number_format($metrics['approved'], 0) }}</span>
+                <span class="metric-value text-indigo">{{ \App\Support\Money::format($metrics['approved']) }}</span>
             </div>
         </div>
         <div class="metric-card">
             <div class="metric-icon bg-emerald-light text-emerald"><i class="fas fa-check-circle"></i></div>
             <div class="metric-content">
                 <span class="metric-label">Completed</span>
-                <span class="metric-value text-emerald">KSh {{ number_format($metrics['completed'], 0) }}</span>
+                <span class="metric-value text-emerald">{{ \App\Support\Money::format($metrics['completed']) }}</span>
             </div>
         </div>
         <div class="metric-card">
             <div class="metric-icon bg-rose-light text-rose"><i class="fas fa-times-circle"></i></div>
             <div class="metric-content">
                 <span class="metric-label">Rejected</span>
-                <span class="metric-value text-rose">KSh {{ number_format($metrics['rejected'], 0) }}</span>
+                <span class="metric-value text-rose">{{ \App\Support\Money::format($metrics['rejected']) }}</span>
             </div>
         </div>
     </div>
@@ -98,7 +98,7 @@
                         <tr>
                             <td><span class="mono-sm">#{{ $refund->id }}</span></td>
                             <td class="font-semibold">{{ $refund->student->full_name ?? 'N/A' }} <span class="mono-sm text-muted">{{ $refund->student->admission_no ?? '' }}</span></td>
-                            <td class="text-right mono font-semibold">KSh {{ number_format($refund->amount, 2) }}</td>
+                            <td class="text-right mono font-semibold">{{ \App\Support\Money::format($refund->amount) }}</td>
                             <td class="text-muted" style="max-width:260px;">{{ \Illuminate\Support\Str::limit($refund->reason, 60) }}</td>
                             <td>
                                 @php

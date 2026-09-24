@@ -198,6 +198,15 @@ class Staff extends Model
         return $this->hasMany(\App\Models\Timetable::class, 'teacher_id', 'staff_id');
     }
 
+    /**
+     * Latest salary structure from the legacy staff_salary table. Used by the
+     * Payroll screens to pre-fill basic salary figures.
+     */
+    public function salary(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(\App\Models\StaffSalary::class, 'staff_id', 'staff_id');
+    }
+
     // Scopes
     public function scopeActive($query)
     {

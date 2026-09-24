@@ -24,6 +24,7 @@ class Refund extends Model
         'rejection_reason',
         'refund_method',
         'refund_reference',
+        'bank_account_id',
         'ledger_entry_id',
         'completed_by',
         'completed_at',
@@ -75,6 +76,14 @@ class Refund extends Model
     public function ledgerEntry()
     {
         return $this->belongsTo(\App\Models\LedgerEntry::class, 'ledger_entry_id');
+    }
+
+    /**
+     * Bank or cash-office account the payout was made from.
+     */
+    public function bankAccount()
+    {
+        return $this->belongsTo(\App\Models\BankAccount::class, 'bank_account_id', 'account_id');
     }
 
     public function scopeRequested($query)

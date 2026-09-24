@@ -23,6 +23,26 @@ class DiscountSchemeController extends AppBaseController
     }
 
     /**
+     * Form input with the checkbox flags normalised.
+     *
+     * An unticked checkbox is simply absent from the request, so reading
+     * $request->all() left the previous value in place: a scheme could be given
+     * "requires approval" or "auto apply" and then never have it removed. The
+     * form posts every field, so an absent flag means false.
+     *
+     * @return array<string, mixed>
+     */
+    private function formInput(Request $request): array
+    {
+        $input = $request->all();
+
+        $input['requires_approval'] = $request->boolean('requires_approval');
+        $input['auto_apply'] = $request->boolean('auto_apply');
+
+        return $input;
+    }
+
+    /**
      * Display a listing of the DiscountScheme.
      */
     public function index(Request $request)
@@ -51,7 +71,7 @@ class DiscountSchemeController extends AppBaseController
      */
     public function store(CreateDiscountSchemeRequest $request)
     {
-        $input = $request->all();
+        $input = $this->formInput($request);
 
         $discountScheme = $this->discountSchemeRepository->create($input);
 
@@ -114,7 +134,7 @@ class DiscountSchemeController extends AppBaseController
         }
 
         $oldData = $discountScheme->toArray();
-        $discountScheme = $this->discountSchemeRepository->update($request->all(), $id);
+        $discountScheme = $this->discountSchemeRepository->update($this->formInput($request), $id);
 
         AuditTrail::log('Discount Scheme', 'UPDATE', $discountScheme->id, $oldData, $discountScheme->toArray());
 

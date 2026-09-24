@@ -6,7 +6,6 @@ use App\Models\Staff;
 use App\Models\StaffAllowance;
 use App\Models\StaffDeduction;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Laracasts\Flash\Flash;
 
 class PayrollProcessingController extends Controller
@@ -14,13 +13,15 @@ class PayrollProcessingController extends Controller
     public function __construct()
     {
         $this->middleware('can:hr.view')->only(['index', 'show']);
-        $this->middleware('can:hr.manage')->only(['create', 'calculate', 'store']);
+        $this->middleware('can:hr.manage')->only(['create', 'calculate', 'store', 'review', 'finalize']);
     }
 
     public function index()
     {
-        // Show list of payroll runs (placeholder - would come from Payroll model)
-        return view('hr.payroll.index');
+        // Payroll wizard plus the list of already-processed staff payslips.
+        $payrolls = \App\Models\Payroll::with('staff')->latest('payroll_id')->paginate(15);
+
+        return view('hr.payroll.index', compact('payrolls'));
     }
 
     public function create()
@@ -86,29 +87,26 @@ class PayrollProcessingController extends Controller
 
     public function review($payrollId)
     {
-        // Show payroll for review before finalizing
-        return view('hr.payroll.review');
+        // This route never had the data the review view needs: the view
+        // renders $payrollData and $request from the calculate() step, so
+        // hitting /review/{id} directly threw an undefined-variable 500.
+        // There is no persisted payroll to review yet (finalize writes
+        // nothing), so send the user back to the wizard that produces the
+        // breakdown instead of rendering a view that cannot work.
+        Flash::info('The review screen only shows the wizard\'s calculation — start there to see the breakdown.');
+        return redirect()->route('payroll-processing.create');
     }
 
     public function finalize(Request $request, $payrollId)
     {
-        // Finalize and process payroll
-        DB::beginTransaction();
-        try {
-            // Create payroll master record
-            // Create payroll detail records
-            // Create expense entry in financial module
-            // Generate payslips
-            // Send notifications
-
-            DB::commit();
-            Flash::success('Payroll processed successfully.');
-            return redirect()->route('payroll-processing.index');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Flash::error('Error processing payroll: ' . $e->getMessage());
-            return redirect()->back();
-        }
+        // The wizard's last step never did anything: it opened a transaction,
+        // committed an empty body, and flashed "Payroll processed successfully"
+        // — so staff appeared paid while no payroll row, expense or payslip
+        // was ever written. It stays gated behind hr.manage (above) and now
+        // says plainly that the step is not wired up yet, rather than
+        // reporting a success that never happened.
+        Flash::error('Payroll finalisation is not available yet — nothing was written. Process salaries from the HR payroll screen instead.');
+        return redirect()->route('payroll-processing.index');
     }
 
     // Kenya PAYE Calculation (2024 Rates)

@@ -28,7 +28,7 @@
             </div>
             <div class="metric-content">
                 <span class="metric-label">Total Receivable</span>
-                <span class="metric-value">KSh {{ number_format($metrics['total_receivable'], 0) }}</span>
+                <span class="metric-value">{{ \App\Support\Money::format($metrics['total_receivable']) }}</span>
             </div>
         </div>
         <div class="metric-card">
@@ -37,7 +37,7 @@
             </div>
             <div class="metric-content">
                 <span class="metric-label">Total Collected</span>
-                <span class="metric-value text-emerald">KSh {{ number_format($metrics['total_collected'], 0) }}</span>
+                <span class="metric-value text-emerald">{{ \App\Support\Money::format($metrics['total_collected']) }}</span>
             </div>
         </div>
         <div class="metric-card">
@@ -46,7 +46,7 @@
             </div>
             <div class="metric-content">
                 <span class="metric-label">Total Pending</span>
-                <span class="metric-value text-amber">KSh {{ number_format($metrics['total_pending'], 0) }}</span>
+                <span class="metric-value text-amber">{{ \App\Support\Money::format($metrics['total_pending']) }}</span>
             </div>
         </div>
         <div class="metric-card">
@@ -165,9 +165,9 @@
                                     <span class="class-badge">{{ $enrollment->classSection->schoolClass->name ?? '' }}{{ $enrollment->classSection->section->name ? ' - ' . $enrollment->classSection->section->name : '' }}</span>
                                 @endforeach
                             </td>
-                            <td class="text-right mono font-semibold">KSh {{ number_format($student->total_fee, 2) }}</td>
-                            <td class="text-right mono text-emerald">KSh {{ number_format($student->paid_fee, 2) }}</td>
-                            <td class="text-right mono {{ $student->balance_fee > 0 ? 'text-rose font-semibold' : 'text-muted' }}">KSh {{ number_format($student->balance_fee, 2) }}</td>
+                            <td class="text-right mono font-semibold">{{ \App\Support\Money::format($student->total_fee) }}</td>
+                            <td class="text-right mono text-emerald">{{ \App\Support\Money::format($student->paid_fee) }}</td>
+                            <td class="text-right mono {{ $student->balance_fee > 0 ? 'text-rose font-semibold' : 'text-muted' }}">{{ \App\Support\Money::format($student->balance_fee) }}</td>
                             <td class="text-center">
                                 @php
                                     $status = $student->payment_status;

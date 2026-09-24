@@ -107,7 +107,7 @@
                     </div>
                     <div class="col-md-4">
                         <div class="card border-0 shadow-sm bg-white text-center p-3 mb-0 h-100">
-                            <h3 class="mb-0 font-weight-bold text-success">KES {{ number_format($supplier->purchaseOrders->sum('grand_total'), 0) }}</h3>
+                            <h3 class="mb-0 font-weight-bold text-success">{{ \App\Support\Money::format($supplier->purchaseOrders->sum('grand_total')) }}</h3>
                             <div class="small text-muted">Total Order Value</div>
                         </div>
                     </div>

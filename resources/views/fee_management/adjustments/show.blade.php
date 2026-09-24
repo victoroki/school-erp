@@ -153,7 +153,15 @@
                                 <label style="font-weight: 600; color: #374151; font-size: 0.875rem;">Approval Notes (Optional)</label>
                                 <textarea name="approval_notes" class="form-control" rows="3" style="border-radius: 8px; border: 1px solid #d1d5db;" placeholder="Add notes for this approval..."></textarea>
                             </div>
-                            <button type="submit" class="btn btn-success btn-block" style="border-radius: 8px; font-weight: 500;">
+                            {{-- Approving rewrites what the student is charged. It used to
+                                 happen on a single click with no confirmation at all. --}}
+                            <button type="submit" class="btn btn-success btn-block" style="border-radius: 8px; font-weight: 500;"
+                                    data-student="{{ $adjustment->student->full_name ?? 'N/A' }}"
+                                    data-fee="{{ $adjustment->studentFeeAssignment->feeStructure->category->name ?? '—' }}"
+                                    data-from="KES {{ number_format((float) $adjustment->original_amount, 2) }}"
+                                    data-to="KES {{ number_format((float) $adjustment->new_amount, 2) }}"
+                                    data-change="{{ $adjustment->adjustment_amount > 0 ? '-' : '+' }}KES {{ number_format(abs((float) $adjustment->adjustment_amount), 2) }}"
+                                    onclick="return confirmApproveAdjustment(this)">
                                 <i class="fas fa-check mr-2"></i> Approve Adjustment
                             </button>
                         </form>
@@ -190,10 +198,46 @@
                     </div>
                     <div class="modal-footer" style="border-top: 1px solid #e5e7eb; padding: 16px 24px;">
                         <button type="button" class="btn btn-default" data-dismiss="modal" style="border-radius: 8px;">Cancel</button>
-                        <button type="submit" class="btn btn-danger" style="border-radius: 8px;">Reject</button>
+                        <button type="submit" class="btn btn-danger" style="border-radius: 8px;"
+                                data-student="{{ $adjustment->student->full_name ?? 'N/A' }}"
+                                data-from="KES {{ number_format((float) $adjustment->original_amount, 2) }}"
+                                onclick="return confirmRejectAdjustment(this)">Reject</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <script>
+    /**
+     * Confirmation for the two review decisions on a fee adjustment.
+     *
+     * Approving rewrites the amount the student owes; rejecting discards the
+     * request. Both are financial decisions taken on behalf of a parent, so both
+     * state exactly what is about to change. UX protection only — the server
+     * enforces fees.approve.
+     */
+    function confirmApproveAdjustment(button) {
+        return confirm(
+            'Approve this fee adjustment?\n\n' +
+            'Student: ' + button.dataset.student + '\n' +
+            'Fee:     ' + button.dataset.fee + '\n' +
+            'From:    ' + button.dataset.from + '\n' +
+            'To:      ' + button.dataset.to + '\n' +
+            'Change:  ' + button.dataset.change + '\n\n' +
+            'This immediately changes what the student is charged and is recorded ' +
+            'in the adjustment audit log.'
+        );
+    }
+
+    function confirmRejectAdjustment(button) {
+        return confirm(
+            'Reject this fee adjustment?\n\n' +
+            'Student: ' + button.dataset.student + '\n' +
+            'Fee stays at: ' + button.dataset.from + '\n\n' +
+            'The student\'s balance will not change. The rejection and its reason ' +
+            'are recorded against the adjustment.'
+        );
+    }
+    </script>
 @endsection

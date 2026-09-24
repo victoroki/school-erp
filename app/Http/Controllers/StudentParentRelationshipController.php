@@ -157,7 +157,7 @@ class StudentParentRelationshipController extends AppBaseController
      */
     public function show($id)
     {
-        $studentParentRelationship = $this->studentParentRelationshipRepository->find($id);
+        $studentParentRelationship = \App\Models\StudentParentRelationship::with(['student', 'parent'])->find($id);
 
         if (empty($studentParentRelationship)) {
             Flash::error('Student Parent Relationship not found');

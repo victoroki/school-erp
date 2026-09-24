@@ -31,7 +31,7 @@ class StudentTransportAssignmentController extends Controller
             $query->where('status', $request->status);
         }
 
-        $assignments = $query->paginate(10);
+        $assignments = $query->paginate(10)->withQueryString();
         $routes = Route::pluck('name', 'route_id');
 
         return view('student_transport_assignments.index', compact('assignments', 'routes'));

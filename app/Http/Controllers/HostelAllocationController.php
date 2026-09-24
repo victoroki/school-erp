@@ -30,8 +30,10 @@ class HostelAllocationController extends AppBaseController
         private function getDropdownData()
     {
         return [
-            'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' (', admission_no, ')') as full_name")
-                ->pluck('full_name', 'student_id')
+            // `dropdown_name` alias: `full_name` would be shadowed by the
+            // Student fullName accessor and resolve to empty strings.
+            'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' (', admission_no, ')') as dropdown_name")
+                ->pluck('dropdown_name', 'student_id')
                 ->toArray(),
             'hostels' => Hostel::pluck('name', 'hostel_id')->toArray(),
             'rooms' => HostelRoom::with('hostel')->where('status', '!=', 'full')
@@ -58,7 +60,7 @@ class HostelAllocationController extends AppBaseController
             $query->where('status', $request->status);
         }
 
-        $hostelAllocations = $query->latest()->paginate(10);
+        $hostelAllocations = $query->latest()->paginate(10)->withQueryString();
         $hostels = Hostel::pluck('name', 'hostel_id')->toArray();
 
         return view('hostel_allocations.index', compact('hostelAllocations', 'hostels'));

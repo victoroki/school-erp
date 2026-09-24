@@ -87,8 +87,10 @@
                                         </td>
                                         <td><small>{{ $s->class_info }}</small></td>
                                         <td>
-                                            @if($s->route_id)
-                                                <span class="badge badge-danger">Route #{{ $s->route_id }}</span>
+                                            @if($s->route_name)
+                                                <span class="badge badge-danger">{{ $s->route_name }}</span>
+                                            @elseif($s->pickup_point)
+                                                <span class="text-muted">Pickup: {{ $s->pickup_point }}</span>
                                             @else
                                                 <span class="text-muted">—</span>
                                             @endif

@@ -69,14 +69,14 @@
                                     <td class="py-3 text-muted small">{{ $item->term ?? '—' }}</td>
                                     <td class="py-3 text-muted small fw-bold text-capitalize">{{ str_replace('-', ' ', $item->payment_frequency) }}</td>
                                     <td class="py-3 text-muted small">{{ $item->due_date ? $item->due_date->format('M d, Y') : 'N/A' }}</td>
-                                    <td class="pe-4 py-3 text-end fw-850 text-dark">KSh {{ number_format($item->amount, 2) }}</td>
+                                    <td class="pe-4 py-3 text-end fw-850 text-dark">KES {{ number_format($item->amount, 2) }}</td>
                                 </tr>
                                 @endforeach
                             </tbody>
                             <tfoot>
                                 <tr class="table-light">
                                     <td colspan="4" class="ps-4 py-3 fw-850 text-uppercase text-muted small text-end">Total Package</td>
-                                    <td class="pe-4 py-3 text-end fw-850 text-emerald h5 mb-0">KSh {{ number_format($relatedFees->sum('amount'), 2) }}</td>
+                                    <td class="pe-4 py-3 text-end fw-850 text-emerald h5 mb-0">KES {{ number_format($relatedFees->sum('amount'), 2) }}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -108,7 +108,7 @@
             <div class="show-panel mb-4 bg-indigo text-white overflow-hidden position-relative">
                 <div class="show-panel-body p-4 text-center">
                     <p class="x-small text-uppercase fw-bold mb-2 opacity-75 letter-sp">Total Package Value</p>
-                    <div class="display-5 fw-850 mb-1">KSh</div>
+                    <div class="display-5 fw-850 mb-1">KES</div>
                     <div class="h2 fw-850 mb-2">{{ number_format($relatedFees->sum('amount'), 2) }}</div>
                     <p class="small opacity-75 mb-0">
                         Assigned to <strong>{{ $feeStructure->assignments()->count() }}</strong> student(s)
@@ -141,7 +141,7 @@
                     <div class="setting-row px-4 py-3 border-bottom">
                         <span class="x-small text-uppercase fw-bold text-muted">Late Fee</span>
                         <span class="small fw-bold text-dark mt-1">
-                            {{ $feeStructure->late_fee_amount > 0 ? 'KSh ' . number_format($feeStructure->late_fee_amount, 2) : 'None' }}
+                            {{ $feeStructure->late_fee_amount > 0 ? 'KES ' . number_format($feeStructure->late_fee_amount, 2) : 'None' }}
                         </span>
                     </div>
                     <div class="setting-row px-4 py-3">

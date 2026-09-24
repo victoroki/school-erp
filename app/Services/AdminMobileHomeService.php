@@ -187,10 +187,14 @@ class AdminMobileHomeService
      */
     public function financeToday(string $date): array
     {
-        $collectedToday = (float) FeePayment::whereDate('payment_date', $date)->sum('amount');
-        $paymentsToday  = FeePayment::whereDate('payment_date', $date)->count();
+        // notReversed() is mandatory for every money aggregate (see the scope's
+        // own docblock). Without it the mobile dashboard counted voided payments
+        // as collected. Values only — field names and types are unchanged.
+        $collectedToday = (float) FeePayment::whereDate('payment_date', $date)->notReversed()->sum('amount');
+        $paymentsToday  = FeePayment::whereDate('payment_date', $date)->notReversed()->count();
 
         $byMethod = FeePayment::whereDate('payment_date', $date)
+            ->notReversed()
             ->select('payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(amount) as total'))
             ->groupBy('payment_method')
             ->orderByDesc('total')
@@ -208,10 +212,12 @@ class AdminMobileHomeService
 
         // Students in arrears — canonical FeeArrearsController query shape,
         // scoped to the whole school, counted (not paginated) for the badge.
-        $paidTotalsSub = DB::raw('(SELECT fp.student_fee_assignment_id,
-                COALESCE(SUM(fp.amount),0) AS paid_total
-            FROM fee_payments fp
-            GROUP BY fp.student_fee_assignment_id) AS paid_totals');
+        // The paid definition comes from FeeBalanceService so the mobile badge
+        // counts exactly the students the web arrears report lists: excluding
+        // reversed payments (they inflated paid_total and so under-counted
+        // arrears) and honouring payment_allocations (a split "pay total
+        // balance" payment must not be credited wholly to its first fee).
+        $paidTotalsSub = DB::raw(app(\App\Services\FeeBalanceService::class)->paidTotalsSubquery());
 
         $studentsInArrears = Student::query()
             ->join('student_fee_assignments as sfa', 'sfa.student_id', '=', 'students.student_id')

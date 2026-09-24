@@ -19,7 +19,7 @@
                 <h5 class="card-title text-white font-weight-bold mb-0">Account Information</h5>
             </div>
 
-            {!! Form::open(['route' => 'bank-accounts.store']) !!}
+            {!! Form::open(['route' => 'bankAccounts.store']) !!}
             <div class="card-body">
                 <div class="row">
                     <!-- Account Name Field -->
@@ -102,9 +102,16 @@
 
 @push('page_scripts')
     <script>
-        $(document).ready(function() {
-            $('input[name="opening_balance"]').on('input', function() {
-                $('#current_balance').val($(this).val());
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.jQuery === 'undefined') {
+                console.error('jQuery is not loaded; current balance sync disabled.');
+                return;
+            }
+
+            window.jQuery(function($) {
+                $('input[name="opening_balance"]').on('input', function() {
+                    $('#current_balance').val($(this).val());
+                });
             });
         });
     </script>

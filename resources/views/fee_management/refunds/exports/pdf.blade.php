@@ -25,7 +25,7 @@
                 <tr>
                     <td>#{{ $r->id }}</td>
                     <td>{{ $r->student->full_name ?? 'N/A' }}</td>
-                    <td class="right">KSh {{ number_format($r->amount, 2) }}</td>
+                    <td class="right">{{ \App\Support\Money::format($r->amount) }}</td>
                     <td>{{ \Illuminate\Support\Str::limit($r->reason, 70) }}</td>
                     <td>{{ ucfirst($r->status) }}</td>
                     <td>{{ $r->requestedBy->name ?? '' }}</td>

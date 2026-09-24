@@ -34,6 +34,23 @@
     {!! Form::select('status', ['' => 'Select Status'] + $statusOptions, (isset($studentClassEnrollment) && $studentClassEnrollment->status) ? $studentClassEnrollment->status : 'active', ['class' => 'form-control', 'required']) !!}
 </div>
 
+<!-- Is Current Field -->
+<div class="form-group col-sm-6">
+    {!! Form::label('is_current', 'Current Enrollment:') !!}
+    <div class="custom-control custom-switch">
+        {{-- Hidden 0 + checkbox 1: the standard pattern so an unticked box still
+             submits a value, and the checkbox overrides it when ticked. --}}
+        {!! Form::hidden('is_current', 0) !!}
+        {!! Form::checkbox('is_current', 1, isset($studentClassEnrollment) ? (bool) $studentClassEnrollment->is_current : true, ['class' => 'custom-control-input', 'id' => 'is_current']) !!}
+        <label class="custom-control-label" for="is_current">Make this the learner's current class</label>
+    </div>
+    <small class="text-muted">
+        The current enrollment is what the student list, the attendance register and the fee
+        screens treat as the learner's class. Turning it on here moves the flag off any other
+        enrollment for the same learner, so only one can ever be current.
+    </small>
+</div>
+
 @push('page_css')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>

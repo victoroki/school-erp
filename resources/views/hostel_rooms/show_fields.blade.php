@@ -1,7 +1,7 @@
 <!-- Hostel Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('hostel_id', 'Hostel Id:') !!}
-    <p>{{ $hostelRoom->hostel_id }}</p>
+    {!! Form::label('hostel_id', 'Hostel:') !!}
+    <p>{{ $hostelRoom->hostel->name ?? 'N/A' }}</p>
 </div>
 
 <!-- Room Number Field -->

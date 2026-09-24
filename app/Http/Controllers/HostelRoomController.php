@@ -42,7 +42,7 @@ class HostelRoomController extends AppBaseController
             $query->where('hostel_id', $request->hostel_id);
         }
 
-        $hostelRooms = $query->paginate(10);
+        $hostelRooms = $query->paginate(10)->withQueryString();
         $hostels = Hostel::pluck('name', 'hostel_id')->toArray();
 
         return view('hostel_rooms.index', compact('hostelRooms', 'hostels'));

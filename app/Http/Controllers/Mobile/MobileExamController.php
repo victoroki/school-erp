@@ -9,8 +9,10 @@ use App\Models\ExamResult;
 use App\Models\ExamSchedule;
 use App\Models\Student;
 use App\Models\StudentClassEnrollment;
+use App\Models\SchoolClass;
 use App\Models\StudentParentRelationship;
 use App\Services\TeacherScopeService;
+use App\Support\CbcStage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -346,6 +348,34 @@ class MobileExamController extends Controller
     }
 
     /**
+     * The CBC stage implied by the request's class, or null when none is given.
+     *
+     * A class section is preferred over a class because it identifies the exact
+     * section being assessed; both resolve through the same CbcStage bridge the
+     * web assessment screen uses, so the two cannot disagree about which stage a
+     * class belongs to.
+     */
+    private function stageForRequest(Request $request): ?string
+    {
+        if ($request->filled('class_section_id')) {
+            $classSection = ClassSection::with('schoolClass')->find($request->class_section_id);
+
+            return CbcStage::forClass(
+                $classSection?->schoolClass?->name,
+                $classSection?->schoolClass?->numeric_value
+            );
+        }
+
+        if ($request->filled('class_id')) {
+            $class = SchoolClass::find($request->class_id);
+
+            return CbcStage::forClass($class?->name, $class?->numeric_value);
+        }
+
+        return null;
+    }
+
+    /**
      * GET /api/mobile/exams/cbc/structure
      *
      * CBC competency framework: learning areas with their strands (and
@@ -354,7 +384,30 @@ class MobileExamController extends Controller
      */
     public function cbcStructure(Request $request): JsonResponse
     {
-        $areas = \App\Models\CbcLearningArea::with('strands.subStrands')
+        // Optionally narrowed to the CBC stage of the class being assessed.
+        //
+        // cbc_learning_areas.level is a *stage* ('Pre-Primary', 'Lower Primary',
+        // 'Upper Primary', 'Junior School') while a class carries a numeric level,
+        // so the two could not be related and this endpoint returned every
+        // learning area in the school to every caller — the same defect fixed on
+        // the web screen in P2-E.
+        //
+        // class_id / class_section_id are OPTIONAL. A caller that sends neither
+        // gets the full framework exactly as before, so no existing client
+        // changes behaviour; the response shape is identical either way, only
+        // fewer rows come back when a class is supplied.
+        $query = \App\Models\CbcLearningArea::with('strands.subStrands');
+
+        $stage = $this->stageForRequest($request);
+
+        if ($stage !== null) {
+            $query->where(function ($q) use ($stage) {
+                // Areas with no level stay available, matching the web behaviour.
+                $q->where('level', $stage)->orWhereNull('level');
+            });
+        }
+
+        $areas = $query
             ->orderBy('name')
             ->get()
             ->map(fn ($area) => [

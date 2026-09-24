@@ -54,7 +54,7 @@
                                 <div class="small text-muted">Unit Price</div>
                             </div>
                             <div class="col-6 py-3 text-center">
-                                <div class="font-weight-bold h5 mb-0 text-dark">KES {{ number_format($inventoryItem->quantity * $inventoryItem->cost_per_unit, 0) }}</div>
+                                <div class="font-weight-bold h5 mb-0 text-dark">{{ \App\Support\Money::format($inventoryItem->quantity * $inventoryItem->cost_per_unit) }}</div>
                                 <div class="small text-muted">Total Value</div>
                             </div>
                         </div>
@@ -201,7 +201,7 @@
                                             <td class="font-weight-bold">{{ $trans->transaction_type == 'issue' ? '-' : '+' }}{{ $trans->quantity }}</td>
                                             <td>{{ $trans->remarks ?: '-' }}</td>
                                             <td class="text-muted">{{ $trans->balance_after }}</td>
-                                            <td>{{ $trans->user ? $trans->user->name : '-' }}</td>
+                                            <td>{{ $trans->handledBy ? $trans->handledBy->full_name : '-' }}</td>
                                         </tr>
                                     @empty
                                         <tr>

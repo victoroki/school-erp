@@ -6,8 +6,8 @@
 
 <!-- Category Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('category_id', 'Category Id:') !!}
-    <p>{{ $inventoryItem->category_id }}</p>
+    {!! Form::label('category_id', 'Category:') !!}
+    <p>{{ $inventoryItem->category->name ?? 'N/A' }}</p>
 </div>
 
 <!-- Quantity Field -->
@@ -31,24 +31,24 @@
 <!-- Cost Per Unit Field -->
 <div class="col-sm-12">
     {!! Form::label('cost_per_unit', 'Cost Per Unit:') !!}
-    <p>{{ $inventoryItem->cost_per_unit }}</p>
+    <p>{{ \App\Support\Money::format($inventoryItem->cost_per_unit ?? 0) }}</p>
 </div>
 
 <!-- Supplier Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('supplier_id', 'Supplier Id:') !!}
-    <p>{{ $inventoryItem->supplier_id }}</p>
+    {!! Form::label('supplier_id', 'Supplier:') !!}
+    <p>{{ $inventoryItem->supplier->name ?? 'N/A' }}</p>
 </div>
 
 <!-- Location Field -->
 <div class="col-sm-12">
     {!! Form::label('location', 'Location:') !!}
-    <p>{{ $inventoryItem->location }}</p>
+    <p>{{ $inventoryItem->location ?? 'Not specified' }}</p>
 </div>
 
 <!-- Description Field -->
 <div class="col-sm-12">
     {!! Form::label('description', 'Description:') !!}
-    <p>{{ $inventoryItem->description }}</p>
+    <p>{{ $inventoryItem->description ?? '—' }}</p>
 </div>
 

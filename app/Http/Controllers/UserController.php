@@ -129,9 +129,17 @@ class UserController extends AppBaseController
 
         $user->update($input);
 
-        $this->syncRolesForRequest($user, $request->input('roles', []));
+        if ($request->has('roles_submitted') || $request->has('roles')) {
+            $this->syncRolesForRequest($user, $request->input('roles', []));
+        }
 
-        AuditTrail::log('User', 'UPDATE', $user->id, null, ['name' => $user->name, 'email' => $user->email, 'roles' => $request->input('roles', [])]);
+        $user->load('roles');
+
+        AuditTrail::log('User', 'UPDATE', $user->id, null, [
+            'name' => $user->name,
+            'email' => $user->email,
+            'roles' => $user->roles->pluck('role_name')->all(),
+        ]);
 
         Flash::success('User updated successfully.');
 
@@ -235,6 +243,8 @@ class UserController extends AppBaseController
         $actor = auth()->user();
         $ownerRoleId = Role::where('role_name', 'Owner')->value('role_id');
 
+        $requestedRoleIds = array_map('intval', $requestedRoleIds);
+
         if (! $actor || ! $actor->canBypassProtection()) {
             $kept = $user->roles()->where('is_protected', true)->pluck('roles.role_id')->toArray();
 
@@ -254,6 +264,13 @@ class UserController extends AppBaseController
             $requestedRoleIds = array_values(array_diff($requestedRoleIds, [$ownerRoleId]));
         }
 
-        $user->roles()->sync($requestedRoleIds);
+        // Defensive: the Owner role checkbox is deliberately not rendered, so a
+        // form-driven sync would otherwise remove the role from the Owner's own
+        // account with no way to restore it from the UI.
+        if ($ownerRoleId && $user->roles()->where('roles.role_id', $ownerRoleId)->exists()) {
+            $requestedRoleIds[] = (int) $ownerRoleId;
+        }
+
+        $user->roles()->sync(array_values(array_unique($requestedRoleIds)));
     }
 }

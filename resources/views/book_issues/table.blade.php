@@ -33,7 +33,7 @@
                 <td class="align-middle">{{ $bookIssue->return_date ? $bookIssue->return_date->format('d M Y') : '-' }}</td>
                 <td class="text-center align-middle">
                     @if($bookIssue->fine_amount > 0)
-                        <span class="text-danger font-weight-bold">KSh {{ number_format($bookIssue->fine_amount, 2) }}</span>
+                        <span class="text-danger font-weight-bold">KES {{ number_format($bookIssue->fine_amount, 2) }}</span>
                     @else
                         -
                     @endif

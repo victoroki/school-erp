@@ -28,33 +28,33 @@
             <tbody>
             @foreach($payrolls as $payroll)
                 <tr>
-                    <td>{{ $payroll->staff_id }}</td>
-                    <td>{{ $payroll->salary_id }}</td>
+                    <td>{{ $payroll->staff->full_name ?? 'N/A' }}</td>
+                    <td>{{ $payroll->salary_id ?? '—' }}</td>
                     <td>{{ $payroll->month }}</td>
                     <td>{{ $payroll->year }}</td>
                     <td>{{ $payroll->working_days }}</td>
                     <td>{{ $payroll->paid_days }}</td>
                     <td>{{ $payroll->absent_days }}</td>
                     <td>{{ $payroll->leave_days }}</td>
-                    <td>{{ $payroll->basic_salary }}</td>
-                    <td>{{ $payroll->allowances }}</td>
-                    <td>{{ $payroll->overtime }}</td>
-                    <td>{{ $payroll->gross_salary }}</td>
-                    <td>{{ $payroll->deductions }}</td>
-                    <td>{{ $payroll->net_salary }}</td>
-                    <td>{{ $payroll->payment_date }}</td>
-                    <td>{{ $payroll->payment_method }}</td>
-                    <td>{{ $payroll->reference_number }}</td>
-                    <td>{{ $payroll->remarks }}</td>
-                    <td>{{ $payroll->status }}</td>
+                    <td>{{ \App\Support\Money::format($payroll->basic_salary ?? 0) }}</td>
+                    <td>{{ \App\Support\Money::format($payroll->allowances ?? 0) }}</td>
+                    <td>{{ \App\Support\Money::format($payroll->overtime ?? 0) }}</td>
+                    <td>{{ \App\Support\Money::format($payroll->gross_salary ?? 0) }}</td>
+                    <td>{{ \App\Support\Money::format($payroll->deductions ?? 0) }}</td>
+                    <td>{{ \App\Support\Money::format($payroll->net_salary ?? 0) }}</td>
+                    <td>{{ $payroll->payment_date ? \Carbon\Carbon::parse($payroll->payment_date)->format('d/m/Y') : '—' }}</td>
+                    <td>{{ ucfirst(str_replace('_', ' ', $payroll->payment_method ?? '')) }}</td>
+                    <td>{{ $payroll->reference_number ?? '—' }}</td>
+                    <td>{{ $payroll->remarks ?? '—' }}</td>
+                    <td>{{ ucfirst($payroll->status ?? '') }}</td>
                     <td  style="width: 120px">
                         {!! Form::open(['route' => ['payrolls.destroy', $payroll->id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('payrolls.show', [$payroll->id]) }}"
+                            <a href="{{ route('payrolls.show', [$payroll->payroll_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('payrolls.edit', [$payroll->id]) }}"
+                            <a href="{{ route('payrolls.edit', [$payroll->payroll_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>
