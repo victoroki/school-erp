@@ -82,15 +82,23 @@ class HrUiConsistencyTest extends TestCase
      */
     public function test_the_app_still_runs_bootstrap_4(): void
     {
-        $manifest = base_path('node_modules/bootstrap/package.json');
+        // Assert the version the app DECLARES, from the tracked package.json.
+        // The installed copy under node_modules is gitignored and CI installs
+        // only Composer dependencies, so reading node_modules made this guard
+        // pass on any machine that had run npm install and fail on every CI run.
+        $manifest = base_path('package.json');
         $this->assertFileExists($manifest);
 
-        $version = json_decode(file_get_contents($manifest), true)['version'] ?? '';
+        $package = json_decode(file_get_contents($manifest), true);
+        $declared = $package['devDependencies']['bootstrap'] ?? $package['dependencies']['bootstrap'] ?? '';
+
+        // Strip a semver range prefix: "^4.6.0", "~4.6.2", ">=4.6.0".
+        $version = ltrim((string) $declared, '^~>=< ');
 
         $this->assertStringStartsWith(
             '4.',
             $version,
-            "Bootstrap is now {$version}. The data-toggle assertions in this file are Bootstrap 4 API; "
+            "Bootstrap is declared as {$declared}. The data-toggle assertions in this file are Bootstrap 4 API; "
                 .'if this is a deliberate upgrade to Bootstrap 5, convert them to data-bs-toggle.'
         );
     }
