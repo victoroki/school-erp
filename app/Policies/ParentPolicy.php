@@ -9,12 +9,13 @@ class ParentPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['Super Admin', 'Admin']);
+        return $user->isSuperUser()
+            || $user->hasAnyRole(['Super Admin', 'Admin']);
     }
 
     public function view(User $user, Parents $parent): bool
     {
-        if ($user->hasAnyRole(['Super Admin', 'Admin'])) {
+        if ($user->isSuperUser() || $user->hasAnyRole(['Super Admin', 'Admin'])) {
             return true;
         }
 
@@ -27,7 +28,8 @@ class ParentPolicy
 
     public function manage(User $user): bool
     {
-        return $user->hasAnyRole(['Super Admin', 'Admin']);
+        return $user->isSuperUser()
+            || $user->hasAnyRole(['Super Admin', 'Admin']);
     }
 
     /**

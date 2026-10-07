@@ -300,9 +300,16 @@ class Staff extends Model
         'department_id' => 'required|exists:departments,department_id',
         'job_position_id' => 'nullable|exists:job_positions,job_position_id',
         'designation' => 'nullable|string|max:100',
-        'date_of_joining' => 'nullable|date',
+        'date_of_joining' => 'required|date',
         'basic_salary' => 'nullable|numeric|min:0',
         'employment_type' => 'required|in:full_time,part_time,contract,casual,intern',
         'employment_status' => 'required|in:active,on_leave,suspended,terminated,resigned,retired',
+        'staff_type' => 'required|in:teaching,non-teaching,administration',
+        'qualification' => 'nullable|string|max:255',
+        'experience' => 'nullable|numeric|min:0|max:50',
+        'current_address' => 'nullable|string|max:1000',
+        'city' => 'nullable|string|max:50',
+        'country' => 'nullable|string|max:50',
+        'user_id' => 'nullable|exists:users,id',
     ];
 }

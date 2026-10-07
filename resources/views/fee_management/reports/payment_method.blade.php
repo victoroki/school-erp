@@ -134,6 +134,13 @@
                     <a class="btn btn-outline-secondary" href="{{ route('fees.dashboard') }}" style="border-radius: 8px; font-weight: 600;">
                         <i class="fas fa-arrow-left mr-1" style="font-size: 0.8rem;"></i> Dashboard
                     </a>
+                    {{-- Exports carry the active filters (year, period, method) through. --}}
+                    <a class="btn btn-outline-secondary" href="{{ route('fees.reports.export.payment-method.csv', request()->query()) }}" style="border-radius: 8px; font-weight: 600;">
+                        <i class="fas fa-file-csv mr-1"></i> Export CSV
+                    </a>
+                    <a class="btn btn-primary" href="{{ route('fees.reports.export.payment-method.pdf', request()->query()) }}">
+                        <i class="fas fa-file-pdf mr-1"></i> Export PDF
+                    </a>
                 </div>
             </div>
         </div>

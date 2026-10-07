@@ -14,26 +14,41 @@
         </thead>
         <tbody>
         @forelse($bookIssues as $bookIssue)
-            <tr>
+            @php
+                // A book that is still out past its due date has not been
+                // charged yet — fine_amount is only written on return — so the
+                // amount it is currently owing is derived from the configured
+                // daily rate.
+                $daysOverdue = $bookIssue->status === 'issued'
+                    ? \App\Services\LibrarySettings::daysOverdue($bookIssue->due_date)
+                    : 0;
+                $accruingFine = \App\Services\LibrarySettings::fineFor($daysOverdue);
+            @endphp
+            <tr class="{{ $daysOverdue > 0 ? 'table-danger' : '' }}">
                 <td class="align-middle">
                     <strong>{{ $bookIssue->book->title ?? 'N/A' }}</strong>
                     <br><small class="text-muted">ISBN: {{ $bookIssue->book->isbn ?? 'N/A' }}</small>
                 </td>
                 <td class="align-middle">
-                    {{ $bookIssue->member->user->name ?? 'Unknown' }}
+                    {{ $bookIssue->member->display_name }}
                     <br><small class="text-muted">{{ $bookIssue->member->reference_id ?? 'N/A' }}</small>
                 </td>
                 <td class="align-middle">{{ $bookIssue->issue_date->format('d M Y') }}</td>
                 <td class="align-middle">
                     {{ $bookIssue->due_date->format('d M Y') }}
-                    @if($bookIssue->status == 'issued' && \Carbon\Carbon::now()->gt($bookIssue->due_date))
-                        <br><span class="badge badge-danger badge-sm">Overdue</span>
+                    @if($daysOverdue > 0)
+                        <br><span class="badge badge-danger badge-sm">
+                            {{ $daysOverdue }} {{ Str::plural('day', $daysOverdue) }} overdue
+                        </span>
                     @endif
                 </td>
                 <td class="align-middle">{{ $bookIssue->return_date ? $bookIssue->return_date->format('d M Y') : '-' }}</td>
                 <td class="text-center align-middle">
-                    @if($bookIssue->fine_amount > 0)
+                    @if((float) $bookIssue->fine_amount > 0)
                         <span class="text-danger font-weight-bold">KES {{ number_format($bookIssue->fine_amount, 2) }}</span>
+                    @elseif($accruingFine > 0)
+                        <span class="text-danger">KES {{ number_format($accruingFine, 2) }}</span>
+                        <br><small class="text-muted">accruing</small>
                     @else
                         -
                     @endif

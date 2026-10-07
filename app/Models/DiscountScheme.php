@@ -43,7 +43,11 @@ class DiscountScheme extends Model
         'value' => 'nullable|numeric|min:0',
         'status' => 'required|in:active,inactive',
         'applies_to' => 'required|in:all_fees,specific_categories,exclude_categories',
-        'eligibility_criteria' => 'required|in:staff_child,sibling,merit,financial_aid,custom'
+        'eligibility_criteria' => 'required|in:staff_child,sibling,merit,financial_aid,custom',
+        // The category list arrives as an array of ticked checkbox values, so
+        // each id is checked on its own rather than as a single field.
+        'applicable_fee_categories' => 'nullable|array',
+        'applicable_fee_categories.*' => 'integer|exists:fee_categories,category_id'
     ];
 
     public function academicYear()

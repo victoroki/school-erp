@@ -40,6 +40,25 @@ class FeeManagementTest extends TestCase
         ]);
     }
 
+    protected function createTerm($academicYear, $code = 'Term 1', $status = 'active')
+    {
+        // The code matches what createFeeStructure() stores in fee_structures.term
+        // throughout this file. Those rows use the term's display name where the
+        // code belongs, which is a wider name/code duplication problem
+        // (fee_structures.term alongside the real term_id) rather than something
+        // to fix inside this test file.
+        return Term::create([
+            'academic_year_id' => $academicYear->academic_year_id,
+            'name' => 'Term 1',
+            'code' => $code,
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-04-03',
+            'fee_due_date' => '2026-01-15',
+            'status' => $status,
+            'display_order' => 1,
+        ]);
+    }
+
     protected function createClass()
     {
         return SchoolClass::create([
@@ -202,6 +221,7 @@ class FeeManagementTest extends TestCase
     public function test_auto_assign_fees_to_student()
     {
         $academicYear = $this->createAcademicYear();
+        $term = $this->createTerm($academicYear);
         $class = $this->createClass();
         $section = $this->createSection();
         $classSection = $this->createClassSection($academicYear, $class, $section);
@@ -215,6 +235,43 @@ class FeeManagementTest extends TestCase
 
         $this->assertTrue($result['success']);
         $this->assertGreaterThanOrEqual(0, $result['count']);
+
+        // The assignment has to carry a real term_id. The service used to fall
+        // back to a literal term string when the year had no active term, which
+        // wrote a null term_id and dropped the assignment out of every
+        // term-filtered arrears view, statement and report.
+        $assignment = StudentFeeAssignment::where('student_id', $student->student_id)
+            ->where('academic_year_id', $academicYear->academic_year_id)
+            ->first();
+
+        $this->assertNotNull($assignment, 'A fee assignment should have been created.');
+        $this->assertNotNull(
+            $assignment->term_id,
+            'The assignment must reference a term, not a bare term string.'
+        );
+        $this->assertSame($term->id, (int) $assignment->term_id);
+    }
+
+    public function test_auto_assign_reports_failure_when_no_term_is_active()
+    {
+        $academicYear = $this->createAcademicYear();
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+        $student = $this->createStudent($classSection, $academicYear);
+        $this->createFeeStructure($academicYear, $class);
+
+        $this->actingAs($this->user);
+
+        $service = app(FeeAssignmentService::class);
+        $result = $service->autoAssignFeesToStudent($student, $academicYear->academic_year_id);
+
+        // Previously this reported success and wrote an assignment with
+        // term_id = null, which then vanished from term-filtered reports.
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('No active term', $result['message']);
+        $this->assertSame(0, $result['count']);
+        $this->assertDatabaseCount('student_fee_assignments', 0);
     }
 
     public function test_fee_adjustment_creation()
@@ -465,6 +522,10 @@ class FeeManagementTest extends TestCase
     public function test_auto_discounts_stack_across_eligible_schemes_without_duplicates()
     {
         $academicYear = $this->createAcademicYear();
+        // Fees are assigned against an active term. Without one the service
+        // declines to assign rather than writing an assignment with a null
+        // term_id, so the year needs a term for this to have anything to price.
+        $this->createTerm($academicYear);
         $class = $this->createClass();
         $section = $this->createSection();
         $classSection = $this->createClassSection($academicYear, $class, $section);

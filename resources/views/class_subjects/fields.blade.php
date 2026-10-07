@@ -7,7 +7,10 @@
 <!-- Academic Year Selection -->
 <div class="form-group col-sm-6 mb-4">
     {!! Form::label('academic_year_id', 'Academic Period', ['class' => 'dash-label']) !!}
-    {!! Form::select('academic_year_id', $academicYear, null, ['class' => 'form-control dash-control', 'required', 'placeholder'=> 'Select Academic Year']) !!}
+    {{-- Defaults to the current year, which is the year the curriculum page
+         lists. Edit mode overrides this with the assignment's own year. --}}
+    {!! Form::select('academic_year_id', $academicYear, $defaultAcademicYearId ?? null, ['class' => 'form-control dash-control', 'required', 'placeholder'=> 'Select Academic Year']) !!}
+    <small class="text-muted">The curriculum page shows the current academic year.</small>
 </div>
 
 @if(isset($classSubject))

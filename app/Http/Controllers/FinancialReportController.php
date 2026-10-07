@@ -6,10 +6,13 @@ use App\Models\BankAccount;
 use App\Models\Expenses;
 use App\Models\FeePayment;
 use App\Models\FinancialYear;
+use App\Models\InventoryItem;
 use App\Models\PettyCashLog;
+use App\Models\PurchaseOrder;
 use App\Models\Refund;
 use App\Models\SchoolClass;
 use App\Models\StudentFeeAssignment;
+use App\Models\Term;
 use App\Services\FinancialMetrics;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -66,12 +69,35 @@ class FinancialReportController extends AppBaseController
         return $pdf->download('cashflow-statement.pdf');
     }
 
+    /**
+     * Resolve the reporting window from an optional term filter. The term's
+     * own start/end dates are authoritative — never hard-coded term dates.
+     */
+    private function resolveTermWindow(Request $request, ?string $startDate, ?string $endDate): array
+    {
+        $term = null;
+
+        if ($request->filled('term_id')) {
+            $term = Term::find($request->integer('term_id'));
+
+            if ($term) {
+                // A term filter overrides any dates; its own boundaries rule.
+                $startDate = $term->start_date->toDateString();
+                $endDate = $term->end_date->toDateString();
+            }
+        }
+
+        return [$startDate, $endDate, $term];
+    }
+
     public function pAndL(Request $request)
     {
         $activeYear = FinancialYear::where('status', 'open')->first() ?: FinancialYear::latest()->first();
 
         $startDate = $request->get('start_date', $activeYear ? $activeYear->start_date->toDateString() : Carbon::now()->startOfYear()->toDateString());
         $endDate = $request->get('end_date', $activeYear ? $activeYear->end_date->toDateString() : Carbon::now()->endOfYear()->toDateString());
+
+        [$startDate, $endDate, $term] = $this->resolveTermWindow($request, $startDate, $endDate);
 
         $totalIncome = FinancialMetrics::incomeTotalBetween($startDate, $endDate);
 
@@ -86,7 +112,11 @@ class FinancialReportController extends AppBaseController
 
         $totalExpenses = $expenseBreakdown->sum('total');
 
-        return view('financial_reports.p_and_l', compact('totalIncome', 'expenseBreakdown', 'totalExpenses', 'startDate', 'endDate'));
+        $terms = Term::orderBy('start_date')->get();
+
+        return view('financial_reports.p_and_l', compact(
+            'totalIncome', 'expenseBreakdown', 'totalExpenses', 'startDate', 'endDate', 'term', 'terms'
+        ));
     }
 
     public function pAndLPdf(Request $request)
@@ -95,6 +125,8 @@ class FinancialReportController extends AppBaseController
 
         $startDate = $request->get('start_date', $activeYear ? $activeYear->start_date->toDateString() : Carbon::now()->startOfYear()->toDateString());
         $endDate = $request->get('end_date', $activeYear ? $activeYear->end_date->toDateString() : Carbon::now()->endOfYear()->toDateString());
+
+        [$startDate, $endDate, $term] = $this->resolveTermWindow($request, $startDate, $endDate);
 
         $totalIncome = FinancialMetrics::incomeTotalBetween($startDate, $endDate);
 
@@ -108,7 +140,7 @@ class FinancialReportController extends AppBaseController
 
         $pdf = Pdf::loadView(
             'financial_reports.exports.p_and_l_pdf',
-            compact('totalIncome', 'expenseBreakdown', 'totalExpenses', 'startDate', 'endDate')
+            compact('totalIncome', 'expenseBreakdown', 'totalExpenses', 'startDate', 'endDate', 'term')
         );
 
         return $pdf->download('profit-loss-statement.pdf');
@@ -148,7 +180,21 @@ class FinancialReportController extends AppBaseController
         )->value('balance');
         $pettyCash = max(0, $pettyCash);
 
-        $totalAssets = $totalBankBalance + $feeReceivables + $pettyCash;
+        // 4. Inventory on hand at cost (existing stock data — no valuation
+        //    layer exists, so quantity × unit cost is the honest figure).
+        $inventoryValue = (float) InventoryItem::query()
+            ->selectRaw('COALESCE(SUM(quantity * cost_per_unit), 0) as value')
+            ->value('value');
+
+        $totalCurrentAssets = $totalBankBalance + $feeReceivables + $pettyCash + $inventoryValue;
+
+        // ── NON-CURRENT ASSETS ──────────────────────────────────────────────
+        // The ERP has no fixed-asset register (no cost/depreciation data is
+        // recorded anywhere), so this section is reported as a limitation
+        // rather than populated with invented figures.
+        $totalNonCurrentAssets = 0.0;
+
+        $totalAssets = $totalCurrentAssets + $totalNonCurrentAssets;
 
         // ── LIABILITIES ──────────────────────────────────────────────────────
 
@@ -160,7 +206,23 @@ class FinancialReportController extends AppBaseController
         $pendingRefunds = (float) Refund::where('status', 'approved')
             ->sum('amount');
 
-        $totalLiabilities = $pendingExpenses + $pendingRefunds;
+        // 3. Supplier payables: received purchase orders not yet paid in full
+        //    (credit purchases). Computed from the payment rows so it can
+        //    never drift from what was actually paid.
+        $supplierPayables = (float) PurchaseOrder::query()
+            ->received()
+            ->with('payments:id,po_id,amount')
+            ->get()
+            ->sum(fn (PurchaseOrder $po) => $po->outstandingBalance());
+
+        // 4. Fees received in advance: students whose valid payments exceed
+        //    what they have been charged (credit balances the school holds).
+        $feesInAdvance = (float) StudentFeeAssignment::where('status', 'active')
+            ->selectRaw('COALESCE(SUM(final_amount - paid_amount), 0) as net')
+            ->value('net');
+        $feesInAdvance = max(0, -1 * min(0, $feesInAdvance));
+
+        $totalLiabilities = $pendingExpenses + $pendingRefunds + $supplierPayables + $feesInAdvance;
 
         // ── EQUITY ───────────────────────────────────────────────────────────
         $netAssets = $totalAssets - $totalLiabilities;
@@ -172,9 +234,14 @@ class FinancialReportController extends AppBaseController
             'totalBilled',
             'totalPaidFees',
             'pettyCash',
+            'inventoryValue',
+            'totalCurrentAssets',
+            'totalNonCurrentAssets',
             'totalAssets',
             'pendingExpenses',
             'pendingRefunds',
+            'supplierPayables',
+            'feesInAdvance',
             'totalLiabilities',
             'netAssets',
             'startDate',

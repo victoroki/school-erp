@@ -3,19 +3,19 @@
         <table class="table" id="library-members-table">
             <thead>
             <tr>
-                <th>User</th>
+                <th>Member</th>
                 <th>Member Type</th>
                 <th>Reference</th>
                 <th>Membership Date</th>
                 <th>Max Allowed Books</th>
                 <th>Status</th>
-                <th colspan="3">Action</th>
+                <th style="width: 120px">Action</th>
             </tr>
             </thead>
             <tbody>
             @foreach($libraryMembers as $libraryMember)
                 <tr>
-                    <td>{{ $libraryMember->user->name ?? 'N/A' }}</td>
+                    <td>{{ $libraryMember->display_name }}</td>
                     <td>{{ ucfirst($libraryMember->member_type ?? '') }}</td>
                     <td>{{ $libraryMember->reference_id ?? '—' }}</td>
                     <td>{{ $libraryMember->membership_date ? \Carbon\Carbon::parse($libraryMember->membership_date)->format('d/m/Y') : '—' }}</td>

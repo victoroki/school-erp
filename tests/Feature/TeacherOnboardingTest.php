@@ -46,8 +46,6 @@ class TeacherOnboardingTest extends TestCase
             'employment_type' => 'full_time',
             'employment_status' => 'active',
             'login_email'   => 'grace.njeri@school.test',
-            'password'      => 'secretpass123',
-            'password_confirmation' => 'secretpass123',
         ];
     }
 
@@ -65,7 +63,8 @@ class TeacherOnboardingTest extends TestCase
 
         $this->actingAs($this->superAdmin)
             ->post(route('teacher-onboarding.store'), $this->validPayload())
-            ->assertRedirect(route('teacher-onboarding.create'));
+            // Redirect goes to All Teachers, not back to the form.
+            ->assertRedirect(route('teacher-management.index'));
 
         // Staff record created, linked to the user, marked teaching/active.
         $staff = Staff::where('work_email', 'grace.njeri@school.test')->first();
@@ -75,11 +74,13 @@ class TeacherOnboardingTest extends TestCase
         $this->assertSame('Mathematics Teacher', $staff->designation);
         $this->assertSame('TSC123456', $staff->tsc_number);
 
-        // User created with hashed password and linked staff.
+        // User created and linked to the staff record. No admin-chosen
+        // password: a password-broker token is issued so the teacher sets
+        // their own through the emailed setup link.
         $user = User::where('email', 'grace.njeri@school.test')->first();
         $this->assertNotNull($user);
         $this->assertSame('Grace Wanjiru Njeri', $user->name);
-        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('secretpass123', $user->password));
+        $this->assertDatabaseHas('password_reset_tokens', ['email' => $user->email]);
         $this->assertSame($staff->staff_id, $user->staff->staff_id);
 
         // Teacher role assigned (default when role_id omitted).
@@ -95,11 +96,10 @@ class TeacherOnboardingTest extends TestCase
         $payload['role_id'] = $accountantRole->role_id;
         $payload['login_email'] = 'grace.njeri2@school.test';
         $payload['work_email'] = 'grace.njeri2@school.test';
-        $payload['password_confirmation'] = $payload['password'] = 'secretpass123';
 
         $this->actingAs($this->superAdmin)
             ->post(route('teacher-onboarding.store'), $payload)
-            ->assertRedirect(route('teacher-onboarding.create'));
+            ->assertRedirect(route('teacher-management.index'));
 
         // The requested role must be ignored: the user is always a Teacher.
         $user = User::where('email', 'grace.njeri2@school.test')->first();

@@ -132,6 +132,30 @@
 
     /* ── Filters ── */
     .fa-filters { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    /* Matches the other fee screens. Bootstrap's .form-control-sm is only
+       ~31px tall, which clipped the select text to roughly half a line here;
+       the explicit height/padding and the custom chevron keep the label fully
+       visible and hide the native arrow that overlapped it. */
+    .fa-filters select.form-control,
+    .fa-filters input.form-control {
+        height: 38px !important;
+        padding: 0 2rem 0 0.75rem !important;
+        font-size: 0.8125rem !important;
+        line-height: 1.4 !important;
+        background-color: #fff;
+    }
+    .fa-filters select.form-control {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%2364748b'%3E%3Cpath d='M4.5 6l3.5 4 3.5-4z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.55rem center;
+        background-size: 14px 14px;
+        cursor: pointer;
+    }
+    .fa-filter-select { width: 170px; }
+    .fa-filter-select--sm { width: 150px; }
 
     /* ── Table ── */
     .fa-table { margin: 0; }
@@ -256,7 +280,7 @@
         .fa-head .d-flex { flex-direction: column; align-items: stretch !important; gap: 0.625rem; }
         .fa-head .btn { justify-content: center; }
         .fa-filters { width: 100%; }
-        .fa-filters .form-control-sm, .fa-filters .btn { width: 100%; }
+        .fa-filters .form-control-sm, .fa-filters .btn, .fa-filter-select, .fa-filter-select--sm { width: 100%; }
         .fa-table thead th:nth-child(n+5),
         .fa-table tbody td:nth-child(n+5) { display: none; }
         .fa-table thead th:first-child, .fa-table tbody td:first-child { padding-left: 0.875rem; }
@@ -345,25 +369,25 @@
                         All Adjustments
                     </h3>
                     <form action="{{ route('fees.adjustments.index') }}" method="GET" class="fa-filters">
-                        <select name="status" class="form-control form-control-sm" style="width: 140px;" aria-label="Filter by status">
+                        <select name="status" class="form-control form-control-sm fa-filter-select--sm fa-filter-select" aria-label="Filter by status">
                             <option value="">All Status</option>
                             <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                             <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
                             <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
                         </select>
-                        <select name="adjustment_type" class="form-control form-control-sm" style="width: 140px;" aria-label="Filter by type">
+                        <select name="adjustment_type" class="form-control form-control-sm fa-filter-select--sm fa-filter-select" aria-label="Filter by type">
                             <option value="">All Types</option>
                             <option value="reduction" {{ request('adjustment_type') == 'reduction' ? 'selected' : '' }}>Reduction</option>
                             <option value="increase" {{ request('adjustment_type') == 'increase' ? 'selected' : '' }}>Increase</option>
                             <option value="waiver" {{ request('adjustment_type') == 'waiver' ? 'selected' : '' }}>Waiver</option>
                         </select>
-                        <select name="student_id" class="form-control form-control-sm" style="width: 200px;" aria-label="Filter by student">
+                        <select name="student_id" class="form-control form-control-sm fa-filter-select" aria-label="Filter by student">
                             <option value="">All Students</option>
                             @foreach($students as $id => $name)
                                 <option value="{{ $id }}" {{ request('student_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
                             @endforeach
                         </select>
-                        <button class="btn btn-primary btn-sm" type="submit">
+                        <button class="btn btn-primary btn-sm" type="submit" style="height: 38px; border-radius: 8px; font-weight: 600;">
                             <i class="fas fa-filter mr-1" style="font-size: 0.75rem;"></i> Filter
                         </button>
                         @if(request('status') || request('adjustment_type') || request('student_id'))

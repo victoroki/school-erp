@@ -19,29 +19,38 @@ class HostelDashboardController extends Controller
 
     public function index()
     {
+        // Occupancy is counted from the active allocation rows rather than the
+        // cached hostel_rooms.occupied column, so this screen can never show
+        // "7 residents" and "9 occupied beds" side by side.
+        $occupied = HostelAllocation::where('status', HostelAllocation::STATUS_ACTIVE)->count();
+
         $stats = [
             'total_hostels' => Hostel::count(),
             'total_rooms' => HostelRoom::count(),
-            'total_capacity' => HostelRoom::sum('capacity'),
-            'total_occupied' => HostelRoom::sum('occupied'),
-            'total_students' => HostelAllocation::where('status', 'active')->count(),
-            'available_rooms' => HostelRoom::where('status', 'available')->count(),
-            'maintenance_rooms' => HostelRoom::where('status', 'under_maintenance')->count(),
+            'total_capacity' => (int) HostelRoom::sum('capacity'),
+            'total_occupied' => $occupied,
+            'total_students' => $occupied,
+            'available_rooms' => HostelRoom::where('status', HostelRoom::STATUS_AVAILABLE)->count(),
+            'maintenance_rooms' => HostelRoom::where('status', HostelRoom::STATUS_UNDER_MAINTENANCE)->count(),
         ];
 
-        $recentAllocations = HostelAllocation::with(['student', 'room', 'hostel'])
+        $stats['vacant_beds'] = max(0, $stats['total_capacity'] - $stats['total_occupied']);
+
+        $recentAllocations = HostelAllocation::withDisplayContext()
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 
         $occupancyByHostel = Hostel::withCount(['hostelRooms as total_rooms'])
             ->get()
-            ->map(function($hostel) {
-                $hostel->occupied = $hostel->hostelRooms()->sum('occupied');
-                $hostel->total_capacity = $hostel->hostelRooms()->sum('capacity');
-                $hostel->occupancy_rate = $hostel->total_capacity > 0 
-                    ? round(($hostel->occupied / $hostel->total_capacity) * 100) 
+            ->map(function (Hostel $hostel) {
+                $hostel->occupied = $hostel->getCurrentOccupancy();
+                $hostel->total_capacity = $hostel->getBedCapacity();
+                $hostel->occupancy_rate = $hostel->total_capacity > 0
+                    ? round(($hostel->occupied / $hostel->total_capacity) * 100)
                     : 0;
+                $hostel->capacity_mismatch = $hostel->capacityMismatch();
+
                 return $hostel;
             });
 

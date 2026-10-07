@@ -1,7 +1,7 @@
 <!-- User Id Field -->
 <div class="col-sm-12">
     {!! Form::label('user_id', 'Member:') !!}
-    <p>{{ $libraryMember->user->name ?? 'N/A' }}</p>
+    <p>{{ $libraryMember->display_name }}</p>
 </div>
 
 <!-- Member Type Field -->

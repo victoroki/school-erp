@@ -988,7 +988,10 @@ html {
 select {
     border-radius: 8px !important;
     border: 1px solid oklch(0.869 0.012 264) !important;
-    padding: 0.5625rem 0.875rem !important;
+    /* No forced padding here: a hard vertical padding on <select> clips the
+       option text (departments HOD picker was the visible case) and overrides
+       Bootstrap's size variants app-wide. Controls keep their framework
+       padding, which renders dropdown items correctly everywhere. */
     font-size: 0.875rem !important;
     transition: border-color 0.16s var(--ease-out),
                 box-shadow   0.16s var(--ease-out) !important;

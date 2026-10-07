@@ -82,7 +82,12 @@
 .stat-label { font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .stat-value { font-size: 1.25rem; font-weight: 850; color: var(--text); }
 
-.dash-panel { background: #fff; border-radius: 16px; overflow: hidden; }
+/* No overflow:hidden here — it would clip the actions dropdown in the table.
+   The rounded corners are re-applied to the panel's first/last rows instead. */
+.dash-panel { background: #fff; border-radius: 16px; }
+.dash-panel .table thead tr th:first-child { border-top-left-radius: 16px; }
+.dash-panel .table thead tr th:last-child { border-top-right-radius: 16px; }
+.dash-panel .dash-panel-footer { border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; }
 
 .btn-dash { display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 0.813rem; font-weight: 750; transition: all 200ms var(--ease-out); text-decoration: none !important; }
 .btn-primary-dash { background: var(--indigo); color: #fff; padding: 0.625rem 1.25rem; }

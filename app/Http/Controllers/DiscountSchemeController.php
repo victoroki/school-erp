@@ -30,6 +30,11 @@ class DiscountSchemeController extends AppBaseController
      * "requires approval" or "auto apply" and then never have it removed. The
      * form posts every field, so an absent flag means false.
      *
+     * The same applies to the applicable fee categories, but as a list rather
+     * than a flag: an empty tick set is a deliberate instruction to stop scoping
+     * the scheme to any category, and without the marker it would be
+     * indistinguishable from a request that never carried the field.
+     *
      * @return array<string, mixed>
      */
     private function formInput(Request $request): array
@@ -39,7 +44,26 @@ class DiscountSchemeController extends AppBaseController
         $input['requires_approval'] = $request->boolean('requires_approval');
         $input['auto_apply'] = $request->boolean('auto_apply');
 
+        if ($request->has('applicable_fee_categories_submitted') || $request->has('applicable_fee_categories')) {
+            $input['applicable_fee_categories'] = array_values(array_map(
+                'intval',
+                (array) $request->input('applicable_fee_categories', [])
+            ));
+        }
+
         return $input;
+    }
+
+    /**
+     * Fee categories keyed by their id, for the tickable category grid and for
+     * rendering a stored selection by name. Ordered by display_order so the
+     * grid reads in the same sequence as the fee categories module.
+     *
+     * @return \Illuminate\Support\Collection<int, string>
+     */
+    private function feeCategoryNames()
+    {
+        return \App\Models\FeeCategory::orderBy('display_order')->pluck('name', 'category_id');
     }
 
     /**
@@ -59,11 +83,10 @@ class DiscountSchemeController extends AppBaseController
     public function create()
     {
         $academicYears = \App\Models\AcademicYear::pluck('name', 'academic_year_id');
-        $feeCategories = \App\Models\FeeCategory::pluck('name', 'category_id');
-        
+
         return view('discount_schemes.create')
             ->with('academicYears', $academicYears)
-            ->with('feeCategories', $feeCategories);
+            ->with('feeCategories', $this->feeCategoryNames());
     }
 
     /**
@@ -95,7 +118,9 @@ class DiscountSchemeController extends AppBaseController
             return redirect(route('fees.discounts.index'));
         }
 
-        return view('discount_schemes.show')->with('discountScheme', $discountScheme);
+        return view('discount_schemes.show')
+            ->with('discountScheme', $discountScheme)
+            ->with('feeCategoryNames', $this->feeCategoryNames());
     }
 
     /**
@@ -112,12 +137,11 @@ class DiscountSchemeController extends AppBaseController
         }
 
         $academicYears = \App\Models\AcademicYear::pluck('name', 'academic_year_id');
-        $feeCategories = \App\Models\FeeCategory::pluck('name', 'category_id');
 
         return view('discount_schemes.edit')
             ->with('discountScheme', $discountScheme)
             ->with('academicYears', $academicYears)
-            ->with('feeCategories', $feeCategories);
+            ->with('feeCategories', $this->feeCategoryNames());
     }
 
     /**

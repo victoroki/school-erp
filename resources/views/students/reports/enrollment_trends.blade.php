@@ -59,7 +59,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($trends as $idx => $trend)
+                        @forelse($trends as $idx => $trend)
                             @php
                                 $prevTotal = $idx > 0 ? $trends[$idx - 1]->total : 0;
                                 $change = $prevTotal > 0 ? $trend->total - $prevTotal : 0;
@@ -92,7 +92,14 @@
                                     @endif
                                 </td>
                             </tr>
-                        @endforeach
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="fas fa-chart-line fa-2x mb-2 d-block"></i>
+                                    No enrollment records found for any academic year yet.
+                                </td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>

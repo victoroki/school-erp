@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AcademicYear extends Model
 {
+    use HasFactory;
+
     public $table = 'academic_years';
     
     protected $primaryKey = 'academic_year_id';
@@ -101,5 +104,21 @@ class AcademicYear extends Model
     public function studentDiscounts(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(\App\Models\StudentDiscount::class, 'academic_year_id');
+    }
+
+    public function scopeCurrent($query)
+    {
+        return $query->where('is_current', true);
+    }
+
+    /**
+     * The year a given date falls in, where more than one could match.
+     */
+    public function scopeCovering($query, $date)
+    {
+        $date = $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : (string) $date;
+
+        return $query->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date);
     }
 }

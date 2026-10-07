@@ -34,10 +34,16 @@
     {!! Form::number('seating_capacity', null, ['class' => 'form-control', 'required']) !!}
 </div>
 
-<!-- Driver Id Field -->
+<!-- Driver Name Field -->
 <div class="form-group col-sm-6">
-    {!! Form::label('driver_id', 'Driver:') !!}
-    {!! Form::select('driver_id', $drivers ?? [], null, ['class' => 'form-control', 'placeholder' => 'Select Driver']) !!}
+    {!! Form::label('driver_name', 'Driver:') !!}
+    {!! Form::text('driver_name', null, [
+        'class' => 'form-control',
+        'maxlength' => 100,
+        'placeholder' => 'Enter driver name',
+        'autocomplete' => 'off',
+    ]) !!}
+    <small class="form-text text-muted">Type the driver's name, e.g. John Otieno.</small>
 </div>
 
 <!-- Status Field -->

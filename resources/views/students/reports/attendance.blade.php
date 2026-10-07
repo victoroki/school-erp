@@ -31,6 +31,7 @@
                             <tr>
                                 <th>Status</th>
                                 <th class="text-center">Count</th>
+                                <th class="text-center">%</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -48,6 +49,7 @@
                                         {{ str_replace('_', ' ', $row->status) }}
                                     </td>
                                     <td class="text-center font-weight-bold">{{ $row->count }}</td>
+                                    <td class="text-center text-muted">{{ $total > 0 ? round(($row->count / $total) * 100, 1) . '%' : '—' }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -60,6 +62,7 @@
                             <tr>
                                 <td>OVERALL TOTAL</td>
                                 <td class="text-center text-primary">{{ $total }}</td>
+                                <td class="text-center">100%</td>
                             </tr>
                         </tfoot>
                         @endif

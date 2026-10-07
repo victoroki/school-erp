@@ -44,6 +44,7 @@ class Payroll extends Model
         'total_allowances',
         'paye_tax',
         'nhif_deduction',
+        'sha_deduction',
         'nssf_deduction',
         'total_statutory_deductions',
         'total_other_deductions',
@@ -67,6 +68,7 @@ class Payroll extends Model
         'status' => 'string',
         'paye_tax' => 'decimal:2',
         'nhif_deduction' => 'decimal:2',
+        'sha_deduction' => 'decimal:2',
         'nssf_deduction' => 'decimal:2',
         'payslip_sent' => 'boolean',
     ];

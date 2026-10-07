@@ -19,6 +19,12 @@
 <!-- Is Paid Field -->
 <div class="col-sm-12">
     {!! Form::label('is_paid', 'Is Paid:') !!}
-    <p>{{ $leaveType->is_paid }}</p>
+    <p>
+        @if($leaveType->is_paid)
+            <span class="badge bg-success">Yes</span>
+        @else
+            <span class="badge bg-secondary">No</span>
+        @endif
+    </p>
 </div>
 

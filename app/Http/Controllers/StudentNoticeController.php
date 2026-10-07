@@ -12,8 +12,14 @@ class StudentNoticeController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:student-notices.view')->only(['index', 'show', 'create', 'edit']);
-        $this->middleware('can:student-notices.manage')->only(['store', 'update', 'destroy']);
+        // `create` and `edit` render the write form, so they belong behind the
+        // MANAGE permission. They used to sit behind `.view`, which handed a
+        // Parent or Student — both of whom hold student-notices.view so they
+        // can read the notices addressed to them — an open "create notice" page
+        // whose POST was then correctly refused. The form and the ability it
+        // submits have to agree.
+        $this->middleware('can:student-notices.view')->only(['index', 'show']);
+        $this->middleware('can:student-notices.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     public function index()

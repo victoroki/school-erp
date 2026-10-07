@@ -154,11 +154,16 @@ class BankLedger
      * carry source_type/source_id and match on those directly; older rows are
      * matched by the description prefix describe() produces. Returns null when
      * the money never moved through the ledger (e.g. a cash expense).
+     *
+     * $type pins the expected direction. Without it the legacy inference
+     * applies (only 'Income' sources were deposits, everything else
+     * withdrawals) — which misreads the newer fee-payment and bulk-receipt
+     * deposits, so callers posting deposits pass 'deposit' explicitly.
      */
-    public static function findFor(string $source, int $id): ?BankTransaction
+    public static function findFor(string $source, int $id, ?string $type = null): ?BankTransaction
     {
         return BankTransaction::query()
-            ->where('transaction_type', $source === 'Income' ? 'deposit' : 'withdrawal')
+            ->where('transaction_type', $type ?? ($source === 'Income' ? 'deposit' : 'withdrawal'))
             ->where('status', '!=', 'voided')
             ->where(function ($query) use ($source, $id) {
                 $query->where('source_type', $source)

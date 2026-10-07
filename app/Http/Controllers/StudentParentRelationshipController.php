@@ -22,7 +22,7 @@ class StudentParentRelationshipController extends AppBaseController
     public function __construct(StudentParentRelationshipRepository $studentParentRelationshipRepo)
     {
         $this->studentParentRelationshipRepository = $studentParentRelationshipRepo;
-        $this->middleware('can:students.view')->only(['index', 'show']);
+        $this->middleware('can:students.view')->only(['index', 'show', 'print']);
         $this->middleware('can:students.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
@@ -119,10 +119,102 @@ class StudentParentRelationshipController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $studentParentRelationships = $this->studentParentRelationshipRepository->paginate(10);
+        // The repository ships an unfiltered, relation-less list; for a
+        // directory of who-is-linked-to-whom that means one lazy-load per row
+        // and no way to find anything. Search, class filter and print live on
+        // this query instead.
+        $query = \App\Models\StudentParentRelationship::query()
+            ->with(['student', 'parent']);
+
+        if ($request->filled('q')) {
+            $term = $request->get('q');
+            $query->whereHas('student', function ($s) use ($term) {
+                $s->where(function ($w) use ($term) {
+                    $w->where('first_name', 'like', "%{$term}%")
+                        ->orWhere('middle_name', 'like', "%{$term}%")
+                        ->orWhere('last_name', 'like', "%{$term}%")
+                        ->orWhere('admission_no', 'like', "%{$term}%");
+                });
+            })->orWhereHas('parent', function ($p) use ($term) {
+                $p->where(function ($w) use ($term) {
+                    $w->where('first_name', 'like', "%{$term}%")
+                        ->orWhere('last_name', 'like', "%{$term}%")
+                        ->orWhere('phone', 'like', "%{$term}%")
+                        ->orWhere('email', 'like', "%{$term}%");
+                });
+            });
+        }
+
+        if ($request->filled('class_id')) {
+            $classId = (int) $request->get('class_id');
+            $query->whereHas('student.studentClassEnrollments.classSection', function ($q) use ($classId) {
+                $q->where('class_id', $classId);
+            });
+        }
+
+        $studentParentRelationships = $query
+            ->join('students', 'student_parent_relationship.student_id', '=', 'students.student_id')
+            ->orderBy('students.first_name')
+            ->orderBy('students.last_name')
+            ->orderByDesc('student_parent_relationship.is_primary_contact')
+            ->select('student_parent_relationship.*')
+            ->paginate(15)
+            ->withQueryString();
+
+        $classes = \App\Models\SchoolClass::orderBy('numeric_value')->pluck('name', 'class_id');
 
         return view('student_parent_relationships.index')
-            ->with('studentParentRelationships', $studentParentRelationships);
+            ->with('studentParentRelationships', $studentParentRelationships)
+            ->with('classes', $classes);
+    }
+
+    /**
+     * Print-friendly roster of student-parent relationships.
+     * Uses the same filters as index(); the view renders without the layout.
+     */
+    public function print(Request $request)
+    {
+        $query = \App\Models\StudentParentRelationship::query()->with(['student', 'parent']);
+
+        if ($request->filled('q')) {
+            $term = $request->get('q');
+            $query->whereHas('student', function ($s) use ($term) {
+                $s->where(function ($w) use ($term) {
+                    $w->where('first_name', 'like', "%{$term}%")
+                        ->orWhere('middle_name', 'like', "%{$term}%")
+                        ->orWhere('last_name', 'like', "%{$term}%")
+                        ->orWhere('admission_no', 'like', "%{$term}%");
+                });
+            })->orWhereHas('parent', function ($p) use ($term) {
+                $p->where(function ($w) use ($term) {
+                    $w->where('first_name', 'like', "%{$term}%")
+                        ->orWhere('last_name', 'like', "%{$term}%")
+                        ->orWhere('phone', 'like', "%{$term}%")
+                        ->orWhere('email', 'like', "%{$term}%");
+                });
+            });
+        }
+
+        if ($request->filled('class_id')) {
+            $classId = (int) $request->get('class_id');
+            $query->whereHas('student.studentClassEnrollments.classSection', function ($q) use ($classId) {
+                $q->where('class_id', $classId);
+            });
+        }
+
+        $relationships = $query
+            ->join('students', 'student_parent_relationship.student_id', '=', 'students.student_id')
+            ->orderBy('students.first_name')
+            ->orderBy('students.last_name')
+            ->orderByDesc('student_parent_relationship.is_primary_contact')
+            ->select('student_parent_relationship.*')
+            ->get();
+
+        $className = $request->filled('class_id')
+            ? (\App\Models\SchoolClass::find($request->get('class_id'))->name ?? null)
+            : null;
+
+        return view('student_parent_relationships.print', compact('relationships', 'className'));
     }
 
     /**

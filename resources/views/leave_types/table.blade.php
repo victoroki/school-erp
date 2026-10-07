@@ -16,7 +16,13 @@
                     <td>{{ $leaveType->name }}</td>
                     <td>{{ $leaveType->days_allowed }}</td>
                     <td>{{ $leaveType->description }}</td>
-                    <td>{{ $leaveType->is_paid }}</td>
+                    <td>
+                        @if($leaveType->is_paid)
+                            <span class="badge bg-success">Yes</span>
+                        @else
+                            <span class="badge bg-secondary">No</span>
+                        @endif
+                    </td>
                     <td  style="width: 120px">
                         {!! Form::open(['route' => ['leaveTypes.destroy', $leaveType->leave_type_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>

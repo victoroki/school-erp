@@ -14,6 +14,9 @@
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <h5 class="font-weight-bold text-dark mb-0" style="font-size: 1.2rem;">
                                 Room {{ $classroom->room_number }}
+                                @if(!$classroom->is_active)
+                                    <span class="badge badge-secondary" style="vertical-align: middle; font-size: 0.6rem;">Archived</span>
+                                @endif
                             </h5>
                             <span class="badge" style="background-color: #f1f5f9; color: #475569; padding: 0.5rem 0.75rem; border-radius: 6px;">
                                 <i class="fas fa-users mr-1"></i> {{ $classroom->capacity }}
@@ -43,17 +46,39 @@
                                 <a href="{{ route('classrooms.show', $classroom->classroom_id) }}" class="btn btn-light btn-sm px-3" style="background-color: #ffffff; border-color: #f1f5f9; color: #334155;">
                                     <i class="fas fa-eye text-primary"></i>
                                 </a>
-                                <a href="{{ route('classrooms.edit', $classroom->classroom_id) }}" class="btn btn-light btn-sm px-3" style="background-color: #ffffff; border-color: #f1f5f9; color: #334155;">
-                                    <i class="fas fa-edit text-info"></i>
-                                </a>
-                                {!! Form::open(['route' => ['classrooms.destroy', $classroom->classroom_id], 'method' => 'delete', 'class' => 'd-inline']) !!}
-                                    {!! Form::button('<i class="fas fa-trash-alt text-danger"></i>', [
-                                        'type' => 'submit',
-                                        'class' => 'btn btn-light btn-sm px-3',
-                                        'style' => 'background-color: #ffffff; border-color: #f1f5f9;',
-                                        'onclick' => "return confirm('Are you sure you want to delete this room?')"
-                                    ]) !!}
-                                {!! Form::close() !!}
+                                @if($classroom->is_active)
+                                    <a href="{{ route('classrooms.edit', $classroom->classroom_id) }}" class="btn btn-light btn-sm px-3" style="background-color: #ffffff; border-color: #f1f5f9; color: #334155;">
+                                        <i class="fas fa-edit text-info"></i>
+                                    </a>
+                                    {{-- Archive: the safe retirement for a room with history. The server still refuses
+                                         a delete that would violate the FK — this just keeps the UI honest. --}}
+                                    {!! Form::open(['route' => ['classrooms.archive', $classroom->classroom_id], 'method' => 'post', 'class' => 'd-inline']) !!}
+                                        {!! Form::button('<i class="fas fa-archive text-warning"></i>', [
+                                            'type' => 'submit',
+                                            'class' => 'btn btn-light btn-sm px-3',
+                                            'style' => 'background-color: #ffffff; border-color: #f1f5f9;',
+                                            'title' => 'Archive — withdraw from new allocations without losing history',
+                                        ]) !!}
+                                    {!! Form::close() !!}
+                                    {!! Form::open(['route' => ['classrooms.destroy', $classroom->classroom_id], 'method' => 'delete', 'class' => 'd-inline']) !!}
+                                        {!! Form::button('<i class="fas fa-trash-alt text-danger"></i>', [
+                                            'type' => 'submit',
+                                            'class' => 'btn btn-light btn-sm px-3',
+                                            'style' => 'background-color: #ffffff; border-color: #f1f5f9;',
+                                            'onclick' => "return confirm('Are you sure you want to delete this room? Rooms used by class sections, timetables or exams cannot be deleted and must be archived instead.')"
+                                        ]) !!}
+                                    {!! Form::close() !!}
+                                @else
+                                    {{-- Restore: bring an archived room back into the active pool --}}
+                                    {!! Form::open(['route' => ['classrooms.restore', $classroom->classroom_id], 'method' => 'post', 'class' => 'd-inline']) !!}
+                                        {!! Form::button('<i class="fas fa-undo text-success"></i>', [
+                                            'type' => 'submit',
+                                            'class' => 'btn btn-light btn-sm px-3',
+                                            'style' => 'background-color: #ffffff; border-color: #f1f5f9;',
+                                            'title' => 'Restore to the active list',
+                                        ]) !!}
+                                    {!! Form::close() !!}
+                                @endif
                             </div>
                         </div>
                     </div>

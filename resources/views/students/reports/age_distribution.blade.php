@@ -51,17 +51,15 @@
             </div>
         </div>
         <div class="col-md-4">
-            @php $largestGroup = $ageGroups->max(); $largestLabel = $ageGroups->keys()->first(); @endphp
-            @foreach($ageGroups as $label => $count)
-                @if($count === $largestGroup)
-                    @php $largestLabel = $label; @endphp
-                @endif
-            @endforeach
             <div class="stat-card border-left-success">
                 <div class="stat-icon"><i class="fas fa-chart-bar text-success"></i></div>
                 <div>
-                    <div class="stat-value text-success">{{ $largestLabel }}</div>
-                    <div class="stat-label">Largest Age Group ({{ $largestGroup }} students)</div>
+                    {{-- The largest group is calculated in the controller; the old
+                         Blade code called ->max() on a plain PHP array, which is a
+                         fatal error, and paired it with ->keys()->first() which named
+                         the first bucket rather than the biggest one. --}}
+                    <div class="stat-value text-success">{{ $largestGroup }}</div>
+                    <div class="stat-label">Largest Age Group{{ $largestCount > 0 ? ' (' . $largestCount . ' students)' : '' }}</div>
                 </div>
             </div>
         </div>

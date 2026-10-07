@@ -102,14 +102,31 @@
                             <h6 class="font-weight-bold mb-0">Approval Actions</h6>
                         </div>
                         <div class="card-body pt-0">
+                            {{-- Approving generates a purchase order from this requisition's
+                                 items — the approver picks which supplier gets the order. --}}
                             <form action="{{ route('inventory.requisitions.approve', $requisition->requisition_id) }}" method="POST">
                                 @csrf
+                                <div class="form-group mb-2">
+                                    <label class="small font-weight-bold text-muted mb-1">
+                                        <span class="text-danger">*</span> Supplier for the purchase order
+                                    </label>
+                                    <select name="supplier_id" class="form-control form-control-sm{{ $errors->has('supplier_id') ? ' is-invalid' : '' }}" required>
+                                        <option value="">— Select supplier —</option>
+                                        @foreach(\App\Models\Supplier::orderBy('name')->get() as $supplier)
+                                            <option value="{{ $supplier->supplier_id }}" {{ old('supplier_id') == $supplier->supplier_id ? 'selected' : '' }}>
+                                                {{ $supplier->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('supplier_id')<span class="text-danger small">{{ $message }}</span>@enderror
+                                </div>
                                 <div class="form-group mb-3">
-                                    <textarea name="reason" class="form-control form-control-sm" placeholder="Reason for approval/rejection (Optional)" rows="2"></textarea>
+                                    <textarea name="reason" class="form-control form-control-sm" placeholder="Approval note (optional) — stored on the purchase order" rows="2">{{ old('reason') }}</textarea>
                                 </div>
                                 <div class="d-flex">
-                                    <button type="submit" name="action" value="approve" class="btn btn-success btn-block mr-2 shadow-sm">
-                                        <i class="fas fa-check mr-1"></i> Approve
+                                    <button type="submit" name="action" value="approve" class="btn btn-success btn-block mr-2 shadow-sm"
+                                            onclick="return confirm('Approving will generate a purchase order from this requisition. Continue?')">
+                                        <i class="fas fa-check mr-1"></i> Approve &amp; Generate PO
                                     </button>
                                     <button type="submit" name="action" value="reject" class="btn btn-danger btn-block mt-0 shadow-sm">
                                         <i class="fas fa-times mr-1"></i> Reject
@@ -131,6 +148,23 @@
                             @endif
                         </div>
                     </div>
+
+                    {{-- The PO generated at approval time --}}
+                    @if($requisition->status == 'Approved' && $requisition->purchaseOrders->isNotEmpty())
+                        <div class="card border-0 shadow-sm border-left border-success mt-3">
+                            <div class="card-body py-3">
+                                <div class="small font-weight-bold text-success mb-2">
+                                    <i class="fas fa-file-invoice mr-1"></i> Generated Purchase Order{{ $requisition->purchaseOrders->count() > 1 ? 's' : '' }}
+                                </div>
+                                @foreach($requisition->purchaseOrders as $po)
+                                    <a href="{{ route('inventory.purchase-orders.show', $po->po_id) }}" class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="font-weight-bold">{{ $po->po_number }}</span>
+                                        <span class="badge badge-secondary">{{ str_replace('_', ' ', $po->status) }}</span>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 @endif
             </div>
         </div>

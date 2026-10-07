@@ -22,8 +22,59 @@ class StudentController extends AppBaseController
     public function __construct(StudentRepository $studentRepo)
     {
         $this->studentRepository = $studentRepo;
-        $this->middleware('can:students.view')->only(['index', 'show']);
+        $this->middleware('can:students.view')->only(['index', 'show', 'transferred']);
         $this->middleware('can:students.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
+
+    /**
+     * Historical list of learners who have been transferred out.
+     *
+     * Kept out of the ordinary student index so active and past learners are
+     * never confused; this page is the archive view for the transfer workflow
+     * (StudentTransferController::store marks students status='transferred').
+     */
+    public function transferred(Request $request)
+    {
+        $query = Student::query()
+            ->where('status', 'transferred')
+            ->with(['studentClassEnrollments' => function ($q) {
+                $q->with(['classSection.schoolClass', 'classSection.section']);
+            }]);
+
+        if ($request->filled('q')) {
+            $term = $request->get('q');
+            $query->where(function ($w) use ($term) {
+                $w->where('first_name', 'like', "%{$term}%")
+                    ->orWhere('middle_name', 'like', "%{$term}%")
+                    ->orWhere('last_name', 'like', "%{$term}%")
+                    ->orWhere('admission_no', 'like', "%{$term}%");
+            });
+        }
+
+        // Filter by the class the learner was last enrolled in.
+        if ($request->filled('class_id')) {
+            $classId = (int) $request->get('class_id');
+            $query->whereHas('studentClassEnrollments.classSection', function ($q) use ($classId) {
+                $q->where('class_id', $classId);
+            });
+        }
+
+        if ($request->filled('from')) {
+            $query->whereDate('transfer_date', '>=', $request->get('from'));
+        }
+
+        if ($request->filled('to')) {
+            $query->whereDate('transfer_date', '<=', $request->get('to'));
+        }
+
+        $transferred = $query->orderByRaw('transfer_date IS NULL, transfer_date DESC')
+            ->orderBy('first_name')
+            ->paginate(15)
+            ->withQueryString();
+
+        $classes = \App\Models\SchoolClass::orderBy('numeric_value')->pluck('name', 'class_id');
+
+        return view('students.transferred', compact('transferred', 'classes'));
     }
 
     /**

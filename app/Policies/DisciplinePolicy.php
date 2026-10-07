@@ -8,7 +8,8 @@ class DisciplinePolicy
 {
     public function view(User $user): bool
     {
-        return $user->hasAnyRole(['Super Admin', 'Admin', 'Teacher']);
+        return $user->isSuperUser()
+            || $user->hasAnyRole(['Super Admin', 'Admin', 'Teacher']);
     }
 
     public function manage(User $user): bool

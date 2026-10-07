@@ -141,6 +141,41 @@
                                     <td class="text-right pr-4 font-weight-bold text-emerald">KES {{ number_format($pettyCash, 2) }}</td>
                                 </tr>
 
+                                {{-- Inventory --}}
+                                <tr class="bg-slate-light">
+                                    <td class="pl-4 font-weight-bold" colspan="2">
+                                        <i class="fas fa-boxes me-2 text-slate"></i> Inventory
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="pl-4 pl-md-5 font-weight-bold">Stock on Hand (at cost)</td>
+                                    <td class="text-right pr-4 font-weight-bold text-emerald">KES {{ number_format($inventoryValue, 2) }}</td>
+                                </tr>
+
+                                {{-- Total Current --}}
+                                <tr class="border-top-thick">
+                                    <td class="pl-4 font-weight-bold">TOTAL CURRENT ASSETS</td>
+                                    <td class="text-right pr-4 font-weight-bold text-emerald">KES {{ number_format($totalCurrentAssets, 2) }}</td>
+                                </tr>
+
+                                {{-- Non-Current Assets --}}
+                                <tr class="bg-slate-light">
+                                    <td class="pl-4 font-weight-bold" colspan="2">
+                                        <i class="fas fa-warehouse me-2 text-slate"></i> Non-Current Assets
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="pl-4 pl-md-5 text-muted small">
+                                        Land, buildings, vehicles, furniture &amp; equipment
+                                        <span class="d-block small text-slate">No fixed-asset register exists in the system yet — add one to bring these onto the statement.</span>
+                                    </td>
+                                    <td class="text-right pr-4 text-muted small">Not recorded</td>
+                                </tr>
+                                <tr>
+                                    <td class="pl-4 pl-md-5 font-weight-bold">Total Non-Current Assets</td>
+                                    <td class="text-right pr-4 font-weight-bold">KES {{ number_format($totalNonCurrentAssets, 2) }}</td>
+                                </tr>
+
                                 {{-- Total --}}
                                 <tr class="border-top-thick">
                                     <td class="pl-4 font-weight-bold" style="font-size: 1.1rem;">TOTAL ASSETS</td>
@@ -198,6 +233,29 @@
                                         <span class="badge badge-info small ml-1">Pending Payout</span>
                                     </td>
                                     <td class="text-right pr-4 font-weight-bold text-rose">KES {{ number_format($pendingRefunds, 2) }}</td>
+                                </tr>
+
+                                {{-- Supplier Payables (credit purchases) --}}
+                                <tr class="bg-slate-light">
+                                    <td class="pl-4 font-weight-bold" colspan="2">
+                                        <i class="fas fa-truck me-2 text-slate"></i> Supplier Payables
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="pl-4 pl-md-5">
+                                        Received Purchase Orders (credit) not yet paid
+                                        <span class="badge badge-warning small ml-1">Accounts Payable</span>
+                                    </td>
+                                    <td class="text-right pr-4 font-weight-bold text-rose">KES {{ number_format($supplierPayables, 2) }}</td>
+                                </tr>
+
+                                {{-- Fees received in advance --}}
+                                <tr>
+                                    <td class="pl-4 pl-md-5">
+                                        Fees Received in Advance
+                                        <span class="d-block small text-muted">Student credit balances the school holds</span>
+                                    </td>
+                                    <td class="text-right pr-4 font-weight-bold text-rose">KES {{ number_format($feesInAdvance, 2) }}</td>
                                 </tr>
 
                                 {{-- Total Liabilities --}}

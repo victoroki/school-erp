@@ -80,7 +80,7 @@
                                     </div>
                                 </div>
                                 <div class="dropdown">
-                                    <button class="action-btn" data-bs-toggle="dropdown">
+                                    <button class="action-btn" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         <i class="fas fa-ellipsis-v"></i>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">

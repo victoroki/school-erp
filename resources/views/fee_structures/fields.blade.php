@@ -16,7 +16,10 @@
     <!-- Term Field -->
     <div class="form-group col-sm-6">
         {!! Form::label('term', 'Applicable Term') !!}
-        <select name="term" class="form-control" required>
+        {{-- Options are scoped to one academic year by the controller; changing the
+             Academic Year above re-populates this list via the cascade script at the
+             bottom of this file. --}}
+        <select name="term" id="term" class="form-control select2" data-placeholder="Select Term" required>
             <option value="">Select Term</option>
             @foreach($terms as $termOpt)
                 <option value="{{ $termOpt->code }}" {{ old('term', isset($feeStructure) ? $feeStructure->term : null) == $termOpt->code ? 'selected' : '' }}>
@@ -76,3 +79,89 @@
     </div>
     @endif
 </div>
+
+@push('page_scripts')
+<script>
+    (function () {
+        const yearSelect = document.getElementById('academic_year_id');
+        const termSelect = document.getElementById('term');
+        if (!yearSelect || !termSelect) {
+            return;
+        }
+
+        const termsUrl = @json(route('fee-structures.terms-by-year', ['academicYearId' => 'ACADEMIC_YEAR_ID']));
+
+        // Rebuild the Term options for the given academic year. Term codes are only
+        // unique within a year, so the list must be refetched whenever the year
+        // changes rather than rendering every year at once.
+        function loadTerms(academicYearId) {
+            if (!academicYearId) {
+                return;
+            }
+
+            fetch(termsUrl.replace('ACADEMIC_YEAR_ID', encodeURIComponent(academicYearId)), {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'same-origin'
+            })
+                .then(function (response) {
+                    return response.ok ? response.json() : [];
+                })
+                .then(function (terms) {
+                    // Built via DOM nodes so term names are never parsed as HTML.
+                    termSelect.textContent = '';
+
+                    var placeholder = document.createElement('option');
+                    placeholder.value = '';
+                    placeholder.textContent = 'Select Term';
+                    termSelect.appendChild(placeholder);
+
+                    if (!terms.length) {
+                        placeholder.textContent = 'No terms defined for this academic year';
+                    }
+
+                    terms.forEach(function (term) {
+                        var option = document.createElement('option');
+                        option.value = term.code;
+                        option.textContent = term.name;
+                        termSelect.appendChild(option);
+                    });
+
+                    refreshSelect2();
+                })
+                .catch(function () {
+                    // Leave the previously rendered options in place on a failed fetch.
+                });
+        }
+
+        // Rebuilds the select2 widget so it reflects the options we just swapped in.
+        function refreshSelect2() {
+            if (typeof window.jQuery === 'undefined' || typeof window.jQuery.fn.select2 === 'undefined') {
+                return;
+            }
+
+            var $ = window.jQuery;
+            if ($.data(termSelect, 'select2')) {
+                $(termSelect).select2('destroy');
+            }
+            $(termSelect).select2({ theme: 'bootstrap-5' });
+        }
+
+        // Initialise every select2 on the form, then wire up the cascade.
+        function initFeeForm() {
+            if (typeof window.jQuery === 'undefined' || typeof window.jQuery.fn.select2 === 'undefined') {
+                setTimeout(initFeeForm, 50);
+                return;
+            }
+
+            window.jQuery('.select2').select2({ theme: 'bootstrap-5' });
+            yearSelect.addEventListener('change', function () {
+                loadTerms(yearSelect.value);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(initFeeForm, 100);
+        });
+    })();
+</script>
+@endpush

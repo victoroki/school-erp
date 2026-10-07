@@ -27,7 +27,7 @@
                                 <span class="font-weight-bold small text-dark">{{ $department->hod->full_name }}</span>
                             </div>
                         @else
-                            <span class="badge badge-light text-muted" style="font-weight: 500;">Not Assigned</span>
+                            <span class="badge badge-warning" style="font-weight: 500;">Not Assigned</span>
                         @endif
                     </td>
                     <td class="px-4 py-3 align-middle text-right" style="width: 150px">
@@ -41,6 +41,13 @@
                                class='btn btn-light btn-sm text-primary' title="Edit" style="background-color: #ffffff; border-color: #f1f5f9;">
                                 <i class="fas fa-edit"></i>
                             </a>
+                            {{-- Assign HOD / Change HOD — inline toggle, no round-trip through the edit form --}}
+                            <button type="button" class='btn btn-light btn-sm text-success'
+                                    title="{{ $department->hod ? 'Change HOD' : 'Assign HOD' }}"
+                                    style="background-color: #ffffff; border-color: #f1f5f9;"
+                                    data-toggle="collapse" data-target="#hod-form-{{ $department->department_id }}">
+                                <i class="fas fa-user-tie"></i>
+                            </button>
                             {!! Form::button('<i class="fas fa-trash-alt"></i>', [
                                 'type' => 'submit', 
                                 'class' => 'btn btn-light btn-sm text-danger', 
@@ -50,6 +57,36 @@
                             ]) !!}
                         </div>
                         {!! Form::close() !!}
+                    </td>
+                </tr>
+                {{-- Inline Assign/Change HOD form --}}
+                <tr class="collapse" id="hod-form-{{ $department->department_id }}">
+                    <td colspan="4" class="px-4 py-3 bg-light">
+                        <form method="POST" action="{{ route('departments.update-hod', $department->department_id) }}"
+                              class="form-inline justify-content-end">
+                            @csrf
+                            @method('PATCH')
+                            <label class="mr-2 small font-weight-bold text-muted" for="hod-select-{{ $department->department_id }}">
+                                {{ $department->hod ? 'Change HOD for ' . $department->name . ':' : 'Assign HOD for ' . $department->name . ':' }}
+                            </label>
+                            <select name="hod_id" id="hod-select-{{ $department->department_id }}"
+                                    class="form-control form-control-sm mr-2" style="min-width: 260px;">
+                                <option value="">— No HOD (clear) —</option>
+                                @foreach($hods as $staffId => $staffName)
+                                    <option value="{{ $staffId }}" {{ $department->hod_id == $staffId ? 'selected' : '' }}>
+                                        {{ $staffName }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-success mr-2">
+                                <i class="fas fa-check mr-1"></i> Save
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-toggle="collapse" data-target="#hod-form-{{ $department->department_id }}">
+                                Cancel
+                            </button>
+                            <small class="text-muted ml-2">Active teaching and non-teaching staff only.</small>
+                        </form>
                     </td>
                 </tr>
             @endforeach

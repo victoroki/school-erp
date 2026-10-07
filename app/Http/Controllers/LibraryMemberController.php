@@ -27,16 +27,40 @@ class LibraryMemberController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $query = $this->libraryMemberRepository->allQuery()->with('user');
+        $query = $this->libraryMemberRepository->allQuery()
+            ->with(['user', 'student', 'staff']);
 
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+
+            // Search the person behind the membership, not just the linked
+            // login: most members have no user_id at all, so filtering on
+            // users.name alone hid every real record. `membership_number` was
+            // also being queried here even though the column is reference_id,
+            // which made any search on this page fail outright.
+            //
+            // The columns are listed per relation on purpose — students have
+            // no employee_number, staff have no admission_no, and users have
+            // neither, so one shared list just throws an unknown-column error.
+            $searchable = [
+                'student' => ['first_name', 'middle_name', 'last_name', 'admission_no'],
+                'staff' => ['first_name', 'middle_name', 'last_name', 'employee_number'],
+                'user' => ['name'],
+            ];
+
+            $query->where(function($q) use ($search, $searchable) {
                 $q->where('member_type', 'like', "%$search%")
-                  ->orWhere('membership_number', 'like', "%$search%") // Assuming this field exists or similar
-                  ->orWhereHas('user', function($u) use ($search) {
-                       $u->where('name', 'like', "%$search%"); // User relation search
-                  });
+                  ->orWhere('reference_id', 'like', "%$search%");
+
+                foreach ($searchable as $relation => $columns) {
+                    $q->orWhereHas($relation, function ($r) use ($search, $columns) {
+                        $r->where(function ($inner) use ($search, $columns) {
+                            foreach ($columns as $column) {
+                                $inner->orWhere($column, 'like', "%$search%");
+                            }
+                        });
+                    });
+                }
             });
         }
 

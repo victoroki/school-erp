@@ -167,6 +167,8 @@ return [
                  'route' => 'student-promotion.index', 'active' => 'student-promotion*', 'permission' => ['students.manage']],
                 ['key' => 'student-transfer', 'label' => 'Student Transfer', 'icon' => 'fas fa-exchange-alt', 'color' => 'text-warning',
                  'route' => 'student-transfer.index', 'active' => 'student-transfer*', 'permission' => ['students.manage']],
+                ['key' => 'students-transferred', 'label' => 'Transferred Students', 'icon' => 'fas fa-archive', 'color' => 'text-warning',
+                 'route' => 'students.transferred', 'active' => 'students/transferred', 'permission' => ['students.view', 'students.manage']],
                 // Restored: both routes work and both patterns are still listed in
                 // this section's `active` array, so these entries were meant to exist.
                 // Without them the features were unreachable from the navigation.
@@ -352,6 +354,13 @@ return [
                  'route' => 'fees.arrears.index', 'active' => 'fees/arrears*', 'permission' => ['fees.view']],
                 ['key' => 'fee-refunds', 'label' => 'Refunds', 'icon' => 'fas fa-hand-holding-usd', 'color' => 'text-success',
                  'route' => 'fees.refunds.index', 'active' => 'fees/refunds*', 'permission' => ['fees.view', 'fees.collect', 'fees.approve']],
+                // Bulk fee assignment: sponsor/bursary money received once and
+                // distributed across many students through the normal payment
+                // chain, with a printable receipt per bulk receipt. Labelled for
+                // how bursars look for it ("bulk assignment") rather than for
+                // the accounting term.
+                ['key' => 'fee-bulk-receipts', 'label' => 'Bulk Fee Assignment', 'icon' => 'fas fa-hands-holding-circle', 'color' => 'text-success',
+                 'route' => 'fees.bulk-receipts.index', 'active' => 'fees/bulk-receipts*', 'permission' => ['fees.view', 'fees.manage']],
 
                 ['header' => 'Reports', 'color' => 'text-success'],
                 ['key' => 'fee-revenue', 'label' => 'Expected Revenue', 'icon' => 'fas fa-chart-line', 'color' => 'text-success',

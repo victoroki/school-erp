@@ -1,4 +1,4 @@
-<div class="table-responsive">
+<div class="table-responsive jp-actions-table">
     <table class="table table-hover align-middle mb-0" id="job-positions-table">
         <thead class="bg-light border-bottom">
             <tr>
@@ -31,7 +31,7 @@
                     </td>
                     <td class="text-end pe-4">
                         <div class="dropdown">
-                            <button class="btn btn-icon-dash" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button class="btn btn-icon-dash" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-ellipsis-v"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
@@ -76,6 +76,11 @@
 </div>
 
 <style>
+/* The row actions menu is position:absolute, so any ancestor that scrolls or
+   clips (Bootstrap's .table-responsive) would cut the menu off. This table is
+   only 4 columns wide, so horizontal scrolling is not needed — keep the box
+   unclipped and let the dropdown escape. */
+.jp-actions-table { overflow: visible; }
 .table thead th { font-size: 0.75rem; font-weight: 750; color: var(--slate); text-transform: uppercase; letter-spacing: 0.05em; padding: 1rem 0.5rem; }
 .table tbody td { font-size: 0.875rem; vertical-align: middle; }
 .btn-icon-dash { width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: var(--slate); display: inline-flex; align-items: center; justify-content: center; transition: all 200ms var(--ease-out); }

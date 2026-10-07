@@ -5,7 +5,16 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1><i class="fas fa-file-invoice-dollar text-primary mr-2"></i>PO: {{ $purchaseOrder->po_number }}</h1>
+                    <h1>
+                        <i class="fas fa-file-invoice-dollar text-primary mr-2"></i>PO: {{ $purchaseOrder->po_number }}
+                        @if($purchaseOrder->requisition)
+                            <a href="{{ route('inventory.requisitions.show', $purchaseOrder->requisition->requisition_id) }}"
+                               class="badge badge-light border ml-2" style="vertical-align: middle;"
+                               title="This order was generated from an approved requisition">
+                                <i class="fas fa-file-alt text-muted mr-1"></i> from {{ $purchaseOrder->requisition->requisition_number }}
+                            </a>
+                        @endif
+                    </h1>
                 </div>
                 <div class="col-sm-6 text-right">
                     <a href="{{ route('inventory.purchase-orders.index') }}" class="btn btn-default shadow-sm border mr-2">
@@ -112,25 +121,135 @@
                     </div>
                 </div>
 
+                <!-- Payment / Receiving -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="font-weight-bold mb-0"><i class="fas fa-money-bill-wave mr-2 text-success"></i>Payment</h6>
+                    </div>
+                    <div class="card-body py-3">
+                        @php $paymentStatus = $purchaseOrder->derivedPaymentStatus(); @endphp
+                        <ul class="list-group list-group-unbordered mb-2">
+                            <li class="list-group-item d-flex justify-content-between border-top-0 px-0">
+                                <b class="text-muted small">Arrangement</b>
+                                <span class="small font-weight-bold">{{ $purchaseOrder->payment_arrangement ? \App\Models\PurchaseOrder::ARRANGEMENTS[$purchaseOrder->payment_arrangement] : 'Not set (legacy)' }}</span>
+                            </li>
+                            @if($purchaseOrder->payment_due_date)
+                                <li class="list-group-item d-flex justify-content-between px-0">
+                                    <b class="text-muted small">Due Date</b>
+                                    <span class="small font-weight-bold {{ $paymentStatus === 'overdue' ? 'text-danger' : '' }}">{{ $purchaseOrder->payment_due_date->format('d M Y') }}</span>
+                                </li>
+                            @endif
+                            <li class="list-group-item d-flex justify-content-between px-0">
+                                <b class="text-muted small">Paid</b>
+                                <span class="small">KES {{ number_format($purchaseOrder->paidAmount(), 2) }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between border-bottom-0 px-0">
+                                <b class="text-muted small">Outstanding</b>
+                                <span class="small font-weight-bold {{ $purchaseOrder->outstandingBalance() > 0 ? 'text-danger' : 'text-success' }}">KES {{ number_format($purchaseOrder->outstandingBalance(), 2) }}</span>
+                            </li>
+                        </ul>
+                        <div class="mb-2">
+                            <span class="badge badge-{{ ['paid' => 'success', 'partially_paid' => 'info', 'overdue' => 'danger'][$paymentStatus] ?? 'warning' }}">
+                                {{ ['paid' => 'Paid', 'partially_paid' => 'Partially Paid', 'overdue' => 'Overdue'][$paymentStatus] ?? 'Unpaid' }}
+                            </span>
+                        </div>
+
+                        {{-- Same gate as PurchaseOrderController::arrange (finance.manage).
+                             Showing this form on inventory.manage alone would offer a button
+                             the server answers with 403. --}}
+                        @can('finance.manage')
+                            @if(! $purchaseOrder->payment_arrangement && $purchaseOrder->paidAmount() == 0)
+                                <form action="{{ route('inventory.purchase-orders.arrange', $purchaseOrder->po_id) }}" method="POST" class="border-top pt-2 mt-2">
+                                    @csrf
+                                    <label class="small font-weight-bold">Payment Arrangement</label>
+                                    <select name="payment_arrangement" class="form-control form-control-sm mb-2" required>
+                                        <option value="immediate">Immediate Payment</option>
+                                        <option value="credit">Credit / Pay Later</option>
+                                    </select>
+                                    <input type="date" name="payment_due_date" class="form-control form-control-sm mb-2" placeholder="Due date (credit)">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary btn-block">Save Arrangement</button>
+                                </form>
+                            @endif
+                        @endcan
+
+                        @can('finance.manage')
+                            @if($purchaseOrder->outstandingBalance() > 0 && $purchaseOrder->isReceived())
+                                <form action="{{ route('inventory.purchase-orders.pay', $purchaseOrder->po_id) }}" method="POST" class="border-top pt-2 mt-2">
+                                    @csrf
+                                    <label class="small font-weight-bold">Record Supplier Payment</label>
+                                    <input type="number" name="amount" class="form-control form-control-sm mb-2" step="0.01" min="0.01" max="{{ $purchaseOrder->outstandingBalance() }}" value="{{ $purchaseOrder->outstandingBalance() }}" required>
+                                    <select name="payment_method" class="form-control form-control-sm mb-2" required>
+                                        @foreach(\App\Models\PurchaseOrderPayment::PAYMENT_METHODS as $method)
+                                            <option value="{{ $method }}">{{ ucfirst(str_replace('_', ' ', $method)) }}</option>
+                                        @endforeach
+                                    </select>
+                                    <select name="bank_account_id" class="form-control form-control-sm mb-2">
+                                        <option value="">Cash (no bank movement)</option>
+                                        @foreach(\App\Models\BankAccount::where('status', 'active')->get() as $account)
+                                            <option value="{{ $account->account_id }}">{{ $account->account_name }} — KES {{ number_format($account->current_balance, 2) }}</option>
+                                        @endforeach
+                                    </select>
+                                    <input type="text" name="reference_number" class="form-control form-control-sm mb-2" placeholder="Reference / cheque no.">
+                                    <button type="submit" class="btn btn-success btn-block btn-sm" onclick="return confirm('Record this supplier payment and deduct the bank account?')">
+                                        <i class="fas fa-hand-holding-usd mr-1"></i> Pay Supplier
+                                    </button>
+                                </form>
+                            @elseif($purchaseOrder->outstandingBalance() > 0 && ! $purchaseOrder->isReceived())
+                                <p class="small text-muted mb-0"><i class="fas fa-info-circle mr-1"></i> Payment opens once the goods are received.</p>
+                            @endif
+                        @endcan
+
+                        @can('finance.view')
+                            @cannot('finance.manage')
+                                @if($purchaseOrder->outstandingBalance() > 0)
+                                    <p class="small text-muted mb-0">Payments are recorded by the finance office.</p>
+                                @endif
+                            @endcannot
+                        @endcan
+                    </div>
+                </div>
+
+                @if($purchaseOrder->payments->count())
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white py-3"><h6 class="font-weight-bold mb-0">Payment History</h6></div>
+                        <div class="card-body py-2">
+                            @foreach($purchaseOrder->payments as $payment)
+                                <div class="d-flex justify-content-between border-bottom py-2 small">
+                                    <div>
+                                        <strong>{{ \App\Support\Money::format($payment->amount) }}</strong>
+                                        <span class="text-muted">{{ $payment->payment_date->format('d M Y') }}</span>
+                                    </div>
+                                    <span class="text-muted">{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}{{ $payment->bankAccount ? ' · ' . $payment->bankAccount->account_name : '' }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Receive Action -->
-                @if($purchaseOrder->status == 'Approved' || $purchaseOrder->status == 'Sent' || $purchaseOrder->status == 'Pending_Approval')
+                @if(in_array($purchaseOrder->status, ['Approved', 'Sent']))
                     <div class="card border-0 shadow-sm bg-light">
                         <div class="card-header bg-light border-bottom-0 pt-3">
                             <h6 class="font-weight-bold mb-0">Quick Action</h6>
                         </div>
                         <div class="card-body">
-                            @if($purchaseOrder->status == 'Pending_Approval')
-                                <p class="small text-muted italic">This order is awaiting approval from management.</p>
-                                <button class="btn btn-outline-primary btn-block shadow-sm btn-sm" disabled>Awaiting Approval</button>
-                            @else
-                                <p class="small text-muted italic">Once the shipment arrives, use the button below to update inventory.</p>
+                            <p class="small text-muted italic">Once the shipment arrives, use the button below to update inventory.</p>
+                            @can('inventory.approve')
                                 <form action="{{ route('inventory.purchase-orders.receive', $purchaseOrder->po_id) }}" method="POST">
                                     @csrf
                                     <button type="submit" class="btn btn-success btn-block shadow-sm" onclick="return confirm('Confirm all items have been received at the warehouse?')">
                                         <i class="fas fa-check-double mr-2"></i> Receive Stock
                                     </button>
                                 </form>
-                            @endif
+                            @elsecan('inventory.view')
+                                <button class="btn btn-success btn-block shadow-sm" disabled title="Requires receiving permission">Receive Stock</button>
+                            @endcan
+                        </div>
+                    </div>
+                @elseif($purchaseOrder->status == 'Pending_Approval')
+                    <div class="card border-0 shadow-sm bg-light">
+                        <div class="card-body">
+                            <p class="small text-muted italic mb-0">This order is awaiting approval from management.</p>
                         </div>
                     </div>
                 @elseif($purchaseOrder->status == 'Fully_Received')

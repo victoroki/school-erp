@@ -66,7 +66,7 @@
                         <div class="detail-value">
                             <div class="tag-list">
                                 @foreach($discountScheme->applicable_fee_categories as $category)
-                                    <span class="tag">{{ $category }}</span>
+                                    <span class="tag">{{ $feeCategoryNames[$category] ?? 'Category #' . $category }}</span>
                                 @endforeach
                             </div>
                         </div>

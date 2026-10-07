@@ -64,6 +64,11 @@ class AuthServiceProvider extends ServiceProvider
         // Gate definitions (which broke under tests where seeder data arrived
         // after the provider booted) with a single before-hook that handles
         // ALL permission-based abilities.
+        //
+        // `User::hasPermission()` returns true for a super user, so this hook
+        // is also where the platform Owner gains access to modules whose
+        // permission rows were never granted on the role_permission pivot.
+        //
         // Before-hook: if the ability looks like a dotted permission name and
         // the user holds it, allow immediately.  If the user does NOT hold it
         // we return null (not false) so that policy-based Gates can still

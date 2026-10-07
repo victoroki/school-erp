@@ -17,14 +17,24 @@
         </div>
         <div class="col-md-5 text-md-end mt-3 mt-md-0">
             <form action="{{ route('financial-reports.p-and-l') }}" method="GET" class="d-flex justify-content-md-end gap-2 flex-wrap">
-                <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $startDate }}" style="max-width: 140px;">
-                <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $endDate }}" style="max-width: 140px;">
+                <select name="term_id" class="form-control form-control-sm" style="max-width: 180px;">
+                    <option value="">Custom date range</option>
+                    @foreach($terms as $termOption)
+                        <option value="{{ $termOption->id }}" {{ isset($term) && $term && $term->id === $termOption->id ? 'selected' : '' }}>
+                            {{ $termOption->name }} ({{ $termOption->start_date->format('M Y') }})
+                        </option>
+                    @endforeach
+                </select>
+                <input type="date" name="start_date" class="form-control form-control-sm" value="{{ $startDate }}" style="max-width: 140px;" {{ isset($term) && $term ? 'disabled' : '' }}>
+                <input type="date" name="end_date" class="form-control form-control-sm" value="{{ $endDate }}" style="max-width: 140px;" {{ isset($term) && $term ? 'disabled' : '' }}>
                 <button type="submit" class="btn-dash btn-indigo-dash">
                     <i class="fas fa-filter me-1"></i> Filter
                 </button>
             </form>
             <div class="mt-2">
-                <a href="{{ route('financial-reports.p-and-l-pdf', ['start_date' => $startDate, 'end_date' => $endDate]) }}"
+                <a href="{{ route('financial-reports.p-and-l-pdf', http_build_query(
+                    array_filter(['term_id' => $term ? $term->id : null, 'start_date' => $startDate, 'end_date' => $endDate])
+                )) }}"
                    class="btn-dash btn-slate-dash">
                     <i class="fas fa-file-pdf me-1"></i> Download PDF
                 </a>

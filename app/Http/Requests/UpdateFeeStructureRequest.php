@@ -24,8 +24,6 @@ class UpdateFeeStructureRequest extends FormRequest
      */
     public function rules()
     {
-        $rules = FeeStructure::$rules;
-        
-        return $rules;
+        return FeeStructure::validationRules();
     }
 }

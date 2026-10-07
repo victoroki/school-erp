@@ -51,7 +51,24 @@ class FeeAssignmentService
             ? Term::where('code', $termCode)->where('academic_year_id', $academicYear->academic_year_id)->first()
             : Term::forCurrentAcademicYear()->active()->first();
 
-        $termValue = $term?->code ?? 'Term 1';
+        // Previously this fell back to a literal 'Term 1', writing an assignment
+        // whose term_id was null. A null term_id drops the row out of every
+        // term-filtered arrears view, statement and report, so a school with no
+        // active term got fees that quietly disappeared from their balances.
+        // Failing loudly is better: the year is either missing its terms or none
+        // of them are active, and both are fixed from the academic years page.
+        if (! $term) {
+            return [
+                'success' => false,
+                'message' => sprintf(
+                    'No active term for academic year %s, so fees were not assigned.',
+                    $academicYear->name
+                ),
+                'count' => 0,
+            ];
+        }
+
+        $termValue = $term->code;
 
         $enrollment = $student->studentClassEnrollments()
             ->where('academic_year_id', $academicYear->academic_year_id)
@@ -62,7 +79,14 @@ class FeeAssignmentService
             return ['success' => false, 'message' => 'Student has no active enrollment for this academic year', 'count' => 0];
         }
 
-        $classId = $enrollment->classSection->class_id;
+        // An enrollment can be recorded before a class section is attached
+        // (class_section_id is nullable). There is nothing to price against in
+        // that state, so skip instead of dereferencing a null relation.
+        $classId = optional($enrollment->classSection)->class_id;
+
+        if ($classId === null) {
+            return ['success' => false, 'message' => 'Enrollment has no class section, so fees cannot be determined', 'count' => 0];
+        }
 
         $feeStructures = FeeStructure::where('academic_year_id', $academicYear->academic_year_id)
             ->where('status', 'active')

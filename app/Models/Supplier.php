@@ -64,6 +64,41 @@ class Supplier extends Model
         return $this->hasMany(\App\Models\InventoryItem::class, 'supplier_id');
     }
 
+    /**
+     * Purchase orders raised against this supplier. SupplierController::show
+     * and the supplier profile page render this relation; it went missing
+     * from the model once, which made every supplier profile page 500.
+     */
+    public function purchaseOrders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\PurchaseOrder::class, 'supplier_id');
+    }
+
+    /**
+     * Expenses recorded against this supplier/payee. The expense form has
+     * always captured supplier_id; the profile can now show that history.
+     */
+    public function expenses(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\Expenses::class, 'supplier_id');
+    }
+
+    /**
+     * Money still owed to this supplier across received purchase orders:
+     * goods that have arrived but not been paid for in full.
+     */
+    public function outstandingPayable(): float
+    {
+        return round(
+            (float) $this->purchaseOrders()
+                ->received()
+                ->with('payments:id,po_id,amount')
+                ->get()
+                ->sum(fn (\App\Models\PurchaseOrder $po) => $po->outstandingBalance()),
+            2
+        );
+    }
+
     // Get total items supplied
     public function getTotalItemsSupplied(): int
     {

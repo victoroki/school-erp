@@ -60,16 +60,32 @@
             <thead>
             <tr>
                 <th>Student</th>
-                <th>Parent</th>
-                <th>Is Primary Contact</th>
+                <th>Admission No</th>
+                <th>Class</th>
+                <th>Parent / Guardian</th>
+                <th>Relationship</th>
+                <th>Phone</th>
+                <th>Primary Contact</th>
                 <th class="text-center" style="width: 150px;">Action</th>
             </tr>
             </thead>
             <tbody>
             @foreach($studentParentRelationships as $studentParentRelationship)
+                @php
+                    $student = $studentParentRelationship->student;
+                    $parent = $studentParentRelationship->parent;
+                    $enrollment = $student?->studentClassEnrollments->firstWhere('is_current', true)
+                        ?? $student?->studentClassEnrollments->first();
+                    $classLabel = trim(($enrollment?->classSection?->schoolClass?->name ?? '')
+                        . ($enrollment?->classSection?->section?->name ? ' - ' . $enrollment->classSection->section->name : ''));
+                @endphp
                 <tr>
-                    <td class="font-weight-bold"><i class="fas fa-user-graduate text-info mr-2"></i> {{ optional($studentParentRelationship->student)->first_name }} {{ optional($studentParentRelationship->student)->last_name }}</td>
-                    <td><i class="fas fa-user-tie text-muted mr-2"></i> {{ optional($studentParentRelationship->parent)->first_name }} {{ optional($studentParentRelationship->parent)->last_name }}</td>
+                    <td class="font-weight-bold"><i class="fas fa-user-graduate text-info mr-2"></i> {{ trim(($student?->first_name ?? '') . ' ' . ($student?->last_name ?? '')) ?: '—' }}</td>
+                    <td>{{ $student?->admission_no ?? '—' }}</td>
+                    <td>{{ $classLabel ?: '—' }}</td>
+                    <td><i class="fas fa-user-tie text-muted mr-2"></i> {{ trim(($parent?->first_name ?? '') . ' ' . ($parent?->last_name ?? '')) ?: '—' }}</td>
+                    <td>{{ $parent?->relationship ? ucfirst($parent->relationship) : '—' }}</td>
+                    <td>{{ $parent?->phone ?? '—' }}</td>
                     <td>
                         @php $cls = $studentParentRelationship->is_primary_contact ? 'success' : 'secondary'; @endphp
                         <span class="badge badge-{{ $cls }} modern-badge">{{ $studentParentRelationship->is_primary_contact ? 'Primary' : 'Secondary' }}</span>
@@ -93,7 +109,7 @@
             @endforeach
             @if($studentParentRelationships->isEmpty())
                 <tr>
-                    <td colspan="4" class="text-center text-muted py-4">No relationships found.</td>
+                    <td colspan="8" class="text-center text-muted py-4">No relationships found.</td>
                 </tr>
             @endif
             </tbody>

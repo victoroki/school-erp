@@ -123,14 +123,54 @@ class User extends Authenticatable
     }
 
     /**
+     * True when the user holds a super role (config('rbac.super_roles')).
+     *
+     * This is the single place the application answers "outranks everybody?".
+     * `hasPermission()` consults it, and the Gate::before hook consults it, so
+     * every `can:` middleware check, every `@can` in Blade and every policy
+     * method admits a super user — including policies whose role list never
+     * mentioned the Owner role, which is exactly how the platform owner ended
+     * up refused by /medical-incidents, homework and student notices.
+     *
+     * Deliberately *not* the same thing as canBypassProtection(): that one
+     * answers "may this user modify protected accounts", which is a narrower
+     * question about destructive actions, not about module access.
+     */
+    public function isSuperUser(): bool
+    {
+        if (!$this->relationLoaded('roles')) {
+            $this->load('roles');
+        }
+
+        $superRoles = (array) config('rbac.super_roles', ['Owner']);
+
+        // Deliberately not `$this->roles->contains('role_name', $superRoles)`.
+        // That two-argument form routes into Collection::operatorForWhere(),
+        // which compares each role name loosely against the whole array
+        // (`'Owner' == ['Owner']`) — always false in PHP 8, so a configurable
+        // list would silently match nothing.
+        return $this->roles->contains(
+            fn ($role) => in_array($role->role_name, $superRoles, true)
+        );
+    }
+
+    /**
      * Check if the user has a specific permission.
      *
+     * A super user holds every permission. Short-circuiting here — rather than
+     * in each middleware, policy and Blade @can — is what makes that a single
+     * decision instead of forty.
+     *
      * IMPORTANT: roles.permissions must be eager-loaded before this is called
-     * (done by Authenticate middleware). If not loaded, falls back to loading
-     * them now (slower path, for safety).
+     * (done by the `permissions` middleware). If not loaded, falls back to
+     * loading them now (slower path, for safety).
      */
     public function hasPermission(string $permission): bool
     {
+        if ($this->isSuperUser()) {
+            return true;
+        }
+
         if (!$this->relationLoaded('roles')) {
             $this->load('roles.permissions');
         }
@@ -142,9 +182,16 @@ class User extends Authenticatable
 
     /**
      * Get all permission names the user holds (flattened from all roles).
+     *
+     * A super user holds every permission, so the full catalogue is returned
+     * rather than the (possibly incomplete) grants recorded on the pivot.
      */
     public function getAllPermissions(): \Illuminate\Support\Collection
     {
+        if ($this->isSuperUser()) {
+            return Permission::query()->pluck('permission_name');
+        }
+
         if (!$this->relationLoaded('roles')) {
             $this->load('roles.permissions');
         }

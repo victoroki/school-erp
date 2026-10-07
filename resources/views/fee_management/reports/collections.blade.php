@@ -2,13 +2,22 @@
 
 @section('content')
 <div class="report-wrap">
-    <div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap" style="gap: 0.75rem;">
         <div class="d-flex align-items-center gap-3">
             <div class="icon-box bg-emerald-light text-emerald"><i class="fas fa-hand-holding-usd"></i></div>
             <div>
                 <h1 class="page-title mb-0">Collections Report</h1>
                 <p class="page-subtitle mb-0">Track fee collections by date range, method and receipt</p>
             </div>
+        </div>
+        {{-- Exports carry the active filters through, so the file matches the screen. --}}
+        <div class="page-header-actions">
+            <a href="{{ route('fees.reports.export.collections.csv', request()->query()) }}" class="btn-ghost-custom">
+                <i class="fas fa-file-csv me-1"></i> Export CSV
+            </a>
+            <a href="{{ route('fees.reports.export.collections.pdf', request()->query()) }}" class="btn-ghost-custom">
+                <i class="fas fa-file-pdf me-1"></i> Export PDF
+            </a>
         </div>
     </div>
 
@@ -235,6 +244,7 @@
 .btn-primary-custom{display:inline-flex;align-items:center;padding:.5rem 1.25rem;border-radius:8px;font-size:.75rem;font-weight:800;border:none;text-decoration:none!important;cursor:pointer;background:var(--emerald);color:#fff;}
 .btn-ghost-custom{display:inline-flex;align-items:center;padding:.5rem 1.25rem;border-radius:8px;font-size:.75rem;font-weight:700;text-decoration:none!important;cursor:pointer;background:#fff;border:1px solid var(--border);color:var(--slate-700);}
 .btn-xs{padding:.3rem .75rem;font-size:.68rem;}
+.page-header-actions{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
 .filter-bar{background:#fff;border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;}
 .filter-form{display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;}
 .filter-field{display:flex;flex-direction:column;gap:.35rem;}
@@ -265,6 +275,8 @@
 @media (max-width:768px) {
     .report-wrap { padding:1rem; }
     .d-flex.align-items-center.justify-content-between.mb-4 { flex-direction:column; align-items:flex-start!important; gap:0.75rem; }
+    .page-header-actions { width:100%; }
+    .page-header-actions .btn-ghost-custom { flex:1; justify-content:center; }
     .page-title { font-size:1.1rem; }
     .filter-form { flex-direction:column; gap:0.625rem; }
     .filter-field { width:100%; }

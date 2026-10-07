@@ -11,12 +11,13 @@ class FeePolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['Super Admin', 'Admin', 'Accountant']);
+        return $user->isSuperUser()
+            || $user->hasAnyRole(['Super Admin', 'Admin', 'Accountant']);
     }
 
     public function view(User $user, ?FeePayment $payment = null): bool
     {
-        if ($user->hasAnyRole(['Super Admin', 'Admin', 'Accountant'])) {
+        if ($user->isSuperUser() || $user->hasAnyRole(['Super Admin', 'Admin', 'Accountant'])) {
             return true;
         }
 

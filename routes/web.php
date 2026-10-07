@@ -39,11 +39,23 @@ Route::middleware(['auth', 'module'])->group(function () {
     Route::get('/dashboard/data', [App\Http\Controllers\DashboardController::class, 'getData'])->name('dashboard.data');
 
     Route::resource('roles', App\Http\Controllers\RoleController::class);
+    Route::patch('departments/{department}/hod', [App\Http\Controllers\DepartmentController::class, 'updateHod'])->name('departments.update-hod');
     Route::resource('departments', App\Http\Controllers\DepartmentController::class);
     Route::resource('academic-years', App\Http\Controllers\AcademicYearController::class);
+// Sets up the year after the current one, terms included. Declared after the
+// resource so 'academic-years.roll-forward' is not shadowed by the {id} route.
+Route::post('academic-years/roll-forward', [App\Http\Controllers\AcademicYearController::class, 'rollForward'])->name('academic-years.roll-forward');
     Route::resource('school-classes', App\Http\Controllers\SchoolClassController::class);
     Route::resource('sections', App\Http\Controllers\SectionController::class);
+    // Must precede the resource so the literal segments are not captured as
+    // a {classroom} id.
+    Route::post('classrooms/{classroom}/archive', [App\Http\Controllers\ClassroomController::class, 'archive'])->name('classrooms.archive');
+    Route::post('classrooms/{classroom}/restore', [App\Http\Controllers\ClassroomController::class, 'restore'])->name('classrooms.restore');
     Route::resource('classrooms', App\Http\Controllers\ClassroomController::class);
+    // Declared before the resource so the literal "archive"/"restore" segments
+    // are matched as actions rather than falling through to subjects/{subject}.
+    Route::post('subjects/{subject}/archive', [App\Http\Controllers\SubjectController::class, 'archive'])->name('subjects.archive');
+    Route::post('subjects/{subject}/restore', [App\Http\Controllers\SubjectController::class, 'restore'])->name('subjects.restore');
     Route::resource('subjects', App\Http\Controllers\SubjectController::class);
     Route::resource('periods', App\Http\Controllers\PeriodController::class);
     Route::resource('exam-types', App\Http\Controllers\ExamTypeController::class);
@@ -64,6 +76,7 @@ Route::middleware(['auth', 'module'])->group(function () {
     Route::resource('users', App\Http\Controllers\UserController::class);
     Route::get('student-parent-relationships/search/students', [App\Http\Controllers\StudentParentRelationshipController::class, 'searchStudents'])->name('student-parent-relationships.search-students');
     Route::get('student-parent-relationships/search/parents', [App\Http\Controllers\StudentParentRelationshipController::class, 'searchParents'])->name('student-parent-relationships.search-parents');
+    Route::get('student-parent-relationships/print', [App\Http\Controllers\StudentParentRelationshipController::class, 'print'])->name('student-parent-relationships.print');
     Route::resource('student-parent-relationships', App\Http\Controllers\StudentParentRelationshipController::class);
     Route::resource('student-documents', App\Http\Controllers\StudentDocumentController::class);
     Route::get('student-documents/{id}/download', [App\Http\Controllers\StudentDocumentController::class, 'download'])->name('student-documents.download');
@@ -72,6 +85,7 @@ Route::middleware(['auth', 'module'])->group(function () {
     Route::resource('staff-documents', App\Http\Controllers\StaffDocumentController::class)->names('staffDocuments');
     Route::resource('class-sections', App\Http\Controllers\ClassSectionController::class);
     Route::post('class-subjects/bulk-delete', [App\Http\Controllers\ClassSubjectController::class, 'bulkDestroy'])->name('class-subjects.bulk-delete');
+    Route::get('class-subjects/curriculum', [App\Http\Controllers\ClassSubjectController::class, 'curriculum'])->name('class-subjects.curriculum');
     Route::get('class-subjects/subjects-by-class/{classId}', [App\Http\Controllers\ClassSubjectController::class, 'getSubjectsByClass'])->name('class-subjects.subjects-by-class');
     Route::resource('class-subjects', App\Http\Controllers\ClassSubjectController::class);
     Route::resource('teacher-subjects', App\Http\Controllers\TeacherSubjectController::class);
@@ -86,12 +100,19 @@ Route::post('exam-results/bulk/save-one', [App\Http\Controllers\ExamResultContro
     Route::post('exam-results/import', [App\Http\Controllers\ExamResultController::class, 'importStore'])->name('exam-results.import.store');
     Route::get('exam-results/students-by-class', [App\Http\Controllers\ExamResultController::class, 'studentsByClass'])->name('exam-results.students-by-class');
 Route::resource('exam-results', App\Http\Controllers\ExamResultController::class);
-    Route::resource('fee-structures', App\Http\Controllers\FeeStructureController::class);
+    // Declared before the resource so the two-segment path is not shadowed.
+    Route::get('fee-structures/terms-by-year/{academicYearId}', [App\Http\Controllers\FeeStructureController::class, 'getTermsByYear'])->name('fee-structures.terms-by-year');
+Route::resource('fee-structures', App\Http\Controllers\FeeStructureController::class);
+    Route::get('books/import-template', [App\Http\Controllers\BookController::class, 'importTemplate'])->name('books.import-template');
+    Route::get('books/import', [App\Http\Controllers\BookController::class, 'importForm'])->name('books.import');
+    Route::post('books/import', [App\Http\Controllers\BookController::class, 'import'])->name('books.import.store');
     Route::resource('books', App\Http\Controllers\BookController::class);
     Route::resource('book-issues', App\Http\Controllers\BookIssueController::class);
     Route::get('library/book-issues/{id}/return', [App\Http\Controllers\BookIssueController::class, 'returnModal'])->name('book-issues.return-modal');
     Route::post('library/book-issues/{id}/return', [App\Http\Controllers\BookIssueController::class, 'returnBook'])->name('book-issues.return');
     Route::get('library/dashboard', [App\Http\Controllers\LibraryDashboardController::class, 'index'])->name('library.dashboard');
+    Route::get('library/settings', [App\Http\Controllers\LibrarySettingsController::class, 'edit'])->name('library.settings.edit');
+    Route::patch('library/settings', [App\Http\Controllers\LibrarySettingsController::class, 'update'])->name('library.settings.update');
     Route::resource('inventory-items', App\Http\Controllers\InventoryItemController::class);
 
     // Inventory Management Routes
@@ -112,6 +133,11 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
         // Purchase Orders
         Route::resource('purchase-orders', App\Http\Controllers\PurchaseOrderController::class);
         Route::post('purchase-orders/{id}/receive', [App\Http\Controllers\PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive');
+        // Supplier payments: the money step of a purchase order. Literal
+        // segments registered before the resource's {id} routes cannot shadow
+        // them because they carry extra path depth.
+        Route::post('purchase-orders/{id}/pay', [App\Http\Controllers\PurchaseOrderController::class, 'pay'])->name('purchase-orders.pay');
+        Route::post('purchase-orders/{id}/arrange', [App\Http\Controllers\PurchaseOrderController::class, 'arrange'])->name('purchase-orders.arrange');
     });
     
     Route::resource('routes', App\Http\Controllers\RouteController::class);
@@ -177,16 +203,31 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
         Route::get('/dashboard', [App\Http\Controllers\HostelDashboardController::class, 'index'])->name('dashboard');
         Route::get('/reports', [App\Http\Controllers\HostelReportController::class, 'index'])->name('reports');
         Route::get('/vacancy-report', [App\Http\Controllers\HostelReportController::class, 'vacancyReport'])->name('vacancy-report');
+        Route::get('/vacancy-report/pdf', [App\Http\Controllers\HostelReportController::class, 'vacancyReportPdf'])->name('vacancy-report.pdf');
         Route::get('/student-list', [App\Http\Controllers\HostelReportController::class, 'studentList'])->name('student-list');
+        Route::get('/student-list/pdf', [App\Http\Controllers\HostelReportController::class, 'studentListPdf'])->name('student-list.pdf');
     });
     
     Route::resource('hostel-rooms', App\Http\Controllers\HostelRoomController::class);
+
+    // Hostel allocation custom routes MUST be declared before Route::resource:
+    // the resource's `show` route (`/hostel-allocations/{hostel_allocation}`) would
+    // otherwise swallow the literal `/hostel-allocations/bulk` path and resolve
+    // "bulk" as an allocation id. Numeric constraints keep the two apart even if
+    // the ordering is ever changed.
+    Route::middleware('can:hostel.manage')->group(function () {
+        Route::get('hostel-allocations/bulk', [App\Http\Controllers\HostelAllocationController::class, 'bulkForm'])->name('hostel-allocations.bulk-form');
+        Route::post('hostel-allocations/bulk', [App\Http\Controllers\HostelAllocationController::class, 'bulkStore'])->name('hostel-allocations.bulk-store');
+        Route::get('hostel-allocations/{id}/transfer', [App\Http\Controllers\HostelAllocationController::class, 'transferForm'])->whereNumber('id')->name('hostel-allocations.transfer-form');
+        Route::post('hostel-allocations/{id}/transfer', [App\Http\Controllers\HostelAllocationController::class, 'transferStore'])->whereNumber('id')->name('hostel-allocations.transfer-store');
+        Route::post('hostel-allocations/{id}/checkout', [App\Http\Controllers\HostelAllocationController::class, 'checkout'])->whereNumber('id')->name('hostel-allocations.checkout');
+    });
+
+    Route::middleware('can:hostel.view')->group(function () {
+        Route::get('hostel-allocations/export', [App\Http\Controllers\HostelAllocationController::class, 'export'])->name('hostel-allocations.export');
+    });
+
     Route::resource('hostel-allocations', App\Http\Controllers\HostelAllocationController::class);
-    Route::post('hostel-allocations/{id}/checkout', [App\Http\Controllers\HostelAllocationController::class, 'checkout'])->name('hostel-allocations.checkout');
-    Route::get('hostel-allocations/bulk', [App\Http\Controllers\HostelAllocationController::class, 'bulkForm'])->name('hostel-allocations.bulk-form');
-    Route::post('hostel-allocations/bulk', [App\Http\Controllers\HostelAllocationController::class, 'bulkStore'])->name('hostel-allocations.bulk-store');
-    Route::get('hostel-allocations/{id}/transfer', [App\Http\Controllers\HostelAllocationController::class, 'transferForm'])->name('hostel-allocations.transfer-form');
-    Route::post('hostel-allocations/{id}/transfer', [App\Http\Controllers\HostelAllocationController::class, 'transferStore'])->name('hostel-allocations.transfer-store');
     Route::resource('payrolls', App\Http\Controllers\PayrollController::class);
     Route::resource('expenses', App\Http\Controllers\ExpensesController::class);
     Route::get('expenses-pending', [App\Http\Controllers\ExpensesController::class, 'pending'])->name('expenses.pending');
@@ -208,6 +249,8 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
 
     // Must precede the resource so 'students/...' literal segments are not
     // captured as a {student} id.
+    Route::get('students/transferred', [App\Http\Controllers\StudentController::class, 'transferred'])
+        ->name('students.transferred');
     Route::post('students/{id}/restore', [App\Http\Controllers\StudentController::class, 'restore'])
         ->name('students.restore');
 
@@ -435,6 +478,10 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
         Route::get('/reports/export/expected-revenue/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportExpectedRevenuePdf'])->name('reports.export.expected-revenue.pdf');
         Route::get('/reports/export/assignment-status/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportAssignmentStatusPdf'])->name('reports.export.assignment-status.pdf');
         Route::get('/reports/export/discount-summary/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportDiscountSummaryPdf'])->name('reports.export.discount-summary.pdf');
+        Route::get('/reports/export/collections/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportCollectionsPdf'])->name('reports.export.collections.pdf');
+        Route::get('/reports/export/collections/csv', [App\Http\Controllers\FeeReportsController::class, 'exportCollectionsCsv'])->name('reports.export.collections.csv');
+        Route::get('/reports/export/payment-method/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportPaymentMethodPdf'])->name('reports.export.payment-method.pdf');
+        Route::get('/reports/export/payment-method/csv', [App\Http\Controllers\FeeReportsController::class, 'exportPaymentMethodCsv'])->name('reports.export.payment-method.csv');
 
         // Arrears
         Route::get('/arrears', [App\Http\Controllers\FeeArrearsController::class, 'index'])->name('arrears.index');
@@ -460,6 +507,17 @@ Route::resource('exam-results', App\Http\Controllers\ExamResultController::class
         // Fee data needing an administrative decision. Read-only: it reports,
         // it never corrects.
         Route::get('/integrity', [App\Http\Controllers\FeeIntegrityController::class, 'index'])->name('integrity');
+
+        // Sponsor / bursary bulk receipts: one cash receipt, distributed to
+        // students through the normal payment chain.
+        Route::get('/bulk-receipts', [App\Http\Controllers\BulkReceiptController::class, 'index'])->name('bulk-receipts.index');
+        Route::get('/bulk-receipts/create', [App\Http\Controllers\BulkReceiptController::class, 'create'])->name('bulk-receipts.create');
+        Route::post('/bulk-receipts', [App\Http\Controllers\BulkReceiptController::class, 'store'])->name('bulk-receipts.store');
+        Route::get('/bulk-receipts/{id}', [App\Http\Controllers\BulkReceiptController::class, 'show'])->name('bulk-receipts.show');
+        Route::get('/bulk-receipts/{id}/receipt', [App\Http\Controllers\BulkReceiptController::class, 'printReceipt'])->name('bulk-receipts.receipt');
+        Route::post('/bulk-receipts/{id}/allocate', [App\Http\Controllers\BulkReceiptController::class, 'allocate'])->name('bulk-receipts.allocate');
+        Route::post('/bulk-receipts/{id}/allocations/{paymentId}/reverse', [App\Http\Controllers\BulkReceiptController::class, 'reverseAllocation'])->name('bulk-receipts.allocations.reverse');
+        Route::post('/bulk-receipts/{id}/reverse', [App\Http\Controllers\BulkReceiptController::class, 'reverseReceipt'])->name('bulk-receipts.reverse');
     });
 
     // Legacy Fee Management (Collection) - Kept/Modified for integration

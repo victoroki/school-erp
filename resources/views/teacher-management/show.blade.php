@@ -14,6 +14,13 @@
             </div>
         </div>
         <div class="d-flex gap-3">
+            {{-- Same authorization as TimetableController::teacherTimetable() — the
+                 controller re-checks it, this only offers the shortcut. --}}
+            @if(auth()->user()->isSuperUser() || auth()->user()->hasAnyRole(['Super Admin', 'Admin']))
+                <a href="{{ route('timetables.teacher', ['staff_id' => $teacher->staff_id]) }}" class="btn-dash btn-ghost px-4">
+                    <i class="far fa-calendar-alt" style="margin-right: 10px; color: var(--slate);"></i> View Timetable
+                </a>
+            @endif
             <a href="{{ route('teacher-management.edit', $teacher->staff_id) }}" class="btn-dash btn-ghost px-4">
                 <i class="far fa-edit" style="margin-right: 10px; color: var(--indigo);"></i> Edit Profile
             </a>

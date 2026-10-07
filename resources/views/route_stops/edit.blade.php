@@ -19,7 +19,7 @@
 
         <div class="card">
 
-            {!! Form::model($routeStop, ['route' => ['route-stops.update', $routeStop->stop_id], 'method' => 'patch']) !!}
+            {!! Form::model($routeStop, ['route' => ['routeStops.update', $routeStop->stop_id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">

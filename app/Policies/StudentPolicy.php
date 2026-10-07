@@ -11,12 +11,13 @@ class StudentPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['Super Admin', 'Admin', 'Accountant', 'Teacher']);
+        return $user->isSuperUser()
+            || $user->hasAnyRole(['Super Admin', 'Admin', 'Accountant', 'Teacher']);
     }
 
     public function view(User $user, Student $student): bool
     {
-        if ($user->hasAnyRole(['Super Admin', 'Admin'])) {
+        if ($user->isSuperUser() || $user->hasAnyRole(['Super Admin', 'Admin'])) {
             return true;
         }
 
@@ -41,7 +42,8 @@ class StudentPolicy
 
     public function manage(User $user): bool
     {
-        return $user->hasAnyRole(['Super Admin', 'Admin']);
+        return $user->isSuperUser()
+            || $user->hasAnyRole(['Super Admin', 'Admin']);
     }
 
     public function import(User $user): bool

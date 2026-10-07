@@ -6,7 +6,6 @@ use App\Http\Requests\CreateVehicleRequest;
 use App\Http\Requests\UpdateVehicleRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\VehicleRepository;
-use App\Models\Staff;
 use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
@@ -21,13 +20,6 @@ class VehicleController extends AppBaseController
         $this->vehicleRepository = $vehicleRepo;
         $this->middleware('can:transport.view')->only(['index', 'show']);
         $this->middleware('can:transport.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
-    }
-
-    private function getDropdownData()
-    {
-        return [
-            'drivers' => Staff::where('staff_type', 'driver')->pluck('first_name', 'staff_id')
-        ];
     }
 
     /**
@@ -46,8 +38,7 @@ class VehicleController extends AppBaseController
      */
     public function create()
     {
-        $dropdownData = $this->getDropdownData();
-        return view('vehicles.create', $dropdownData);
+        return view('vehicles.create');
     }
 
     /**
@@ -95,8 +86,7 @@ class VehicleController extends AppBaseController
             return redirect(route('vehicles.index'));
         }
 
-        $dropdownData = $this->getDropdownData();
-        return view('vehicles.edit', array_merge(['vehicle' => $vehicle], $dropdownData));
+        return view('vehicles.edit', ['vehicle' => $vehicle]);
     }
 
     /**

@@ -28,7 +28,7 @@
                             <div class="col-12 bg-light p-3 rounded border">
                                 <h6 class="text-primary font-weight-bold border-bottom pb-1 mb-2">Book Details</h6>
                                 <p class="mb-1"><strong>Title:</strong> {{ $issue->book->title }}</p>
-                                <p class="mb-1"><strong>Member:</strong> {{ $issue->member->user->name ?? 'N/A' }} ({{ $issue->member->reference_id }})</p>
+                                <p class="mb-1"><strong>Member:</strong> {{ $issue->member->display_name }}</p>
                                 <p class="mb-0"><strong>Due Date:</strong> {{ $issue->due_date->format('d M Y') }}</p>
                             </div>
                         </div>

@@ -92,7 +92,14 @@
                             {!! Form::label('content', 'Message Content:') !!}
                             {!! Form::textarea('content', null, ['class' => 'form-control', 'rows' => 5, 'id' => 'message_content']) !!}
                             <small class="text-muted float-right" id="char_count">0 chars</small>
-                            <small class="text-info">Available placeholders: {name}, {class}, {fee_balance}</small>
+                            <small class="text-info">Available placeholders: {school_name}, {student_name}, {student_class}</small>
+                            <small class="form-text text-muted d-block">
+                                {school_name} always fills. {student_name} and {student_class} fill for the
+                                All Students, Class and Class Section groups only &mdash; the All Parents and
+                                All Staff groups carry no per-person details, so a template using them will
+                                reach those groups with a blank where the name should be. Any other token is
+                                sent as literal text.
+                            </small>
                         </div>
 
                     </div>
@@ -129,129 +136,148 @@
 
 @push('page_scripts')
     <script>
-        $(document).ready(function() {
-            $('.select2').select2({ theme: 'bootstrap4' });
-
-            // Toggle Message Type
-            $('input[name="message_type"]').change(function() {
-                var type = $(this).val();
-                if(type === 'SMS') {
-                    $('#subject_group').addClass('d-none');
-                    $('#sms_templates_opt').show();
-                    $('#email_templates_opt').hide();
-                } else {
-                    $('#subject_group').removeClass('d-none');
-                    $('#sms_templates_opt').hide();
-                    $('#email_templates_opt').show();
-                }
-                // Reset template selection
-                $('#template_id').val('').trigger('change');
-            });
-
-            // Toggle Class Selector
-            function updateRecipientCount() {
-                var group = $('#recipient_group').val();
-                var classId = $('select[name="class_id"]').val();
-                var classSectionId = $('select[name="class_section_id"]').val();
-                var type = $('input[name="message_type"]:checked').val();
-
-                if (!group) {
-                    $('#recipient_estimate').text('Select a group to see count.');
+        // jQuery ships in the deferred Vite module, which executes after this
+        // inline block. Poll until jQuery and select2 are both ready, then
+        // wire the compose form — a plain document-ready handler here
+        // would throw on the undefined $ and kill every behaviour below,
+        // including the class selector toggles.
+        (function () {
+            function initCompose(attempt) {
+                if (!(window.jQuery && window.jQuery.fn && window.jQuery.fn.select2)) {
+                    // CDN blocked or bundle missing: give up quietly instead of
+                    // polling forever.
+                    if (attempt < 100) {
+                        setTimeout(function () { initCompose(attempt + 1); }, 50);
+                    }
                     return;
                 }
 
-                $('#recipient_estimate').html('<i class="fas fa-spinner fa-spin"></i> Calculating...');
+                var $ = window.jQuery;
 
-                $.ajax({
-                    url: '{{ route("communication.api.recipients.count") }}',
-                    method: 'GET',
-                    data: {
-                        recipient_group: group,
-                        class_id: classId,
-                        class_section_id: classSectionId,
-                        message_type: type,
-                    },
-                    success: function(response) {
-                        var cost = type === 'SMS' ? (response.count * 0.80).toFixed(2) : '0.00';
-                        $('#recipient_estimate').html(
-                            '<strong class="text-dark">' + response.count + ' recipients</strong>' +
-                            (type === 'SMS' ? '<br><small class="text-muted">Est. cost: KES ' + cost + '</small>' : '')
-                        );
-                    },
-                    error: function() {
-                        $('#recipient_estimate').text('Could not calculate count.');
-                    }
-                });
-            }
+                // Select2 fields are initialised centrally by the layout
+                // (guarded against double-init), so no per-view init here.
 
-            $('#recipient_group').change(function() {
-                var group = $(this).val();
-                if (group === 'Class') {
-                    $('#class_selector').removeClass('d-none');
-                    $('#class_section_selector').addClass('d-none');
-                } else if (group === 'Class Section') {
-                    $('#class_section_selector').removeClass('d-none');
-                    $('#class_selector').addClass('d-none');
-                } else {
-                    $('#class_selector').addClass('d-none');
-                    $('#class_section_selector').addClass('d-none');
+                // Show/hide the class and class-section pickers for the
+                // chosen recipient group. Also run once at startup so a
+                // re-rendered form (validation error, ?type= deep link)
+                // keeps the right selector visible.
+                function syncSelectorVisibility() {
+                    var group = $('#recipient_group').val();
+                    $('#class_selector').toggleClass('d-none', group !== 'Class');
+                    $('#class_section_selector').toggleClass('d-none', group !== 'Class Section');
                 }
-                updateRecipientCount();
-            });
 
-            $('select[name="class_id"]').change(function() {
-                updateRecipientCount();
-            });
+                // Toggle Message Type
+                $('input[name="message_type"]').change(function () {
+                    var type = $(this).val();
+                    if (type === 'SMS') {
+                        $('#subject_group').addClass('d-none');
+                        $('#sms_templates_opt').show();
+                        $('#email_templates_opt').hide();
+                    } else {
+                        $('#subject_group').removeClass('d-none');
+                        $('#sms_templates_opt').hide();
+                        $('#email_templates_opt').show();
+                    }
+                    // Reset template selection
+                    $('#template_id').val('').trigger('change');
+                    updateRecipientCount();
+                });
 
-            $('select[name="class_section_id"]').change(function() {
-                updateRecipientCount();
-            });
+                // Recipient estimate (AJAX count + SMS cost)
+                function updateRecipientCount() {
+                    var group = $('#recipient_group').val();
+                    var classId = $('select[name="class_id"]').val();
+                    var classSectionId = $('select[name="class_section_id"]').val();
+                    var type = $('input[name="message_type"]:checked').val();
 
-            $('input[name="message_type"]').change(function() {
-                updateRecipientCount();
-            });
+                    if (!group) {
+                        $('#recipient_estimate').text('Select a group to see count.');
+                        return;
+                    }
 
-            // Load Template Content
-            $('#template_id').change(function() {
-                var id = $(this).val();
-                var type = $('input[name="message_type"]:checked').val();
-                if(id) {
-                    $.get('/communication/api/template/' + type + '/' + id, function(data) {
-                        if(type === 'SMS') {
-                            $('#message_content').val(data.content);
-                        } else {
-                            $('input[name="subject"]').val(data.subject);
-                            $('#message_content').val(data.content);
+                    $('#recipient_estimate').html('<i class="fas fa-spinner fa-spin"></i> Calculating...');
+
+                    $.ajax({
+                        url: '{{ route('communication.api.recipients.count') }}',
+                        method: 'GET',
+                        data: {
+                            recipient_group: group,
+                            class_id: classId,
+                            class_section_id: classSectionId,
+                            message_type: type,
+                        },
+                        success: function (response) {
+                            var cost = type === 'SMS' ? (response.count * 0.80).toFixed(2) : '0.00';
+                            $('#recipient_estimate').html(
+                                '<strong class="text-dark">' + response.count + ' recipients</strong>' +
+                                (type === 'SMS' ? '<br><small class="text-muted">Est. cost: KES ' + cost + '</small>' : '')
+                            );
+                        },
+                        error: function () {
+                            $('#recipient_estimate').text('Could not calculate count.');
                         }
-                        updatePreview();
                     });
                 }
-            });
 
-            // Live Preview & Char Count
-            $('#message_content').on('keyup input', function() {
-                updatePreview();
-            });
+                $('#recipient_group').change(function () {
+                    syncSelectorVisibility();
+                    updateRecipientCount();
+                });
 
-            function updatePreview() {
-                var content = $('#message_content').val();
-                $('#preview_area').html(content.replace(/\n/g, '<br>'));
-                $('#char_count').text(content.length + ' chars');
-            }
+                $('select[name="class_id"]').change(updateRecipientCount);
+                $('select[name="class_section_id"]').change(updateRecipientCount);
 
-            // Pre-select template if in URL
-            var urlParams = new URLSearchParams(window.location.search);
-            if(urlParams.has('type')) {
-                var type = urlParams.get('type');
-                if(type === 'Email') {
-                    $('#type_email').prop('checked', true).trigger('change'); 
-                    $('#type_email').parent().addClass('active');
-                    $('#type_sms').parent().removeClass('active');
+                // Load Template Content
+                $('#template_id').change(function () {
+                    var id = $(this).val();
+                    var type = $('input[name="message_type"]:checked').val();
+                    if (id) {
+                        $.get('{{ url('communication/api/template') }}/' + type + '/' + id, function (data) {
+                            if (type === 'SMS') {
+                                $('#message_content').val(data.content);
+                            } else {
+                                $('input[name="subject"]').val(data.subject);
+                                $('#message_content').val(data.content);
+                            }
+                            updatePreview();
+                        });
+                    }
+                });
+
+                // Live Preview & Char Count
+                $('#message_content').on('keyup input', function () {
+                    updatePreview();
+                });
+
+                function updatePreview() {
+                    var content = $('#message_content').val();
+                    $('#preview_area').html(content.replace(/\n/g, '<br>'));
+                    $('#char_count').text(content.length + ' chars');
                 }
+
+                // Pre-select template if in URL
+                var urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('type')) {
+                    var type = urlParams.get('type');
+                    if (type === 'Email') {
+                        $('#type_email').prop('checked', true).trigger('change');
+                        $('#type_email').parent().addClass('active');
+                        $('#type_sms').parent().removeClass('active');
+                    }
+                }
+                if (urlParams.has('template_id')) {
+                    $('#template_id').val(urlParams.get('template_id')).trigger('change');
+                }
+
+                // Re-rendered form: restore selector visibility for the
+                // currently chosen group without firing the AJAX estimate.
+                syncSelectorVisibility();
             }
-            if(urlParams.has('template_id')) {
-                $('#template_id').val(urlParams.get('template_id')).trigger('change');
-            }
-        });
+
+            document.addEventListener('DOMContentLoaded', function () {
+                initCompose(0);
+            });
+        })();
     </script>
 @endpush

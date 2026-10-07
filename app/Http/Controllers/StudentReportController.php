@@ -144,37 +144,7 @@ class StudentReportController extends Controller
      */
     public function ageDistribution()
     {
-        $students = Student::where('status', 'active')
-            ->whereNotNull('date_of_birth')
-            ->get();
-
-        $ageGroups = [
-            'Under 5' => 0,
-            '5-7' => 0,
-            '8-10' => 0,
-            '11-13' => 0,
-            '14-16' => 0,
-            '17-19' => 0,
-            '20+' => 0,
-        ];
-
-        foreach ($students as $student) {
-            $age = $student->age;
-            if ($age === null) continue;
-
-            if ($age < 5) $ageGroups['Under 5']++;
-            elseif ($age <= 7) $ageGroups['5-7']++;
-            elseif ($age <= 10) $ageGroups['8-10']++;
-            elseif ($age <= 13) $ageGroups['11-13']++;
-            elseif ($age <= 16) $ageGroups['14-16']++;
-            elseif ($age <= 19) $ageGroups['17-19']++;
-            else $ageGroups['20+']++;
-        }
-
-        $totalStudents = $students->count();
-        $avgAge = $totalStudents > 0 ? round($students->avg('age'), 1) : 0;
-
-        return view('students.reports.age_distribution', compact('ageGroups', 'totalStudents', 'avgAge'));
+        return view('students.reports.age_distribution', $this->getAgeDistributionData());
     }
 
     /**
@@ -268,54 +238,7 @@ class StudentReportController extends Controller
      */
     public function transportHostelSummary()
     {
-        $transportStudents = Student::where('status', 'active')
-            ->where('uses_transport', true)
-            ->with(['studentClassEnrollments' => function ($q) {
-                $q->where('is_current', true)
-                  ->with(['classSection.schoolClass', 'classSection.section']);
-            }])
-            ->get()
-            ->with(['route'])
-            ->get()
-            ->map(function ($student) {
-                $enrollment = $student->studentClassEnrollments->first();
-                return (object) [
-                    'full_name' => $student->full_name,
-                    'admission_no' => $student->admission_no,
-                    'class_info' => ($enrollment->classSection->schoolClass->name ?? 'N/A')
-                        . ' - ' . ($enrollment->classSection->section->name ?? ''),
-                    'route_name' => $student->route->name ?? null,
-                    'pickup_point' => $student->pickup_point,
-                ];
-            })
-            ->sortBy('full_name')
-            ->values();
-
-        $hostelStudents = Student::where('status', 'active')
-            ->where('is_hosteller', true)
-            ->with(['studentClassEnrollments' => function ($q) {
-                $q->where('is_current', true)
-                  ->with(['classSection.schoolClass', 'classSection.section']);
-            }])
-            ->get()
-            ->map(function ($student) {
-                $enrollment = $student->studentClassEnrollments->first();
-                return (object) [
-                    'full_name' => $student->full_name,
-                    'admission_no' => $student->admission_no,
-                    'class_info' => ($enrollment->classSection->schoolClass->name ?? 'N/A')
-                        . ' - ' . ($enrollment->classSection->section->name ?? ''),
-                ];
-            })
-            ->sortBy('full_name')
-            ->values();
-
-        $totalTransport = $transportStudents->count();
-        $totalHostel = $hostelStudents->count();
-
-        return view('students.reports.transport_hostel', compact(
-            'transportStudents', 'hostelStudents', 'totalTransport', 'totalHostel'
-        ));
+        return view('students.reports.transport_hostel', $this->getTransportHostelData());
     }
 
     // ─── CSV EXPORTS ──────────────────────────────────────────────────
@@ -494,7 +417,27 @@ class StudentReportController extends Controller
         }
         $totalStudents = $students->count();
         $avgAge = $totalStudents > 0 ? round($students->avg('age'), 1) : 0;
-        return compact('ageGroups', 'totalStudents', 'avgAge');
+
+        // The largest group is whichever bucket holds the highest count —
+        // computed here rather than in Blade, where it was previously derived
+        // from `$ageGroups->keys()->first()` (simply the first bucket, not the
+        // biggest one) on a plain PHP array that has no max() to call.
+        $largestCount = $totalStudents > 0 ? max($ageGroups) : 0;
+        $largestGroup = '—';
+        if ($largestCount > 0) {
+            foreach ($ageGroups as $label => $count) {
+                if ($count === $largestCount) {
+                    $largestGroup = $label;
+                    break;
+                }
+            }
+        }
+
+        // A Collection, so the view can use ->keys()/->values()/->max() for the
+        // chart while the CSV/PDF exports keep iterating it as a plain map.
+        $ageGroups = collect($ageGroups);
+
+        return compact('ageGroups', 'totalStudents', 'avgAge', 'largestGroup', 'largestCount');
     }
 
     private function getEnrollmentTrendsData()
@@ -539,15 +482,18 @@ class StudentReportController extends Controller
 
     private function getTransportHostelData()
     {
+        // `route` is eager loaded alongside the enrollments — the page action
+        // used to call ->with(['route']) *after* ->get(), on a Collection that
+        // has no with() method.
         $transportStudents = Student::where('status', 'active')->where('uses_transport', true)
-            ->with(['studentClassEnrollments' => function ($q) {
+            ->with(['route', 'studentClassEnrollments' => function ($q) {
                 $q->where('is_current', true)->with(['classSection.schoolClass', 'classSection.section']);
             }])->get()
             ->map(function ($student) {
                 $enrollment = $student->studentClassEnrollments->first();
                 return (object) ['full_name' => $student->full_name, 'admission_no' => $student->admission_no,
                     'class_info' => ($enrollment->classSection->schoolClass->name ?? 'N/A') . ' - ' . ($enrollment->classSection->section->name ?? ''),
-                    'route_id' => $student->route_id, 'pickup_point' => $student->pickup_point];
+                    'route_name' => $student->route->name ?? null, 'pickup_point' => $student->pickup_point];
             })
             ->sortBy('full_name')->values();
         $hostelStudents = Student::where('status', 'active')->where('is_hosteller', true)

@@ -25,6 +25,8 @@ class FeePayment extends Model
         'amount',
         'payment_date',
         'payment_method',
+        'bank_account_id',
+        'bulk_receipt_id',
         'transaction_id',
         'client_reference',
         'receipt_number',
@@ -85,5 +87,22 @@ class FeePayment extends Model
     public function reversedBy()
     {
         return $this->belongsTo(\App\Models\User::class, 'reversed_by');
+    }
+
+    /**
+     * The sponsor/bursary receipt this payment was allocated from, when it
+     * came from a bulk receipt rather than the counter.
+     */
+    public function bulkReceipt()
+    {
+        return $this->belongsTo(\App\Models\FeeBulkReceipt::class, 'bulk_receipt_id');
+    }
+
+    /**
+     * The account this payment was received into (banked methods only).
+     */
+    public function bankAccount()
+    {
+        return $this->belongsTo(\App\Models\BankAccount::class, 'bank_account_id', 'account_id');
     }
 }

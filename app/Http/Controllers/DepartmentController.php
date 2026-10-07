@@ -19,7 +19,7 @@ class DepartmentController extends AppBaseController
     {
         $this->departmentRepository = $departmentRepo;
         $this->middleware('can:hr.view')->only(['index', 'show']);
-        $this->middleware('can:hr.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+        $this->middleware('can:hr.manage')->only(['create', 'store', 'edit', 'update', 'destroy', 'updateHod']);
     }
 
     /**
@@ -29,8 +29,18 @@ class DepartmentController extends AppBaseController
     {
         $departments = $this->departmentRepository->with(['hod'])->paginate(10);
 
+        // Eligible HOD candidates: active staff, listed by name. Eligibility is
+        // enforced again server-side in updateHod(), so a crafted post naming
+        // an inactive or non-existent staff member is refused.
+        $hods = \App\Models\Staff::where('employment_status', 'active')
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get()
+            ->mapWithKeys(fn ($s) => [$s->staff_id => $s->full_name]);
+
         return view('departments.index')
-            ->with('departments', $departments);
+            ->with('departments', $departments)
+            ->with('hods', $hods);
     }
 
     /**
@@ -41,6 +51,56 @@ class DepartmentController extends AppBaseController
         return [
             'staff' => \App\Models\Staff::get()->pluck('full_name', 'staff_id')->toArray()
         ];
+    }
+
+    /**
+     * Assign or change the Head of Department from the listing page.
+     *
+     * Split out from the general update so the index can offer the action
+     * without a round-trip through the edit form. The HOD field is set
+     * directly on the department — no pivot involved — so duplicate HOD rows
+     * are structurally impossible; assigning the same teacher again is simply
+     * a no-op update.
+     */
+    public function updateHod(Request $request, $id)
+    {
+        $department = $this->departmentRepository->find($id);
+
+        if (empty($department)) {
+            Flash::error('Department not found');
+
+            return redirect(route('departments.index'));
+        }
+
+        $validated = $request->validate([
+            // Nullable: clearing the field removes the current HOD.
+            'hod_id' => 'nullable|integer|exists:staff,staff_id',
+        ]);
+
+        if (!empty($validated['hod_id'])) {
+            $staff = \App\Models\Staff::find($validated['hod_id']);
+
+            if ($staff && $staff->employment_status !== 'active') {
+                Flash::error($staff->full_name . ' is not an active staff member and cannot head ' . $department->name . '.');
+
+                return redirect(route('departments.index'));
+            }
+        }
+
+        $oldHod = $department->hod ? $department->hod->full_name : null;
+        $department->hod_id = $validated['hod_id'] ?? null;
+        $department->save();
+
+        AuditTrail::log('Department', 'SET_HOD', $department->department_id,
+            ['hod_id' => $oldHod], ['hod_id' => $department->hod?->full_name]);
+
+        if ($department->hod) {
+            Flash::success($department->hod->full_name . ' is now Head of ' . $department->name . '.');
+        } else {
+            Flash::success('HOD removed from ' . $department->name . '.');
+        }
+
+        return redirect(route('departments.index'));
     }
 
     /**

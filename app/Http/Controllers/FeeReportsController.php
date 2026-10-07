@@ -231,7 +231,13 @@ class FeeReportsController extends Controller
                     $sq->where('fs.class_id', $request->class_id)->orWhereNull('fs.class_id');
                 });
             })
-            ->groupBy('fs.fee_structure_id', 'sfa.term', 'sfa.academic_year_id', 'fc.name', 'c.name', 't.name', 'ay.name')
+            // fs.class_id is selected for the drill-down link. It must be listed
+            // here explicitly: the paginator's COUNT(*) wraps this grouped query
+            // in a derived table, and MySQL re-checks ONLY_FULL_GROUP_BY against
+            // the merged query — where a bare fs.class_id is rejected with
+            // 1055 ("'fs.class_id' isn't in GROUP BY") even though it is
+            // functionally dependent on the primary key.
+            ->groupBy('fs.fee_structure_id', 'fs.class_id', 'sfa.term', 'sfa.academic_year_id', 'fc.name', 'c.name', 't.name', 'ay.name')
             ->orderByRaw("COALESCE(c.name, 'zzz')")
             ->orderBy('fc.name')
             ->orderBy('sfa.term')
@@ -466,26 +472,7 @@ class FeeReportsController extends Controller
      */
     public function collections(Request $request)
     {
-        $paymentQuery = FeePayment::query()
-            ->with(['studentFeeAssignment.student', 'studentFeeAssignment.feeStructure.category'])
-            ->when($request->filled('date'), function ($q) use ($request) {
-                return $q->whereDate('payment_date', $request->date);
-            })
-            ->when($request->filled('from'), function ($q) use ($request) {
-                return $q->whereDate('payment_date', '>=', $request->from);
-            })
-            ->when($request->filled('to'), function ($q) use ($request) {
-                return $q->whereDate('payment_date', '<=', $request->to);
-            })
-            ->when($request->filled('payment_method'), function ($q) use ($request) {
-                // "__unspecified" is the sentinel for legacy rows imported before
-                // the ENUM was enforced; MySQL stored those as ''.
-                if ($request->payment_method === '__unspecified') {
-                    return $q->where(fn ($sub) => $sub->where('payment_method', '')->orWhereNull('payment_method'));
-                }
-
-                return $q->where('payment_method', $request->payment_method);
-            });
+        $paymentQuery = $this->collectionsQuery($request);
 
         // Money figures exclude reversed payments; the paginated list below keeps
         // them so a voided receipt stays visible for audit (marked VOID in the
@@ -549,20 +536,14 @@ class FeeReportsController extends Controller
         $detailMode = $request->boolean('detail');
         $methodFilter = $request->filled('payment_method') ? $request->payment_method : null;
 
-        $applyPeriod = fn ($q) => $q
-            ->when($yearId, fn ($w) => $w->where('sfa.academic_year_id', $yearId))
-            ->when($request->filled('from'), fn ($w) => $w->whereDate('fee_payments.payment_date', '>=', $request->from))
-            ->when($request->filled('to'), fn ($w) => $w->whereDate('fee_payments.payment_date', '<=', $request->to));
-
-        $baseQuery = fn () => FeePayment::query()
-            ->join('student_fee_assignments as sfa', 'fee_payments.student_fee_assignment_id', '=', 'sfa.id')
-            ->notReversed();
+        // Period + year scope lives in one place so the screen and the exports
+        // can never report different figures.
+        $baseQuery = fn () => $this->paymentMethodQuery($request, $yearId);
 
         $academicYears = AcademicYear::orderBy('academic_year_id', 'desc')->pluck('name', 'academic_year_id');
 
         // ---- Headline metrics over the WHOLE filtered set.
         $stats = $baseQuery()
-            ->where($applyPeriod)
             ->selectRaw('COUNT(*) as payments_count')
             ->selectRaw('COALESCE(SUM(fee_payments.amount), 0) as grand_total')
             ->selectRaw('COUNT(DISTINCT fee_payments.payment_method) as methods_used')
@@ -575,7 +556,6 @@ class FeeReportsController extends Controller
         if ($detailMode && $methodFilter) {
             // ---- Per-day breakdown for one method.
             $byDay = $baseQuery()
-                ->where($applyPeriod)
                 ->where('fee_payments.payment_method', $methodFilter)
                 ->selectRaw('DATE(fee_payments.payment_date) as day')
                 ->selectRaw('COUNT(*) as count')
@@ -593,7 +573,6 @@ class FeeReportsController extends Controller
 
         // ---- Roll-up: one row per method (plus legacy '' rows as Unspecified).
         $byMethod = $baseQuery()
-            ->where($applyPeriod)
             ->select('fee_payments.payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(fee_payments.amount) as total'), DB::raw('MIN(fee_payments.payment_date) as first_payment'), DB::raw('MAX(fee_payments.payment_date) as last_payment'))
             ->groupBy('fee_payments.payment_method')
             ->orderByDesc('total')
@@ -764,5 +743,281 @@ class FeeReportsController extends Controller
         ));
         $pdf->setPaper('A4', 'portrait');
         return $pdf->download('receipt-register-' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Shared filter set for the collections report and its exports, so the
+     * screen and the downloaded file can never disagree.
+     */
+    protected function collectionsQuery(Request $request)
+    {
+        return FeePayment::query()
+            ->with(['studentFeeAssignment.student', 'studentFeeAssignment.feeStructure.category'])
+            ->when($request->filled('date'), function ($q) use ($request) {
+                return $q->whereDate('payment_date', $request->date);
+            })
+            ->when($request->filled('from'), function ($q) use ($request) {
+                return $q->whereDate('payment_date', '>=', $request->from);
+            })
+            ->when($request->filled('to'), function ($q) use ($request) {
+                return $q->whereDate('payment_date', '<=', $request->to);
+            })
+            ->when($request->filled('payment_method'), function ($q) use ($request) {
+                // "__unspecified" is the sentinel for legacy rows imported before
+                // the ENUM was enforced; MySQL stored those as ''.
+                if ($request->payment_method === '__unspecified') {
+                    return $q->where(fn ($sub) => $sub->where('payment_method', '')->orWhereNull('payment_method'));
+                }
+
+                return $q->where('payment_method', $request->payment_method);
+            });
+    }
+
+    /**
+     * Human-readable summary of the filters in force, printed on the exports.
+     */
+    protected function collectionsFilterLabel(Request $request): string
+    {
+        $method = $request->filled('payment_method')
+            ? ($request->payment_method === '__unspecified'
+                ? 'Unspecified'
+                : ucwords(str_replace('_', ' ', $request->payment_method)))
+            : null;
+
+        return collect([
+            'date' => $request->filled('date') ? 'Date: ' . \Carbon\Carbon::parse($request->date)->format('d M Y') : null,
+            'from' => $request->filled('from') ? 'From: ' . \Carbon\Carbon::parse($request->from)->format('d M Y') : null,
+            'to' => $request->filled('to') ? 'To: ' . \Carbon\Carbon::parse($request->to)->format('d M Y') : null,
+            'method' => $method ? 'Method: ' . $method : null,
+        ])->filter()->values()->implode(' · ');
+    }
+
+    /**
+     * Collections report as CSV over the SAME filters as the screen. Voided
+     * receipts stay in the file for audit (flagged VOID) but are excluded from
+     * the reconciliation line, exactly like the on-screen totals.
+     */
+    public function exportCollectionsCsv(Request $request)
+    {
+        $payments = $this->collectionsQuery($request)
+            ->orderBy('payment_date')
+            ->orderBy('payment_id')
+            ->get();
+
+        $validTotal = (float) (clone $this->collectionsQuery($request))->notReversed()->sum('amount');
+        $voidedTotal = (float) (clone $this->collectionsQuery($request))->reversed()->sum('amount');
+
+        $filename = 'collections-report-' . date('Y-m-d') . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function () use ($payments, $validTotal, $voidedTotal) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Receipt No', 'Date', 'Student', 'Admission No', 'Charge', 'Method', 'Amount', 'Status']);
+
+            foreach ($payments as $p) {
+                $student = $p->studentFeeAssignment->student ?? null;
+
+                fputcsv($file, [
+                    $p->receipt_number ?? 'RCP-' . $p->payment_id,
+                    $p->payment_date ? $p->payment_date->format('Y-m-d') : '',
+                    $student ? trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')) : 'N/A',
+                    $student->admission_no ?? '',
+                    $p->studentFeeAssignment->feeStructure->category->name ?? '',
+                    $p->payment_method ? ucwords(str_replace('_', ' ', $p->payment_method)) : 'Unspecified',
+                    number_format((float) $p->amount, 2, '.', ''),
+                    $p->isReversed() ? 'VOID' : 'Valid',
+                ]);
+            }
+
+            // Reconciliation lines — a bursar should not have to total the file
+            // by hand, and the voided figure is disclosed rather than hidden.
+            fputcsv($file, []);
+            fputcsv($file, ['Total (valid receipts)', '', '', '', '', '', number_format($validTotal, 2, '.', ''), '']);
+            fputcsv($file, ['Voided (excluded)', '', '', '', '', '', number_format($voidedTotal, 2, '.', ''), 'VOID']);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Collections report as a printable PDF, honouring the active filters.
+     */
+    public function exportCollectionsPdf(Request $request)
+    {
+        $paymentQuery = $this->collectionsQuery($request);
+
+        $totalCollected = (float) (clone $paymentQuery)->notReversed()->sum('amount');
+        $paymentCount = (clone $paymentQuery)->notReversed()->count();
+        $reversedTotal = (float) (clone $paymentQuery)->reversed()->sum('amount');
+        $reversedCount = (clone $paymentQuery)->reversed()->count();
+
+        $refundedTotal = (float) \App\Models\Refund::query()
+            ->where('status', 'completed')
+            ->when($request->filled('from'), fn ($q) => $q->whereDate('completed_at', '>=', $request->from))
+            ->when($request->filled('to'), fn ($q) => $q->whereDate('completed_at', '<=', $request->to))
+            ->when($request->filled('date'), fn ($q) => $q->whereDate('completed_at', $request->date))
+            ->sum('amount');
+
+        $byMethod = (clone $paymentQuery)
+            ->notReversed()
+            ->reorder()
+            ->select('payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(amount) as total'))
+            ->groupBy('payment_method')
+            ->orderByDesc('total')
+            ->get()
+            ->map(function ($row) {
+                $row->label = $row->payment_method === '' || $row->payment_method === null
+                    ? 'Unspecified'
+                    : \Illuminate\Support\Str::title(str_replace('_', ' ', $row->payment_method));
+
+                return $row;
+            });
+
+        $payments = (clone $paymentQuery)->orderBy('payment_date')->orderBy('payment_id')->get();
+
+        $pdf = Pdf::loadView('fee_management.reports.exports.collections_pdf', [
+            'payments' => $payments,
+            'byMethod' => $byMethod,
+            'totalCollected' => $totalCollected,
+            'paymentCount' => $paymentCount,
+            'reversedTotal' => $reversedTotal,
+            'reversedCount' => $reversedCount,
+            'refundedTotal' => $refundedTotal,
+            'filterLabel' => $this->collectionsFilterLabel($request),
+        ]);
+        $pdf->setPaper('A4', 'landscape');
+
+        return $pdf->download('collections-report-' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Period/year scope for the payment-method report and its exports. All
+     * money excludes reversed payments via notReversed().
+     */
+    protected function paymentMethodQuery(Request $request, ?int $yearId)
+    {
+        return FeePayment::query()
+            ->join('student_fee_assignments as sfa', 'fee_payments.student_fee_assignment_id', '=', 'sfa.id')
+            ->notReversed()
+            ->when($yearId, fn ($w) => $w->where('sfa.academic_year_id', $yearId))
+            ->when($request->filled('from'), fn ($w) => $w->whereDate('fee_payments.payment_date', '>=', $request->from))
+            ->when($request->filled('to'), fn ($w) => $w->whereDate('fee_payments.payment_date', '<=', $request->to));
+    }
+
+    /**
+     * One row per payment method (or per day when drilled into a method).
+     */
+    protected function paymentMethodRows(Request $request, ?int $yearId, ?string $methodFilter)
+    {
+        $query = $this->paymentMethodQuery($request, $yearId)
+            ->when($methodFilter, fn ($q) => $q->where('fee_payments.payment_method', $methodFilter));
+
+        if ($methodFilter) {
+            return $query
+                ->selectRaw('DATE(fee_payments.payment_date) as day')
+                ->selectRaw('COUNT(*) as count')
+                ->selectRaw('SUM(fee_payments.amount) as total')
+                ->groupByRaw('DATE(fee_payments.payment_date)')
+                ->orderByDesc('day')
+                ->get();
+        }
+
+        return $query
+            ->select('fee_payments.payment_method', DB::raw('COUNT(*) as count'), DB::raw('SUM(fee_payments.amount) as total'))
+            ->groupBy('fee_payments.payment_method')
+            ->orderByDesc('total')
+            ->get();
+    }
+
+    /**
+     * Payment-method report as CSV over the same scope as the screen.
+     */
+    public function exportPaymentMethodCsv(Request $request)
+    {
+        $yearId = $this->resolvePaymentMethodYear($request);
+        $methodFilter = $request->filled('payment_method') ? $request->payment_method : null;
+        $rows = $this->paymentMethodRows($request, $yearId, $methodFilter);
+
+        $grandTotal = (float) $rows->sum('total');
+
+        $filename = 'payment-methods-report-' . date('Y-m-d') . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ];
+
+        $callback = function () use ($rows, $methodFilter, $grandTotal) {
+            $file = fopen('php://output', 'w');
+
+            if ($methodFilter) {
+                fputcsv($file, ['Date', 'Payments', 'Total']);
+                foreach ($rows as $row) {
+                    fputcsv($file, [$row->day, $row->count, number_format((float) $row->total, 2, '.', '')]);
+                }
+            } else {
+                fputcsv($file, ['Payment Method', 'Payments', 'Total', 'Share %']);
+                foreach ($rows as $row) {
+                    $label = ($row->payment_method === '' || $row->payment_method === null)
+                        ? 'Unspecified'
+                        : ucwords(str_replace('_', ' ', $row->payment_method));
+                    $share = $grandTotal > 0 ? round(((float) $row->total / $grandTotal) * 100, 1) : 0;
+
+                    fputcsv($file, [$label, $row->count, number_format((float) $row->total, 2, '.', ''), $share]);
+                }
+            }
+
+            // Reconciliation line: method totals must add up to the grand total.
+            fputcsv($file, []);
+            fputcsv($file, ['Total', (int) $rows->sum('count'), number_format($grandTotal, 2, '.', ''), $grandTotal > 0 ? 100 : 0]);
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Payment-method report as a printable PDF.
+     */
+    public function exportPaymentMethodPdf(Request $request)
+    {
+        $yearId = $this->resolvePaymentMethodYear($request);
+        $methodFilter = $request->filled('payment_method') ? $request->payment_method : null;
+        $rows = $this->paymentMethodRows($request, $yearId, $methodFilter);
+
+        $grandTotal = (float) $rows->sum('total');
+        $paymentsCount = (int) $rows->sum('count');
+
+        $methodLabel = $methodFilter
+            ? ucwords(str_replace('_', ' ', $methodFilter))
+            : null;
+
+        $pdf = Pdf::loadView('fee_management.reports.exports.payment_method_pdf', [
+            'rows' => $rows,
+            'methodFilter' => $methodFilter,
+            'methodLabel' => $methodLabel,
+            'grandTotal' => $grandTotal,
+            'paymentsCount' => $paymentsCount,
+            'filterLabel' => $this->collectionsFilterLabel($request),
+        ]);
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->download('payment-methods-report-' . date('Y-m-d') . '.pdf');
+    }
+
+    /**
+     * Resolve the academic year the payment-method report is scoped to.
+     */
+    protected function resolvePaymentMethodYear(Request $request): ?int
+    {
+        $currentYear = AcademicYear::where('is_current', true)->first();
+        $yearId = $request->get('academic_year_id', $currentYear ? $currentYear->academic_year_id : null);
+
+        return $yearId ? (int) $yearId : null;
     }
 }

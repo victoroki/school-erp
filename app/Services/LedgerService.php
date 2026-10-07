@@ -248,6 +248,14 @@ class LedgerService
                 'reversed_by' => $user,
             ]);
 
+            // Undo the bank deposit this payment created (banked methods only;
+            // cash payments never had one). Marks the statement row voided and
+            // restores the account balance in the same transaction.
+            $bankTransaction = \App\Services\BankLedger::findFor('FeePayment', $payment->payment_id, 'deposit');
+            if ($bankTransaction) {
+                \App\Services\BankLedger::reverse($bankTransaction);
+            }
+
             // Rebuild paid_amount from the single source of truth.
             $balances = app(FeeBalanceService::class);
 

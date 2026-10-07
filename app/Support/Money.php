@@ -51,4 +51,77 @@ class Money
     {
         return number_format((float) $amount, 0);
     }
+
+    /**
+     * Spell an amount in words (Kenyan Shillings) for a receipt's legal line.
+     *
+     * Lives here rather than on one controller because both the per-payment
+     * receipt and the sponsor/bursary bulk receipt print it; duplicating it
+     * would let the two receipts word the same amount differently.
+     */
+    public static function inWords(mixed $amount): string
+    {
+        $amount = (float) $amount;
+        $shillings = (int) floor($amount);
+        $cents = (int) round(($amount - $shillings) * 100);
+
+        if ($cents === 100) {
+            $shillings++;
+            $cents = 0;
+        }
+
+        $words = self::numberToWords($shillings) . ' shilling' . ($shillings === 1 ? '' : 's');
+
+        if ($cents > 0) {
+            $words .= ' and ' . self::numberToWords($cents) . ' cent' . ($cents === 1 ? '' : 's');
+        }
+
+        return ucfirst($words . ' only');
+    }
+
+    private static function numberToWords(int $number): string
+    {
+        if ($number === 0) {
+            return 'zero';
+        }
+
+        $ones = [
+            '', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
+            'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen',
+            'seventeen', 'eighteen', 'nineteen',
+        ];
+        $tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+        $chunks = [
+            ['value' => 1000000000, 'label' => 'billion'],
+            ['value' => 1000000, 'label' => 'million'],
+            ['value' => 1000, 'label' => 'thousand'],
+            ['value' => 100, 'label' => 'hundred'],
+        ];
+
+        $parts = [];
+
+        foreach ($chunks as $chunk) {
+            if ($number >= $chunk['value']) {
+                $count = intdiv($number, $chunk['value']);
+                $parts[] = trim(self::numberToWords($count) . ' ' . $chunk['label']);
+                $number %= $chunk['value'];
+            }
+        }
+
+        if ($number >= 20) {
+            $part = $tens[intdiv($number, 10)];
+            if ($number % 10 > 0) {
+                $part .= '-' . $ones[$number % 10];
+            }
+            $parts[] = $part;
+            $number = 0;
+        }
+
+        if ($number > 0) {
+            $parts[] = $ones[$number];
+        }
+
+        return implode(' ', array_filter($parts));
+    }
 }

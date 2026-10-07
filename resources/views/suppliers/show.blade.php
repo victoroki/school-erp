@@ -106,9 +106,11 @@
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card border-0 shadow-sm bg-white text-center p-3 mb-0 h-100">
-                            <h3 class="mb-0 font-weight-bold text-success">{{ \App\Support\Money::format($supplier->purchaseOrders->sum('grand_total')) }}</h3>
-                            <div class="small text-muted">Total Order Value</div>
+                        <div class="card border-0 shadow-sm {{ $supplier->outstandingPayable() > 0 ? 'bg-warning' : 'bg-white' }} text-center p-3 mb-0 h-100">
+                            <h3 class="mb-0 font-weight-bold {{ $supplier->outstandingPayable() > 0 ? 'text-dark' : 'text-danger' }}">
+                                {{ \App\Support\Money::format($supplier->outstandingPayable()) }}
+                            </h3>
+                            <div class="small {{ $supplier->outstandingPayable() > 0 ? 'opacity-75' : 'text-muted' }}">Outstanding Payable</div>
                         </div>
                     </div>
                 </div>
@@ -118,17 +120,106 @@
                     <div class="card-header bg-white p-0">
                         <ul class="nav nav-tabs border-bottom-0" id="supplierTabs" role="tablist">
                             <li class="nav-item">
-                                <a class="nav-link active font-weight-bold py-3 px-4 border-bottom-0 border-top-0 border-left-0" id="items-tab" data-toggle="pill" href="#items" role="tab">Supplied Items</a>
+                                <a class="nav-link active font-weight-bold py-3 px-4 border-bottom-0 border-top-0 border-left-0" id="orders-tab" data-toggle="pill" href="#orders" role="tab">Order History</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link font-weight-bold py-3 px-4 border-bottom-0 border-top-0 border-left-0" id="orders-tab" data-toggle="pill" href="#orders" role="tab">Order History</a>
+                                <a class="nav-link font-weight-bold py-3 px-4 border-bottom-0 border-top-0 border-left-0" id="expenses-tab" data-toggle="pill" href="#expenses" role="tab">Expenses</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link font-weight-bold py-3 px-4 border-bottom-0 border-top-0 border-left-0" id="items-tab" data-toggle="pill" href="#items" role="tab">Supplied Items</a>
                             </li>
                         </ul>
                     </div>
                     <div class="card-body p-0">
                         <div class="tab-content" id="supplierTabsContent">
+                            <!-- Orders Tab -->
+                            <div class="tab-pane fade show active" id="orders" role="tabpanel">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0 align-middle">
+                                        <thead class="bg-light small uppercase">
+                                            <tr>
+                                                <th class="pl-4">PO #</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th class="text-right">Payment</th>
+                                                <th class="pr-4 text-right">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($supplier->purchaseOrders as $order)
+                                                <tr>
+                                                    <td class="pl-4">
+                                                        <a href="{{ route('inventory.purchase-orders.show', $order->po_id) }}" class="font-weight-bold">
+                                                            {{ $order->po_number }}
+                                                        </a>
+                                                    </td>
+                                                    <td>{{ $order->order_date->format('d M Y') }}</td>
+                                                    <td>
+                                                        <span class="badge {{ $order->status == 'Fully_Received' ? 'badge-success' : ($order->status == 'Cancelled' ? 'badge-secondary' : 'badge-warning') }}">
+                                                            {{ str_replace('_', ' ', $order->status) }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-right small">
+                                                        @php
+                                                            $paymentStatus = $order->derivedPaymentStatus();
+                                                            $labels = ['paid' => 'Paid', 'partially_paid' => 'Partly paid', 'overdue' => 'Overdue', 'unpaid' => 'Unpaid'];
+                                                            $styles = ['paid' => 'text-success', 'partially_paid' => 'text-info', 'overdue' => 'text-danger font-weight-bold', 'unpaid' => 'text-muted'];
+                                                        @endphp
+                                                        <span class="{{ $styles[$paymentStatus] ?? 'text-muted' }}">{{ $labels[$paymentStatus] ?? '—' }}</span>
+                                                    </td>
+                                                    <td class="pr-4 text-right font-weight-bold">KES {{ number_format($order->grand_total, 2) }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="5" class="text-center py-5 text-muted small italic">No purchase orders found for this supplier.</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Expenses Tab -->
+                            <div class="tab-pane fade" id="expenses" role="tabpanel">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0 align-middle">
+                                        <thead class="bg-light small uppercase">
+                                            <tr>
+                                                <th class="pl-4">Expense</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th class="pr-4 text-right">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($supplier->expenses as $expense)
+                                                <tr>
+                                                    <td class="pl-4">
+                                                        <a href="{{ route('expenses.show', $expense->expense_id) }}" class="font-weight-bold">
+                                                            {{ $expense->description ? \Illuminate\Support\Str::limit($expense->description, 40) : 'Expense #' . $expense->expense_id }}
+                                                        </a>
+                                                        <div class="small text-muted">{{ $expense->category->name ?? '' }}</div>
+                                                    </td>
+                                                    <td>{{ $expense->expense_date ? $expense->expense_date->format('d M Y') : '—' }}</td>
+                                                    <td>
+                                                        <span class="badge {{ $expense->status == 'paid' ? 'badge-success' : ($expense->status == 'rejected' ? 'badge-danger' : 'badge-warning') }}">
+                                                            {{ ucfirst($expense->status) }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="pr-4 text-right font-weight-bold">KES {{ number_format($expense->amount, 2) }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="4" class="text-center py-5 text-muted small italic">No expenses recorded against this supplier yet.</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
                             <!-- Items Tab -->
-                            <div class="tab-pane fade show active" id="items" role="tabpanel">
+                            <div class="tab-pane fade" id="items" role="tabpanel">
                                 <div class="table-responsive">
                                     <table class="table table-hover mb-0 align-middle">
                                         <thead class="bg-light small uppercase">

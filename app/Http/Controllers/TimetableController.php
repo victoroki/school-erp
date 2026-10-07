@@ -261,8 +261,18 @@ class TimetableController extends AppBaseController
         $selectedStaffId = $request->get('staff_id');
         $allTeachers = collect();
 
-        // Check permissions
-        $isAdmin = $user->hasAnyRole(['Super Admin', 'Admin']);
+        // Check permissions.
+        //
+        // A super user (the platform Owner) sits alongside Super Admin and Admin
+        // here. Previously the check read `hasAnyRole(['Super Admin', 'Admin'])`
+        // only, so the Owner — who outranks every operational role — was pushed
+        // into the `else` branch and silently shown *their own* timetable
+        // instead of being able to look at anyone's, and the teacher picker was
+        // never rendered for them. The branch below is a real authorization
+        // decision (it decides whether `?staff_id=` is honoured), so it is
+        // enforced here rather than left to the absence of a UI control.
+        $isAdmin = $user->isSuperUser()
+            || $user->hasAnyRole(['Super Admin', 'Admin']);
 
         if ($isAdmin) {
             $allTeachers = Staff::where('staff_type', 'teaching')

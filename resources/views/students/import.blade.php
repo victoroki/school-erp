@@ -153,6 +153,7 @@
                         <li>Gender must be exactly: <code>male</code>, <code>female</code>, or <code>other</code>.</li>
                         <li>Dates use the format DD-MM-YYYY or YYYY-MM-DD.</li>
                         <li>Class/Section and Academic Year are selected on the upload form above.</li>
+                        <li>Optional: fill the <code>guardian_*</code> columns to import guardians alongside students. Existing guardians are matched by phone or email and reused — never duplicated.</li>
                         <li>Upload the final .xlsx file here.</li>
                     </ol>
 
@@ -178,6 +179,15 @@
                             <tr><td><code>previous_school</code></td><td>No</td><td>Previous school name</td></tr>
                             <tr><td><code>medical_conditions</code></td><td>No</td><td>Chronic conditions</td></tr>
                             <tr><td><code>allergies</code></td><td>No</td><td>Known allergies</td></tr>
+                            <tr class="table-light"><td colspan="3" class="font-weight-bold">Guardian (all optional — fill first name, last name and phone to link a guardian)</td></tr>
+                            <tr><td><code>guardian_first_name</code></td><td>No</td><td>Max 50 chars</td></tr>
+                            <tr><td><code>guardian_last_name</code></td><td>No</td><td>Max 50 chars</td></tr>
+                            <tr><td><code>guardian_relationship</code></td><td>No</td><td><code>father</code>, <code>mother</code>, <code>guardian</code> — defaults to <code>guardian</code></td></tr>
+                            <tr><td><code>guardian_phone</code></td><td>No</td><td>Used to match existing guardians, max 20 chars</td></tr>
+                            <tr><td><code>guardian_alternate_phone</code></td><td>No</td><td>Max 20 chars</td></tr>
+                            <tr><td><code>guardian_email</code></td><td>No</td><td>Also used for guardian matching</td></tr>
+                            <tr><td><code>guardian_occupation</code></td><td>No</td><td>Max 100 chars</td></tr>
+                            <tr><td><code>guardian_is_primary</code></td><td>No</td><td><code>1</code>/<code>yes</code> (default) or <code>0</code>/<code>no</code></td></tr>
                         </tbody>
                     </table>
                     <small class="text-muted d-block mb-2">Additional fields (blood group, transport, address, etc.) can be edited after import via the student edit form.</small>

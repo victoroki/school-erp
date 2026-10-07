@@ -83,7 +83,9 @@ class SupplierController extends AppBaseController
      */
     public function show($id)
     {
-        $supplier = Supplier::with(['inventoryItems', 'purchaseOrders'])->find($id);
+        // inventoryItems + purchaseOrders: the profile's activity panels.
+        // expenses: the payee history already captured by the expense form.
+        $supplier = Supplier::with(['inventoryItems.category', 'purchaseOrders', 'expenses.category'])->find($id);
 
         if (empty($supplier)) {
             Flash::error('Supplier not found');

@@ -176,8 +176,6 @@ class TeacherManagementTest extends TestCase
             'employment_type' => 'full_time',
             'employment_status' => 'active',
             'login_email' => self::TEACHER_EMAILS['onboarded'],
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
         ];
     }
 
@@ -213,7 +211,9 @@ class TeacherManagementTest extends TestCase
     {
         $this->actingAs($this->admin())
             ->post('/teacher-onboarding', $this->validOnboardingPayload())
-            ->assertRedirect(route('teacher-onboarding.create'));
+            // Onboarding now lands on All Teachers — the listed teacher below
+            // is the one just created.
+            ->assertRedirect(route('teacher-management.index'));
 
         $this->assertDatabaseHas('users', ['email' => self::TEACHER_EMAILS['onboarded']]);
         $this->assertDatabaseHas('staff', [

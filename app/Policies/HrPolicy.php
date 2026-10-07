@@ -10,7 +10,8 @@ class HrPolicy
 {
     public function view(User $user): bool
     {
-        return $user->hasAnyRole(['Super Admin', 'Admin']);
+        return $user->isSuperUser()
+            || $user->hasAnyRole(['Super Admin', 'Admin']);
     }
 
     public function manage(User $user): bool

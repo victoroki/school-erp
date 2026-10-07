@@ -23,8 +23,18 @@ class Subject extends Model
         'name' => 'string',
         'description' => 'string',
         'is_elective' => 'boolean',
+        'is_active' => 'boolean',
         'grade_level' => 'integer',
     ];
+
+    /**
+     * Only ever set through SubjectLifecycleService::archive()/restore(), never
+     * from request input, so a crafted form post cannot retire a subject.
+     */
+    public function scopeSelectable($query)
+    {
+        return $query->where('is_active', true);
+    }
 
     public static array $rules = [
         'subject_code' => 'required|string|max:20',
@@ -64,4 +74,11 @@ class Subject extends Model
     {
         return $this->hasMany(\App\Models\Timetable::class, 'subject_id');
     }
+
+    /**
+     * The `assignments` table has no dedicated model, so it is counted
+     * through the query builder in SubjectLifecycleService. Declaring a
+     * relation against a non-existent class here would only produce a fatal
+     * the first time somebody tried to eager-load it.
+     */
 }

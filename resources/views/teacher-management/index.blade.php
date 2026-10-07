@@ -81,6 +81,12 @@
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-right shadow-sm border-0">
                                         <li><a class="dropdown-item" href="{{ route('teacher-management.show', $teacher->staff_id) }}"><i class="far fa-eye dd-icon"></i> View Profile</a></li>
+                                        {{-- Mirrors the check in TimetableController::teacherTimetable(). The
+                                             controller re-decides it server-side; this only decides whether
+                                             to offer the shortcut, so hiding it is cosmetic. --}}
+                                        @if(auth()->user()->isSuperUser() || auth()->user()->hasAnyRole(['Super Admin', 'Admin']))
+                                            <li><a class="dropdown-item" href="{{ route('timetables.teacher', ['staff_id' => $teacher->staff_id]) }}"><i class="far fa-calendar-alt dd-icon"></i> View Timetable</a></li>
+                                        @endif
                                         <li><a class="dropdown-item" href="{{ route('teacher-management.edit', $teacher->staff_id) }}"><i class="far fa-edit dd-icon"></i> Edit Details</a></li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li>

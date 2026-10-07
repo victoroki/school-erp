@@ -331,7 +331,9 @@ class FeeArrearsController extends Controller
         foreach ($query->get() as $s) {
             $rows[] = [
                 'admission_no' => $s->admission_no,
-                'name' => trim($s->first_name . ' ' . $s->middle_name . ' ' . $s->last_name),
+                // Same idiom as Student::getFullNameAttribute(): a student with no
+                // middle name was written as "Brian  Kariuki", double space and all.
+                'name' => implode(' ', array_filter([$s->first_name, $s->middle_name, $s->last_name])),
                 'expected' => (float) $s->expected_total,
                 'paid' => (float) $s->paid_total,
                 'outstanding' => (float) $s->expected_total - (float) $s->paid_total,

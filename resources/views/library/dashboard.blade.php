@@ -7,12 +7,45 @@
                 <div class="col-sm-6">
                     <h1 class="m-0 text-dark"><i class="fas fa-university mr-2"></i>Library Dashboard</h1>
                 </div>
+                <div class="col-sm-6">
+                    <div class="float-right">
+                        @can('library.manage')
+                            <a class="btn btn-outline-secondary" href="{{ route('library.settings.edit') }}">
+                                <i class="fas fa-cog mr-1"></i> Library Settings
+                            </a>
+                        @endcan
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
     <div class="content">
         <div class="container-fluid">
+            <!-- Policy summary: the fine rate and loan period these numbers are
+                 calculated from, with a link to change them. -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="callout callout-info py-2 mb-3" style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>
+                            Loan period <strong>{{ $stats['loan_period_days'] }} days</strong>,
+                            fine <strong>{{ number_format($stats['fine_per_day'], 2) }}</strong> per day overdue.
+                        </span>
+                        @if ($stats['overdue_books'] > 0)
+                            <span class="badge badge-danger">
+                                {{ $stats['overdue_books'] }} overdue &middot;
+                                {{ number_format($stats['overdue_fines_total'], 2) }} outstanding
+                            </span>
+                        @endif
+                        @can('library.manage')
+                            <a class="btn btn-sm btn-link p-0 ml-auto" href="{{ route('library.settings.edit') }}">
+                                Change
+                            </a>
+                        @endcan
+                    </div>
+                </div>
+            </div>
             <!-- Info boxes -->
             <div class="row">
                 <div class="col-12 col-sm-6 col-md-3">
@@ -78,7 +111,7 @@
                                     @forelse($recentIssues as $issue)
                                         <tr>
                                             <td>{{ Str::limit($issue->book->title, 30) }}</td>
-                                            <td>{{ $issue->member->user->name ?? 'N/A' }}</td>
+                                            <td>{{ $issue->member->display_name }}</td>
                                             <td>{{ $issue->due_date->format('d M Y') }}</td>
                                             <td>
                                                 <span class="badge badge-{{ $issue->status == 'returned' ? 'success' : ($issue->status == 'overdue' ? 'danger' : 'warning') }}">
@@ -109,6 +142,12 @@
                             <div class="card-body p-0">
                                 <ul class="products-list product-list-in-card pl-2 pr-2">
                                     @foreach($overdueBooks as $overdue)
+                                        @php
+                                            // What this book owes if it is returned
+                                            // today, at the configured rate.
+                                            $daysOverdue = \App\Services\LibrarySettings::daysOverdue($overdue->due_date);
+                                            $fine = \App\Services\LibrarySettings::fineFor($daysOverdue);
+                                        @endphp
                                         <li class="item">
                                             <div class="product-info">
                                                 <a href="{{ route('book-issues.show', $overdue->issue_id) }}" class="product-title">
@@ -116,7 +155,11 @@
                                                     <span class="badge badge-danger float-right">{{ $overdue->due_date->diffForHumans() }}</span>
                                                 </a>
                                                 <span class="product-description text-dark">
-                                                    Borrowed by: {{ $overdue->member->user->name ?? 'N/A' }}
+                                                    Borrowed by: {{ $overdue->member->display_name }}
+                                                    @if ($fine > 0)
+                                                        &middot; {{ $daysOverdue }} {{ Str::plural('day', $daysOverdue) }} overdue
+                                                        &middot; <strong>{{ number_format($fine, 2) }}</strong> due
+                                                    @endif
                                                 </span>
                                             </div>
                                         </li>

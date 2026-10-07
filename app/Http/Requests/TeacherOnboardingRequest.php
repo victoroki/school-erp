@@ -40,9 +40,10 @@ class TeacherOnboardingRequest extends FormRequest
             'employment_type' => 'required|in:full_time,part_time,contract,casual,intern',
             'employment_status' => 'required|in:active,on_leave,suspended,terminated,resigned,retired',
 
-            // Login
+            // Login — the account starts without a usable password. The teacher
+            // sets their own through the tokenised, expiring password broker
+            // email, so the administrator never handles a live credential.
             'login_email' => 'required|email|max:255|unique:users,email',
-            'password'    => 'required|string|min:8|confirmed',
         ];
     }
 }

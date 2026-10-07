@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditTrail;
+use App\Models\Parents;
 use App\Models\Student;
 use App\Models\StudentClassEnrollment;
 use Flash;
@@ -19,8 +20,9 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class StudentImportController extends Controller
 {
     /**
-     * Trimmed template columns — only what's needed for a valid student record.
-     * Optional fields that were removed are all fillable via the student edit form.
+     * Template columns. Guardian columns are optional; when present, guardians
+     * are matched by phone/email (never duplicated) and linked to the student
+     * through student_parent_relationship.
      */
     protected array $templateHeaders = [
         'admission_no'        => 'Unique admission number. Required. Max 20 characters.',
@@ -39,6 +41,14 @@ class StudentImportController extends Controller
         'previous_school'     => 'Name of school previously attended. Optional.',
         'medical_conditions'  => 'Any chronic or ongoing medical conditions. Optional.',
         'allergies'           => 'Known allergies (food, drug, environmental). Optional.',
+        'guardian_first_name' => 'Guardian first name. Optional. Leave blank to skip guardian linking.',
+        'guardian_last_name'  => 'Guardian last name / surname. Optional. Required if guardian_first_name is filled.',
+        'guardian_relationship' => 'Exactly one of: father, mother, guardian. Optional. Defaults to guardian.',
+        'guardian_phone'      => 'Guardian phone. Optional. Required if guardian_first_name is filled. Used to match existing guardians.',
+        'guardian_alternate_phone' => 'Guardian alternative phone. Optional.',
+        'guardian_email'      => 'Guardian email. Optional. Also used to match existing guardians.',
+        'guardian_occupation' => 'Guardian occupation. Optional.',
+        'guardian_is_primary' => '1 or yes if this guardian is the primary contact. Optional. Defaults to yes.',
     ];
 
     protected array $requiredFields = [
@@ -105,6 +115,14 @@ class StudentImportController extends Controller
             'previous_school'         => 'ABC Academy',
             'medical_conditions'      => 'Asthma',
             'allergies'               => 'Peanuts',
+            'guardian_first_name'     => 'Mary',
+            'guardian_last_name'      => 'Doe',
+            'guardian_relationship'   => 'mother',
+            'guardian_phone'          => '0722000000',
+            'guardian_alternate_phone' => '0733000000',
+            'guardian_email'          => 'mary.doe@example.com',
+            'guardian_occupation'     => 'Nurse',
+            'guardian_is_primary'     => '1',
         ];
 
         $row = 2;
@@ -127,6 +145,10 @@ class StudentImportController extends Controller
         $instructions->setCellValue([1, $row], '3. Rows with validation errors are skipped — valid rows are still imported.');
         $row++;
         $instructions->setCellValue([1, $row], '4. Additional fields (blood group, transport, scholarship, address, etc.) can be edited after import via the student edit form.');
+        $row++;
+        $instructions->setCellValue([1, $row], '5. Guardian columns are optional. If guardian_phone or guardian_email matches an existing guardian, that guardian is reused instead of creating a duplicate.');
+        $row++;
+        $instructions->setCellValue([1, $row], '6. Two rows may share the same guardian phone — the guardian is created once and linked to both students.');
 
         $instructions->getColumnDimension('A')->setWidth(30);
         $instructions->getColumnDimension('C')->setWidth(75);
@@ -234,7 +256,8 @@ class StudentImportController extends Controller
             DB::beginTransaction();
             try {
                 foreach ($validRows as $entry) {
-                    $this->createStudent($entry['data'], $request->class_section_id, $request->academic_year_id);
+                    $student = $this->createStudent($entry['data'], $request->class_section_id, $request->academic_year_id);
+                    $this->linkGuardian($student, $entry['data']);
                     $imported++;
                 }
                 DB::commit();
@@ -315,7 +338,141 @@ class StudentImportController extends Controller
             $errors[] = '"phone" must not exceed 20 characters.';
         }
 
+        // ─── Guardian columns ──────────────────────────────────────────
+        // Optional as a block: either leave every guardian_* column empty, or
+        // supply at least first name, last name and phone.
+        $hasGuardian = trim($data['guardian_first_name'] ?? '') !== ''
+            || trim($data['guardian_last_name'] ?? '') !== ''
+            || trim($data['guardian_phone'] ?? '') !== ''
+            || trim($data['guardian_email'] ?? '') !== '';
+
+        if ($hasGuardian) {
+            foreach (['guardian_first_name', 'guardian_last_name'] as $field) {
+                if (trim($data[$field] ?? '') === '') {
+                    $errors[] = 'Missing "' . $field . '" field (required when any guardian column is filled).';
+                }
+            }
+
+            if (mb_strlen(trim($data['guardian_first_name'] ?? '')) > 50) {
+                $errors[] = '"guardian_first_name" must not exceed 50 characters.';
+            }
+            if (mb_strlen(trim($data['guardian_last_name'] ?? '')) > 50) {
+                $errors[] = '"guardian_last_name" must not exceed 50 characters.';
+            }
+
+            $gPhone = trim($data['guardian_phone'] ?? '');
+            if ($gPhone === '') {
+                $errors[] = 'Missing "guardian_phone" field (required when any guardian column is filled).';
+            } elseif (mb_strlen($gPhone) > 20) {
+                $errors[] = '"guardian_phone" must not exceed 20 characters.';
+            }
+
+            $gEmail = trim($data['guardian_email'] ?? '');
+            if ($gEmail !== '' && !filter_var($gEmail, FILTER_VALIDATE_EMAIL)) {
+                $errors[] = 'Invalid "guardian_email" value "' . $gEmail . '".';
+            }
+
+            $relationship = strtolower(trim($data['guardian_relationship'] ?? ''));
+            if ($relationship !== '' && !in_array($relationship, ['father', 'mother', 'guardian'], true)) {
+                $errors[] = 'Invalid "guardian_relationship" value "' . $data['guardian_relationship'] . '". Allowed: father, mother, guardian.';
+            }
+
+            $altPhone = trim($data['guardian_alternate_phone'] ?? '');
+            if ($altPhone !== '' && mb_strlen($altPhone) > 20) {
+                $errors[] = '"guardian_alternate_phone" must not exceed 20 characters.';
+            }
+        }
+
         return $errors;
+    }
+
+    /**
+     * Find an existing guardian to reuse, so a family with several children —
+     * or an import run against a school with existing records — does not
+     * accumulate duplicates.
+     *
+     * Matching order: exact phone, then alternate phone, then email. A phone
+     * match is the strongest signal in the Kenyan context where email is often
+     * blank; matching never falls back to name alone, which would wrongly
+     * merge unrelated families sharing a surname.
+     */
+    protected function findExistingGuardian(array $data): ?Parents
+    {
+        $phone = trim($data['guardian_phone'] ?? '');
+        $altPhone = trim($data['guardian_alternate_phone'] ?? '');
+        $email = trim($data['guardian_email'] ?? '');
+
+        if ($phone !== '') {
+            $match = Parents::where('phone', $phone)->first();
+            if ($match) {
+                return $match;
+            }
+        }
+
+        if ($altPhone !== '') {
+            $match = Parents::where('alternate_phone', $altPhone)->first();
+            if ($match) {
+                return $match;
+            }
+        }
+
+        if ($email !== '') {
+            $match = Parents::where('email', $email)->first();
+            if ($match) {
+                return $match;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Create (or reuse) the guardian and link them to the student.
+     * Runs inside the import transaction, so a mid-import failure cannot
+     * leave a guardian linked to a student row that no longer exists.
+     */
+    protected function linkGuardian(Student $student, array $data): void
+    {
+        if (trim($data['guardian_first_name'] ?? '') === '' && trim($data['guardian_phone'] ?? '') === '') {
+            return;
+        }
+
+        $guardian = $this->findExistingGuardian($data);
+
+        if (! $guardian) {
+            $guardian = Parents::create([
+                'first_name' => trim($data['guardian_first_name']),
+                'last_name' => trim($data['guardian_last_name']),
+                'relationship' => strtolower(trim($data['guardian_relationship'] ?? '')) ?: 'guardian',
+                'phone' => trim($data['guardian_phone']),
+                'alternate_phone' => trim($data['guardian_alternate_phone'] ?? '') ?: null,
+                'email' => trim($data['guardian_email'] ?? '') ?: null,
+                'occupation' => trim($data['guardian_occupation'] ?? '') ?: null,
+            ]);
+        }
+
+        // Idempotent link: re-importing the same row must not double-link.
+        $exists = DB::table('student_parent_relationship')
+            ->where('student_id', $student->student_id)
+            ->where('parent_id', $guardian->parent_id)
+            ->exists();
+
+        if (! $exists) {
+            DB::table('student_parent_relationship')->insert([
+                'student_id' => $student->student_id,
+                'parent_id' => $guardian->parent_id,
+                'is_primary_contact' => $this->isPrimaryFlag($data),
+            ]);
+        }
+    }
+
+    protected function isPrimaryFlag(array $data): bool
+    {
+        $flag = strtolower(trim($data['guardian_is_primary'] ?? ''));
+
+        // Default to primary: a row with a single guardian nearly always means
+        // the primary contact. Explicit no/0/false opts out.
+        return ! in_array($flag, ['0', 'no', 'false'], true);
     }
 
     protected function createStudent(array $data, $classSectionId, $academicYearId): Student

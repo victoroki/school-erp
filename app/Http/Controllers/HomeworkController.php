@@ -11,8 +11,14 @@ class HomeworkController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:homework.view')->only(['index', 'show', 'create', 'edit']);
-        $this->middleware('can:homework.manage')->only(['store', 'update', 'destroy']);
+        // `create` and `edit` render the write form, so they belong behind the
+        // MANAGE permission. They used to sit behind `.view`, which handed a
+        // Parent or Student — both of whom hold homework.view so they can read
+        // their own children's homework — an open "create homework" page whose
+        // POST was then correctly refused. The form and the ability it submits
+        // have to agree.
+        $this->middleware('can:homework.view')->only(['index', 'show']);
+        $this->middleware('can:homework.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     public function index()

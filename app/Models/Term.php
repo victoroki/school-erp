@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Term extends Model
 {
+    use HasFactory;
+
     public $table = 'terms';
 
     public $fillable = [
@@ -52,7 +55,11 @@ class Term extends Model
         return $this->hasMany(\App\Models\StudentFeeAssignment::class, 'term_id');
     }
 
-    public function isCurrentAttribute()
+    /**
+     * Eloquent only calls getXAttribute(), so this was previously a plain method
+     * that nothing ever invoked and $term->is_current was always null.
+     */
+    public function getIsCurrentAttribute(): bool
     {
         return $this->status === 'active';
     }
@@ -72,5 +79,16 @@ class Term extends Model
     public function scopeOrdered($query)
     {
         return $query->orderBy('display_order')->orderBy('start_date');
+    }
+
+    /**
+     * The term a given date falls in, within this term's academic year.
+     */
+    public function scopeCovering($query, $date)
+    {
+        $date = $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : (string) $date;
+
+        return $query->whereDate('start_date', '<=', $date)
+            ->whereDate('end_date', '>=', $date);
     }
 }

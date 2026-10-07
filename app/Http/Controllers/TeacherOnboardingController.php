@@ -34,13 +34,18 @@ class TeacherOnboardingController extends Controller
     {
         try {
             $result = $service->onboard($request->validated());
-            Flash::success('Teacher '.$result['full_name'].' onboarded successfully with login account and Teacher role.');
         } catch (\Exception $e) {
+            report($e);
             Flash::error('Error onboarding teacher: '.$e->getMessage());
 
             return redirect()->back()->withInput();
         }
 
-        return redirect(route('teacher-onboarding.create'));
+        // All Teachers — the natural next stop after onboarding someone.
+        Flash::success('Teacher '.$result['full_name'].' onboarded successfully. An account-setup '
+            .'email has been sent to '.$result['user']->email.' — the teacher sets their own '
+            .'password through the secure, expiring link inside it.');
+
+        return redirect(route('teacher-management.index'));
     }
 }

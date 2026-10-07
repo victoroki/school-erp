@@ -78,6 +78,9 @@ class DatabaseSeeder extends Seeder
             CommunicationTriggerSeeder::class,
             CommunicationTemplateSeeder::class,
             CommunicationSeeder::class,
+
+            // The manual Compose library (SMS Templates / Email Templates).
+            SchoolMessageTemplateSeeder::class,
         ]);
     }
 }

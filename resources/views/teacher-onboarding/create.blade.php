@@ -36,50 +36,50 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="form-group col-sm-6">
-                                {!! Form::label('first_name', 'First Name:') !!}
-                                {!! Form::text('first_name', old('first_name'), ['class' => 'form-control', 'required', 'maxlength' => 50]) !!}
+                                {!! Form::label('first_name', '<span class="text-danger">*</span> First Name:') !!}
+                                {!! Form::text('first_name', old('first_name'), ['class' => 'form-control', 'required', 'maxlength' => 50, 'placeholder' => 'Enter first name']) !!}
                                 @error('first_name')<span class="text-danger">{{ $message }}</span>@enderror
                             </div>
 
                             <div class="form-group col-sm-6">
                                 {!! Form::label('middle_name', 'Middle Name:') !!}
-                                {!! Form::text('middle_name', old('middle_name'), ['class' => 'form-control', 'maxlength' => 50]) !!}
+                                {!! Form::text('middle_name', old('middle_name'), ['class' => 'form-control', 'maxlength' => 50, 'placeholder' => 'Middle name (optional)']) !!}
                                 @error('middle_name')<span class="text-danger">{{ $message }}</span>@enderror
                             </div>
 
                             <div class="form-group col-sm-6">
-                                {!! Form::label('last_name', 'Last Name:') !!}
-                                {!! Form::text('last_name', old('last_name'), ['class' => 'form-control', 'required', 'maxlength' => 50]) !!}
+                                {!! Form::label('last_name', '<span class="text-danger">*</span> Last Name:') !!}
+                                {!! Form::text('last_name', old('last_name'), ['class' => 'form-control', 'required', 'maxlength' => 50, 'placeholder' => 'Enter last name']) !!}
                                 @error('last_name')<span class="text-danger">{{ $message }}</span>@enderror
                             </div>
 
                             <div class="form-group col-sm-6">
-                                {!! Form::label('date_of_birth', 'Date Of Birth:') !!}
+                                {!! Form::label('date_of_birth', '<span class="text-danger">*</span> Date Of Birth:') !!}
                                 {!! Form::date('date_of_birth', old('date_of_birth'), ['class' => 'form-control', 'required']) !!}
                                 @error('date_of_birth')<span class="text-danger">{{ $message }}</span>@enderror
                             </div>
 
                             <div class="form-group col-sm-6">
-                                {!! Form::label('gender', 'Gender:') !!}
+                                {!! Form::label('gender', '<span class="text-danger">*</span> Gender:') !!}
                                 {!! Form::select('gender', ['' => '— Select Gender —', 'male' => 'Male', 'female' => 'Female', 'other' => 'Other'], old('gender'), ['class' => 'form-control', 'required']) !!}
                                 @error('gender')<span class="text-danger">{{ $message }}</span>@enderror
                             </div>
 
                             <div class="form-group col-sm-6">
-                                {!! Form::label('phone_primary', 'Phone (Primary):') !!}
-                                {!! Form::tel('phone_primary', old('phone_primary'), ['class' => 'form-control', 'required', 'maxlength' => 20]) !!}
+                                {!! Form::label('phone_primary', '<span class="text-danger">*</span> Phone (Primary):') !!}
+                                {!! Form::tel('phone_primary', old('phone_primary'), ['class' => 'form-control', 'required', 'maxlength' => 20, 'placeholder' => 'e.g. +254 7XX XXX XXX']) !!}
                                 @error('phone_primary')<span class="text-danger">{{ $message }}</span>@enderror
                             </div>
 
                             <div class="form-group col-sm-6">
-                                {!! Form::label('work_email', 'Work Email:') !!}
-                                {!! Form::email('work_email', old('work_email'), ['class' => 'form-control', 'required', 'maxlength' => 100]) !!}
+                                {!! Form::label('work_email', '<span class="text-danger">*</span> Work Email:') !!}
+                                {!! Form::email('work_email', old('work_email'), ['class' => 'form-control', 'required', 'maxlength' => 100, 'placeholder' => 'teacher@school.ac.ke']) !!}
                                 @error('work_email')<span class="text-danger">{{ $message }}</span>@enderror
                             </div>
 
                             <div class="form-group col-sm-6">
                                 {!! Form::label('personal_email', 'Personal Email:') !!}
-                                {!! Form::email('personal_email', old('personal_email'), ['class' => 'form-control', 'maxlength' => 100]) !!}
+                                {!! Form::email('personal_email', old('personal_email'), ['class' => 'form-control', 'maxlength' => 100, 'placeholder' => 'personal email (optional)']) !!}
                                 @error('personal_email')<span class="text-danger">{{ $message }}</span>@enderror
                             </div>
 
@@ -121,7 +121,7 @@
 
                             <div class="form-group col-sm-6">
                                 {!! Form::label('tsc_number', 'TSC Number:') !!}
-                                {!! Form::text('tsc_number', old('tsc_number'), ['class' => 'form-control', 'maxlength' => 20]) !!}
+                                {!! Form::text('tsc_number', old('tsc_number'), ['class' => 'form-control', 'maxlength' => 20, 'placeholder' => 'Enter TSC number, if applicable']) !!}
                                 @error('tsc_number')<span class="text-danger">{{ $message }}</span>@enderror
                             </div>
 
@@ -156,13 +156,13 @@
                             </div>
 
                             <div class="form-group col-sm-6">
-                                {!! Form::label('employment_type', 'Employment Type:') !!}
+                                {!! Form::label('employment_type', '<span class="text-danger">*</span> Employment Type:') !!}
                                 {!! Form::select('employment_type', ['' => '— Select Type —', 'full_time' => 'Full Time', 'part_time' => 'Part Time', 'contract' => 'Contract', 'casual' => 'Casual', 'intern' => 'Intern'], old('employment_type', 'full_time'), ['class' => 'form-control', 'required']) !!}
                                 @error('employment_type')<span class="text-danger">{{ $message }}</span>@enderror
                             </div>
 
                             <div class="form-group col-sm-6">
-                                {!! Form::label('employment_status', 'Employment Status:') !!}
+                                {!! Form::label('employment_status', '<span class="text-danger">*</span> Employment Status:') !!}
                                 {!! Form::select('employment_status', ['active' => 'Active', 'on_leave' => 'On Leave', 'suspended' => 'Suspended', 'terminated' => 'Terminated', 'resigned' => 'Resigned', 'retired' => 'Retired'], old('employment_status', 'active'), ['class' => 'form-control', 'required']) !!}
                                 @error('employment_status')<span class="text-danger">{{ $message }}</span>@enderror
                             </div>
@@ -180,26 +180,20 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="form-group col-sm-4">
-                                {!! Form::label('login_email', 'Login Email:') !!}
-                                {!! Form::email('login_email', old('login_email', old('work_email')), ['class' => 'form-control', 'required', 'maxlength' => 255, 'placeholder' => 'Used to sign in']) !!}
+                                {!! Form::label('login_email', '<span class="text-danger">*</span> Login Email:') !!}
+                                {!! Form::email('login_email', old('login_email', old('work_email')), ['class' => 'form-control', 'required', 'maxlength' => 255, 'placeholder' => 'teacher@example.com']) !!}
+                                <small class="text-muted d-block mt-1">The teacher receives an account-setup email with a secure, expiring link to set their own password.</small>
                                 @error('login_email')<span class="text-danger">{{ $message }}</span>@enderror
-                            </div>
-
-                            <div class="form-group col-sm-4">
-                                {!! Form::label('password', 'Temporary Password:') !!}
-                                {!! Form::password('password', ['class' => 'form-control', 'required', 'minlength' => 8]) !!}
-                                @error('password')<span class="text-danger">{{ $message }}</span>@enderror
-                            </div>
-
-                            <div class="form-group col-sm-4">
-                                {!! Form::label('password_confirmation', 'Confirm Password:') !!}
-                                {!! Form::password('password_confirmation', ['class' => 'form-control', 'required', 'minlength' => 8]) !!}
                             </div>
 
                             <div class="form-group col-sm-4">
                                 {!! Form::label('role', 'Role:') !!}
                                 {!! Form::text('role', $teacherRole->role_name ?? 'Teacher', ['class' => 'form-control', 'disabled']) !!}
                             </div>
+                        </div>
+                        <div class="alert alert-info mb-0 mt-2">
+                            <i class="fas fa-envelope-open-text mr-2"></i>
+                            No password is chosen here. The teacher is emailed a tokenised, expiring setup link and sets their own password.
                         </div>
                     </div>
                 </div>

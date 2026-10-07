@@ -37,13 +37,22 @@
                                 <b>Capacity</b> <span class="float-right">{{ $hostelRoom->capacity }} Beds</span>
                             </li>
                             <li class="list-group-item">
-                                <b>Occupied</b> <span class="float-right">{{ $hostelRoom->occupied }} Beds</span>
+                                <b>Occupied</b> <span class="float-right">{{ $hostelRoom->occupied ?? 0 }} Beds</span>
+                            </li>
+                            <li class="list-group-item">
+                                <b>Free beds</b> <span class="float-right">{{ $hostelRoom->getAvailableBeds() }} Beds</span>
                             </li>
                             <li class="list-group-item border-bottom-0">
-                                <b>Status</b> 
-                                <span class="float-right badge badge-{{ $hostelRoom->status == 'available' ? 'success' : ($hostelRoom->status == 'full' ? 'danger' : 'warning') }}">
-                                    {{ ucfirst($hostelRoom->status) }}
-                                </span>
+                                <b>Status</b>
+                                @if($hostelRoom->status === \App\Models\HostelRoom::STATUS_AVAILABLE)
+                                    <span class="float-right badge badge-success">Available</span>
+                                @elseif($hostelRoom->status === \App\Models\HostelRoom::STATUS_FULL)
+                                    <span class="float-right badge badge-danger">Full</span>
+                                @elseif($hostelRoom->status === \App\Models\HostelRoom::STATUS_UNDER_MAINTENANCE)
+                                    <span class="float-right badge badge-secondary">Under maintenance</span>
+                                @else
+                                    <span class="float-right badge badge-info">{{ ucfirst((string) $hostelRoom->status) }}</span>
+                                @endif
                             </li>
                         </ul>
 
@@ -62,9 +71,9 @@
                     <div class="card-header">
                         <h3 class="card-title">Current Occupants</h3>
                         <div class="card-tools">
-                            @if($hostelRoom->occupied < $hostelRoom->capacity && $hostelRoom->status !== 'under_maintenance')
+                            @if($hostelRoom->canAllocate())
                                 <a href="{{ route('hostel-allocations.create', ['room_id' => $hostelRoom->room_id]) }}" class="btn btn-success btn-sm">
-                                    <i class="fas fa-plus mr-1"></i> Add Occupant
+                                    <i class="fas fa-plus mr-1"></i> Allocate a Bed
                                 </a>
                             @endif
                         </div>
@@ -86,13 +95,13 @@
                                             <div class="d-flex align-items-center">
                                                 <i class="fas fa-user-graduate mr-2 text-muted"></i>
                                                 <div>
-                                                    <strong>{{ $allocation->student->first_name }} {{ $allocation->student->last_name }}</strong><br>
-                                                    <small class="text-muted">{{ $allocation->student->student_id }}</small>
+                                                    <strong>{{ optional($allocation->student)->first_name ?? 'N/A' }} {{ optional($allocation->student)->last_name ?? '' }}</strong><br>
+                                                    <small class="text-muted">{{ optional($allocation->student)->student_id }} &middot; {{ $allocation->class_info }}</small>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>{{ $allocation->bed_number }}</td>
-                                        <td>{{ $allocation->allocation_date->format('d M, Y') }}</td>
+                                        <td>{{ $allocation->bed_number ?? '—' }}</td>
+                                        <td>{{ optional($allocation->allocation_date)->format('d M, Y') }}</td>
                                         <td>
                                             <a href="{{ route('hostel-allocations.show', $allocation->allocation_id) }}" class="btn btn-xs btn-default">
                                                 <i class="fas fa-eye"></i>
@@ -102,7 +111,13 @@
                                 @empty
                                     <tr>
                                         <td colspan="4" class="text-center py-4">
-                                            <p class="text-muted mb-0">No active students in this room.</p>
+                                            <i class="fas fa-bed fa-2x text-muted mb-2 d-block"></i>
+                                            <p class="text-muted mb-2">No active students in this room.</p>
+                                            @if($hostelRoom->canAllocate())
+                                                <a href="{{ route('hostel-allocations.create', ['room_id' => $hostelRoom->room_id]) }}" class="btn btn-success btn-sm">
+                                                    <i class="fas fa-plus mr-1"></i> Allocate a Bed
+                                                </a>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforelse
@@ -110,6 +125,49 @@
                         </table>
                     </div>
                 </div>
+
+                @php $history = $hostelRoom->hostelAllocations->where('status', '!=', 'active')->sortByDesc('allocation_date'); @endphp
+                @if($history->isNotEmpty())
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-history mr-1"></i> Past Allocations</h3>
+                            <small class="card-text">Students who previously held a bed in this room.</small>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-striped table-valign-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Bed #</th>
+                                        <th>Period</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($history as $allocation)
+                                        <tr>
+                                            <td>
+                                                {{ optional($allocation->student)->first_name ?? 'N/A' }} {{ optional($allocation->student)->last_name ?? '' }}
+                                                <br><small class="text-muted">{{ optional($allocation->student)->student_id }}</small>
+                                            </td>
+                                            <td>{{ $allocation->bed_number ?? '—' }}</td>
+                                            <td>
+                                                <small>
+                                                    {{ optional($allocation->allocation_date)->format('d M, Y') }}
+                                                    &rarr;
+                                                    {{ $allocation->vacating_date ? $allocation->vacating_date->format('d M, Y') : '…' }}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-{{ $allocation->status === 'vacated' ? 'secondary' : 'warning' }}">{{ ucfirst($allocation->status) }}</span>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

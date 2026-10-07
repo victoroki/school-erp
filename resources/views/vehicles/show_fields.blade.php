@@ -34,10 +34,10 @@
     <p>{{ $vehicle->seating_capacity }}</p>
 </div>
 
-<!-- Driver Id Field -->
+<!-- Driver Field -->
 <div class="col-sm-12">
-    {!! Form::label('driver_id', 'Driver:') !!}
-    <p>{{ $vehicle->driver->full_name ?? 'Not Assigned' }}</p>
+    {!! Form::label('driver_name', 'Driver:') !!}
+    <p>{{ $vehicle->driver_display }}</p>
 </div>
 
 <!-- Status Field -->

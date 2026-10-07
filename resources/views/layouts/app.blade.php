@@ -2,7 +2,7 @@
 @push('page_css')
     <link rel="stylesheet" href="{{ asset('css/sidebar-fixed-final.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
 @endpush
 
     <body class="hold-transition sidebar-mini">
@@ -89,9 +89,44 @@
                 }
             }
 
+            // Searchable selects.
+            //
+            // `page_scripts` is rendered straight after the Vite app.js bundle,
+            // but that bundle is an ES module, so it only executes once the document
+            // has finished parsing. This inline script runs *during* parsing, which
+            // means `window.jQuery` does not exist yet and any inline
+            // `$('.select2').select2()` call is dead code. Initialising here, after
+            // DOMContentLoaded and only once jQuery *and* select2 are both present,
+            // makes every `.select2` field in the ERP searchable.
+            function initializeSelect2(attempt) {
+                if (typeof window.jQuery === 'undefined' || typeof window.jQuery.fn.select2 === 'undefined') {
+                    // Give up quietly rather than poll forever if the CDN is blocked.
+                    if (attempt < 100) {
+                        setTimeout(function () { initializeSelect2(attempt + 1); }, 50);
+                    }
+                    return;
+                }
+
+                var $ = window.jQuery;
+
+                // `:not([data-select2])` keeps a view from initialising the same
+                // field twice when it brings its own options.
+                $('.select2:not([data-select2])').each(function () {
+                    $(this).select2({ theme: 'bootstrap4', width: '100%' });
+                });
+
+                // Views that fill a Select2 after load (a cascading dropdown, say)
+                // have to wait for the widget to exist before they can refresh it.
+                // One event beats every view re-initialising the field itself.
+                $(document).trigger('select2:ready');
+
+                $('[data-toggle="tooltip"]').tooltip({ container: 'body' });
+            }
+
             // Start initialization after DOM is ready
             document.addEventListener('DOMContentLoaded', function() {
                 setTimeout(initializeAdminLTE, 100);
+                initializeSelect2(0);
             });
         </script>
         @endpush

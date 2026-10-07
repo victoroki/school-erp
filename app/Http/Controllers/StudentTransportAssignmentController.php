@@ -9,6 +9,7 @@ use App\Models\Student;
 use App\Models\StudentTransportAssignment;
 use App\Models\AuditTrail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Flash;
 
 class StudentTransportAssignmentController extends Controller
@@ -44,9 +45,10 @@ class StudentTransportAssignmentController extends Controller
             ->toArray();
         $routes = Route::pluck('name', 'route_id')->toArray();
         $academicYears = AcademicYear::pluck('name', 'academic_year_id')->toArray();
-        $stops = RouteStop::all()->groupBy('route_id');
 
-        return view('student_transport_assignments.create', compact('students', 'routes', 'academicYears', 'stops'));
+        // The stop options are filled in by the cascade partial, which lists only
+        // the stops belonging to the chosen route.
+        return view('student_transport_assignments.create', compact('students', 'routes', 'academicYears'));
     }
 
     public function store(Request $request)
@@ -85,7 +87,17 @@ class StudentTransportAssignmentController extends Controller
             ->toArray();
         $routes = Route::pluck('name', 'route_id')->toArray();
         $academicYears = AcademicYear::pluck('name', 'academic_year_id')->toArray();
-        $stops = RouteStop::where('route_id', $assignment->route_id)->pluck('stop_name', 'stop_id')->toArray();
+
+        // Server-render the current route's stops so the saved pickup/drop are
+        // preselected before the cascade refetches them. Labels match the ones the
+        // cascade builds, time included, so nothing visibly jumps on load.
+        $stops = RouteStop::where('route_id', $assignment->route_id)
+            ->orderBy('sequence')
+            ->get()
+            ->mapWithKeys(fn ($stop) => [
+                $stop->stop_id => $this->stopOptionLabel($stop),
+            ])
+            ->all();
 
         return view('student_transport_assignments.edit', compact('assignment', 'students', 'routes', 'academicYears', 'stops'));
     }
@@ -127,7 +139,27 @@ class StudentTransportAssignmentController extends Controller
 
     public function getStopsByRoute($routeId)
     {
-        $stops = RouteStop::where('route_id', $routeId)->orderBy('sequence')->get();
+        // Only what the cascading selects render, so a stop renamed in the database
+        // cannot smuggle markup into the page through string-built <option> HTML.
+        $stops = RouteStop::where('route_id', $routeId)
+            ->orderBy('sequence')
+            ->get(['stop_id', 'stop_name', 'stop_time']);
+
         return response()->json($stops);
+    }
+
+    /**
+     * "Main Gate  (07:30)".
+     *
+     * stop_time is a MySQL TIME column, so it arrives as 07:30:00. Trimmed here and
+     * by formatTime() in the cascade partial, so the two never disagree.
+     */
+    private function stopOptionLabel(RouteStop $stop): string
+    {
+        if (empty($stop->stop_time)) {
+            return $stop->stop_name;
+        }
+
+        return $stop->stop_name.'  ('.Carbon::parse($stop->stop_time)->format('H:i').')';
     }
 }

@@ -23,6 +23,7 @@
 
     <section class="content">
         <div class="container-fluid">
+            @include('flash::message')
             <div class="row">
                 <div class="col-md-8">
                     <div class="card">

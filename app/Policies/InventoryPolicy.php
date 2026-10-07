@@ -8,7 +8,8 @@ class InventoryPolicy
 {
     public function view(User $user): bool
     {
-        return $user->hasAnyRole(['Super Admin', 'Admin', 'Accountant']);
+        return $user->isSuperUser()
+            || $user->hasAnyRole(['Super Admin', 'Admin', 'Accountant']);
     }
 
     public function manage(User $user): bool

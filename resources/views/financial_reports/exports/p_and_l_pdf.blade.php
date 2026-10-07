@@ -29,6 +29,11 @@
     <div class="school-header">
         <h1>{{ config('app.name') }}</h1>
         <div class="subtitle">Profit &amp; Loss Statement &mdash; {{ \Carbon\Carbon::parse($startDate)->format('d M, Y') }} to {{ \Carbon\Carbon::parse($endDate)->format('d M, Y') }}</div>
+        @if(! empty($term))
+            {{-- The term filter drives the dates above; naming it keeps the
+                 exported document self-explanatory when it is filed on its own. --}}
+            <div class="subtitle"><strong>Term:</strong> {{ $term->name }}</div>
+        @endif
     </div>
 
     @php $netProfit = $totalIncome - $totalExpenses; @endphp

@@ -18,6 +18,7 @@ use App\Models\Department;
 use App\Models\User;
 use App\Models\JobPosition;
 use App\Models\AuditTrail;
+use App\Services\TeacherOnboardingService;
 
 class StaffController extends AppBaseController
 {
@@ -33,7 +34,8 @@ class StaffController extends AppBaseController
     public function __construct(
         StaffRepository $staffRepo,
         UserRoleRepository $userRepo,
-        DepartmentRepository $departmentRepo
+        DepartmentRepository $departmentRepo,
+        private TeacherOnboardingService $teacherOnboarding
     ) {
         $this->staffRepository = $staffRepo;
         $this->userRepository = $userRepo;
@@ -109,11 +111,38 @@ class StaffController extends AppBaseController
                 }
             }
 
+            // The staff table declares these NOT NULL without a default, so a blank
+            // submission must still send a value or the insert is rejected.
+            foreach (['current_address', 'city', 'country'] as $field) {
+                if (! isset($input[$field]) || $input[$field] === null) {
+                    $input[$field] = '';
+                }
+            }
+
             // Handle photo upload
             if ($request->hasFile('photo')) {
                 $photoPath = $request->file('photo')->store('staff-photos', 'public');
                 $input['photo_url'] = Storage::url($photoPath);
             }
+
+            // A teaching hire is onboarded through the shared service, which also
+            // mints the portal login and mails the teacher an expiring
+            // account-setup link. It is the only path from this form that may
+            // create a user, so the portal fields are discarded for every other
+            // staff type before anything else looks at them.
+            if (($input['staff_type'] ?? null) === 'teaching') {
+                $result = $this->teacherOnboarding->onboard(array_merge($input, [
+                    'login_email' => $input['personal_email'] ?? $input['work_email'],
+                ]));
+
+                Flash::success('Staff saved successfully. An account-setup email has been sent to '
+                    . $result['user']->email . ' — they set their own password through the secure, '
+                    . 'expiring link inside it.');
+
+                return redirect(route('staff.index'));
+            }
+
+            unset($input['personal_email'], $input['tsc_number'], $input['login_email']);
 
             // Ensure created_by is set
             $input['created_by'] = Auth::id();
@@ -202,6 +231,14 @@ class StaffController extends AppBaseController
             foreach (['employee_number', 'job_position_id', 'designation', 'basic_salary', 'middle_name'] as $field) {
                 if (isset($input[$field]) && $input[$field] === '') {
                     $input[$field] = null;
+                }
+            }
+
+            // The staff table declares these NOT NULL without a default, so a blank
+            // submission must still send a value or the update is rejected.
+            foreach (['current_address', 'city', 'country'] as $field) {
+                if (! isset($input[$field]) || $input[$field] === null) {
+                    $input[$field] = '';
                 }
             }
 

@@ -129,7 +129,13 @@ class StudentFeeAssignmentController extends Controller
             })
             ->when($request->filled('academic_year_id'), fn($q) => $q->where('sfa.academic_year_id', $request->academic_year_id))
             ->when($request->filled('term'), fn($q) => $q->where('sfa.term', $request->term))
-            ->groupBy('fs.fee_structure_id', 'sfa.term', 'sfa.academic_year_id', 'fc.name', 'c.name', 't.name', 'ay.name')
+            // fs.class_id and fs.payment_frequency are selected for the UI, so
+            // they must also appear here: the paginator's COUNT(*) wraps this
+            // grouped query in a derived table, and MySQL re-checks
+            // ONLY_FULL_GROUP_BY on the merged query — where a bare fs.class_id
+            // is rejected with 1055 even though it is functionally dependent on
+            // the primary key.
+            ->groupBy('fs.fee_structure_id', 'fs.class_id', 'fs.payment_frequency', 'sfa.term', 'sfa.academic_year_id', 'fc.name', 'c.name', 't.name', 'ay.name')
             ->orderByRaw("COALESCE(c.name, 'zzz')")
             ->orderBy('fc.name')
             ->orderBy('sfa.term')

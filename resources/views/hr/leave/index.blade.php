@@ -22,13 +22,21 @@
 
     <section class="content">
         <div class="container-fluid">
+            @include('flash::message')
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">{{ $viewAll ? 'All Leave Applications' : 'My Leave Applications' }}</h3>
                     <div class="card-tools">
-                        <a href="{{ route('leave-applications.create') }}" class="btn btn-success btn-sm">
-                            <i class="fas fa-plus"></i> Apply for Leave
-                        </a>
+                        @if($canApplyForLeave)
+                            <a href="{{ route('leave-applications.create') }}" class="btn btn-success btn-sm">
+                                <i class="fas fa-plus"></i> Apply for Leave
+                            </a>
+                        @else
+                            <span class="text-muted" style="font-size: 0.8125rem;">
+                                <i class="fas fa-info-circle"></i>
+                                You need a staff record before you can apply for leave.
+                            </span>
+                        @endif
                     </div>
                 </div>
                 <div class="card-body">

@@ -161,6 +161,10 @@ class FeeManagementController extends Controller
             'client_reference' => 'nullable|string|max:64',
             'remarks' => 'nullable|string|max:2000',
             'allocation_strategy' => 'nullable|in:oldest_first,manual',
+            // The collector picks which account non-cash money lands in. The
+            // collect form posts this; without it the choice was dropped and
+            // every deposit fell to the first active account.
+            'bank_account_id' => 'nullable|exists:bank_accounts,account_id',
         ]);
 
         $isTotalPayment = (string) $validated['student_fee_assignment_id'] === 'total';
@@ -197,6 +201,7 @@ class FeeManagementController extends Controller
                     'amount' => $validated['amount'],
                     'payment_date' => $validated['payment_date'],
                     'payment_method' => $validated['payment_method'],
+                    'bank_account_id' => $validated['bank_account_id'] ?? null,
                     'transaction_id' => $validated['transaction_id'] ?? null,
                     'client_reference' => $validated['client_reference'] ?? null,
                     'remarks' => $validated['remarks'] ?? null,
@@ -318,71 +323,12 @@ class FeeManagementController extends Controller
     }
 
     /**
-     * Spell an amount in words (Kenyan Shillings) for the receipt's legal line.
+     * Spell an amount in words for the receipt's legal line. Shared with the
+     * bulk/deferred receipt printer so both word an amount identically.
      */
     private function amountInWords(float $amount): string
     {
-        $shillings = (int) floor($amount);
-        $cents = (int) round(($amount - $shillings) * 100);
-
-        if ($cents === 100) {
-            $shillings++;
-            $cents = 0;
-        }
-
-        $words = $this->numberToWords($shillings) . ' shilling' . ($shillings === 1 ? '' : 's');
-
-        if ($cents > 0) {
-            $words .= ' and ' . $this->numberToWords($cents) . ' cent' . ($cents === 1 ? '' : 's');
-        }
-
-        return ucfirst($words . ' only');
-    }
-
-    private function numberToWords(int $number): string
-    {
-        if ($number === 0) {
-            return 'zero';
-        }
-
-        $ones = [
-            '', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine',
-            'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen',
-            'seventeen', 'eighteen', 'nineteen',
-        ];
-        $tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-
-        $chunks = [
-            ['value' => 1000000000, 'label' => 'billion'],
-            ['value' => 1000000, 'label' => 'million'],
-            ['value' => 1000, 'label' => 'thousand'],
-            ['value' => 100, 'label' => 'hundred'],
-        ];
-
-        $parts = [];
-
-        foreach ($chunks as $chunk) {
-            if ($number >= $chunk['value']) {
-                $count = intdiv($number, $chunk['value']);
-                $parts[] = trim($this->numberToWords($count) . ' ' . $chunk['label']);
-                $number %= $chunk['value'];
-            }
-        }
-
-        if ($number >= 20) {
-            $part = $tens[intdiv($number, 10)];
-            if ($number % 10 > 0) {
-                $part .= '-' . $ones[$number % 10];
-            }
-            $parts[] = $part;
-            $number = 0;
-        }
-
-        if ($number > 0) {
-            $parts[] = $ones[$number];
-        }
-
-        return implode(' ', array_filter($parts));
+        return \App\Support\Money::inWords($amount);
     }
 
     public function exportPdf(Request $request)

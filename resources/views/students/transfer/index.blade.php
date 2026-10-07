@@ -55,6 +55,7 @@
 
             <div class="card-footer">
                 {!! Form::submit('Submit Transfer', ['class' => 'btn btn-warning font-weight-bold']) !!}
+                <a href="{{ route('students.transferred') }}" class="btn btn-outline-secondary"><i class="fas fa-archive mr-1"></i> Transferred Students</a>
                 <a href="{{ route('students.index') }}" class="btn btn-default"> Cancel </a>
             </div>
             {!! Form::close() !!}

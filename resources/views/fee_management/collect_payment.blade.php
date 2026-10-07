@@ -140,6 +140,17 @@
                     </div>
                 </div>
 
+                <div class="form-group" id="bank-account-row" style="display: none;">
+                    <label for="bank_account_id" class="form-label-custom">Received Into Account <span class="text-muted small">(non-cash)</span></label>
+                    <select name="bank_account_id" id="bank_account_id" class="form-select-custom">
+                        <option value="">Automatically: first active account</option>
+                        @foreach(\App\Models\BankAccount::where('status', 'active')->orderBy('account_id')->get() as $account)
+                            <option value="{{ $account->account_id }}">{{ $account->account_name }} — KES {{ number_format($account->current_balance, 2) }}</option>
+                        @endforeach
+                    </select>
+                    <small class="form-text text-muted">Bank, card and online payments are recorded as a deposit into this account. Cash stays off the bank ledger.</small>
+                </div>
+
                 <div class="form-group">
                     <label for="remarks" class="form-label-custom">Remarks</label>
                     <textarea name="remarks" id="remarks" class="form-input-custom form-textarea" rows="2" placeholder="Any additional notes..."></textarea>
@@ -470,6 +481,12 @@
             setTimeout(initPaymentForm, 100);
         }
     }
+
+    // Show/hide the bank account selector with the payment method.
+    $(document).on('change', '#payment_method', function () {
+        const showRow = this.value !== 'cash';
+        $('#bank-account-row').toggle(showRow);
+    }).trigger('change');
 
     // Start polling after DOM is ready
     if (document.readyState === 'loading') {

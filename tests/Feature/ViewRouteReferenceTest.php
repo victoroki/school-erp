@@ -19,6 +19,13 @@ use Tests\TestCase;
  * and \Request::route('token') are not the route() helper, and matching them produced
  * two false positives during the sweep that found this class of defect.
  *
+ * A second shape is checked too. Laravel Collective's Form::open/Form::model take the
+ * route as a data option — Form::open(['route' => 'fee-categories.store']) — and the
+ * form builder resolves that name at render time, throwing RouteNotFoundException on a
+ * page that looks correct in the source. There is no literal route('...') call on those
+ * lines, so scanning only for the helper missed all of them; a kebab-cased name slipped
+ * past `->names('feeCategories')` resources in three views this way.
+ *
  * There is no allowlist. The 45 references this found were all in unreachable files —
  * the retired assessment_types feature and the pre-consolidation RBAC scaffold — and
  * those files have been removed, so every remaining reference must now resolve.
@@ -83,6 +90,71 @@ class ViewRouteReferenceTest extends TestCase
             $dangling,
             "These views reference route names that are not registered, which throws "
                 . "RouteNotFoundException when rendered:\n  " . implode("\n  ", $dangling)
+        );
+    }
+
+    /**
+     * The form-builder form of the same defect.
+     *
+     * Form::open(['route' => 'name']) and Form::model($m, ['route' => ['name', $id]])
+     * resolve the name when the form renders, so a wrong name is a 500 on a page
+     * that reads correctly in the source — exactly what
+     * `Route [route-stops.store] not defined` was. Scanning for the route() helper
+     * cannot see these lines, because they never call it.
+     */
+    public function test_no_form_action_references_an_unregistered_route(): void
+    {
+        $registered = [];
+        foreach (Route::getRoutes() as $route) {
+            if ($name = $route->getName()) {
+                $registered[$name] = true;
+            }
+        }
+
+        $this->assertNotEmpty($registered, 'No routes registered — the lint would be vacuous.');
+
+        $dangling = [];
+        $checked = 0;
+
+        foreach (File::allFiles(resource_path('views')) as $file) {
+            if (! str_ends_with($file->getFilename(), '.blade.php')) {
+                continue;
+            }
+
+            $relative = str_replace('\\', '/', $file->getRelativePathname());
+
+            foreach (file($file->getPathname(), FILE_IGNORE_NEW_LINES) as $index => $line) {
+                if (! preg_match('/Form::(open|model|openFor|modelFor)\s*\(/', $line)) {
+                    continue;
+                }
+
+                // 'route' => 'name'  or  'route' => ['name', ...]
+                if (! preg_match_all(
+                    '/[\'"]route[\'"]\s*=>\s*(?:\[\s*)?[\'"]([A-Za-z0-9_.\-]+)[\'"]/',
+                    $line,
+                    $matches,
+                    PREG_SET_ORDER
+                )) {
+                    continue;
+                }
+
+                foreach ($matches as $match) {
+                    $checked++;
+
+                    if (! isset($registered[$match[1]])) {
+                        $dangling[] = $relative . ':' . ($index + 1) . '  ' . $match[1];
+                    }
+                }
+            }
+        }
+
+        $this->assertGreaterThan(0, $checked, 'No form actions found; this guard has become meaningless.');
+
+        $this->assertSame(
+            [],
+            $dangling,
+            "These form actions target route names that are not registered, which throws "
+                . "RouteNotFoundException when the page renders:\n  " . implode("\n  ", $dangling)
         );
     }
 }

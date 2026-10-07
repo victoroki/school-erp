@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Payroll;
 use App\Models\Staff;
-use App\Models\StaffAllowance;
-use App\Models\StaffDeduction;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Laracasts\Flash\Flash;
 
 class PayrollProcessingController extends Controller
 {
-    public function __construct()
+    public function __construct(private \App\Services\PayrollCalculator $calculator)
     {
         $this->middleware('can:hr.view')->only(['index', 'show']);
         $this->middleware('can:hr.manage')->only(['create', 'calculate', 'store', 'review', 'finalize']);
@@ -19,7 +19,7 @@ class PayrollProcessingController extends Controller
     public function index()
     {
         // Payroll wizard plus the list of already-processed staff payslips.
-        $payrolls = \App\Models\Payroll::with('staff')->latest('payroll_id')->paginate(15);
+        $payrolls = Payroll::with('staff')->latest('payroll_id')->paginate(15);
 
         return view('hr.payroll.index', compact('payrolls'));
     }
@@ -35,36 +35,56 @@ class PayrollProcessingController extends Controller
 
     public function calculate(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'month' => 'required|integer|min:1|max:12',
             'year' => 'required|integer|min:2020',
         ]);
+
+        $period = Carbon::create(
+            $validated['year'],
+            $validated['month'],
+            1
+        )->startOfMonth();
 
         $staff = Staff::where('employment_status', 'active')
             ->with(['allowances', 'deductions'])
             ->get();
 
         $payrollData = [];
+        $totals = [
+            'staff' => $staff->count(),
+            'basic_salary' => 0.0,
+            'allowances' => 0.0,
+            'gross_salary' => 0.0,
+            'paye' => 0.0,
+            'shif_employee' => 0.0,
+            'shif_employer' => 0.0,
+            'nssf_employee' => 0.0,
+            'nssf_employer' => 0.0,
+            'other_deductions' => 0.0,
+            'total_deductions' => 0.0,
+            'net_salary' => 0.0,
+        ];
 
         foreach ($staff as $employee) {
-            $basicSalary = $employee->basic_salary ?? 0;
-            $totalAllowances = $employee->allowances->sum('amount');
+            // basic_salary is cast decimal:2, so it arrives as a string. The old
+            // code relied on PHP coercing it in arithmetic, which left the
+            // running total as a float and lost the currency-scale rounding.
+            $basicSalary = (float) ($employee->basic_salary ?? 0);
+            $totalAllowances = (float) $employee->allowances->sum('amount');
             $grossSalary = $basicSalary + $totalAllowances;
 
-            // Calculate PAYE (Kenya Tax Rates 2024)
-            $paye = $this->calculatePAYE($grossSalary);
-            
-            // NHIF (Kenya Rates)
-            $nhif = $this->calculateNHIF($grossSalary);
-            
-            // NSSF (Kenya Rates - Tier I & II)
-            $nssf = $this->calculateNSSF($grossSalary);
+            $statutory = $this->calculator->statutory($grossSalary);
 
-            // Other deductions
-            $otherDeductions = $employee->deductions->sum('monthly_amount');
+            $otherDeductions = (float) $employee->deductions->sum('monthly_amount');
 
-            $totalDeductions = $paye + $nhif + $nssf + $otherDeductions;
-            $netSalary = $grossSalary - $totalDeductions;
+            $totalDeductions = round(
+                $statutory['paye']
+                + $statutory['shif_employee']
+                + $statutory['nssf_employee']
+                + $otherDeductions,
+                2
+            );
 
             $payrollData[] = [
                 'staff_id' => $employee->staff_id,
@@ -73,16 +93,53 @@ class PayrollProcessingController extends Controller
                 'basic_salary' => $basicSalary,
                 'allowances' => $totalAllowances,
                 'gross_salary' => $grossSalary,
-                'paye' => $paye,
-                'nhif' => $nhif,
-                'nssf' => $nssf,
+                'paye' => $statutory['paye'],
+                // NHIF became SHIF under the Social Health Insurance Act 2023,
+                // administered by the Social Health Authority. The old figure was
+                // a flat KES 150-1,700 assessment with no relation to earnings;
+                // SHIF is a percentage of gross, so this column is not the same
+                // number renamed.
+                'shif_employee' => $statutory['shif_employee'],
+                'shif_employer' => $statutory['shif_employer'],
+                'nssf_employee' => $statutory['nssf_employee'],
+                'nssf_employer' => $statutory['nssf_employer'],
                 'other_deductions' => $otherDeductions,
                 'total_deductions' => $totalDeductions,
-                'net_salary' => $netSalary,
+                'net_salary' => round($grossSalary - $totalDeductions, 2),
             ];
+
+            $totals['basic_salary'] += $basicSalary;
+            $totals['allowances'] += $totalAllowances;
+            $totals['gross_salary'] += $grossSalary;
+            $totals['paye'] += $statutory['paye'];
+            $totals['shif_employee'] += $statutory['shif_employee'];
+            $totals['shif_employer'] += $statutory['shif_employer'];
+            $totals['nssf_employee'] += $statutory['nssf_employee'];
+            $totals['nssf_employer'] += $statutory['nssf_employer'];
+            $totals['other_deductions'] += $otherDeductions;
+            $totals['total_deductions'] += $totalDeductions;
+            $totals['net_salary'] += $grossSalary - $totalDeductions;
         }
 
-        return view('hr.payroll.review', compact('payrollData', 'request'));
+        // Money totals are rounded once, at the end, rather than relying on the
+        // sum of individually rounded rows landing on the same figure.
+        foreach ($totals as $key => $value) {
+            if ($key !== 'staff') {
+                $totals[$key] = round($value, 2);
+            }
+        }
+
+        $totals['statutory_employer'] = round(
+            $totals['shif_employer'] + $totals['nssf_employer'],
+            2
+        );
+
+        return view('hr.payroll.review', [
+            'payrollData' => $payrollData,
+            'totals' => $totals,
+            'period' => $period,
+            'rates' => $this->calculator->ratesSummary(),
+        ]);
     }
 
     public function review($payrollId)
@@ -107,68 +164,5 @@ class PayrollProcessingController extends Controller
         // reporting a success that never happened.
         Flash::error('Payroll finalisation is not available yet — nothing was written. Process salaries from the HR payroll screen instead.');
         return redirect()->route('payroll-processing.index');
-    }
-
-    // Kenya PAYE Calculation (2024 Rates)
-    private function calculatePAYE($grossSalary)
-    {
-        $taxableIncome = $grossSalary;
-        $paye = 0;
-
-        if ($taxableIncome <= 24000) {
-            $paye = $taxableIncome * 0.10;
-        } elseif ($taxableIncome <= 32333) {
-            $paye = 2400 + (($taxableIncome - 24000) * 0.25);
-        } elseif ($taxableIncome <= 500000) {
-            $paye = 2400 + 2083.25 + (($taxableIncome - 32333) * 0.30);
-        } elseif ($taxableIncome <= 800000) {
-            $paye = 2400 + 2083.25 + 140300.10 + (($taxableIncome - 500000) * 0.325);
-        } else {
-            $paye = 2400 + 2083.25 + 140300.10 + 97500 + (($taxableIncome - 800000) * 0.35);
-        }
-
-        // Personal Relief
-        $paye = max(0, $paye - 2400);
-
-        return round($paye, 2);
-    }
-
-    // Kenya NHIF Calculation
-    private function calculateNHIF($grossSalary)
-    {
-        if ($grossSalary <= 5999) return 150;
-        if ($grossSalary <= 7999) return 300;
-        if ($grossSalary <= 11999) return 400;
-        if ($grossSalary <= 14999) return 500;
-        if ($grossSalary <= 19999) return 600;
-        if ($grossSalary <= 24999) return 750;
-        if ($grossSalary <= 29999) return 850;
-        if ($grossSalary <= 34999) return 900;
-        if ($grossSalary <= 39999) return 950;
-        if ($grossSalary <= 44999) return 1000;
-        if ($grossSalary <= 49999) return 1100;
-        if ($grossSalary <= 59999) return 1200;
-        if ($grossSalary <= 69999) return 1300;
-        if ($grossSalary <= 79999) return 1400;
-        if ($grossSalary <= 89999) return 1500;
-        if ($grossSalary <= 99999) return 1600;
-        return 1700;
-    }
-
-    // Kenya NSSF Calculation (Tier I & II)
-    private function calculateNSSF($grossSalary)
-    {
-        $tier1Limit = 7000;
-        $tier2Limit = 36000;
-        $rate = 0.06;
-
-        $tier1 = min($grossSalary, $tier1Limit) * $rate;
-        $tier2 = 0;
-
-        if ($grossSalary > $tier1Limit) {
-            $tier2 = min($grossSalary - $tier1Limit, $tier2Limit - $tier1Limit) * $rate;
-        }
-
-        return round($tier1 + $tier2, 2);
     }
 }

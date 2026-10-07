@@ -23,6 +23,7 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-md-8">
+                    @include('flash::message')
                     <div class="card">
                         <div class="card-header bg-success">
                             <h3 class="card-title">Leave Application Form</h3>

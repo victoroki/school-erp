@@ -112,6 +112,7 @@ class FinanceService
                 'amount' => $data['amount'],
                 'payment_date' => $data['payment_date'] ?? now(),
                 'payment_method' => $data['payment_method'],
+                'bank_account_id' => $data['bank_account_id'] ?? null,
                 'transaction_id' => $data['transaction_id'] ?? null,
                 'client_reference' => $data['client_reference'] ?? null,
                 'receipt_number' => $this->generateReceiptNumber(),
@@ -126,6 +127,10 @@ class FinanceService
                 $data['allocation_strategy'] ?? 'manual'
             );
 
+            // Single bank posting for the money actually received (banked
+            // methods only; cash stays off the bank ledger by design).
+            $this->postFeePaymentToBank($payment);
+
             $this->updateAssignmentPaymentStatus($assignment);
 
             DB::commit();
@@ -134,6 +139,52 @@ class FinanceService
             DB::rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * The single place a fee payment becomes a bank deposit.
+     *
+     * Exactly one posting per payment: cash payments never touch the bank
+     * ledger (the money is in hand, not in an account), every other method
+     * deposits into the chosen account — or the first active account when the
+     * collector did not pick one. A payment that already has a ledger row is
+     * never posted again, so replays and duplicate calls are harmless.
+     */
+    private function postFeePaymentToBank(FeePayment $payment): void
+    {
+        if ($payment->payment_method === 'cash') {
+            return;
+        }
+
+        if (\App\Services\BankLedger::findFor('FeePayment', $payment->payment_id, 'deposit') !== null) {
+            return; // already posted — never double-post
+        }
+
+        $account = $payment->bank_account_id
+            ? \App\Models\BankAccount::lockForUpdate()->find($payment->bank_account_id)
+            : \App\Models\BankAccount::where('status', 'active')->orderBy('account_id')->first();
+
+        if (! $account) {
+            // No active account exists to receive the deposit. The fee payment
+            // itself is still valid; the deposit is skipped and the fee-to-bank
+            // reconciliation command reports the gap.
+            return;
+        }
+
+        \App\Services\BankLedger::recordDeposit(
+            $account,
+            (float) $payment->amount,
+            $payment->payment_date instanceof \Carbon\Carbon
+                ? $payment->payment_date->toDateString()
+                : (string) $payment->payment_date,
+            \App\Services\BankLedger::describe('FeePayment', $payment->payment_id,
+                'Fee receipt ' . $payment->receipt_number),
+            $payment->transaction_id,
+            auth()->id(),
+            'unreconciled',
+            'FeePayment',
+            $payment->payment_id
+        );
     }
 
     /**
@@ -166,6 +217,7 @@ class FinanceService
                 'amount' => (float) $data['amount'],
                 'payment_date' => $data['payment_date'] ?? now(),
                 'payment_method' => $data['payment_method'],
+                'bank_account_id' => $data['bank_account_id'] ?? null,
                 'transaction_id' => $data['transaction_id'] ?? null,
                 'client_reference' => $data['client_reference'] ?? null,
                 'receipt_number' => $this->generateReceiptNumber(),
@@ -178,6 +230,9 @@ class FinanceService
                 $recommended,
                 $data['allocation_strategy'] ?? 'oldest_first'
             );
+
+            // Same single bank posting rule as recordPayment().
+            $this->postFeePaymentToBank($payment);
 
             DB::commit();
             return $payment;
