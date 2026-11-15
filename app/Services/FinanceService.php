@@ -264,8 +264,6 @@ class FinanceService
     {
         $balances = app(\App\Services\FeeBalanceService::class);
 
-        $activeAssignmentIds = StudentFeeAssignment::where('status', 'active')->pluck('id')->all();
-
         // Money paid back out to parents/students. Only completed refunds have
         // actually left the school; requested/approved ones are still pending.
         $totalRefunded = (float) \App\Models\Refund::where('status', 'completed')->sum('amount');
@@ -274,7 +272,7 @@ class FinanceService
             'total_receivable' => $balances->totalAssigned(),
             // Reversed payments no longer inflate "collected".
             'total_collected' => $balances->totalCollected(),
-            'total_pending' => $balances->outstandingForAssignments($activeAssignmentIds),
+            'total_pending' => $balances->outstandingForActive(),
             'collection_rate' => $this->getCollectionRate(),
             'total_refunded' => round($totalRefunded, 2),
         ];

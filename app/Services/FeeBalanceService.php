@@ -504,6 +504,27 @@ class FeeBalanceService
     }
 
     /**
+     * Outstanding across every active assignment, in one aggregate query.
+     *
+     * Same figure as outstandingForAssignments(<all active ids>), built from
+     * paidTotalsSubquery(), the SQL statement of the same paid/refund rule.
+     * The id-list form plucked every active id into PHP and shipped it back
+     * as IN (...) lists, over a second per call on a school-sized ledger;
+     * dashboards that want the whole-school number use this instead.
+     */
+    public function outstandingForActive(?int $academicYearId = null): float
+    {
+        $total = DB::table('student_fee_assignments as sfa')
+            ->leftJoin(DB::raw($this->paidTotalsSubquery()), 'paid_totals.student_fee_assignment_id', '=', 'sfa.id')
+            ->where('sfa.status', 'active')
+            ->when($academicYearId, fn ($q) => $q->where('sfa.academic_year_id', $academicYearId))
+            ->selectRaw('COALESCE(SUM(sfa.final_amount - COALESCE(paid_totals.paid_total, 0)), 0) as outstanding')
+            ->value('outstanding');
+
+        return round((float) $total, 2);
+    }
+
+    /**
      * Total value of active fee assignments.
      */
     public function totalAssigned(?int $academicYearId = null): float

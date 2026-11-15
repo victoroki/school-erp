@@ -22,7 +22,10 @@ class PortalFeeController extends Controller
         $student = $this->resolveStudent($user);
 
         if (!$student) {
-            return view('portal.fees', ['assignments' => collect(), 'message' => 'No student profile found.']);
+            // The view reads $student in its header, so rendering it without
+            // one was a 500 for every account with no linked learner. Same
+            // answer as the report-card portal gives.
+            abort(403, 'No student is linked to this account.');
         }
 
         $assignments = StudentFeeAssignment::with([

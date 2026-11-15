@@ -216,6 +216,31 @@ class Student extends Model
     }
 
     /**
+     * Fill the fee summary of every student in a list with one batched
+     * lookup, so a page that shows total/paid/balance per row runs a fixed
+     * number of queries instead of five per student.
+     *
+     * @param  iterable<Student>|\Illuminate\Contracts\Pagination\Paginator  $students
+     */
+    public static function primeFeeSummaries(iterable $students): void
+    {
+        $models = collect($students instanceof \Illuminate\Contracts\Pagination\Paginator ? $students->items() : $students)
+            ->filter(fn ($s) => $s instanceof self && $s->feeSummaryCache === null);
+
+        if ($models->isEmpty()) {
+            return;
+        }
+
+        $summaries = app(\App\Services\FeeBalanceService::class)
+            ->summariesForStudents($models->pluck('student_id')->all());
+
+        foreach ($models as $student) {
+            $student->feeSummaryCache = $summaries[(int) $student->student_id]
+                ?? ['assigned' => 0.0, 'payments' => 0.0, 'refunded' => 0.0, 'paid' => 0.0, 'balance' => 0.0];
+        }
+    }
+
+    /**
      * Drop the cached summary. Call after a payment, reversal or refund.
      */
     public function forgetFeeSummary(): static
@@ -329,12 +354,33 @@ class Student extends Model
         return $badges[$this->enrollment_status] ?? $badges['enrolled'];
     }
 
+    /**
+     * The student's active enrollment as a relation, so list pages can
+     * eager-load it: Student::with(Student::CURRENT_ENROLLMENT_WITH).
+     */
+    public function activeEnrollment(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(\App\Models\StudentClassEnrollment::class, 'student_id')
+            ->where('status', 'active');
+    }
+
+    public const CURRENT_ENROLLMENT_WITH = [
+        'activeEnrollment.classSection.schoolClass',
+        'activeEnrollment.classSection.section',
+        'activeEnrollment.academicYear',
+    ];
+
+    /**
+     * Previously re-queried (five queries) on every read; now resolved once
+     * per model and served from an eager load when the caller provided one.
+     */
     public function getCurrentEnrollmentAttribute()
     {
-        return $this->studentClassEnrollments()
-            ->where('status', 'active')
-            ->with(['classSection.schoolClass', 'classSection.section', 'academicYear'])
-            ->first();
+        if (! $this->relationLoaded('activeEnrollment')) {
+            $this->load(self::CURRENT_ENROLLMENT_WITH);
+        }
+
+        return $this->getRelation('activeEnrollment');
     }
 
     public function getPaymentStatusBadgeAttribute()

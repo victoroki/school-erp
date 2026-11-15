@@ -2,7 +2,7 @@
     {{-- ── Brand ── --}}
     <div class="brand-container">
         <div class="brand-logo-mark">
-            <img src="{{ asset('garikon-white.png') }}" alt="Garikon logo">
+            <img src="{{ asset('garikon-school.svg') }}" alt="Garikon School logo">
         </div>
         <div class="brand-info">
             <span class="brand-title">Garikon School</span>
@@ -18,10 +18,12 @@
                 class="search-input"
                 type="search"
                 placeholder="Quick find…"
-                aria-label="Search navigation"
+                aria-label="Search navigation (press / to focus)"
+                aria-keyshortcuts="/ Control+K"
                 autocomplete="off"
                 spellcheck="false"
             >
+            <kbd class="search-kbd" aria-hidden="true">/</kbd>
         </div>
     </div>
 
@@ -47,7 +49,9 @@
             if (count($secondWord) > 1) {
                 $initials .= strtoupper(substr($secondWord[1], 0, 1));
             }
-            $roleName = Auth::user()->roles->first()?->name ?? 'Administrator';
+            // The column is role_name; reading ->name always fell back, so
+            // every account (Owner, Bursar, Teacher) was labelled "Administrator".
+            $roleName = Auth::user()->roles->first()?->role_name ?? 'Staff';
         @endphp
         <div class="user-avatar-container">
             <div class="user-initials" aria-hidden="true">{{ $initials }}</div>
@@ -58,11 +62,12 @@
             <span class="user-display-role">{{ $roleName }}</span>
         </div>
         @endauth
-        <a href="#"
-           class="logout-action"
-           aria-label="Sign out"
-           onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+        <button type="submit"
+                form="logout-form"
+                class="logout-action border-0"
+                aria-label="Sign out"
+                title="Sign out">
             <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-        </a>
+        </button>
     </div>
 </aside>

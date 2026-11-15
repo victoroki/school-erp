@@ -92,7 +92,7 @@ class StudentDocumentController extends AppBaseController
             });
         }
 
-        $studentDocuments = $query->with(['student.studentClassEnrollments.classSection'])
+        $studentDocuments = $query->with(['student.activeEnrollment.classSection.schoolClass', 'student.activeEnrollment.classSection.section'])
             ->orderBy('uploaded_at', 'desc')
             ->paginate(15)
             ->appends($request->all());

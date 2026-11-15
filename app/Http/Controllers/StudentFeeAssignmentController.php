@@ -68,7 +68,7 @@ class StudentFeeAssignmentController extends Controller
             ->first();
 
         if ($detailMode) {
-            $query = StudentFeeAssignment::with(['student.studentClassEnrollments.classSection.schoolClass', 'feeStructure.category', 'academicYear'])
+            $query = StudentFeeAssignment::with(['student.activeEnrollment.classSection.schoolClass', 'feeStructure.category', 'academicYear'])
                 ->when($statusFilter, fn($q) => $q->where('status', $statusFilter), fn($q) => $q->where('status', 'active'));
 
             if ($request->filled('class_id')) {
@@ -112,47 +112,54 @@ class StudentFeeAssignmentController extends Controller
         // fs.class_id carries the target class; NULL means a global fee, which is
         // shown as "All Classes" and kept when filtering by a specific class since
         // those students were billed it too.
-        $rollupQuery = DB::table('student_fee_assignments as sfa')
-            ->join('fee_structures as fs', 'fs.fee_structure_id', '=', 'sfa.fee_structure_id')
-            ->join('fee_categories as fc', 'fc.category_id', '=', 'fs.category_id')
-            ->leftJoin('classes as c', 'c.class_id', '=', 'fs.class_id')
-            ->leftJoin('academic_years as ay', 'ay.academic_year_id', '=', 'sfa.academic_year_id')
-            ->leftJoin('terms as t', function ($j) {
-                $j->on('t.academic_year_id', '=', 'sfa.academic_year_id')
-                  ->on('t.code', '=', 'sfa.term');
-            })
+        // Aggregate on the narrow key first (structure + term + year), then
+        // attach names to the ~100 resulting groups. Every name column is
+        // functionally dependent on that key, so the groups are identical to
+        // grouping by all of them, but MySQL no longer sorts every assignment
+        // row on a nine-column string key (~0.7s per query, twice per page, on
+        // a 10k-row ledger).
+        $groups = DB::table('student_fee_assignments as sfa')
             ->when($statusFilter, fn($q) => $q->where('sfa.status', $statusFilter), fn($q) => $q->where('sfa.status', 'active'))
             ->when($request->filled('class_id'), function ($q) use ($request) {
-                $q->where(function ($sq) use ($request) {
-                    $sq->where('fs.class_id', $request->class_id)->orWhereNull('fs.class_id');
+                $q->whereIn('sfa.fee_structure_id', function ($sq) use ($request) {
+                    $sq->select('fee_structure_id')->from('fee_structures')
+                        ->where('class_id', $request->class_id)->orWhereNull('class_id');
                 });
             })
             ->when($request->filled('academic_year_id'), fn($q) => $q->where('sfa.academic_year_id', $request->academic_year_id))
             ->when($request->filled('term'), fn($q) => $q->where('sfa.term', $request->term))
-            // fs.class_id and fs.payment_frequency are selected for the UI, so
-            // they must also appear here: the paginator's COUNT(*) wraps this
-            // grouped query in a derived table, and MySQL re-checks
-            // ONLY_FULL_GROUP_BY on the merged query — where a bare fs.class_id
-            // is rejected with 1055 even though it is functionally dependent on
-            // the primary key.
-            ->groupBy('fs.fee_structure_id', 'fs.class_id', 'fs.payment_frequency', 'sfa.term', 'sfa.academic_year_id', 'fc.name', 'c.name', 't.name', 'ay.name')
-            ->orderByRaw("COALESCE(c.name, 'zzz')")
-            ->orderBy('fc.name')
-            ->orderBy('sfa.term')
-            ->selectRaw('fs.fee_structure_id')
-            ->selectRaw('fs.class_id')
-            ->selectRaw('fc.name as category_name')
-            ->selectRaw('fs.payment_frequency')
-            ->selectRaw('COALESCE(c.name, ?) as class_name', ['All Classes'])
-            ->selectRaw('sfa.term')
-            ->selectRaw('COALESCE(t.name, sfa.term) as term_name')
-            ->selectRaw('sfa.academic_year_id')
-            ->selectRaw('COALESCE(ay.name, ?) as year_name', ['—'])
+            ->groupBy('sfa.fee_structure_id', 'sfa.term', 'sfa.academic_year_id')
+            ->select('sfa.fee_structure_id', 'sfa.term', 'sfa.academic_year_id')
             ->selectRaw('COUNT(DISTINCT sfa.student_id) as student_count')
             ->selectRaw('COUNT(DISTINCT CASE WHEN COALESCE(sfa.paid_amount, 0) >= sfa.final_amount THEN sfa.student_id END) as fully_paid_students')
             ->selectRaw('COALESCE(SUM(sfa.final_amount), 0) as total_net')
             ->selectRaw('COALESCE(SUM(COALESCE(sfa.paid_amount, 0)), 0) as total_collected')
             ->selectRaw('COALESCE(SUM(sfa.final_amount - COALESCE(sfa.paid_amount, 0)), 0) as total_balance');
+
+        // fee_categories is an inner join, as before: a structure whose
+        // category is gone is not listed.
+        $rollupQuery = DB::query()->fromSub($groups, 'g')
+            ->join('fee_structures as fs', 'fs.fee_structure_id', '=', 'g.fee_structure_id')
+            ->join('fee_categories as fc', 'fc.category_id', '=', 'fs.category_id')
+            ->leftJoin('classes as c', 'c.class_id', '=', 'fs.class_id')
+            ->leftJoin('academic_years as ay', 'ay.academic_year_id', '=', 'g.academic_year_id')
+            ->leftJoin('terms as t', function ($j) {
+                $j->on('t.academic_year_id', '=', 'g.academic_year_id')
+                  ->on('t.code', '=', 'g.term');
+            })
+            ->orderByRaw("COALESCE(c.name, 'zzz')")
+            ->orderBy('fc.name')
+            ->orderBy('g.term')
+            ->selectRaw('fs.fee_structure_id')
+            ->selectRaw('fs.class_id')
+            ->selectRaw('fc.name as category_name')
+            ->selectRaw('fs.payment_frequency')
+            ->selectRaw('COALESCE(c.name, ?) as class_name', ['All Classes'])
+            ->selectRaw('g.term')
+            ->selectRaw('COALESCE(t.name, g.term) as term_name')
+            ->selectRaw('g.academic_year_id')
+            ->selectRaw('COALESCE(ay.name, ?) as year_name', ['—'])
+            ->selectRaw('g.student_count, g.fully_paid_students, g.total_net, g.total_collected, g.total_balance');
 
         // COUNT(*) over a grouped query returns per-group counts, not the
         // number of groups, so the paginator total comes from a subquery.
@@ -403,16 +410,15 @@ class StudentFeeAssignmentController extends Controller
         $currentYear = AcademicYear::where('is_current', true)->first();
         $yearId = $currentYear ? $currentYear->academic_year_id : 0;
         
+        // A subquery rather than a plucked id list: the list grows with the
+        // school and was shipped back to MySQL as thousands of bound params.
         $assignedStudentIds = StudentFeeAssignment::where('academic_year_id', $yearId)
             ->where('status', 'active')
-            ->pluck('student_id')
-            ->unique();
-            
+            ->select('student_id');
+
         $students = Student::whereNotIn('student_id', $assignedStudentIds)
             ->where('status', 'active') // Active students only
-            ->with(['studentClassEnrollments' => function($q) use ($yearId) {
-                $q->where('academic_year_id', $yearId)->where('is_current', true);
-            }, 'studentClassEnrollments.classSection.schoolClass'])
+            ->with('activeEnrollment.classSection.schoolClass')
             ->paginate(20);
             
         return view('fee_management.assignments.unassigned', compact('students', 'currentYear'));

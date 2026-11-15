@@ -119,16 +119,11 @@ class DashboardController extends Controller
         if ($this->moduleIsActive('students') && MenuService::canSee($user, ['students.view'])) {
             $statistics['total_students'] = Student::count();
 
-            $months = [];
-            $counts = [];
-            for ($i = 11; $i >= 0; $i--) {
-                $month    = Carbon::today()->subMonths($i);
-                $months[] = $month->format('M');
-                $counts[] = Student::whereYear('created_at', $month->year)
-                    ->whereMonth('created_at', $month->month)
-                    ->count();
-            }
-            $charts['enrollment_trend'] = ['labels' => $months, 'data' => $counts];
+            $trend = $this->getEnrollmentTrend();
+            $charts['enrollment_trend'] = [
+                'labels' => array_map(fn ($l) => substr($l, 0, 3), $trend['labels']),
+                'data'   => $trend['data'],
+            ];
         }
 
         if ($this->moduleIsActive('hr') && MenuService::canSee($user, ['hr.view'])) {
@@ -166,13 +161,12 @@ class DashboardController extends Controller
 
     private function getAlertCounts(): array
     {
-        $pendingFeeQuery = StudentFeeAssignment::where('status', 'active')
-            ->whereRaw('COALESCE(paid_amount, 0) < final_amount');
+        $outstanding = $this->outstandingFees();
 
         return [
-            'pendingFeeCount'          => $pendingFeeQuery->count(),
-            'pendingFeeAmount'         => $pendingFeeQuery->get()->sum(fn($fee) => $fee->balance),
-            'pendingLeaveCount'        => LeaveApplication::where('application_status', 'pending')->count(),
+            'pendingFeeCount'          => $outstanding['count'],
+            'pendingFeeAmount'         => $outstanding['amount'],
+            'pendingLeaveCount'        => $this->pendingLeaveCount(),
             'pendingRequisitionsCount' => Requisition::where('status', 'Pending')->count(),
             'lowStockCount'            => InventoryItem::whereRaw('quantity <= minimum_quantity')->count(),
         ];
@@ -233,17 +227,8 @@ class DashboardController extends Controller
                     'icon' => 'fa-exclamation-circle', 'color' => 'ic-red',
                     'badge' => 'Urgent', 'badgeClass' => 'sb-down',
                     'title' => 'Outstanding Fees',
-                    'value' => fn() => 'KES ' . number_format(
-                        StudentFeeAssignment::where('status', 'active')
-                            ->whereRaw('COALESCE(paid_amount, 0) < final_amount')
-                            ->get()->sum(fn($fee) => $fee->balance),
-                        0
-                    ),
-                    'foot' => fn() => 'Across ' . number_format(
-                        StudentFeeAssignment::where('status', 'active')
-                            ->whereRaw('COALESCE(paid_amount, 0) < final_amount')
-                            ->count()
-                    ) . ' accounts',
+                    'value' => fn() => 'KES ' . number_format($this->outstandingFees()['amount'], 0),
+                    'foot' => fn() => 'Across ' . number_format($this->outstandingFees()['count']) . ' accounts',
                 ],
             ];
         } elseif ($isHR && MenuService::canSee($user, ['hr.view'])) {
@@ -263,10 +248,10 @@ class DashboardController extends Controller
                     'permission' => ['hr.view'],
                     'col' => 'col-md-6', 'route' => 'leave-applications.index',
                     'icon' => 'fa-user-clock', 'color' => 'ic-yellow',
-                    'badge' => fn() => LeaveApplication::where('application_status', 'pending')->count() > 0 ? 'Pending' : 'Clear',
-                    'badgeClass' => fn() => LeaveApplication::where('application_status', 'pending')->count() > 0 ? 'sb-down' : 'sb-up',
+                    'badge' => fn() => $this->pendingLeaveCount() > 0 ? 'Pending' : 'Clear',
+                    'badgeClass' => fn() => $this->pendingLeaveCount() > 0 ? 'sb-down' : 'sb-up',
                     'title' => 'Leave Requests',
-                    'value' => fn() => LeaveApplication::where('application_status', 'pending')->count(),
+                    'value' => fn() => $this->pendingLeaveCount(),
                     'foot'  => 'Awaiting your review',
                 ],
             ];
@@ -319,12 +304,7 @@ class DashboardController extends Controller
                             ->sum('amount') / 1000,
                         1
                     ) . 'k',
-                    'foot'  => fn() => 'Pending: ' . number_format(
-                        StudentFeeAssignment::where('status', 'active')
-                            ->whereRaw('COALESCE(paid_amount, 0) < final_amount')
-                            ->get()->sum(fn($fee) => $fee->balance) / 1000,
-                        1
-                    ) . 'k',
+                    'foot'  => fn() => 'Pending: ' . number_format($this->outstandingFees()['amount'] / 1000, 1) . 'k',
                 ],
             ];
         }
@@ -369,33 +349,87 @@ class DashboardController extends Controller
 
     private function getEnrollmentTrend(): array
     {
-        $labels = [];
-        $data   = [];
-        for ($i = 11; $i >= 0; $i--) {
-            $month    = Carbon::today()->subMonths($i);
-            $labels[] = $month->format('M Y');
-            $data[]   = Student::whereYear('created_at', $month->year)
-                ->whereMonth('created_at', $month->month)
-                ->count();
-        }
-        return ['labels' => $labels, 'data' => $data];
+        $months = $this->monthWindow(12);
+        $counts = $this->monthlyTotals(Student::query(), 'created_at', 'COUNT(*)', $months);
+
+        return [
+            'labels' => $months->map->format('M Y')->all(),
+            'data'   => $months->map(fn ($m) => (int) ($counts[$m->format('Y-m')] ?? 0))->all(),
+        ];
     }
 
     private function getFeeTrend(): array
     {
-        $labels = [];
-        $data   = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $month    = Carbon::today()->subMonths($i);
-            $labels[] = $month->format('M');
-            // Revenue trend: payment_date (the business date every report uses)
-            // and reversals excluded, matching the collections report the same
-            // figures are reconciled against.
-            $data[]   = (float) FeePayment::notReversed()
-                ->whereYear('payment_date', $month->year)
-                ->whereMonth('payment_date', $month->month)
-                ->sum('amount');
-        }
-        return ['labels' => $labels, 'data' => $data];
+        $months = $this->monthWindow(6);
+        // Revenue trend: payment_date (the business date every report uses)
+        // and reversals excluded, matching the collections report the same
+        // figures are reconciled against.
+        $sums = $this->monthlyTotals(FeePayment::notReversed(), 'payment_date', 'SUM(amount)', $months);
+
+        return [
+            'labels' => $months->map->format('M')->all(),
+            'data'   => $months->map(fn ($m) => (float) ($sums[$m->format('Y-m')] ?? 0))->all(),
+        ];
     }
+
+    /**
+     * First day of each of the last $count months, oldest first.
+     */
+    private function monthWindow(int $count): \Illuminate\Support\Collection
+    {
+        return collect(range($count - 1, 0))
+            ->map(fn ($i) => Carbon::today()->startOfMonth()->subMonths($i));
+    }
+
+    /**
+     * One grouped query for a whole trend window instead of one per month.
+     * A plain range on the date column keeps any index on it usable, which
+     * whereYear()/whereMonth() (functions on the column) do not.
+     *
+     * @return array<string, float|int> keyed by 'Y-m'
+     */
+    private function monthlyTotals($query, string $column, string $aggregate, \Illuminate\Support\Collection $months): array
+    {
+        $wrapped = $query->getQuery()->getGrammar()->wrap($column);
+        $bucket = $query->getConnection()->getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', {$wrapped})"
+            : "DATE_FORMAT({$wrapped}, '%Y-%m')";
+
+        return $query
+            ->where($column, '>=', $months->first()->toDateString())
+            ->where($column, '<', $months->last()->copy()->addMonth()->toDateString())
+            ->selectRaw("{$bucket} as bucket, {$aggregate} as total")
+            ->groupByRaw($bucket)
+            ->toBase()
+            ->pluck('total', 'bucket')
+            ->all();
+    }
+
+    /**
+     * Unpaid active fee balances, summed in SQL rather than hydrating every
+     * assignment. Memoised: the alert strip and the metric cards both use it.
+     *
+     * @return array{count:int, amount:float}
+     */
+    private function outstandingFees(): array
+    {
+        return $this->outstanding ??= (function () {
+            $row = StudentFeeAssignment::where('status', 'active')
+                ->whereRaw('COALESCE(paid_amount, 0) < final_amount')
+                ->selectRaw('COUNT(*) as n, COALESCE(SUM(final_amount - COALESCE(paid_amount, 0)), 0) as amount')
+                ->toBase()
+                ->first();
+
+            return ['count' => (int) $row->n, 'amount' => (float) $row->amount];
+        })();
+    }
+
+    private function pendingLeaveCount(): int
+    {
+        return $this->pendingLeaves ??= LeaveApplication::where('application_status', 'pending')->count();
+    }
+
+    private ?array $outstanding = null;
+
+    private ?int $pendingLeaves = null;
 }

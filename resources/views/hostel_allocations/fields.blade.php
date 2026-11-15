@@ -50,7 +50,7 @@
 <!-- Bed Number Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('bed_number', 'Bed Number:') !!}
-    {!! Form::number('bed_number', old('bed_number', $allocation->bed_number), ['class' => 'form-control', 'min' => 1, 'placeholder' => 'Leave blank to auto-assign the next free bed']) !!}
+    {!! Form::number('bed_number', old('bed_number', $allocation?->bed_number), ['class' => 'form-control', 'min' => 1, 'placeholder' => 'Leave blank to auto-assign the next free bed']) !!}
     <small class="form-text text-muted">Beds are numbered 1 to the room capacity. Leave blank and the next free bed is used.</small>
 </div>
 

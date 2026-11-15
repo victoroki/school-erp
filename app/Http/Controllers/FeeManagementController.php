@@ -30,8 +30,10 @@ class FeeManagementController extends Controller
 
     public function index(Request $request)
     {
+        // feeAssignments/payments were eager-loaded here but the list never
+        // reads them; balances come from the batched summary below.
         $query = Student::query()
-            ->with(['feeAssignments', 'payments', 'studentClassEnrollments.classSection.schoolClass'])
+            ->with(['studentClassEnrollments.classSection.schoolClass'])
             ->whereHas('feeAssignments');
 
         if ($request->has('status') && $request->status != '') {
@@ -74,6 +76,8 @@ class FeeManagementController extends Controller
         }
 
         $students = $query->paginate(10)->withQueryString();
+        // Total/paid/balance per row, in one batch rather than five queries each.
+        Student::primeFeeSummaries($students);
         $metrics = $this->financeService->getMetrics();
         $classes = \App\Models\SchoolClass::pluck('name', 'class_id');
 
@@ -83,7 +87,7 @@ class FeeManagementController extends Controller
     public function collect(Request $request)
     {
         $query = Student::query()
-            ->with(['feeAssignments', 'studentClassEnrollments.classSection.schoolClass'])
+            ->with(['studentClassEnrollments.classSection.schoolClass'])
             ->where('is_active', true);
 
         if ($request->filled('q')) {
@@ -103,6 +107,7 @@ class FeeManagementController extends Controller
         }
 
         $students = $query->orderBy('admission_no')->paginate(25)->withQueryString();
+        Student::primeFeeSummaries($students);
         $classes = \App\Models\SchoolClass::orderBy('name')->pluck('name', 'class_id');
 
         return view('fee_management.collect', compact('students', 'classes'));
@@ -377,6 +382,7 @@ class FeeManagementController extends Controller
         }
 
         $students = $query->get();
+        Student::primeFeeSummaries($students);
         $metrics = $this->financeService->getMetrics();
 
         $pdf = Pdf::loadView('fee_management.export_pdf', compact('students', 'metrics'));
@@ -431,6 +437,7 @@ class FeeManagementController extends Controller
         }
 
         $students = $query->get();
+        Student::primeFeeSummaries($students);
 
         $filename = 'fee-report-' . date('Y-m-d') . '.csv';
         $headers = [

@@ -37,7 +37,7 @@
                     <td>{{ $s->admission_no }}</td>
                     <td><strong>{{ $s->full_name }}</strong></td>
                     <td>{{ $s->class_info }}</td>
-                    <td>{{ $s->route_id ? 'Route #' . $s->route_id : '—' }}</td>
+                    <td>{{ $s->route_name ?? '—' }}</td>
                     <td>{{ $s->pickup_point ?? '—' }}</td>
                 </tr>
             @empty

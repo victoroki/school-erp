@@ -51,8 +51,9 @@ class InlineScriptEscapingTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        // The inline initializer must still be delivered as executable script.
-        $this->assertStringContainsString('function initializeSelect2(attempt)', $html);
+        // The initializer moved from an inline block to public/js/app-shell.js;
+        // it must still be delivered as a script, not as text.
+        $this->assertMatchesRegularExpression('#<script[^>]+src="[^"]*/js/app-shell\.js#', $html);
 
         $this->assertStringNotContainsString(
             'but that bundle is an ES module',

@@ -9,7 +9,7 @@ use App\Models\StudentClassEnrollment;
 use App\Models\StudentFeeAssignment;
 use App\Models\AcademicYear;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Pdf;
+use Barryvdh\DomPDF\Facade\Pdf;
 use DB;
 
 class StudentReportController extends Controller
@@ -69,69 +69,9 @@ class StudentReportController extends Controller
      */
     public function feeStatus(Request $request)
     {
-        $currentYear = AcademicYear::where('is_current', true)->first();
-        $yearId = $request->get('academic_year_id') ?: ($currentYear?->academic_year_id);
-        $academicYears = AcademicYear::orderBy('start_date', 'desc')->get();
-        $balances = app(\App\Services\FeeBalanceService::class);
-
-        // Students with their fee summaries
-        $students = Student::where('status', 'active')
-            ->with(['studentClassEnrollments' => function ($q) use ($yearId) {
-                $q->where('is_current', true)
-                  ->with(['classSection.schoolClass', 'classSection.section']);
-            }])
-            ->get()
-            ->filter(fn ($s) => $s->studentClassEnrollments->isNotEmpty())
-            ->map(function ($student) use ($yearId, $balances) {
-                $enrollment = $student->studentClassEnrollments->first();
-                $classInfo = ($enrollment->classSection->schoolClass->name ?? 'N/A')
-                    . ' - ' . ($enrollment->classSection->section->name ?? '');
-
-                $assignments = StudentFeeAssignment::where('student_id', $student->student_id)
-                    ->where('academic_year_id', $yearId)
-                    ->where('status', 'active')
-                    ->get();
-
-                $totalAssigned = $assignments->sum('final_amount');
-
-                // Paid comes from the single balance authority, scoped to the
-                // assignments of the selected year.
-                //
-                // This previously ran
-                //     $student->payments()->whereIn('student_fee_assignment_id',
-                //         $assignments->pluck('student_fee_assignment_id'))->sum(...)
-                // and `student_fee_assignment_id` is not an attribute of
-                // StudentFeeAssignment (its primary key is `id`), so pluck()
-                // produced a list of NULLs, whereIn matched nothing and this
-                // report showed every learner as fully unpaid — total_paid 0.
-                // It also ignored reversed payments and payment_allocations.
-                // Effective paid, not payments received: a charge that was paid
-                // and later refunded is no longer settled, so this report's
-                // balance has to move with the refund exactly as the student's
-                // own page does.
-                $totalPaid = round(array_sum(
-                    $balances->effectivePaidForAssignments($assignments->pluck('id')->all())
-                ), 2);
-
-                $balance = round($totalAssigned - $totalPaid, 2);
-
-                return (object) [
-                    'student_id' => $student->student_id,
-                    'full_name' => $student->full_name,
-                    'admission_no' => $student->admission_no,
-                    'class_info' => $classInfo,
-                    'total_assigned' => $totalAssigned,
-                    'total_paid' => $totalPaid,
-                    'balance' => $balance,
-                ];
-            })
-            ->sortBy('balance', SORT_REGULAR, true)
-            ->values();
-
-        $totalAssigned = $students->sum('total_assigned');
-        $totalPaid = $students->sum('total_paid');
-        $totalBalance = $students->sum('balance');
-        $studentsWithArrears = $students->filter(fn ($s) => $s->balance > 0)->count();
+        // Screen, CSV and PDF share one data builder so the three can never
+        // disagree about a learner's balance.
+        extract($this->getFeeStatusData($request));
 
         return view('students.reports.fee_status', compact(
             'students', 'academicYears', 'yearId', 'currentYear',
@@ -368,31 +308,54 @@ class StudentReportController extends Controller
         $academicYears = AcademicYear::orderBy('start_date', 'desc')->get();
         $balances = app(\App\Services\FeeBalanceService::class);
 
-        $students = Student::where('status', 'active')
-            ->with(['studentClassEnrollments' => function ($q) use ($yearId) {
+        $enrolled = Student::where('status', 'active')
+            ->with(['studentClassEnrollments' => function ($q) {
                 $q->where('is_current', true)->with(['classSection.schoolClass', 'classSection.section']);
             }])
             ->get()
-            ->filter(fn ($s) => $s->studentClassEnrollments->isNotEmpty())
-            ->map(function ($student) use ($yearId, $balances) {
-                $enrollment = $student->studentClassEnrollments->first();
-                $classInfo = ($enrollment->classSection->schoolClass->name ?? 'N/A') . ' - ' . ($enrollment->classSection->section->name ?? '');
-                $assignments = StudentFeeAssignment::where('student_id', $student->student_id)
-                    ->where('academic_year_id', $yearId)->where('status', 'active')->get();
-                $totalAssigned = $assignments->sum('final_amount');
-                // Effective paid, not payments received: a charge that was paid
-                // and later refunded is no longer settled, so this report's
-                // balance has to move with the refund exactly as the student's
-                // own page does.
-                $totalPaid = round(array_sum(
-                    $balances->effectivePaidForAssignments($assignments->pluck('id')->all())
-                ), 2);
-                return (object) ['student_id' => $student->student_id, 'full_name' => $student->full_name, 'admission_no' => $student->admission_no, 'class_info' => $classInfo, 'total_assigned' => $totalAssigned, 'total_paid' => $totalPaid, 'balance' => round($totalAssigned - $totalPaid, 2)];
-            })
-            ->sortBy('balance', SORT_REGULAR, true)->values();
+            ->filter(fn ($s) => $s->studentClassEnrollments->isNotEmpty());
 
-        return compact('students', 'academicYears', 'yearId', 'currentYear',
-            'totalAssigned', 'totalPaid', 'totalBalance', 'studentsWithArrears') + [
+        // One query for every learner's assignments in the year and one
+        // batched lookup for what was effectively paid against them. This
+        // used to run both per learner: five queries a head on every load.
+        $assignmentsByStudent = StudentFeeAssignment::whereIn('student_id', $enrolled->pluck('student_id'))
+            ->where('academic_year_id', $yearId)
+            ->where('status', 'active')
+            ->get(['id', 'student_id', 'final_amount'])
+            ->groupBy('student_id');
+
+        // Effective paid, not payments received: a charge that was paid and
+        // later refunded is no longer settled, so this report's balance has to
+        // move with the refund exactly as the student's own page does.
+        $paidByAssignment = $balances->effectivePaidForAssignments(
+            $assignmentsByStudent->flatten()->pluck('id')->all()
+        );
+
+        $students = $enrolled->map(function ($student) use ($assignmentsByStudent, $paidByAssignment) {
+            $enrollment = $student->studentClassEnrollments->first();
+            $classInfo = ($enrollment->classSection->schoolClass->name ?? 'N/A')
+                . ' - ' . ($enrollment->classSection->section->name ?? '');
+
+            $assignments = $assignmentsByStudent->get($student->student_id, collect());
+            $totalAssigned = $assignments->sum('final_amount');
+            $totalPaid = round($assignments->sum(fn ($a) => $paidByAssignment[$a->id] ?? 0.0), 2);
+
+            return (object) [
+                'student_id' => $student->student_id,
+                'full_name' => $student->full_name,
+                'admission_no' => $student->admission_no,
+                'class_info' => $classInfo,
+                'total_assigned' => $totalAssigned,
+                'total_paid' => $totalPaid,
+                'balance' => round($totalAssigned - $totalPaid, 2),
+            ];
+        })->sortBy('balance', SORT_REGULAR, true)->values();
+
+        return [
+            'students' => $students,
+            'academicYears' => $academicYears,
+            'yearId' => $yearId,
+            'currentYear' => $currentYear,
             'totalAssigned' => $students->sum('total_assigned'),
             'totalPaid' => $students->sum('total_paid'),
             'totalBalance' => $students->sum('balance'),

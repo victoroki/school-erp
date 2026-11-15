@@ -16,6 +16,34 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class FeeReportsController extends Controller
 {
+    /**
+     * Most table rows a single report PDF will render. DomPDF lays the whole
+     * table out in memory; on a school-sized ledger an unfiltered export
+     * (every receipt, every assignment) ran past the 60s limit or exhausted
+     * memory and died as a blank 500.
+     */
+    private const PDF_ROW_LIMIT = 2000;
+
+    /**
+     * When a selection is too long to print, send the user back to the
+     * report (filters kept) with a message instead of crashing.
+     */
+    private function pdfTooLarge(int $rows, string $what, string $route, Request $request): ?\Illuminate\Http\RedirectResponse
+    {
+        if ($rows <= self::PDF_ROW_LIMIT) {
+            return null;
+        }
+
+        \Laracasts\Flash\Flash::warning(sprintf(
+            'That selection has %s %s, more than the %s a printable report can hold. Narrow the filters (date range, class or term) and export again.',
+            number_format($rows),
+            $what,
+            number_format(self::PDF_ROW_LIMIT)
+        ));
+
+        return redirect()->route($route, $request->query());
+    }
+
     protected $financeService;
 
     public function __construct(FinanceService $financeService)
@@ -424,6 +452,10 @@ class FeeReportsController extends Controller
             });
         }
 
+        if ($redirect = $this->pdfTooLarge((clone $query)->count(), 'fee assignments', 'fees.reports.assignment-status', $request)) {
+            return $redirect;
+        }
+
         $assignments = $query->get();
 
         $pdf = Pdf::loadView('fee_management.reports.exports.assignment_status_pdf', compact('assignments', 'yearId'));
@@ -713,6 +745,10 @@ class FeeReportsController extends Controller
 
         $count = (clone $baseQuery)->count();
 
+        if ($redirect = $this->pdfTooLarge($count, 'receipts', 'fees.reports.receipt-register', $request)) {
+            return $redirect;
+        }
+
         if ($count <= 300) {
             $receipts = (clone $baseQuery)->orderBy('payment_date')->orderBy('payment_id')->get()
                 ->groupBy(fn ($p) => optional($p->payment_date)->format('Y-m-d') ?? 'undated');
@@ -850,6 +886,10 @@ class FeeReportsController extends Controller
     public function exportCollectionsPdf(Request $request)
     {
         $paymentQuery = $this->collectionsQuery($request);
+
+        if ($redirect = $this->pdfTooLarge((clone $paymentQuery)->count(), 'payments', 'fees.reports.collections', $request)) {
+            return $redirect;
+        }
 
         $totalCollected = (float) (clone $paymentQuery)->notReversed()->sum('amount');
         $paymentCount = (clone $paymentQuery)->notReversed()->count();

@@ -2,6 +2,8 @@
 
 @section('content')
 <div class="report-wrap">
+    @include('flash::message')
+
     <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap" style="gap: 0.75rem;">
         <div class="d-flex align-items-center gap-3">
             <div class="icon-box bg-emerald-light text-emerald"><i class="fas fa-hand-holding-usd"></i></div>

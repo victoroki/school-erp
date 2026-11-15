@@ -42,11 +42,14 @@ class TransportAssignmentSelect2Test extends TestCase
     public function test_the_loaded_select2_theme_matches_the_bootstrap_major_in_use(): void
     {
         $layout = file_get_contents(resource_path('views/layouts/app.blade.php'));
+        // The layout links the theme stylesheet; the shared initializer that
+        // passes the theme to .select2() lives in public/js/app-shell.js.
+        $shell = file_get_contents(public_path('js/app-shell.js'));
 
         // Both spellings ship a Bootstrap-4 Select2 theme:
         // select2-bootstrap-4-theme and @ttskch/select2-bootstrap4-theme.
         preg_match('/select2-bootstrap-?(\d+)-?theme/', $layout, $stylesheet);
-        preg_match_all("/theme:\s*'bootstrap(\d+)'/", $layout, $scripts);
+        preg_match_all("/theme:\s*'bootstrap(\d+)'/", $shell, $scripts);
 
         $this->assertNotEmpty($stylesheet, 'No Select2 theme stylesheet found in the layout.');
         $this->assertNotEmpty($scripts[1], 'No Select2 theme passed to .select2() in the layout.');

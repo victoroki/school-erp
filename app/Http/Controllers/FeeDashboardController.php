@@ -51,14 +51,7 @@ class FeeDashboardController extends Controller
         // receivable against gross payments received, so after a refund it still
         // counted money the school had already handed back and reported less
         // outstanding than the student's own page.
-        $outstanding = app(\App\Services\FeeBalanceService::class)->outstandingForAssignments(
-            StudentFeeAssignment::where('status', 'active')
-                ->when($yearId, function ($q) use ($yearId) {
-                    return $q->where('academic_year_id', $yearId);
-                })
-                ->pluck('id')
-                ->all()
-        );
+        $outstanding = app(\App\Services\FeeBalanceService::class)->outstandingForActive($yearId ?: null);
 
         // Collected net of refunds, derived from the two figures above rather
         // than from a separate payment sum — so Expected − Collected =

@@ -15,6 +15,10 @@ class AppServiceProvider extends ServiceProvider
             require_once $helperPath;
         }
 
+        // One module registry per request, so its in-memory copy is shared by
+        // the sidebar, dashboard and middleware instead of re-read per call.
+        $this->app->scoped(\App\Services\ModuleManager::class);
+
         // Communication service bindings — dynamic based on active SMS provider
         $this->app->bind(
             \App\Services\Communication\SmsProviderInterface::class,

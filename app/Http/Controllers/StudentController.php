@@ -140,6 +140,9 @@ class StudentController extends AppBaseController
         ->paginate(10)
         ->appends($request->all());
 
+        // The table shows each learner's fee balance and status badge.
+        Student::primeFeeSummaries($students);
+
         $classSections = ClassSection::with(['schoolClass', 'section'])->get();
         $academicYears = AcademicYear::orderBy('start_date', 'desc')->get();
 

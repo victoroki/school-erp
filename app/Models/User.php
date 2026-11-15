@@ -188,16 +188,28 @@ class User extends Authenticatable
      */
     public function getAllPermissions(): \Illuminate\Support\Collection
     {
-        if ($this->isSuperUser()) {
-            return Permission::query()->pluck('permission_name');
-        }
-
         if (!$this->relationLoaded('roles')) {
             $this->load('roles.permissions');
         }
 
-        return $this->roles->flatMap->permissions
-            ->pluck('permission_name')
-            ->unique();
+        // The sidebar, dashboard and policies ask this dozens of times per
+        // request. Memoise against the loaded roles collection so a reload of
+        // the relation (role change mid-request) still recomputes.
+        $rolesKey = spl_object_id($this->roles);
+        if ($this->permissionCache !== null && $this->permissionCacheKey === $rolesKey) {
+            return $this->permissionCache;
+        }
+
+        $permissions = $this->isSuperUser()
+            ? Permission::query()->pluck('permission_name')
+            : $this->roles->flatMap->permissions->pluck('permission_name')->unique()->values();
+
+        $this->permissionCacheKey = $rolesKey;
+
+        return $this->permissionCache = $permissions;
     }
+
+    private ?\Illuminate\Support\Collection $permissionCache = null;
+
+    private ?int $permissionCacheKey = null;
 }

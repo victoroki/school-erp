@@ -189,7 +189,7 @@ body.sidebar-mini.sidebar-collapse .main-header {
 }
 
 .search-input::placeholder {
-    color: oklch(0.400 0.010 264);
+    color: oklch(0.560 0.012 264);
 }
 
 /* ===================================================================
@@ -239,50 +239,15 @@ body.sidebar-mini.sidebar-collapse .main-header {
 }
 
 /* ===================================================================
-   NAV ITEMS — stagger on load
+   NAV ITEMS
+   No entrance animation. Every navigation is a full page load, so a
+   stagger here replayed on every click and hid the menu for ~400ms,
+   the screen people use most. Navigation should feel instant.
    =================================================================== */
 
-@keyframes sidebarItemIn {
-    from {
-        opacity: 0;
-        transform: translateY(5px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Stagger is decorative — only runs once, short duration */
 .nav-sidebar .nav-item {
     margin-bottom: 1px !important;
     position: relative;
-    animation: sidebarItemIn 260ms var(--ease-out) both;
-}
-
-.nav-sidebar > .nav-item:nth-child(1)  { animation-delay:  20ms; }
-.nav-sidebar > .nav-item:nth-child(2)  { animation-delay:  45ms; }
-.nav-sidebar > .nav-item:nth-child(3)  { animation-delay:  70ms; }
-.nav-sidebar > .nav-item:nth-child(4)  { animation-delay:  95ms; }
-.nav-sidebar > .nav-item:nth-child(5)  { animation-delay: 115ms; }
-.nav-sidebar > .nav-item:nth-child(6)  { animation-delay: 130ms; }
-.nav-sidebar > .nav-item:nth-child(7)  { animation-delay: 145ms; }
-.nav-sidebar > .nav-item:nth-child(8)  { animation-delay: 155ms; }
-/* Beyond 8 — no extra delay, just instant */
-.nav-sidebar > .nav-item:nth-child(n+9) { animation-delay: 160ms; }
-
-/* Headers also stagger */
-.nav-sidebar .nav-header {
-    animation: sidebarItemIn 260ms var(--ease-out) both;
-    animation-delay: 30ms;
-}
-
-/* Respect reduced motion */
-@media (prefers-reduced-motion: reduce) {
-    .nav-sidebar .nav-item,
-    .nav-sidebar .nav-header {
-        animation: none !important;
-    }
 }
 
 /* ===================================================================
@@ -558,6 +523,8 @@ body.sidebar-mini.sidebar-collapse .main-header {
 }
 
 .logout-action {
+    background: transparent;
+    cursor: pointer;
     color: var(--text-header);
     font-size: 0.9375rem;
     padding: 0.3125rem;

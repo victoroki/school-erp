@@ -14,7 +14,7 @@ class StudentIdCardController extends Controller
 
     public function generate($id)
     {
-        $student = Student::with(['studentClassEnrollments.classSection.schoolClass', 'studentClassEnrollments.classSection.section', 'studentClassEnrollments.academicYear'])->findOrFail($id);
+        $student = Student::with(Student::CURRENT_ENROLLMENT_WITH)->findOrFail($id);
         
         return view('students.id_card', compact('student'));
     }
@@ -26,7 +26,7 @@ class StudentIdCardController extends Controller
             return redirect()->back()->with('error', 'No students selected');
         }
 
-        $students = Student::with(['studentClassEnrollments.classSection.schoolClass', 'studentClassEnrollments.classSection.section'])->whereIn('student_id', $studentIds)->get();
+        $students = Student::with(Student::CURRENT_ENROLLMENT_WITH)->whereIn('student_id', $studentIds)->get();
 
         return view('students.bulk_id_cards', compact('students'));
     }

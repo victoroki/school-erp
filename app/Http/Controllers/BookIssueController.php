@@ -134,6 +134,18 @@ class BookIssueController extends Controller
     /**
      * Show Return Book Form
      */
+    /**
+     * The issue list's View button and the library dashboard's overdue links
+     * pointed here, but the action was never written, so both answered 500.
+     */
+    public function show($id)
+    {
+        $bookIssue = BookIssue::with(['book', 'member.user', 'member.student', 'member.staff', 'issuer', 'receiver'])
+            ->findOrFail($id);
+
+        return view('book_issues.show', compact('bookIssue'));
+    }
+
     public function returnModal($id)
     {
         $issue = BookIssue::with(['book', 'member.user', 'member.student', 'member.staff'])->findOrFail($id);

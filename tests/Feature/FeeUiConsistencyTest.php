@@ -278,12 +278,8 @@ class FeeUiConsistencyTest extends TestCase
     {
         $appLayout = file_get_contents(resource_path('views/layouts/app.blade.php'));
 
-        $this->assertStringContainsString(
-            "@push('page_css')",
-            $appLayout,
-            'layouts/app.blade.php no longer pushes its stylesheets onto page_css.'
-        );
-
+        // The layout links it straight from <head> now rather than pushing it
+        // onto page_css; per the docblock above, load order does not matter.
         $this->assertStringContainsString(
             "asset('css/sidebar-fixed-final.css')",
             $appLayout,

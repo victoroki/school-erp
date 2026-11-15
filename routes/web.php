@@ -107,7 +107,7 @@ Route::resource('fee-structures', App\Http\Controllers\FeeStructureController::c
     Route::get('books/import', [App\Http\Controllers\BookController::class, 'importForm'])->name('books.import');
     Route::post('books/import', [App\Http\Controllers\BookController::class, 'import'])->name('books.import.store');
     Route::resource('books', App\Http\Controllers\BookController::class);
-    Route::resource('book-issues', App\Http\Controllers\BookIssueController::class);
+    Route::resource('book-issues', App\Http\Controllers\BookIssueController::class)->except(['edit', 'update']);
     Route::get('library/book-issues/{id}/return', [App\Http\Controllers\BookIssueController::class, 'returnModal'])->name('book-issues.return-modal');
     Route::post('library/book-issues/{id}/return', [App\Http\Controllers\BookIssueController::class, 'returnBook'])->name('book-issues.return');
     Route::get('library/dashboard', [App\Http\Controllers\LibraryDashboardController::class, 'index'])->name('library.dashboard');
@@ -127,11 +127,11 @@ Route::resource('fee-structures', App\Http\Controllers\FeeStructureController::c
         Route::get('/stock-movement-history', [App\Http\Controllers\InventoryController::class, 'stockMovementHistory'])->name('stock-movement-history');
         
         // Requisitions
-        Route::resource('requisitions', App\Http\Controllers\RequisitionController::class);
+        Route::resource('requisitions', App\Http\Controllers\RequisitionController::class)->except(['edit', 'update', 'destroy']);
         Route::post('requisitions/{id}/approve', [App\Http\Controllers\RequisitionController::class, 'approve'])->name('requisitions.approve');
         
         // Purchase Orders
-        Route::resource('purchase-orders', App\Http\Controllers\PurchaseOrderController::class);
+        Route::resource('purchase-orders', App\Http\Controllers\PurchaseOrderController::class)->except(['edit', 'update', 'destroy']);
         Route::post('purchase-orders/{id}/receive', [App\Http\Controllers\PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive');
         // Supplier payments: the money step of a purchase order. Literal
         // segments registered before the resource's {id} routes cannot shadow
@@ -284,8 +284,8 @@ Route::resource('fee-structures', App\Http\Controllers\FeeStructureController::c
     });
 
     Route::resource('income', App\Http\Controllers\IncomeController::class);
-    Route::resource('bank-transactions', App\Http\Controllers\BankTransactionController::class);
-    Route::resource('bank-reconciliations', App\Http\Controllers\BankReconciliationController::class);
+    Route::resource('bank-transactions', App\Http\Controllers\BankTransactionController::class)->except(['show', 'edit', 'update', 'destroy']);
+    Route::resource('bank-reconciliations', App\Http\Controllers\BankReconciliationController::class)->only(['index', 'show', 'update']);
     Route::resource('budgets', App\Http\Controllers\BudgetController::class);
     Route::get('budget-vs-actual', [App\Http\Controllers\BudgetController::class, 'vsActual'])->name('budgets.vs-actual');
 
@@ -306,7 +306,7 @@ Route::resource('fee-structures', App\Http\Controllers\FeeStructureController::c
     });
 
     Route::get('financial-years/{financialYear}/audit', [App\Http\Controllers\FinancialYearController::class, 'audit'])->name('financial-years.audit');
-    Route::resource('financial-years', App\Http\Controllers\FinancialYearController::class);
+    Route::resource('financial-years', App\Http\Controllers\FinancialYearController::class)->except(['show', 'destroy']);
     Route::get('audit-trail', [App\Http\Controllers\AuditTrailController::class, 'index'])->name('audit-trail.index');
     Route::get('audit-trail/export', [App\Http\Controllers\AuditTrailController::class, 'export'])->name('audit-trail.export');
     Route::get('system-logs', [App\Http\Controllers\SystemLogController::class, 'index'])->name('system-logs.index');
@@ -548,7 +548,6 @@ Route::resource('fee-structures', App\Http\Controllers\FeeStructureController::c
     Route::get('exam-reports/individual/{exam_id}/{student_id}', [App\Http\Controllers\ExamReportController::class, 'individual'])->name('exam-reports.individual');
     Route::get('exam-reports/generate', [App\Http\Controllers\ExamReportController::class, 'generate'])->name('exam-reports.generate');
     Route::get('exam-reports/pdf', [App\Http\Controllers\ExamReportController::class, 'bulkPdf'])->name('exam-reports.pdf');
-    Route::resource('report-card-templates', App\Http\Controllers\ReportCardTemplateController::class);
     Route::get('bulk-report-cards', [App\Http\Controllers\ExamReportController::class, 'bulk'])->name('exam-reports.bulk');
     Route::get('exam-analysis/performance', [App\Http\Controllers\ExamAnalysisController::class, 'performance'])->name('exam-analysis.performance');
     Route::get('exam-analysis/subject', [App\Http\Controllers\ExamAnalysisController::class, 'subject'])->name('exam-analysis.subject');
@@ -580,12 +579,10 @@ Route::resource('fee-structures', App\Http\Controllers\FeeStructureController::c
         Route::get('/exit/create/{staff}', [App\Http\Controllers\StaffExitController::class, 'create'])->name('exit.create');
         Route::post('/exit', [App\Http\Controllers\StaffExitController::class, 'store'])->name('exit.store');
 
-        // Staff Directory
-        Route::get('staff-directory', [App\Http\Controllers\StaffController::class, 'directory'])->name('staff.directory');
     });
 
     // Enhanced Resource Routes
-    Route::resource('leave-applications', App\Http\Controllers\LeaveApplicationController::class);
+    Route::resource('leave-applications', App\Http\Controllers\LeaveApplicationController::class)->except(['edit', 'update']);
     Route::post('leave-applications/{id}/approve', [App\Http\Controllers\LeaveApplicationController::class, 'approve'])->name('leave-applications.approve');
     Route::post('leave-applications/{id}/reject', [App\Http\Controllers\LeaveApplicationController::class, 'reject'])->name('leave-applications.reject');
 

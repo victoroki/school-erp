@@ -14,13 +14,17 @@ class ModuleManager
      */
     private const ALL_CACHE_KEY = 'modules.all';
 
+    private ?Collection $memo = null;
+
     /**
      * All registered modules, keyed by module key, ordered by the
      * configured display order. Cached for the lifetime of the request.
      */
     public function all(): Collection
     {
-        return Cache::remember(self::ALL_CACHE_KEY, now()->addDay(), function () {
+        // The file cache is read from disk and unserialised on every call; the
+        // menu and dashboard ask ~40 times per page, so keep a per-request copy.
+        return $this->memo ??= Cache::remember(self::ALL_CACHE_KEY, now()->addDay(), function () {
             if (!\Illuminate\Support\Facades\Schema::hasTable('modules')) {
                 return collect();
             }
@@ -81,6 +85,7 @@ class ModuleManager
      */
     public function forgetCache(): void
     {
+        $this->memo = null;
         Cache::forget(self::ALL_CACHE_KEY);
     }
 }

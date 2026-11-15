@@ -57,17 +57,30 @@ class LayoutFooterScriptLeakTest extends TestCase
         $this->assertStringNotContainsString('but that bundle is an ES module', $withoutScripts);
     }
 
-    public function test_inline_init_script_is_present_exactly_once(): void
+    public function test_shell_init_script_is_present_exactly_once(): void
     {
         $response = $this->actingAs($this->admin())->get(route('routeStops.index'));
 
         $response->assertOk();
 
+        // Select2/AdminLTE initialisation moved out of an inline block into
+        // public/js/app-shell.js; it must still be wired exactly once, after
+        // jQuery, which is a classic script so page scripts can use it.
+        $html = $response->getContent();
+
         $this->assertSame(
             1,
-            substr_count($response->getContent(), 'function initializeSelect2'),
-            'The select2 init script must appear exactly once per page.'
+            preg_match_all('#<script[^>]+src="[^"]*/js/app-shell\.js#', $html),
+            'The shell init script must be included exactly once per page.'
         );
+
+        $this->assertLessThan(
+            strpos($html, '/js/app-shell.js'),
+            strpos($html, '/build/vendor/jquery.min.js'),
+            'jQuery must load before the shell script.'
+        );
+
+        $this->assertStringNotContainsString('type="module"', $html, 'jQuery must not be a deferred module script.');
     }
 
     private function admin(): User
