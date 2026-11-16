@@ -6,8 +6,8 @@
 
 <!-- Department Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('department_id', 'Department Id:') !!}
-    <p>{{ $jobPosition->department_id }}</p>
+    {!! Form::label('department_id', 'Department:') !!}
+    <p>{{ $jobPosition->department->name ?? 'N/A' }}</p>
 </div>
 
 <!-- Description Field -->
@@ -31,6 +31,6 @@
 <!-- Is Active Field -->
 <div class="col-sm-12">
     {!! Form::label('is_active', 'Is Active:') !!}
-    <p>{{ $jobPosition->is_active }}</p>
+    <p>{{ $jobPosition->is_active ? 'Yes' : 'No' }}</p>
 </div>
 

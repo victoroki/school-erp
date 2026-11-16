@@ -1,0 +1,647 @@
+<?php
+
+namespace Tests\Unit;
+
+use App\Models\AcademicYear;
+use App\Models\ClassSection;
+use App\Models\DiscountScheme;
+use App\Models\FeeAdjustment;
+use App\Models\FeeStructure;
+use App\Models\SchoolClass;
+use App\Models\Section;
+use App\Models\Student;
+use App\Models\StudentClassEnrollment;
+use App\Models\StudentDiscount;
+use App\Models\StudentFeeAssignment;
+use App\Models\Term;
+use App\Models\User;
+use App\Services\FeeAssignmentService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class FeeManagementTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->user = User::factory()->create();
+    }
+
+    protected function createAcademicYear($isCurrent = true, $name = '2026')
+    {
+        return AcademicYear::create([
+            'name' => $name,
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-12-31',
+            'is_current' => $isCurrent,
+        ]);
+    }
+
+    protected function createTerm($academicYear, $code = 'Term 1', $status = 'active')
+    {
+        // The code matches what createFeeStructure() stores in fee_structures.term
+        // throughout this file. Those rows use the term's display name where the
+        // code belongs, which is a wider name/code duplication problem
+        // (fee_structures.term alongside the real term_id) rather than something
+        // to fix inside this test file.
+        return Term::create([
+            'academic_year_id' => $academicYear->academic_year_id,
+            'name' => 'Term 1',
+            'code' => $code,
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-04-03',
+            'fee_due_date' => '2026-01-15',
+            'status' => $status,
+            'display_order' => 1,
+        ]);
+    }
+
+    protected function createClass()
+    {
+        return SchoolClass::create([
+            'name' => 'Form 1',
+            'numeric_value' => 1,
+        ]);
+    }
+
+    protected function createSection()
+    {
+        return Section::create([
+            'name' => 'A',
+        ]);
+    }
+
+    protected function createClassSection($academicYear, $class, $section)
+    {
+        return ClassSection::create([
+            'academic_year_id' => $academicYear->academic_year_id,
+            'class_id' => $class->class_id,
+            'section_id' => $section->section_id,
+        ]);
+    }
+
+    protected function createStudent($classSection, $academicYear)
+    {
+        $student = Student::create([
+            'admission_no' => 'ADM-'.uniqid(),
+            'first_name' => 'Test',
+            'last_name' => 'Student',
+            'date_of_birth' => '2010-01-01',
+            'gender' => 'male',
+            'city' => 'Nairobi',
+            'country' => 'Kenya',
+            'admission_date' => now(),
+            'is_active' => true,
+            'status' => 'active',
+        ]);
+
+        StudentClassEnrollment::create([
+            'student_id' => $student->student_id,
+            'class_section_id' => $classSection->class_section_id,
+            'academic_year_id' => $academicYear->academic_year_id,
+            'enrollment_date' => now(),
+            'status' => 'active',
+            'is_current' => true,
+        ]);
+
+        return $student;
+    }
+
+    protected function createFeeCategory()
+    {
+        return \App\Models\FeeCategory::create([
+            'name' => 'Tuition',
+            'type' => 'mandatory',
+        ]);
+    }
+
+    protected function createFeeStructure($academicYear, $class, $amount = 10000)
+    {
+        $category = $this->createFeeCategory();
+
+        return FeeStructure::create([
+            'academic_year_id' => $academicYear->academic_year_id,
+            'class_id' => $class->class_id,
+            'category_id' => $category->category_id,
+            'amount' => $amount,
+            'term' => 'Term 1',
+            'payment_frequency' => 'termly',
+            'due_date' => now()->addDays(30),
+            'status' => 'active',
+            'created_by' => $this->user->id,
+        ]);
+    }
+
+    public function test_fee_assignment_service_assigns_fee_to_student()
+    {
+        $academicYear = $this->createAcademicYear();
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+        $student = $this->createStudent($classSection, $academicYear);
+        $feeStructure = $this->createFeeStructure($academicYear, $class);
+
+        $this->actingAs($this->user);
+
+        $service = app(FeeAssignmentService::class);
+        $assignment = $service->assignFeeToStudent(
+            $student->student_id,
+            $feeStructure->fee_structure_id,
+            $academicYear->academic_year_id,
+            'Term 1'
+        );
+
+        $this->assertDatabaseHas('student_fee_assignments', [
+            'student_id' => $student->student_id,
+            'fee_structure_id' => $feeStructure->fee_structure_id,
+            'academic_year_id' => $academicYear->academic_year_id,
+            'term' => 'Term 1',
+            'amount' => $feeStructure->amount,
+        ]);
+
+        $this->assertEquals($feeStructure->amount, $assignment->amount);
+        $this->assertEquals($feeStructure->amount, $assignment->final_amount);
+    }
+
+    public function test_fee_assignment_service_assigns_with_discount()
+    {
+        $academicYear = $this->createAcademicYear();
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+        $student = $this->createStudent($classSection, $academicYear);
+        $feeStructure = $this->createFeeStructure($academicYear, $class, 10000);
+
+        $this->actingAs($this->user);
+
+        $service = app(FeeAssignmentService::class);
+        $assignment = $service->assignFeeToStudent(
+            $student->student_id,
+            $feeStructure->fee_structure_id,
+            $academicYear->academic_year_id,
+            'Term 1',
+            2000
+        );
+
+        $this->assertEquals(10000, $assignment->amount);
+        $this->assertEquals(2000, $assignment->discount_amount);
+        $this->assertEquals(8000, $assignment->final_amount);
+    }
+
+    public function test_bulk_assign_to_class()
+    {
+        $academicYear = $this->createAcademicYear();
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+
+        $student1 = $this->createStudent($classSection, $academicYear);
+        $student2 = $this->createStudent($classSection, $academicYear);
+        $feeStructure = $this->createFeeStructure($academicYear, $class);
+
+        $this->actingAs($this->user);
+
+        $service = app(FeeAssignmentService::class);
+        $result = $service->bulkAssignToClass(
+            $class->class_id,
+            $academicYear->academic_year_id,
+            'Term 1',
+            [$feeStructure->fee_structure_id]
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals(2, $result['count']);
+
+        $this->assertDatabaseCount('student_fee_assignments', 2);
+    }
+
+    public function test_auto_assign_fees_to_student()
+    {
+        $academicYear = $this->createAcademicYear();
+        $term = $this->createTerm($academicYear);
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+        $student = $this->createStudent($classSection, $academicYear);
+        $this->createFeeStructure($academicYear, $class);
+
+        $this->actingAs($this->user);
+
+        $service = app(FeeAssignmentService::class);
+        $result = $service->autoAssignFeesToStudent($student, $academicYear->academic_year_id);
+
+        $this->assertTrue($result['success']);
+        $this->assertGreaterThanOrEqual(0, $result['count']);
+
+        // The assignment has to carry a real term_id. The service used to fall
+        // back to a literal term string when the year had no active term, which
+        // wrote a null term_id and dropped the assignment out of every
+        // term-filtered arrears view, statement and report.
+        $assignment = StudentFeeAssignment::where('student_id', $student->student_id)
+            ->where('academic_year_id', $academicYear->academic_year_id)
+            ->first();
+
+        $this->assertNotNull($assignment, 'A fee assignment should have been created.');
+        $this->assertNotNull(
+            $assignment->term_id,
+            'The assignment must reference a term, not a bare term string.'
+        );
+        $this->assertSame($term->id, (int) $assignment->term_id);
+    }
+
+    public function test_auto_assign_reports_failure_when_no_term_is_active()
+    {
+        $academicYear = $this->createAcademicYear();
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+        $student = $this->createStudent($classSection, $academicYear);
+        $this->createFeeStructure($academicYear, $class);
+
+        $this->actingAs($this->user);
+
+        $service = app(FeeAssignmentService::class);
+        $result = $service->autoAssignFeesToStudent($student, $academicYear->academic_year_id);
+
+        // Previously this reported success and wrote an assignment with
+        // term_id = null, which then vanished from term-filtered reports.
+        $this->assertFalse($result['success']);
+        $this->assertStringContainsString('No active term', $result['message']);
+        $this->assertSame(0, $result['count']);
+        $this->assertDatabaseCount('student_fee_assignments', 0);
+    }
+
+    public function test_fee_adjustment_creation()
+    {
+        $academicYear = $this->createAcademicYear();
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+        $student = $this->createStudent($classSection, $academicYear);
+        $feeStructure = $this->createFeeStructure($academicYear, $class);
+
+        $this->actingAs($this->user);
+
+        $assignment = StudentFeeAssignment::create([
+            'student_id' => $student->student_id,
+            'fee_structure_id' => $feeStructure->fee_structure_id,
+            'academic_year_id' => $academicYear->academic_year_id,
+            'term' => 'Term 1',
+            'amount' => 10000,
+            'final_amount' => 10000,
+            'assigned_by' => $this->user->id,
+            'status' => 'active',
+        ]);
+
+        $adjustment = FeeAdjustment::create([
+            'student_fee_assignment_id' => $assignment->id,
+            'student_id' => $student->student_id,
+            'original_amount' => 10000,
+            'new_amount' => 8000,
+            'adjustment_amount' => 2000,
+            'adjustment_type' => 'reduction',
+            'reason' => 'Financial hardship',
+            'status' => 'pending',
+            'requested_by' => $this->user->id,
+        ]);
+
+        $this->assertDatabaseHas('fee_adjustments', [
+            'student_id' => $student->student_id,
+            'status' => 'pending',
+            'adjustment_type' => 'reduction',
+        ]);
+
+        $this->assertEquals('pending', $adjustment->status);
+    }
+
+    public function test_fee_adjustment_approval_workflow()
+    {
+        $academicYear = $this->createAcademicYear();
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+        $student = $this->createStudent($classSection, $academicYear);
+        $feeStructure = $this->createFeeStructure($academicYear, $class);
+
+        $this->actingAs($this->user);
+
+        $assignment = StudentFeeAssignment::create([
+            'student_id' => $student->student_id,
+            'fee_structure_id' => $feeStructure->fee_structure_id,
+            'academic_year_id' => $academicYear->academic_year_id,
+            'term' => 'Term 1',
+            'amount' => 10000,
+            'final_amount' => 10000,
+            'assigned_by' => $this->user->id,
+            'status' => 'active',
+        ]);
+
+        $adjustment = FeeAdjustment::create([
+            'student_fee_assignment_id' => $assignment->id,
+            'student_id' => $student->student_id,
+            'original_amount' => 10000,
+            'new_amount' => 8000,
+            'adjustment_amount' => 2000,
+            'adjustment_type' => 'reduction',
+            'reason' => 'Financial hardship',
+            'status' => 'pending',
+            'requested_by' => $this->user->id,
+        ]);
+
+        $admin = User::factory()->create();
+        $this->actingAs($admin);
+
+        $adjustment->approve($admin->id, 'Approved due to verified hardship');
+
+        $this->assertDatabaseHas('fee_adjustments', [
+            'id' => $adjustment->id,
+            'status' => 'approved',
+            'approved_by' => $admin->id,
+        ]);
+
+        $assignment->refresh();
+        $this->assertEquals(8000, $assignment->final_amount);
+        $this->assertEquals(2000, $assignment->discount_amount);
+
+        $this->assertDatabaseHas('fee_adjustment_audit_logs', [
+            'fee_adjustment_id' => $adjustment->id,
+            'action' => 'approved',
+        ]);
+    }
+
+    public function test_fee_adjustment_rejection()
+    {
+        $academicYear = $this->createAcademicYear();
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+        $student = $this->createStudent($classSection, $academicYear);
+        $feeStructure = $this->createFeeStructure($academicYear, $class);
+
+        $this->actingAs($this->user);
+
+        $assignment = StudentFeeAssignment::create([
+            'student_id' => $student->student_id,
+            'fee_structure_id' => $feeStructure->fee_structure_id,
+            'academic_year_id' => $academicYear->academic_year_id,
+            'term' => 'Term 1',
+            'amount' => 10000,
+            'final_amount' => 10000,
+            'assigned_by' => $this->user->id,
+            'status' => 'active',
+        ]);
+
+        $adjustment = FeeAdjustment::create([
+            'student_fee_assignment_id' => $assignment->id,
+            'student_id' => $student->student_id,
+            'original_amount' => 10000,
+            'new_amount' => 8000,
+            'adjustment_amount' => 2000,
+            'adjustment_type' => 'reduction',
+            'reason' => 'Financial hardship',
+            'status' => 'pending',
+            'requested_by' => $this->user->id,
+        ]);
+
+        $admin = User::factory()->create();
+        $this->actingAs($admin);
+
+        $adjustment->reject($admin->id, 'Insufficient documentation');
+
+        $this->assertDatabaseHas('fee_adjustments', [
+            'id' => $adjustment->id,
+            'status' => 'rejected',
+            'approved_by' => $admin->id,
+            'rejection_reason' => 'Insufficient documentation',
+        ]);
+
+        $assignment->refresh();
+        $this->assertEquals(10000, $assignment->final_amount);
+    }
+
+    public function test_prevents_duplicate_fee_assignment()
+    {
+        $academicYear = $this->createAcademicYear();
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+        $student = $this->createStudent($classSection, $academicYear);
+        $feeStructure = $this->createFeeStructure($academicYear, $class);
+
+        $this->actingAs($this->user);
+
+        $service = app(FeeAssignmentService::class);
+        $service->assignFeeToStudent(
+            $student->student_id,
+            $feeStructure->fee_structure_id,
+            $academicYear->academic_year_id,
+            'Term 1'
+        );
+
+        $count = StudentFeeAssignment::where('student_id', $student->student_id)
+            ->where('fee_structure_id', $feeStructure->fee_structure_id)
+            ->count();
+
+        $this->assertEquals(1, $count);
+    }
+
+    protected function createDiscountScheme($academicYear, array $overrides = [])
+    {
+        return DiscountScheme::create(array_merge([
+            'name' => 'Test Scheme',
+            'code' => 'SCHEME-'.uniqid(),
+            'type' => 'percentage',
+            'value' => 10,
+            'applies_to' => 'all_fees',
+            'eligibility_criteria' => 'financial_aid',
+            'academic_year_id' => $academicYear->academic_year_id,
+            'auto_apply' => true,
+            'status' => 'active',
+        ], $overrides));
+    }
+
+    public function test_assign_fee_with_discount_never_goes_below_zero()
+    {
+        $academicYear = $this->createAcademicYear();
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+        $student = $this->createStudent($classSection, $academicYear);
+        $feeStructure = $this->createFeeStructure($academicYear, $class, 10000);
+
+        $this->actingAs($this->user);
+
+        $service = app(FeeAssignmentService::class);
+        $assignment = $service->assignFeeToStudent(
+            $student->student_id,
+            $feeStructure->fee_structure_id,
+            $academicYear->academic_year_id,
+            'Term 1',
+            15000
+        );
+
+        $this->assertEquals(10000, $assignment->amount);
+        $this->assertEquals(15000, $assignment->discount_amount);
+        $this->assertEquals(0, $assignment->final_amount);
+    }
+
+    public function test_assign_fee_writes_term_id_when_term_exists()
+    {
+        $academicYear = $this->createAcademicYear();
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+        $student = $this->createStudent($classSection, $academicYear);
+        $feeStructure = $this->createFeeStructure($academicYear, $class);
+
+        $term = Term::create([
+            'academic_year_id' => $academicYear->academic_year_id,
+            'name' => 'Term One',
+            'code' => 'Term 1',
+            'start_date' => '2026-01-05',
+            'end_date' => '2026-04-10',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($this->user);
+
+        $service = app(FeeAssignmentService::class);
+        $assignment = $service->assignFeeToStudent(
+            $student->student_id,
+            $feeStructure->fee_structure_id,
+            $academicYear->academic_year_id,
+            'Term 1'
+        );
+
+        $this->assertEquals($term->id, $assignment->term_id);
+    }
+
+    public function test_auto_discounts_stack_across_eligible_schemes_without_duplicates()
+    {
+        $academicYear = $this->createAcademicYear();
+        // Fees are assigned against an active term. Without one the service
+        // declines to assign rather than writing an assignment with a null
+        // term_id, so the year needs a term for this to have anything to price.
+        $this->createTerm($academicYear);
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+        $student = $this->createStudent($classSection, $academicYear);
+        $this->createFeeStructure($academicYear, $class, 10000);
+        $this->createDiscountScheme($academicYear, ['name' => 'Sibling', 'type' => 'percentage', 'value' => 10]);
+        $this->createDiscountScheme($academicYear, ['name' => 'Merit', 'type' => 'fixed', 'value' => 2000]);
+
+        $this->actingAs($this->user);
+
+        $service = app(FeeAssignmentService::class);
+        $service->autoAssignFeesToStudent($student, $academicYear->academic_year_id);
+
+        $assignment = StudentFeeAssignment::where('student_id', $student->student_id)->first();
+        $this->assertEquals(3000, $assignment->discount_amount);
+        $this->assertEquals(7000, $assignment->final_amount);
+
+        // One StudentDiscount row per eligible scheme.
+        $this->assertDatabaseCount('student_discounts', 2);
+
+        // Re-running auto-apply must not duplicate StudentDiscount rows or
+        // change the stacked amounts.
+        $service->autoAssignFeesToStudent($student, $academicYear->academic_year_id);
+        $this->assertDatabaseCount('student_discounts', 2);
+        $assignment->refresh();
+        $this->assertEquals(3000, $assignment->discount_amount);
+        $this->assertEquals(7000, $assignment->final_amount);
+    }
+
+    public function test_auto_apply_does_not_overwrite_manual_discount()
+    {
+        $academicYear = $this->createAcademicYear();
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+        $student = $this->createStudent($classSection, $academicYear);
+        $feeStructure = $this->createFeeStructure($academicYear, $class, 10000);
+
+        // Simulates the outcome of an approved manual fee adjustment.
+        $assignment = StudentFeeAssignment::create([
+            'student_id' => $student->student_id,
+            'fee_structure_id' => $feeStructure->fee_structure_id,
+            'academic_year_id' => $academicYear->academic_year_id,
+            'term' => 'Term 1',
+            'amount' => 10000,
+            'discount_amount' => 1500,
+            'final_amount' => 8500,
+            'assigned_by' => $this->user->id,
+            'status' => 'active',
+        ]);
+
+        $this->createDiscountScheme($academicYear, ['name' => 'Sibling', 'type' => 'percentage', 'value' => 10]);
+
+        $this->actingAs($this->user);
+
+        $service = app(FeeAssignmentService::class);
+        $service->applyAutoDiscounts($student, $academicYear->academic_year_id);
+
+        $assignment->refresh();
+        $this->assertNull($assignment->discount_id);
+        $this->assertEquals(1500, $assignment->discount_amount);
+        $this->assertEquals(8500, $assignment->final_amount);
+
+        $this->assertDatabaseCount('student_discounts', 0);
+    }
+
+    public function test_bulk_assign_only_matches_enrollments_in_the_same_academic_year()
+    {
+        $academicYear = $this->createAcademicYear();
+        $academicYear2 = $this->createAcademicYear(false, '2027');
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+
+        // Students first, so the enrollment observer has no fee structures to
+        // auto-assign yet and the bulk assignment below is the only writer.
+        $currentYearStudent = $this->createStudent($classSection, $academicYear);
+        $classSectionYear2 = $this->createClassSection($academicYear2, $class, $this->createSection());
+        $otherYearStudent = $this->createStudent($classSectionYear2, $academicYear2);
+
+        $feeStructure = $this->createFeeStructure($academicYear, $class);
+
+        $this->actingAs($this->user);
+
+        $service = app(FeeAssignmentService::class);
+        $result = $service->bulkAssignToClass(
+            $class->class_id,
+            $academicYear->academic_year_id,
+            'Term 1',
+            [$feeStructure->fee_structure_id]
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertEquals(1, $result['count']);
+
+        $this->assertDatabaseHas('student_fee_assignments', [
+            'student_id' => $currentYearStudent->student_id,
+            'fee_structure_id' => $feeStructure->fee_structure_id,
+        ]);
+
+        $this->assertDatabaseMissing('student_fee_assignments', [
+            'student_id' => $otherYearStudent->student_id,
+            'fee_structure_id' => $feeStructure->fee_structure_id,
+        ]);
+    }
+
+    public function test_student_getter_attributes()
+    {
+        $academicYear = $this->createAcademicYear();
+        $class = $this->createClass();
+        $section = $this->createSection();
+        $classSection = $this->createClassSection($academicYear, $class, $section);
+        $student = $this->createStudent($classSection, $academicYear);
+
+        $this->assertEquals('Test Student', $student->full_name);
+        $this->assertNotNull($student->admission_no);
+        $this->assertTrue($student->is_active);
+    }
+}

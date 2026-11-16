@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\StudentClassEnrollment;
 use App\Models\StudentDocument;
-use App\Models\StudentFee;
+use App\Models\StudentFeeAssignment;
 use App\Models\AcademicYear;
 use App\Models\SchoolClass;
 use Illuminate\Http\Request;
@@ -17,6 +17,7 @@ class StudentDashboardController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('can:students.view');
     }
 
     public function index()
@@ -50,8 +51,8 @@ class StudentDashboardController extends Controller
         })->count();
 
         // Fee Defaulters
-        $feeDefaulters = StudentFee::where('status', 'unpaid')
-            ->where('due_date', '<', Carbon::now())
+        $feeDefaulters = StudentFeeAssignment::where('status', 'active')
+            ->whereRaw('COALESCE(paid_amount, 0) < final_amount')
             ->distinct('student_id')
             ->count('student_id');
 
@@ -69,7 +70,7 @@ class StudentDashboardController extends Controller
                 $q->where('is_current', true)->with('classSection.class', 'classSection.section');
             }])
             ->orderBy('created_at', 'desc')
-            ->limit(10)
+            ->limit(5)
             ->get();
 
         // Admission Trend (Last 6 months)

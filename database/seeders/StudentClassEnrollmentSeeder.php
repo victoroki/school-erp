@@ -12,88 +12,92 @@ class StudentClassEnrollmentSeeder extends Seeder
 {
     public function run(): void
     {
-        $year = AcademicYear::where('is_current', true)->first();
-        $classSections = ClassSection::all();
-        $students = Student::all();
+        $currentYear = AcademicYear::where('is_current', true)->first();
+        $lastYear = AcademicYear::where('is_current', false)->orderByDesc('academic_year_id')->first();
 
-        if (!$year || $classSections->count() === 0 || $students->count() === 0) {
+        if (!$currentYear) {
             return;
         }
 
-        // Assign students to classes based on their age/birth year
-        $classAssignments = [
-            // Grade 1 students (Age 6-7, born 2016-2017)
-            'ADM2024001' => ['class' => 1, 'section' => 'A'], // Emma Johnson
-            'ADM2024002' => ['class' => 1, 'section' => 'A'], // Liam Martinez
-            'ADM2024003' => ['class' => 1, 'section' => 'B'], // Olivia Brown
-            
-            // Grade 2 students (Age 7-8, born 2015-2016)
-            'ADM2024004' => ['class' => 2, 'section' => 'A'], // Noah Davis
-            'ADM2024005' => ['class' => 2, 'section' => 'A'], // Ava Wilson
-            'ADM2024006' => ['class' => 2, 'section' => 'B'], // Ethan Garcia
-            
-            // Grade 3 students (Age 8-9, born 2014-2015)
-            'ADM2024007' => ['class' => 3, 'section' => 'A'], // Sophia Rodriguez
-            'ADM2024008' => ['class' => 3, 'section' => 'A'], // Mason Lewis
-            'ADM2024009' => ['class' => 3, 'section' => 'B'], // Isabella Lee
-            
-            // Grade 4 students (Age 9-10, born 2013-2014)
-            'ADM2024010' => ['class' => 4, 'section' => 'A'], // William Walker
-            'ADM2024011' => ['class' => 4, 'section' => 'A'], // Mia Hall
-            'ADM2024012' => ['class' => 4, 'section' => 'B'], // James Allen
-            
-            // Grade 5 students (Age 10-11, born 2012-2013)
-            'ADM2024013' => ['class' => 5, 'section' => 'A'], // Charlotte Young
-            'ADM2024014' => ['class' => 5, 'section' => 'A'], // Benjamin Hernandez
-            'ADM2024015' => ['class' => 5, 'section' => 'B'], // Amelia King
-            
-            // Alumni students (would have been in higher grades)
-            'ADM2023001' => ['class' => 6, 'section' => 'A'], // Alexander Wright
-            'ADM2023002' => ['class' => 6, 'section' => 'A'], // Elizabeth Lopez
-            
-            // Transferred/Inactive students (assign to appropriate grade)
-            'ADM2024004' => ['class' => 2, 'section' => 'B'], // Michael Hill
-            'ADM2024005' => ['class' => 4, 'section' => 'B'], // Sofia Green
+        $students = Student::all();
+        if ($students->count() === 0) {
+            return;
+        }
+
+        // admission_no => ['class' => CBC class name, 'section' => A|B, 'status', 'year']
+        $assignments = [
+            // PP1
+            'ADM2026/001' => ['PP1', 'A', 'active'], 'ADM2026/002' => ['PP1', 'A', 'active'], 'ADM2026/003' => ['PP1', 'B', 'active'],
+            // PP2
+            'ADM2026/004' => ['PP2', 'A', 'active'], 'ADM2026/005' => ['PP2', 'A', 'active'], 'ADM2026/006' => ['PP2', 'B', 'active'],
+            // Grade 1
+            'ADM2026/007' => ['Grade 1', 'A', 'active'], 'ADM2026/008' => ['Grade 1', 'A', 'active'], 'ADM2026/009' => ['Grade 1', 'B', 'active'],
+            // Grade 2
+            'ADM2026/010' => ['Grade 2', 'A', 'active'], 'ADM2026/011' => ['Grade 2', 'A', 'active'], 'ADM2026/012' => ['Grade 2', 'B', 'active'],
+            // Grade 3
+            'ADM2026/013' => ['Grade 3', 'A', 'active'], 'ADM2026/014' => ['Grade 3', 'A', 'active'], 'ADM2026/015' => ['Grade 3', 'B', 'active'],
+            // Grade 4
+            'ADM2026/016' => ['Grade 4', 'A', 'active'], 'ADM2026/017' => ['Grade 4', 'A', 'active'], 'ADM2026/018' => ['Grade 4', 'B', 'active'],
+            // Grade 5
+            'ADM2026/019' => ['Grade 5', 'A', 'active'], 'ADM2026/020' => ['Grade 5', 'A', 'active'], 'ADM2026/021' => ['Grade 5', 'B', 'active'],
+            // Grade 6
+            'ADM2026/022' => ['Grade 6', 'A', 'active'], 'ADM2026/023' => ['Grade 6', 'B', 'active'],
+            // Grade 7
+            'ADM2026/024' => ['Grade 7', 'A', 'active'], 'ADM2026/025' => ['Grade 7', 'B', 'active'],
+            // Grade 8
+            'ADM2026/026' => ['Grade 8', 'A', 'active'], 'ADM2026/027' => ['Grade 8', 'B', 'active'],
+            // Grade 9
+            'ADM2026/028' => ['Grade 9', 'A', 'active'], 'ADM2026/029' => ['Grade 9', 'B', 'active'],
+            // Grade 10
+            'ADM2026/030' => ['Grade 10', 'A', 'active'], 'ADM2026/031' => ['Grade 10', 'B', 'active'],
+            // Grade 11
+            'ADM2026/032' => ['Grade 11', 'A', 'active'], 'ADM2026/033' => ['Grade 11', 'B', 'active'],
+            // Grade 12
+            'ADM2026/034' => ['Grade 12', 'A', 'active'], 'ADM2026/035' => ['Grade 12', 'A', 'active'], 'ADM2026/036' => ['Grade 12', 'B', 'active'],
+            // Historical records (placed in the completed 2025 academic year)
+            'ADM2025/101' => ['Grade 12', 'A', 'completed'], 'ADM2025/102' => ['Grade 12', 'B', 'completed'],
+            'ADM2025/103' => ['Grade 7', 'B', 'transferred'],
+            'ADM2024/201' => ['Grade 4', 'A', 'dropped'],
         ];
 
         $rollCounters = [];
-        
+
         foreach ($students as $student) {
-            $admissionNo = $student->admission_no;
-            
-            if (!isset($classAssignments[$admissionNo])) {
-                // Default assignment if not in mapping
-                $classSection = $classSections->random();
-            } else {
-                $assignment = $classAssignments[$admissionNo];
-                $classSection = $classSections->where('class_id', $assignment['class'])
-                    ->where('section_id', function($query) use ($assignment) {
-                        $query->select('section_id')
-                            ->from('sections')
-                            ->where('section_name', $assignment['section']);
-                    })->first();
-                    
-                if (!$classSection) {
-                    $classSection = $classSections->random();
-                }
+            $key = $student->admission_no;
+
+            if (!isset($assignments[$key])) {
+                continue;
             }
-            
-            // Generate roll number based on class and section
-            $classKey = $classSection->class_id . '_' . $classSection->section_id;
-            if (!isset($rollCounters[$classKey])) {
-                $rollCounters[$classKey] = 1;
+
+            [$className, $sectionName, $status] = $assignments[$key];
+
+            $year = $status === 'active' ? $currentYear : $lastYear;
+            if (!$year) {
+                continue;
             }
-            
-            $rollNumber = 'R' . $classSection->class_id . $classSection->section->section_name . 
-                         str_pad((string)$rollCounters[$classKey], 2, '0', STR_PAD_LEFT);
-            $rollCounters[$classKey]++;
-            
-            // Determine status based on student status
-            $enrollmentStatus = 'active';
-            if ($student->status === 'transferred' || $student->status === 'inactive') {
-                $enrollmentStatus = $student->status;
+
+            $classSection = ClassSection::where('academic_year_id', $year->academic_year_id)
+                ->whereHas('schoolClass', function ($q) use ($className) {
+                    $q->where('name', $className);
+                })
+                ->whereHas('section', function ($q) use ($sectionName) {
+                    $q->where('name', $sectionName);
+                })
+                ->first();
+
+            if (!$classSection) {
+                continue;
             }
-            
+
+            $rollKey = $className . '_' . $sectionName;
+            if (!isset($rollCounters[$rollKey])) {
+                $rollCounters[$rollKey] = 1;
+            }
+            $rollState = $rollCounters[$rollKey];
+            $rollCounters[$rollKey]++;
+
+            $rollPrefix = str_replace(' ', '', $className) . $sectionName;
+
             StudentClassEnrollment::firstOrCreate(
                 [
                     'student_id' => $student->student_id,
@@ -101,9 +105,10 @@ class StudentClassEnrollmentSeeder extends Seeder
                     'academic_year_id' => $year->academic_year_id,
                 ],
                 [
-                    'roll_number' => $rollNumber,
-                    'enrollment_date' => $student->admission_date,
-                    'status' => $enrollmentStatus,
+                    'roll_number' => $rollPrefix . '-' . str_pad((string)$rollState, 3, '0', STR_PAD_LEFT),
+                    'enrollment_date' => $status === 'active' ? $student->admission_date : '2025-01-06',
+                    'status' => $status,
+                    'is_current' => $status === 'active',
                 ]
             );
         }

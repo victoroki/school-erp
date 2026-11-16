@@ -13,17 +13,20 @@ class Period extends Model
     public $fillable = [
         'name',
         'start_time',
-        'end_time'
+        'end_time',
+        'type'
     ];
 
     protected $casts = [
-        'name' => 'string'
+        'name' => 'string',
+        'type' => 'string'
     ];
 
     public static array $rules = [
         'name' => 'required|string|max:50',
         'start_time' => 'required',
         'end_time' => 'required',
+        'type' => 'required|in:period,break',
         'created_at' => 'nullable',
         'updated_at' => 'nullable'
     ];

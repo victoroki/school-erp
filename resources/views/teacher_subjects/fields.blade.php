@@ -1,23 +1,72 @@
-<!-- Staff Id Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('staff_id', 'Staff:') !!}
-    {!! Form::select('staff_id', $staffList, null, ['class' => 'form-control', 'required']) !!}
+@push('page_css')
+    <style>
+        .select2-container--bootstrap4 .select2-selection {
+            border: 1px solid var(--border) !important;
+            border-radius: 8px !important;
+            height: 42px !important;
+            padding: 0.375rem 0.75rem !important;
+            font-size: 0.875rem !important;
+            transition: all 150ms var(--ease-out) !important;
+        }
+        .select2-container--bootstrap4.select2-container--focus .select2-selection {
+            border-color: var(--indigo) !important;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1) !important;
+        }
+        .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
+            line-height: 28px !important;
+            color: var(--text) !important;
+        }
+    </style>
+@endpush
+
+<!-- Staff Selection -->
+<div class="form-group col-sm-6 mb-4">
+    {!! Form::label('staff_id', 'Assigned Teacher', ['class' => 'dash-label']) !!}
+    {!! Form::select('staff_id', $staffList, null, ['class' => 'form-control select2', 'id' => 'staff_id', 'required']) !!}
 </div>
 
-<!-- Subject Id Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('subject_id', 'Subject:') !!}
-    {!! Form::select('subject_id', $subjectList, null, ['class' => 'form-control', 'required']) !!}
+<!-- Subject Selection -->
+<div class="form-group col-sm-6 mb-4">
+    {!! Form::label('subject_id', 'Subject to Teach', ['class' => 'dash-label']) !!}
+    {!! Form::select('subject_id', $subjectList, null, ['class' => 'form-control select2', 'id' => 'subject_id', 'required']) !!}
 </div>
 
-<!-- Class Section Id Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('class_section_id', 'Class Section:') !!}
-    {!! Form::select('class_section_id', $classSectionList, null, ['class' => 'form-control', 'required']) !!}
+<!-- Class Section Selection -->
+<div class="form-group col-sm-6 mb-4">
+    {!! Form::label('class_section_id', 'Target Class & Section', ['class' => 'dash-label']) !!}
+    {!! Form::select('class_section_id', $classSectionList, null, ['class' => 'form-control select2', 'id' => 'class_section_id', 'required']) !!}
 </div>
 
-<!-- Academic Year Id Field -->
-<div class="form-group col-sm-6">
-    {!! Form::label('academic_year_id', 'Academic Year:') !!}
-    {!! Form::select('academic_year_id', $academicYearList, null, ['class' => 'form-control', 'required']) !!}
+<!-- Academic Year Selection -->
+<div class="form-group col-sm-6 mb-4">
+    {!! Form::label('academic_year_id', 'Academic Period', ['class' => 'dash-label']) !!}
+    {!! Form::select('academic_year_id', $academicYearList, $currentYearId ?? null, ['class' => 'form-control select2', 'id' => 'academic_year_id', 'required']) !!}
 </div>
+
+@push('page_scripts')
+    <script type="text/javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            // Poll for jQuery + Select2 (loaded with defer in layouts/app) before
+            // initializing — matches the pattern used across the other dashboards.
+            var select2InitInterval = setInterval(function() {
+                if (window.jQuery && window.jQuery.fn.select2) {
+                    clearInterval(select2InitInterval);
+                    window.jQuery(function($) {
+                        $('.select2').select2({
+                            theme: 'bootstrap4',
+                            width: '100%',
+                            placeholder: 'Select an option'
+                        });
+
+                        $(document).on('select2:open', () => {
+                            let searchField = document.querySelector('.select2-search__field');
+                            if (searchField) searchField.focus();
+                        });
+                    });
+                }
+            }, 100);
+
+            setTimeout(function() { clearInterval(select2InitInterval); }, 5000);
+        });
+    </script>
+@endpush

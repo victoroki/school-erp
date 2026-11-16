@@ -1,30 +1,33 @@
 <!-- Hostel Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('hostel_id', 'Hostel:') !!}
-    {!! Form::select('hostel_id', $hostels, null, ['class' => 'form-control select2', 'placeholder' => 'Select Hostel', 'required']) !!}
+    {!! Form::select('hostel_id', $hostels, null, ['class' => 'form-control select2', 'placeholder' => 'Select Hostel', 'required', 'style' => 'width: 100%']) !!}
 </div>
 
 <!-- Room Number Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('room_number', 'Room Number/Name:') !!}
-    {!! Form::text('room_number', null, ['class' => 'form-control', 'required', 'maxlength' => 20]) !!}
+    {!! Form::text('room_number', null, ['class' => 'form-control', 'required', 'maxlength' => 20, 'placeholder' => 'e.g. A-12']) !!}
 </div>
 
 <!-- Room Type Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('room_type', 'Room Type:') !!}
     {!! Form::select('room_type', [
-        'single' => 'Single (1 Bed)',
-        'double' => 'Double (2 Beds)',
-        'triple' => 'Triple (3 Beds)',
-        'dormitory' => 'Dormitory (4+ Beds)'
-    ], null, ['class' => 'form-control select2', 'required']) !!}
+        'single' => 'Single (1 bed)',
+        'double' => 'Double (2 beds)',
+        'triple' => 'Triple (3 beds)',
+        'dormitory' => 'Dormitory (4+ beds)',
+    ], null, ['class' => 'form-control select2', 'required', 'style' => 'width: 100%']) !!}
 </div>
 
 <!-- Capacity Field -->
 <div class="form-group col-sm-6">
     {!! Form::label('capacity', 'Bed Capacity:') !!}
     {!! Form::number('capacity', null, ['class' => 'form-control', 'required', 'min' => 1]) !!}
+    <small class="form-text text-muted">
+        Beds are numbered 1 to this capacity. A room cannot be reduced below the students already in it.
+    </small>
 </div>
 
 <!-- Floor Field -->
@@ -34,15 +37,15 @@
 </div>
 
 <!-- Status Field -->
+{{-- The room's occupancy is never typed in: it is counted from the allocations.
+     "Full" is therefore a derived state and is not offered here. --}}
 <div class="form-group col-sm-6">
-    {!! Form::label('status', 'Status:') !!}
+    {!! Form::label('status', 'Condition:') !!}
     {!! Form::select('status', [
-        'available' => 'Available',
-        'under_maintenance' => 'Under Maintenance',
-        'full' => 'Full (Read-only status)',
-        'partial' => 'Partial (Read-only status)'
-    ], null, ['class' => 'form-control select2']) !!}
-    <small class="text-muted">Status is usually auto-managed based on occupancy.</small>
+        \App\Models\HostelRoom::STATUS_AVAILABLE => 'In service — beds allocated as they are filled',
+        \App\Models\HostelRoom::STATUS_UNDER_MAINTENANCE => 'Under maintenance — cannot take new students',
+    ], null, ['class' => 'form-control select2', 'style' => 'width: 100%']) !!}
+    <small class="form-text text-muted">Status becomes <strong>Full</strong> automatically once every bed is taken.</small>
 </div>
 
 <!-- Maintenance Notes Field -->

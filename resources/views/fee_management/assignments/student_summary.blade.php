@@ -52,10 +52,10 @@
                         <h3 class="card-title">Balance</h3>
                     </div>
                     <div class="card-body">
-                        <h5>Net Payable <span class="float-right text-primary">{{ number_format($netPayable) }}</span></h5>
-                        <h5>Paid <span class="float-right text-success">{{ number_format($totalPaid) }}</span></h5>
+                        <h5>Net Payable <span class="float-right text-primary">{{ \App\Support\Money::format($netPayable) }}</span></h5>
+                        <h5>Paid <span class="float-right text-success">{{ \App\Support\Money::format($totalPaid) }}</span></h5>
                         <hr>
-                        <h4>Due <span class="float-right {{ $balance > 0 ? 'text-danger' : 'text-success' }}">{{ number_format($balance) }}</span></h4>
+                        <h4>Due <span class="float-right {{ $balance > 0 ? 'text-danger' : 'text-success' }}">{{ \App\Support\Money::format($balance) }}</span></h4>
                         
                         <a href="{{ route('fee-management.collect-payment', $student->student_id) }}" class="btn btn-block btn-success mt-3"><b>Collect Payment</b></a>
                     </div>
@@ -89,16 +89,16 @@
                                         <tr>
                                             <td>{{ $assignment->feeStructure->category->name }}</td>
                                             <td>{{ $assignment->term }}</td>
-                                            <td>{{ number_format($assignment->amount) }}</td>
+                                            <td>{{ \App\Support\Money::format($assignment->amount) }}</td>
                                             <td>
                                                 @if($assignment->discount_amount > 0)
-                                                    <span class="text-danger">-{{ number_format($assignment->discount_amount) }}</span>
+                                                    <span class="text-danger">{{ \App\Support\Money::format(-1 * (float) $assignment->discount_amount) }}</span>
                                                     @if($assignment->discount) <small>({{ $assignment->discount->name }})</small> @endif
                                                 @else
                                                   0
                                                 @endif
                                             </td>
-                                            <td><b>{{ number_format($assignment->final_amount) }}</b></td>
+                                            <td><b>{{ \App\Support\Money::format($assignment->final_amount) }}</b></td>
                                             <td>
                                                  {!! Form::open(['route' => ['fees.assignments.destroy', $assignment->id], 'method' => 'delete', 'style' => 'display:inline']) !!}
                                                      <button type="submit" class="btn btn-xs btn-danger" onclick="return confirm('Remove?')">X</button>
@@ -108,9 +108,9 @@
                                         @endforeach
                                         <tr class="bg-light">
                                             <td colspan="2"><strong>TOTALS</strong></td>
-                                            <td><strong>{{ number_format($totalAmount) }}</strong></td>
-                                            <td class="text-danger"><strong>-{{ number_format($totalDiscount) }}</strong></td>
-                                            <td><strong class="text-primary">{{ number_format($netPayable) }}</strong></td>
+                                            <td><strong>{{ \App\Support\Money::format($totalAmount) }}</strong></td>
+                                            <td class="text-danger"><strong>{{ \App\Support\Money::format(-1 * (float) $totalDiscount) }}</strong></td>
+                                            <td><strong class="text-primary">{{ \App\Support\Money::format($netPayable) }}</strong></td>
                                             <td></td>
                                         </tr>
                                     </tbody>

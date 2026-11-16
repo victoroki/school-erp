@@ -15,69 +15,104 @@ use Illuminate\Support\Facades\Artisan;
 |
 */
 
-// Route to clear cache on deployment
+// Route to clear cache on deployment (admin only)
 Route::get('/clear-all-cache', function() {
     Artisan::call('optimize:clear');
     return "<h1>All Cache Cleared Successfully</h1>";
-});
+})->middleware('auth');
 
-// Redirect root to login if not authenticated, otherwise to dashboard
 Route::get('/', function () {
-    if (Auth::check()) {
-        return redirect()->route('dashboard');
-    }
     return redirect()->route('login');
 });
 
 // Authentication Routes
 Auth::routes();
 
+// One-time school onboarding (only reachable before an admin account exists)
+Route::get('/setup/{token}', [App\Http\Controllers\SetupController::class, 'show'])->name('setup');
+Route::post('/setup/{token}', [App\Http\Controllers\SetupController::class, 'store'])->name('setup.store');
+
 // All authenticated routes
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'module'])->group(function () {
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/data', [App\Http\Controllers\DashboardController::class, 'getData'])->name('dashboard.data');
 
     Route::resource('roles', App\Http\Controllers\RoleController::class);
-    Route::resource('permissions', App\Http\Controllers\PermissionController::class);
+    Route::patch('departments/{department}/hod', [App\Http\Controllers\DepartmentController::class, 'updateHod'])->name('departments.update-hod');
     Route::resource('departments', App\Http\Controllers\DepartmentController::class);
     Route::resource('academic-years', App\Http\Controllers\AcademicYearController::class);
+// Sets up the year after the current one, terms included. Declared after the
+// resource so 'academic-years.roll-forward' is not shadowed by the {id} route.
+Route::post('academic-years/roll-forward', [App\Http\Controllers\AcademicYearController::class, 'rollForward'])->name('academic-years.roll-forward');
     Route::resource('school-classes', App\Http\Controllers\SchoolClassController::class);
     Route::resource('sections', App\Http\Controllers\SectionController::class);
+    // Must precede the resource so the literal segments are not captured as
+    // a {classroom} id.
+    Route::post('classrooms/{classroom}/archive', [App\Http\Controllers\ClassroomController::class, 'archive'])->name('classrooms.archive');
+    Route::post('classrooms/{classroom}/restore', [App\Http\Controllers\ClassroomController::class, 'restore'])->name('classrooms.restore');
     Route::resource('classrooms', App\Http\Controllers\ClassroomController::class);
+    // Declared before the resource so the literal "archive"/"restore" segments
+    // are matched as actions rather than falling through to subjects/{subject}.
+    Route::post('subjects/{subject}/archive', [App\Http\Controllers\SubjectController::class, 'archive'])->name('subjects.archive');
+    Route::post('subjects/{subject}/restore', [App\Http\Controllers\SubjectController::class, 'restore'])->name('subjects.restore');
     Route::resource('subjects', App\Http\Controllers\SubjectController::class);
     Route::resource('periods', App\Http\Controllers\PeriodController::class);
     Route::resource('exam-types', App\Http\Controllers\ExamTypeController::class);
-    Route::resource('grading-scales', App\Http\Controllers\GradingScaleController::class);
-    Route::resource('fee-categories', App\Http\Controllers\FeeCategoryController::class);
-    Route::resource('book-categories', App\Http\Controllers\BookCategoryController::class);
+    Route::post('grading-scales/seed-kcse', [App\Http\Controllers\GradingScaleController::class, 'seedKcse'])->name('gradingScales.seed-kcse');
+    Route::post('grading-scales/seed-cbc', [App\Http\Controllers\GradingScaleController::class, 'seedCbc'])->name('gradingScales.seed-cbc');
+    Route::resource('grading-scales', App\Http\Controllers\GradingScaleController::class)->names('gradingScales');
+    Route::resource('fee-categories', App\Http\Controllers\FeeCategoryController::class)->names('feeCategories');
+    Route::post('fee-categories/generate-code', [App\Http\Controllers\FeeCategoryController::class, 'generateAutoCode'])->name('fee-categories.generate-code');
+    Route::resource('book-categories', App\Http\Controllers\BookCategoryController::class)->names('bookCategories');
     Route::resource('inventory-categories', App\Http\Controllers\InventoryCategoryController::class);
     Route::resource('suppliers', App\Http\Controllers\SupplierController::class);
-    Route::resource('bank-accounts', App\Http\Controllers\BankAccountController::class);
+    Route::resource('bank-accounts', App\Http\Controllers\BankAccountController::class)->names('bankAccounts');
     Route::resource('job-positions', App\Http\Controllers\JobPositionController::class);
-    Route::resource('leave-types', App\Http\Controllers\LeaveTypeController::class);
+    Route::resource('leave-types', App\Http\Controllers\LeaveTypeController::class)->names('leaveTypes');
     Route::resource('sms-templates', App\Http\Controllers\SmsTemplateController::class)->names('smsTemplates');
     Route::resource('email-templates', App\Http\Controllers\EmailTemplateController::class)->names('emailTemplates');
+    Route::patch('users/{user}/reset-password', [App\Http\Controllers\UserController::class, 'resetPassword'])->name('users.reset-password');
     Route::resource('users', App\Http\Controllers\UserController::class);
+    Route::get('student-parent-relationships/search/students', [App\Http\Controllers\StudentParentRelationshipController::class, 'searchStudents'])->name('student-parent-relationships.search-students');
+    Route::get('student-parent-relationships/search/parents', [App\Http\Controllers\StudentParentRelationshipController::class, 'searchParents'])->name('student-parent-relationships.search-parents');
+    Route::get('student-parent-relationships/print', [App\Http\Controllers\StudentParentRelationshipController::class, 'print'])->name('student-parent-relationships.print');
     Route::resource('student-parent-relationships', App\Http\Controllers\StudentParentRelationshipController::class);
     Route::resource('student-documents', App\Http\Controllers\StudentDocumentController::class);
     Route::get('student-documents/{id}/download', [App\Http\Controllers\StudentDocumentController::class, 'download'])->name('student-documents.download');
-    Route::resource('staff-documents', App\Http\Controllers\StaffDocumentController::class);
+    Route::get('staff-documents/search', [App\Http\Controllers\StaffDocumentController::class, 'searchStaff'])->name('staffDocuments.search-staff');
+    Route::get('staff-documents/{id}/download', [App\Http\Controllers\StaffDocumentController::class, 'download'])->name('staffDocuments.download');
+    Route::resource('staff-documents', App\Http\Controllers\StaffDocumentController::class)->names('staffDocuments');
     Route::resource('class-sections', App\Http\Controllers\ClassSectionController::class);
+    Route::post('class-subjects/bulk-delete', [App\Http\Controllers\ClassSubjectController::class, 'bulkDestroy'])->name('class-subjects.bulk-delete');
+    Route::get('class-subjects/curriculum', [App\Http\Controllers\ClassSubjectController::class, 'curriculum'])->name('class-subjects.curriculum');
+    Route::get('class-subjects/subjects-by-class/{classId}', [App\Http\Controllers\ClassSubjectController::class, 'getSubjectsByClass'])->name('class-subjects.subjects-by-class');
     Route::resource('class-subjects', App\Http\Controllers\ClassSubjectController::class);
     Route::resource('teacher-subjects', App\Http\Controllers\TeacherSubjectController::class);
     Route::resource('exams', App\Http\Controllers\ExamController::class);
-    Route::resource('exam-schedules', App\Http\Controllers\ExamScheduleController::class);
+    Route::get('exam-schedules/auto-generate', [App\Http\Controllers\ExamScheduleController::class, 'autoGenerate'])->name('exam-schedules.auto-generate');
+Route::post('exam-schedules/auto-generate', [App\Http\Controllers\ExamScheduleController::class, 'storeAutoGenerated'])->name('exam-schedules.auto-generate.store');
+Route::resource('exam-schedules', App\Http\Controllers\ExamScheduleController::class);
     Route::get('exam-results/bulk', [App\Http\Controllers\ExamResultController::class, 'bulk'])->name('exam-results.bulk');
     Route::post('exam-results/bulk', [App\Http\Controllers\ExamResultController::class, 'postBulk'])->name('exam-results.bulk.store');
-    Route::resource('exam-results', App\Http\Controllers\ExamResultController::class);
-    Route::resource('fee-structures', App\Http\Controllers\FeeStructureController::class);
-    Route::resource('student-fee-discounts', App\Http\Controllers\StudentFeeDiscountController::class);
+Route::post('exam-results/bulk/save-one', [App\Http\Controllers\ExamResultController::class, 'saveOne'])->name('exam-results.bulk.save-one');
+    Route::get('exam-results/import-template', [App\Http\Controllers\ExamResultController::class, 'importTemplate'])->name('exam-results.import-template');
+    Route::post('exam-results/import', [App\Http\Controllers\ExamResultController::class, 'importStore'])->name('exam-results.import.store');
+    Route::get('exam-results/students-by-class', [App\Http\Controllers\ExamResultController::class, 'studentsByClass'])->name('exam-results.students-by-class');
+Route::resource('exam-results', App\Http\Controllers\ExamResultController::class);
+    // Declared before the resource so the two-segment path is not shadowed.
+    Route::get('fee-structures/terms-by-year/{academicYearId}', [App\Http\Controllers\FeeStructureController::class, 'getTermsByYear'])->name('fee-structures.terms-by-year');
+Route::resource('fee-structures', App\Http\Controllers\FeeStructureController::class);
+    Route::get('books/import-template', [App\Http\Controllers\BookController::class, 'importTemplate'])->name('books.import-template');
+    Route::get('books/import', [App\Http\Controllers\BookController::class, 'importForm'])->name('books.import');
+    Route::post('books/import', [App\Http\Controllers\BookController::class, 'import'])->name('books.import.store');
     Route::resource('books', App\Http\Controllers\BookController::class);
-    Route::resource('book-issues', App\Http\Controllers\BookIssueController::class);
+    Route::resource('book-issues', App\Http\Controllers\BookIssueController::class)->except(['edit', 'update']);
     Route::get('library/book-issues/{id}/return', [App\Http\Controllers\BookIssueController::class, 'returnModal'])->name('book-issues.return-modal');
     Route::post('library/book-issues/{id}/return', [App\Http\Controllers\BookIssueController::class, 'returnBook'])->name('book-issues.return');
     Route::get('library/dashboard', [App\Http\Controllers\LibraryDashboardController::class, 'index'])->name('library.dashboard');
+    Route::get('library/settings', [App\Http\Controllers\LibrarySettingsController::class, 'edit'])->name('library.settings.edit');
+    Route::patch('library/settings', [App\Http\Controllers\LibrarySettingsController::class, 'update'])->name('library.settings.update');
     Route::resource('inventory-items', App\Http\Controllers\InventoryItemController::class);
 
     // Inventory Management Routes
@@ -92,12 +127,17 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/stock-movement-history', [App\Http\Controllers\InventoryController::class, 'stockMovementHistory'])->name('stock-movement-history');
         
         // Requisitions
-        Route::resource('requisitions', App\Http\Controllers\RequisitionController::class);
+        Route::resource('requisitions', App\Http\Controllers\RequisitionController::class)->except(['edit', 'update', 'destroy']);
         Route::post('requisitions/{id}/approve', [App\Http\Controllers\RequisitionController::class, 'approve'])->name('requisitions.approve');
         
         // Purchase Orders
-        Route::resource('purchase-orders', App\Http\Controllers\PurchaseOrderController::class);
+        Route::resource('purchase-orders', App\Http\Controllers\PurchaseOrderController::class)->except(['edit', 'update', 'destroy']);
         Route::post('purchase-orders/{id}/receive', [App\Http\Controllers\PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive');
+        // Supplier payments: the money step of a purchase order. Literal
+        // segments registered before the resource's {id} routes cannot shadow
+        // them because they carry extra path depth.
+        Route::post('purchase-orders/{id}/pay', [App\Http\Controllers\PurchaseOrderController::class, 'pay'])->name('purchase-orders.pay');
+        Route::post('purchase-orders/{id}/arrange', [App\Http\Controllers\PurchaseOrderController::class, 'arrange'])->name('purchase-orders.arrange');
     });
     
     Route::resource('routes', App\Http\Controllers\RouteController::class);
@@ -105,7 +145,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('vehicles', App\Http\Controllers\VehicleController::class);
     Route::resource('transport-assignments', App\Http\Controllers\TransportAssignmentController::class);
     Route::resource('transport-registrations', App\Http\Controllers\TransportRegistrationController::class);
-    Route::resource('student-transport-assignments', App\Http\Controllers\StudentTransportAssignmentController::class);
+    // No show(): the controller has no show() method and the UI only links to
+    // index/edit, so the registered show route returned 500 for every user.
+    Route::resource('student-transport-assignments', App\Http\Controllers\StudentTransportAssignmentController::class)->except(['show']);
     Route::get('api/routes/{routeId}/stops', [App\Http\Controllers\StudentTransportAssignmentController::class, 'getStopsByRoute'])->name('api.routes.stops');
     
     Route::prefix('transportation')->name('transportation.')->group(function () {
@@ -125,6 +167,32 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/history', [App\Http\Controllers\CommunicationController::class, 'history'])->name('history.index');
         Route::get('/history/{id}', [App\Http\Controllers\CommunicationController::class, 'showHistory'])->name('history.show');
         Route::get('/api/template/{type}/{id}', [App\Http\Controllers\CommunicationController::class, 'getTemplate']);
+
+        // Auto Triggers
+        Route::get('/triggers', [App\Http\Controllers\AutoTriggerController::class, 'index'])->name('triggers.index');
+        Route::get('/triggers/{id}/edit', [App\Http\Controllers\AutoTriggerController::class, 'edit'])->name('triggers.edit');
+        Route::put('/triggers/{id}', [App\Http\Controllers\AutoTriggerController::class, 'update'])->name('triggers.update');
+        Route::post('/triggers/{id}/toggle', [App\Http\Controllers\AutoTriggerController::class, 'toggle'])->name('triggers.toggle');
+
+        // Pending Confirmations
+        Route::get('/pending', [App\Http\Controllers\PendingConfirmationController::class, 'index'])->name('pending.index');
+        Route::post('/pending/{id}/confirm', [App\Http\Controllers\PendingConfirmationController::class, 'confirm'])->name('pending.confirm');
+        Route::post('/pending/bulk-confirm', [App\Http\Controllers\PendingConfirmationController::class, 'bulkConfirm'])->name('pending.bulk-confirm');
+        Route::delete('/pending/{id}/discard', [App\Http\Controllers\PendingConfirmationController::class, 'discard'])->name('pending.discard');
+        Route::delete('/pending/bulk-discard', [App\Http\Controllers\PendingConfirmationController::class, 'bulkDiscard'])->name('pending.bulk-discard');
+
+        // Provider Settings
+        Route::get('/providers', [App\Http\Controllers\ProviderSettingController::class, 'index'])->name('providers.index');
+        Route::post('/providers/sms', [App\Http\Controllers\ProviderSettingController::class, 'updateSms'])->name('providers.update-sms');
+        Route::post('/providers/sozuri', [App\Http\Controllers\ProviderSettingController::class, 'updateSozuri'])->name('providers.update-sozuri');
+        Route::post('/providers/active', [App\Http\Controllers\ProviderSettingController::class, 'setActiveProvider'])->name('providers.set-active');
+        Route::post('/providers/email', [App\Http\Controllers\ProviderSettingController::class, 'updateEmail'])->name('providers.update-email');
+        Route::post('/providers/daily-limit', [App\Http\Controllers\ProviderSettingController::class, 'updateDailyLimit'])->name('providers.update-daily-limit');
+        Route::post('/providers/test-sms', [App\Http\Controllers\ProviderSettingController::class, 'testSms'])->name('providers.test-sms');
+        Route::post('/webhooks/sozuri', [App\Http\Controllers\ProviderSettingController::class, 'handleSozuriWebhook'])->name('webhooks.sozuri');
+
+        // AJAX: Recipient count
+        Route::get('/api/recipients/count', [App\Http\Controllers\CommunicationController::class, 'getRecipientCount'])->name('api.recipients.count');
     });
 
     Route::resource('notifications', App\Http\Controllers\NotificationController::class);
@@ -135,16 +203,31 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [App\Http\Controllers\HostelDashboardController::class, 'index'])->name('dashboard');
         Route::get('/reports', [App\Http\Controllers\HostelReportController::class, 'index'])->name('reports');
         Route::get('/vacancy-report', [App\Http\Controllers\HostelReportController::class, 'vacancyReport'])->name('vacancy-report');
+        Route::get('/vacancy-report/pdf', [App\Http\Controllers\HostelReportController::class, 'vacancyReportPdf'])->name('vacancy-report.pdf');
         Route::get('/student-list', [App\Http\Controllers\HostelReportController::class, 'studentList'])->name('student-list');
+        Route::get('/student-list/pdf', [App\Http\Controllers\HostelReportController::class, 'studentListPdf'])->name('student-list.pdf');
     });
     
     Route::resource('hostel-rooms', App\Http\Controllers\HostelRoomController::class);
+
+    // Hostel allocation custom routes MUST be declared before Route::resource:
+    // the resource's `show` route (`/hostel-allocations/{hostel_allocation}`) would
+    // otherwise swallow the literal `/hostel-allocations/bulk` path and resolve
+    // "bulk" as an allocation id. Numeric constraints keep the two apart even if
+    // the ordering is ever changed.
+    Route::middleware('can:hostel.manage')->group(function () {
+        Route::get('hostel-allocations/bulk', [App\Http\Controllers\HostelAllocationController::class, 'bulkForm'])->name('hostel-allocations.bulk-form');
+        Route::post('hostel-allocations/bulk', [App\Http\Controllers\HostelAllocationController::class, 'bulkStore'])->name('hostel-allocations.bulk-store');
+        Route::get('hostel-allocations/{id}/transfer', [App\Http\Controllers\HostelAllocationController::class, 'transferForm'])->whereNumber('id')->name('hostel-allocations.transfer-form');
+        Route::post('hostel-allocations/{id}/transfer', [App\Http\Controllers\HostelAllocationController::class, 'transferStore'])->whereNumber('id')->name('hostel-allocations.transfer-store');
+        Route::post('hostel-allocations/{id}/checkout', [App\Http\Controllers\HostelAllocationController::class, 'checkout'])->whereNumber('id')->name('hostel-allocations.checkout');
+    });
+
+    Route::middleware('can:hostel.view')->group(function () {
+        Route::get('hostel-allocations/export', [App\Http\Controllers\HostelAllocationController::class, 'export'])->name('hostel-allocations.export');
+    });
+
     Route::resource('hostel-allocations', App\Http\Controllers\HostelAllocationController::class);
-    Route::post('hostel-allocations/{id}/checkout', [App\Http\Controllers\HostelAllocationController::class, 'checkout'])->name('hostel-allocations.checkout');
-    Route::get('hostel-allocations/bulk', [App\Http\Controllers\HostelAllocationController::class, 'bulkForm'])->name('hostel-allocations.bulk-form');
-    Route::post('hostel-allocations/bulk', [App\Http\Controllers\HostelAllocationController::class, 'bulkStore'])->name('hostel-allocations.bulk-store');
-    Route::get('hostel-allocations/{id}/transfer', [App\Http\Controllers\HostelAllocationController::class, 'transferForm'])->name('hostel-allocations.transfer-form');
-    Route::post('hostel-allocations/{id}/transfer', [App\Http\Controllers\HostelAllocationController::class, 'transferStore'])->name('hostel-allocations.transfer-store');
     Route::resource('payrolls', App\Http\Controllers\PayrollController::class);
     Route::resource('expenses', App\Http\Controllers\ExpensesController::class);
     Route::get('expenses-pending', [App\Http\Controllers\ExpensesController::class, 'pending'])->name('expenses.pending');
@@ -155,15 +238,44 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('income-categories', App\Http\Controllers\IncomeCategoryController::class)->names('incomeCategories');
     Route::resource('library-members', App\Http\Controllers\LibraryMemberController::class);
     // Import Routes
+    Route::get('students/import/template', [App\Http\Controllers\StudentImportController::class, 'template'])->name('students.import.template');
     Route::get('students/import', [App\Http\Controllers\StudentImportController::class, 'index'])->name('students.import');
     Route::post('students/import', [App\Http\Controllers\StudentImportController::class, 'store'])->name('students.import.store');
 
     // ID Card Routes
     Route::get('students/{id}/id-card', [App\Http\Controllers\StudentIdCardController::class, 'generate'])->name('students.id-card');
+    Route::get('students/bulk-id-cards', [App\Http\Controllers\StudentIdCardController::class, 'bulkForm'])->name('students.bulk-id-cards.form');
     Route::post('students/bulk-id-cards', [App\Http\Controllers\StudentIdCardController::class, 'bulk'])->name('students.bulk-id-cards');
 
+    // Must precede the resource so 'students/...' literal segments are not
+    // captured as a {student} id.
+    Route::get('students/transferred', [App\Http\Controllers\StudentController::class, 'transferred'])
+        ->name('students.transferred');
+    Route::post('students/{id}/restore', [App\Http\Controllers\StudentController::class, 'restore'])
+        ->name('students.restore');
+
     Route::resource('students', App\Http\Controllers\StudentController::class);
+    Route::get('students/ajax/search', [App\Http\Controllers\StudentController::class, 'ajaxSearch'])->name('students.ajax.search');
+      Route::post('students/{id}/siblings', [App\Http\Controllers\StudentController::class, 
+'addSibling'])->name('students.add-sibling');
+        Route::post('students/{id}/parents', [App\Http\Controllers\StudentController::class, 
+'addParent'])->name('students.add-parent');
+        Route::delete('students/{id}/parents/{parentId}', [App\Http\Controllers\StudentController::class, 
+'removeParent'])->name('students.remove-parent');
+        Route::get('students/ajax/search/parents', [App\Http\Controllers\StudentController::class, 
+'ajaxSearchParents'])->name('students.ajax.search-parents');
+    Route::get('student-transfer', [App\Http\Controllers\StudentTransferController::class, 'index'])->name('student-transfer.index');
+    Route::post('student-transfer', [App\Http\Controllers\StudentTransferController::class, 'store'])->name('student-transfer.store');
     Route::resource('student-class-enrollments', App\Http\Controllers\StudentClassEnrollmentController::class);
+    Route::resource('emergency-contacts', App\Http\Controllers\EmergencyContactController::class)->names([
+        'index' => 'emergencyContacts.index',
+        'create' => 'emergencyContacts.create',
+        'store' => 'emergencyContacts.store',
+        'show' => 'emergencyContacts.show',
+        'edit' => 'emergencyContacts.edit',
+        'update' => 'emergencyContacts.update',
+        'destroy' => 'emergencyContacts.destroy',
+    ]);
     Route::resource('staff', App\Http\Controllers\StaffController::class);
 
     // Financial Management Routes
@@ -172,19 +284,36 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::resource('income', App\Http\Controllers\IncomeController::class);
-    Route::resource('bank-transactions', App\Http\Controllers\BankTransactionController::class);
-    Route::resource('bank-reconciliations', App\Http\Controllers\BankReconciliationController::class);
+    Route::resource('bank-transactions', App\Http\Controllers\BankTransactionController::class)->except(['show', 'edit', 'update', 'destroy']);
+    Route::resource('bank-reconciliations', App\Http\Controllers\BankReconciliationController::class)->only(['index', 'show', 'update']);
     Route::resource('budgets', App\Http\Controllers\BudgetController::class);
     Route::get('budget-vs-actual', [App\Http\Controllers\BudgetController::class, 'vsActual'])->name('budgets.vs-actual');
+
+    // Petty Cash — small cash fund management
+    Route::get('petty-cash', [App\Http\Controllers\PettyCashController::class, 'index'])->name('petty-cash.index');
+    Route::get('petty-cash/create', [App\Http\Controllers\PettyCashController::class, 'create'])->name('petty-cash.create');
+    Route::post('petty-cash', [App\Http\Controllers\PettyCashController::class, 'store'])->name('petty-cash.store');
+    Route::delete('petty-cash/{id}', [App\Http\Controllers\PettyCashController::class, 'destroy'])->name('petty-cash.destroy');
     
     Route::prefix('financial-reports')->name('financial-reports.')->group(function () {
         Route::get('/', [App\Http\Controllers\FinancialReportController::class, 'index'])->name('index');
         Route::get('/cashflow', [App\Http\Controllers\FinancialReportController::class, 'cashflow'])->name('cashflow');
+        Route::get('/cashflow/pdf', [App\Http\Controllers\FinancialReportController::class, 'cashflowPdf'])->name('cashflow-pdf');
         Route::get('/p-and-l', [App\Http\Controllers\FinancialReportController::class, 'pAndL'])->name('p-and-l');
+        Route::get('/p-and-l/pdf', [App\Http\Controllers\FinancialReportController::class, 'pAndLPdf'])->name('p-and-l-pdf');
+        Route::get('/balance-sheet', [App\Http\Controllers\FinancialReportController::class, 'balanceSheet'])->name('balance-sheet');
+        Route::get('/fee-collection-trends', [App\Http\Controllers\FinancialReportController::class, 'feeCollectionTrends'])->name('fee-collection-trends');
     });
 
-    Route::resource('financial-years', App\Http\Controllers\FinancialYearController::class);
+    Route::get('financial-years/{financialYear}/audit', [App\Http\Controllers\FinancialYearController::class, 'audit'])->name('financial-years.audit');
+    Route::resource('financial-years', App\Http\Controllers\FinancialYearController::class)->except(['show', 'destroy']);
     Route::get('audit-trail', [App\Http\Controllers\AuditTrailController::class, 'index'])->name('audit-trail.index');
+    Route::get('audit-trail/export', [App\Http\Controllers\AuditTrailController::class, 'export'])->name('audit-trail.export');
+    Route::get('system-logs', [App\Http\Controllers\SystemLogController::class, 'index'])->name('system-logs.index');
+
+    // Module Management (Administration section — platform Owner only)
+    Route::get('modules', [App\Http\Controllers\ModuleController::class, 'index'])->name('modules.index');
+    Route::post('modules/{module}/toggle', [App\Http\Controllers\ModuleController::class, 'toggle'])->name('modules.toggle');
     
     // Student Management Enhanced Routes
     Route::get('student-dashboard', [App\Http\Controllers\StudentDashboardController::class, 'index'])->name('student-dashboard.index');
@@ -200,6 +329,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('student-promotion', [App\Http\Controllers\StudentPromotionController::class, 'index'])->name('student-promotion.index');
     Route::post('student-promotion', [App\Http\Controllers\StudentPromotionController::class, 'store'])->name('student-promotion.store');
 
+    // Unassigned Students (bulk class assignment)
+    Route::get('student-unassigned', [App\Http\Controllers\StudentUnassignedController::class, 'index'])->name('student-unassigned.index');
+    Route::post('student-unassigned', [App\Http\Controllers\StudentUnassignedController::class, 'store'])->name('student-unassigned.store');
+
 
 
     // Report Routes
@@ -207,6 +340,21 @@ Route::middleware(['auth'])->group(function () {
     Route::get('student-reports/strength', [App\Http\Controllers\StudentReportController::class, 'studentStrength'])->name('student-reports.strength');
     Route::get('student-reports/gender', [App\Http\Controllers\StudentReportController::class, 'genderRatio'])->name('student-reports.gender');
     Route::get('student-reports/attendance', [App\Http\Controllers\StudentReportController::class, 'attendanceSummary'])->name('student-reports.attendance');
+    Route::get('student-reports/fee-status', [App\Http\Controllers\StudentReportController::class, 'feeStatus'])->name('student-reports.fee-status');
+    Route::get('student-reports/age-distribution', [App\Http\Controllers\StudentReportController::class, 'ageDistribution'])->name('student-reports.age-distribution');
+    Route::get('student-reports/enrollment-trends', [App\Http\Controllers\StudentReportController::class, 'enrollmentTrends'])->name('student-reports.enrollment-trends');
+    Route::get('student-reports/medical', [App\Http\Controllers\StudentReportController::class, 'medicalReport'])->name('student-reports.medical');
+    Route::get('student-reports/transport-hostel', [App\Http\Controllers\StudentReportController::class, 'transportHostelSummary'])->name('student-reports.transport-hostel');
+    Route::get('student-reports/fee-status/csv', [App\Http\Controllers\StudentReportController::class, 'feeStatusCsv'])->name('student-reports.fee-status.csv');
+    Route::get('student-reports/fee-status/pdf', [App\Http\Controllers\StudentReportController::class, 'feeStatusPdf'])->name('student-reports.fee-status.pdf');
+    Route::get('student-reports/age-distribution/csv', [App\Http\Controllers\StudentReportController::class, 'ageDistributionCsv'])->name('student-reports.age-distribution.csv');
+    Route::get('student-reports/age-distribution/pdf', [App\Http\Controllers\StudentReportController::class, 'ageDistributionPdf'])->name('student-reports.age-distribution.pdf');
+    Route::get('student-reports/enrollment-trends/csv', [App\Http\Controllers\StudentReportController::class, 'enrollmentTrendsCsv'])->name('student-reports.enrollment-trends.csv');
+    Route::get('student-reports/enrollment-trends/pdf', [App\Http\Controllers\StudentReportController::class, 'enrollmentTrendsPdf'])->name('student-reports.enrollment-trends.pdf');
+    Route::get('student-reports/medical/csv', [App\Http\Controllers\StudentReportController::class, 'medicalReportCsv'])->name('student-reports.medical.csv');
+    Route::get('student-reports/medical/pdf', [App\Http\Controllers\StudentReportController::class, 'medicalReportPdf'])->name('student-reports.medical.pdf');
+    Route::get('student-reports/transport-hostel/csv', [App\Http\Controllers\StudentReportController::class, 'transportHostelCsv'])->name('student-reports.transport-hostel.csv');
+    Route::get('student-reports/transport-hostel/pdf', [App\Http\Controllers\StudentReportController::class, 'transportHostelPdf'])->name('student-reports.transport-hostel.pdf');
 
 
     
@@ -219,20 +367,64 @@ Route::middleware(['auth'])->group(function () {
     Route::get('medical-incidents', [App\Http\Controllers\MedicalIncidentController::class, 'index'])->name('medical-incidents.index');
     Route::get('medical-incidents/create', [App\Http\Controllers\MedicalIncidentController::class, 'create'])->name('medical-incidents.create');
     Route::post('medical-incidents', [App\Http\Controllers\MedicalIncidentController::class, 'store'])->name('medical-incidents.store');
+
+    // Homework
+    Route::get('homework', [App\Http\Controllers\HomeworkController::class, 'index'])->name('homework.index');
+    Route::get('homework/create', [App\Http\Controllers\HomeworkController::class, 'create'])->name('homework.create');
+    Route::post('homework', [App\Http\Controllers\HomeworkController::class, 'store'])->name('homework.store');
+    Route::get('homework/{id}', [App\Http\Controllers\HomeworkController::class, 'show'])->name('homework.show');
+    Route::get('homework/{id}/edit', [App\Http\Controllers\HomeworkController::class, 'edit'])->name('homework.edit');
+    Route::patch('homework/{id}', [App\Http\Controllers\HomeworkController::class, 'update'])->name('homework.update');
+    Route::delete('homework/{id}', [App\Http\Controllers\HomeworkController::class, 'destroy'])->name('homework.destroy');
+
+    // Student Notices
+    Route::get('student-notices', [App\Http\Controllers\StudentNoticeController::class, 'index'])->name('student-notices.index');
+    Route::get('student-notices/create', [App\Http\Controllers\StudentNoticeController::class, 'create'])->name('student-notices.create');
+    Route::post('student-notices', [App\Http\Controllers\StudentNoticeController::class, 'store'])->name('student-notices.store');
+    Route::get('student-notices/{id}', [App\Http\Controllers\StudentNoticeController::class, 'show'])->name('student-notices.show');
+    Route::patch('student-notices/{id}', [App\Http\Controllers\StudentNoticeController::class, 'update'])->name('student-notices.update');
+    Route::delete('student-notices/{id}', [App\Http\Controllers\StudentNoticeController::class, 'destroy'])->name('student-notices.destroy');
     
     // Academic Management Enhanced Routes
     Route::get('academic-dashboard', [App\Http\Controllers\AcademicDashboardController::class, 'index'])->name('academic-dashboard.index');
     Route::get('timetables/teacher', [App\Http\Controllers\TimetableController::class, 'teacherTimetable'])->name('timetables.teacher');
-    Route::resource('academic-calendar', App\Http\Controllers\AcademicCalendarController::class);
+    // No show(): the controller has no show() method; the calendar index is the
+    // detail surface, so the route is not registered rather than always 500ing.
+    Route::resource('academic-calendar', App\Http\Controllers\AcademicCalendarController::class)->except(['show']);
     Route::get('class-teachers', [App\Http\Controllers\ClassTeacherController::class, 'index'])->name('class-teachers.index');
     Route::patch('class-teachers/{id}', [App\Http\Controllers\ClassTeacherController::class, 'update'])->name('class-teachers.update');
     Route::get('teacher-workload', [App\Http\Controllers\TeacherWorkloadController::class, 'index'])->name('teacher-workload.index');
     
-    Route::resource('timetables', App\Http\Controllers\TimetableController::class);
+      Route::get('timetables/auto-generate', [App\Http\Controllers\TimetableController::class, 'autoGenerate'])->name('timetables.auto-generate');
+      Route::post('timetables/auto-generate/options', [App\Http\Controllers\TimetableController::class, 'saveAutoGenerateOptions'])->name('timetables.auto-generate.options');
+      Route::post('timetables/auto-generate', [App\Http\Controllers\TimetableController::class, 'storeAutoGenerated'])->name('timetables.auto-generate.store');
+      Route::post('timetables/check-conflict', [App\Http\Controllers\TimetableController::class, 'checkConflict'])->name('timetables.check-conflict');
+      Route::post('timetables/store-overrides', [App\Http\Controllers\TimetableController::class, 'storeOverrides'])->name('timetables.store-overrides');
+      Route::get('timetables/term-weeks/{academicYearId}', [App\Http\Controllers\TimetableController::class, 'getTermWeeks'])->name('timetables.term-weeks');
+      Route::get('timetables/overrides/{termWeekId}', [App\Http\Controllers\TimetableController::class, 'getOverrides'])->name('timetables.get-overrides');
+      Route::get('timetables/teachers', [App\Http\Controllers\TimetableController::class, 'getTeachers'])->name('timetables.teachers');
+      Route::get('timetables/periods', [App\Http\Controllers\TimetableController::class, 'getPeriods'])->name('timetables.periods');
+      Route::resource('timetables', App\Http\Controllers\TimetableController::class);
+
+      // Teacher onboarding (combined Staff + User + Role form)
+      Route::get('teacher-onboarding', [App\Http\Controllers\TeacherOnboardingController::class, 'create'])->name('teacher-onboarding.create');
+      Route::post('teacher-onboarding', [App\Http\Controllers\TeacherOnboardingController::class, 'store'])->name('teacher-onboarding.store');
+
+      // Teacher management (teaching staff records — gated by its own module)
+      Route::get('teacher-management', [App\Http\Controllers\TeacherManagementController::class, 'index'])->name('teacher-management.index');
+      Route::get('teacher-management/{teacher}', [App\Http\Controllers\TeacherManagementController::class, 'show'])->name('teacher-management.show');
+      Route::get('teacher-management/{teacher}/edit', [App\Http\Controllers\TeacherManagementController::class, 'edit'])->name('teacher-management.edit');
+      Route::put('teacher-management/{teacher}', [App\Http\Controllers\TeacherManagementController::class, 'update'])->name('teacher-management.update');
+      Route::delete('teacher-management/{teacher}', [App\Http\Controllers\TeacherManagementController::class, 'destroy'])->name('teacher-management.destroy');
+    Route::get('api/subjects/{subjectId}/teachers', [App\Http\Controllers\TimetableController::class, 'getTeachersBySubject'])->name('api.subjects.teachers');
+    Route::get('api/academic-years/{academicYearId}/class-sections', [App\Http\Controllers\TimetableController::class, 'getClassSectionsByYear'])->name('api.academic-years.class-sections');
+
+
     
     // Fee Management Revamped Routes
     Route::group(['prefix' => 'fees', 'as' => 'fees.'], function () {
         Route::get('/dashboard', [App\Http\Controllers\FeeDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/collect', [App\Http\Controllers\FeeManagementController::class, 'collect'])->name('collect');
         
         // Fee Assignments
         Route::get('/assignments', [App\Http\Controllers\StudentFeeAssignmentController::class, 'index'])->name('assignments.index');
@@ -242,6 +434,35 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/assignments/student/{id}', [App\Http\Controllers\StudentFeeAssignmentController::class, 'studentSummary'])->name('assignments.student-summary');
         Route::get('/assignments/unassigned', [App\Http\Controllers\StudentFeeAssignmentController::class, 'unassigned'])->name('assignments.unassigned');
         Route::get('/assignments/ajax/class-fees', [App\Http\Controllers\StudentFeeAssignmentController::class, 'getFeesByClass'])->name('assignments.ajax.class-fees');
+        Route::get('/assignments/ajax/classes-fees', [App\Http\Controllers\StudentFeeAssignmentController::class, 'getFeesByClasses'])->name('assignments.ajax.classes-fees');
+        Route::get('/assignments/ajax/auto-preview', [App\Http\Controllers\StudentFeeAssignmentController::class, 'getAutoAssignmentPreview'])->name('assignments.ajax.auto-preview');
+        Route::get('/assignments/ajax/all-fees', [App\Http\Controllers\StudentFeeAssignmentController::class, 'getAllFeeStructures'])->name('assignments.ajax.all-fees');
+
+        // Fee Adjustments
+        // ORDER MATTERS: every literal segment must be registered before
+        // /adjustments/{id}. Previously /adjustments/{id} came first, so
+        // "pending" was captured as {id} and the pending-approvals screen was
+        // unreachable — Laravel matches routes in registration order.
+        Route::get('/adjustments', [App\Http\Controllers\FeeAdjustmentController::class, 'index'])->name('adjustments.index');
+        Route::get('/adjustments/create', [App\Http\Controllers\FeeAdjustmentController::class, 'create'])->name('adjustments.create');
+        Route::get('/adjustments/pending', [App\Http\Controllers\FeeAdjustmentController::class, 'pendingApprovals'])->name('adjustments.pending');
+        Route::get('/adjustments/student/{studentId}', [App\Http\Controllers\FeeAdjustmentController::class, 'studentAdjustments'])->name('adjustments.student-adjustments');
+        Route::get('/adjustments/ajax/student-fees', [App\Http\Controllers\FeeAdjustmentController::class, 'getFeeAssignmentsForStudent'])->name('adjustments.ajax.student-fees');
+        Route::post('/adjustments', [App\Http\Controllers\FeeAdjustmentController::class, 'store'])->name('adjustments.store');
+        Route::get('/adjustments/{id}', [App\Http\Controllers\FeeAdjustmentController::class, 'show'])->name('adjustments.show');
+        Route::post('/adjustments/{id}/approve', [App\Http\Controllers\FeeAdjustmentController::class, 'approve'])->name('adjustments.approve');
+        Route::post('/adjustments/{id}/reject', [App\Http\Controllers\FeeAdjustmentController::class, 'reject'])->name('adjustments.reject');
+        Route::get('/adjustments/{id}/audit-log', [App\Http\Controllers\FeeAdjustmentController::class, 'auditLog'])->name('adjustments.audit-log');
+
+        // Terms
+        Route::get('/terms', [App\Http\Controllers\TermController::class, 'index'])->name('terms.index');
+        Route::get('/terms/create', [App\Http\Controllers\TermController::class, 'create'])->name('terms.create');
+        Route::post('/terms', [App\Http\Controllers\TermController::class, 'store'])->name('terms.store');
+        Route::get('/terms/{id}', [App\Http\Controllers\TermController::class, 'show'])->name('terms.show');
+        Route::get('/terms/{id}/edit', [App\Http\Controllers\TermController::class, 'edit'])->name('terms.edit');
+        Route::put('/terms/{id}', [App\Http\Controllers\TermController::class, 'update'])->name('terms.update');
+        Route::delete('/terms/{id}', [App\Http\Controllers\TermController::class, 'destroy'])->name('terms.destroy');
+        Route::post('/terms/{id}/activate', [App\Http\Controllers\TermController::class, 'activate'])->name('terms.activate');
 
         // Discount Schemes
         Route::resource('discounts', App\Http\Controllers\DiscountSchemeController::class);
@@ -250,35 +471,93 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reports/expected-revenue', [App\Http\Controllers\FeeReportsController::class, 'expectedRevenue'])->name('reports.expected-revenue');
         Route::get('/reports/assignment-status', [App\Http\Controllers\FeeReportsController::class, 'assignmentStatus'])->name('reports.assignment-status');
         Route::get('/reports/discount-summary', [App\Http\Controllers\FeeReportsController::class, 'discountSummary'])->name('reports.discount-summary');
+        Route::get('/reports/collections', [App\Http\Controllers\FeeReportsController::class, 'collections'])->name('reports.collections');
+        Route::get('/reports/payment-method', [App\Http\Controllers\FeeReportsController::class, 'paymentMethod'])->name('reports.payment-method');
+        Route::get('/reports/receipt-register', [App\Http\Controllers\FeeReportsController::class, 'receiptRegister'])->name('reports.receipt-register');
+        Route::get('/reports/export/receipt-register/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportReceiptRegisterPdf'])->name('reports.export.receipt-register.pdf');
+        Route::get('/reports/export/expected-revenue/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportExpectedRevenuePdf'])->name('reports.export.expected-revenue.pdf');
+        Route::get('/reports/export/assignment-status/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportAssignmentStatusPdf'])->name('reports.export.assignment-status.pdf');
+        Route::get('/reports/export/discount-summary/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportDiscountSummaryPdf'])->name('reports.export.discount-summary.pdf');
+        Route::get('/reports/export/collections/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportCollectionsPdf'])->name('reports.export.collections.pdf');
+        Route::get('/reports/export/collections/csv', [App\Http\Controllers\FeeReportsController::class, 'exportCollectionsCsv'])->name('reports.export.collections.csv');
+        Route::get('/reports/export/payment-method/pdf', [App\Http\Controllers\FeeReportsController::class, 'exportPaymentMethodPdf'])->name('reports.export.payment-method.pdf');
+        Route::get('/reports/export/payment-method/csv', [App\Http\Controllers\FeeReportsController::class, 'exportPaymentMethodCsv'])->name('reports.export.payment-method.csv');
+
+        // Arrears
+        Route::get('/arrears', [App\Http\Controllers\FeeArrearsController::class, 'index'])->name('arrears.index');
+        Route::get('/arrears/export/pdf', [App\Http\Controllers\FeeArrearsController::class, 'exportPdf'])->name('arrears.export-pdf');
+        Route::get('/arrears/export/csv', [App\Http\Controllers\FeeArrearsController::class, 'exportCsv'])->name('arrears.export-csv');
+
+        // Payment Reversal
+        Route::get('/payments/{payment}/reverse', [App\Http\Controllers\FeeManagementController::class, 'reverseForm'])->name('payments.reverse-form');
+        Route::post('/payments/{payment}/reverse', [App\Http\Controllers\FeeManagementController::class, 'reversePayment'])->name('payments.reverse');
+
+        // Refunds
+        Route::get('/refunds', [App\Http\Controllers\RefundController::class, 'index'])->name('refunds.index');
+        Route::get('/refunds/create', [App\Http\Controllers\RefundController::class, 'create'])->name('refunds.create');
+        Route::post('/refunds', [App\Http\Controllers\RefundController::class, 'store'])->name('refunds.store');
+        Route::get('/refunds/{id}', [App\Http\Controllers\RefundController::class, 'show'])->name('refunds.show');
+        Route::post('/refunds/{id}/approve', [App\Http\Controllers\RefundController::class, 'approve'])->name('refunds.approve');
+        Route::post('/refunds/{id}/reject', [App\Http\Controllers\RefundController::class, 'reject'])->name('refunds.reject');
+        Route::post('/refunds/{id}/complete', [App\Http\Controllers\RefundController::class, 'complete'])->name('refunds.complete');
+        Route::get('/refunds/export/pdf', [App\Http\Controllers\RefundController::class, 'exportPdf'])->name('refunds.export-pdf');
+        Route::get('/refunds/export/csv', [App\Http\Controllers\RefundController::class, 'exportCsv'])->name('refunds.export-csv');
+        Route::get('/refunds/ajax/student-payments/{studentId}', [App\Http\Controllers\RefundController::class, 'studentPayments'])->name('refunds.ajax.student-payments');
+
+        // Fee data needing an administrative decision. Read-only: it reports,
+        // it never corrects.
+        Route::get('/integrity', [App\Http\Controllers\FeeIntegrityController::class, 'index'])->name('integrity');
+
+        // Sponsor / bursary bulk receipts: one cash receipt, distributed to
+        // students through the normal payment chain.
+        Route::get('/bulk-receipts', [App\Http\Controllers\BulkReceiptController::class, 'index'])->name('bulk-receipts.index');
+        Route::get('/bulk-receipts/create', [App\Http\Controllers\BulkReceiptController::class, 'create'])->name('bulk-receipts.create');
+        Route::post('/bulk-receipts', [App\Http\Controllers\BulkReceiptController::class, 'store'])->name('bulk-receipts.store');
+        Route::get('/bulk-receipts/{id}', [App\Http\Controllers\BulkReceiptController::class, 'show'])->name('bulk-receipts.show');
+        Route::get('/bulk-receipts/{id}/receipt', [App\Http\Controllers\BulkReceiptController::class, 'printReceipt'])->name('bulk-receipts.receipt');
+        Route::post('/bulk-receipts/{id}/allocate', [App\Http\Controllers\BulkReceiptController::class, 'allocate'])->name('bulk-receipts.allocate');
+        Route::post('/bulk-receipts/{id}/allocations/{paymentId}/reverse', [App\Http\Controllers\BulkReceiptController::class, 'reverseAllocation'])->name('bulk-receipts.allocations.reverse');
+        Route::post('/bulk-receipts/{id}/reverse', [App\Http\Controllers\BulkReceiptController::class, 'reverseReceipt'])->name('bulk-receipts.reverse');
     });
 
     // Legacy Fee Management (Collection) - Kept/Modified for integration
+    // Must be registered before the fee-management/{id} routes so "receipt"
+    // is not captured as a student id.
+    Route::get('fee-management/payments/{payment}/receipt', [App\Http\Controllers\FeeManagementController::class, 'printReceipt'])->name('fee-management.receipt');
     Route::get('fee-management', [App\Http\Controllers\FeeManagementController::class, 'index'])->name('fee-management.index');
     Route::get('fee-management/{id}', [App\Http\Controllers\FeeManagementController::class, 'show'])->name('fee-management.show');
     Route::get('fee-management/{id}/collect-payment', [App\Http\Controllers\FeeManagementController::class, 'collectPayment'])->name('fee-management.collect-payment');
     Route::post('fee-management/{id}/store-payment', [App\Http\Controllers\FeeManagementController::class, 'storePayment'])->name('fee-management.store-payment');
     Route::get('fee-management/{id}/print', [App\Http\Controllers\FeeManagementController::class, 'print'])->name('fee-management.print');
+    Route::get('fee-management/export/pdf', [App\Http\Controllers\FeeManagementController::class, 'exportPdf'])->name('fee-management.export-pdf');
+    Route::get('fee-management/export/excel', [App\Http\Controllers\FeeManagementController::class, 'exportExcel'])->name('fee-management.export-excel');
 
     // Examination Management Enhanced Routes
     Route::get('exam-dashboard', [App\Http\Controllers\ExamDashboardController::class, 'index'])->name('exam-dashboard.index');
-    Route::resource('assessment-types', App\Http\Controllers\AssessmentTypeController::class);
-    Route::resource('exam-rooms', App\Http\Controllers\ExamRoomController::class);
+    // Assessment Types removed — table dropped
+    // No show(): the controller has no show() method and no view links to one.
+    Route::resource('exam-rooms', App\Http\Controllers\ExamRoomController::class)->except(['show']);
     Route::get('grade-book', [App\Http\Controllers\GradeBookController::class, 'index'])->name('grade-book.index');
     Route::get('mark-sheets', [App\Http\Controllers\MarkSheetController::class, 'index'])->name('mark-sheets.index');
     Route::get('marks-approval', [App\Http\Controllers\MarksApprovalController::class, 'index'])->name('marks-approval.index');
     Route::post('marks-approval/approve', [App\Http\Controllers\MarksApprovalController::class, 'approve'])->name('marks-approval.approve');
+    Route::post('marks-approval/send-to-parents', [App\Http\Controllers\MarksApprovalController::class, 'sendResultsToParents'])->name('marks-approval.send-to-parents');
+    Route::get('marks-approval/{exam_id}/{class_section_id}', [App\Http\Controllers\MarksApprovalController::class, 'show'])->name('marks-approval.show');
     Route::get('cbc-assessments', [App\Http\Controllers\CompetencyAssessmentController::class, 'index'])->name('cbc-assessments.index');
     Route::post('cbc-assessments', [App\Http\Controllers\CompetencyAssessmentController::class, 'store'])->name('cbc-assessments.store');
     Route::get('exam-reports/individual/{exam_id}/{student_id}', [App\Http\Controllers\ExamReportController::class, 'individual'])->name('exam-reports.individual');
     Route::get('exam-reports/generate', [App\Http\Controllers\ExamReportController::class, 'generate'])->name('exam-reports.generate');
-    Route::resource('report-card-templates', App\Http\Controllers\ReportCardTemplateController::class);
+    Route::get('exam-reports/pdf', [App\Http\Controllers\ExamReportController::class, 'bulkPdf'])->name('exam-reports.pdf');
     Route::get('bulk-report-cards', [App\Http\Controllers\ExamReportController::class, 'bulk'])->name('exam-reports.bulk');
     Route::get('exam-analysis/performance', [App\Http\Controllers\ExamAnalysisController::class, 'performance'])->name('exam-analysis.performance');
     Route::get('exam-analysis/subject', [App\Http\Controllers\ExamAnalysisController::class, 'subject'])->name('exam-analysis.subject');
     Route::get('exam-analysis/rankings', [App\Http\Controllers\ExamAnalysisController::class, 'rankings'])->name('exam-analysis.rankings');
-    Route::resource('learning-areas', App\Http\Controllers\LearningAreaController::class);
-    Route::resource('strands', App\Http\Controllers\StrandController::class);
-    Route::resource('sub-strands', App\Http\Controllers\SubStrandController::class);
+    // No show(): the controllers below have no show() method and no view links
+    // to one — the CBC indexes are the detail surfaces.
+    Route::resource('learning-areas', App\Http\Controllers\LearningAreaController::class)->except(['show']);
+    Route::post('learning-areas/seed-kenyan-curriculum', [App\Http\Controllers\LearningAreaController::class, 'seedDefaults'])->name('learning-areas.seed');
+    Route::resource('strands', App\Http\Controllers\StrandController::class)->except(['show']);
+    Route::resource('sub-strands', App\Http\Controllers\SubStrandController::class)->except(['show']);
     Route::get('competency-assessment', [App\Http\Controllers\CompetencyAssessmentController::class, 'index'])->name('competency-assessment.index');
     // Human Resources Management Revamped Routes
     Route::prefix('hr')->name('hr.')->group(function () {
@@ -300,12 +579,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/exit/create/{staff}', [App\Http\Controllers\StaffExitController::class, 'create'])->name('exit.create');
         Route::post('/exit', [App\Http\Controllers\StaffExitController::class, 'store'])->name('exit.store');
 
-        // Staff Directory
-        Route::get('staff-directory', [App\Http\Controllers\StaffController::class, 'directory'])->name('staff.directory');
     });
 
     // Enhanced Resource Routes
-    Route::resource('leave-applications', App\Http\Controllers\LeaveApplicationController::class);
+    Route::resource('leave-applications', App\Http\Controllers\LeaveApplicationController::class)->except(['edit', 'update']);
     Route::post('leave-applications/{id}/approve', [App\Http\Controllers\LeaveApplicationController::class, 'approve'])->name('leave-applications.approve');
     Route::post('leave-applications/{id}/reject', [App\Http\Controllers\LeaveApplicationController::class, 'reject'])->name('leave-applications.reject');
 
@@ -320,4 +597,24 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/finalize/{payroll}', [App\Http\Controllers\PayrollProcessingController::class, 'finalize'])->name('finalize');
     });
 
+    // ─── PARENT/STUDENT PORTAL ────────────────────────────────────
+    Route::prefix('portal')->name('portal.')->middleware(['auth'])->group(function () {
+        // Profile
+        Route::get('/profile', [App\Http\Controllers\Portal\PortalProfileController::class, 'index'])->name('profile');
+        Route::put('/profile', [App\Http\Controllers\Portal\PortalProfileController::class, 'update'])->name('profile.update');
+
+        // Fees (Parent + Student)
+        Route::get('/fees', [App\Http\Controllers\Portal\PortalFeeController::class, 'index'])->name('fees');
+        Route::get('/fees/{studentFeeAssignment}', [App\Http\Controllers\Portal\PortalFeeController::class, 'show'])->name('fees.show');
+        Route::get('/fees/{studentFeeAssignment}/receipt', [App\Http\Controllers\Portal\PortalFeeController::class, 'receipt'])->name('fees.receipt');
+
+        // Report Cards (Parent + Student)
+        Route::get('/report-cards', [App\Http\Controllers\Portal\PortalReportCardController::class, 'index'])->name('report-cards');
+        Route::get('/report-cards/{exam}', [App\Http\Controllers\Portal\PortalReportCardController::class, 'show'])->name('report-cards.show');
+
+        // Attendance (Parent + Student)
+        Route::get('/attendance', [App\Http\Controllers\Portal\PortalAttendanceController::class, 'index'])->name('attendance');
+    });
+
 });
+

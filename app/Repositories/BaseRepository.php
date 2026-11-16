@@ -140,6 +140,17 @@ abstract class BaseRepository
     }
 
     /**
+     * Set the relationships that should be eager loaded.
+     *
+     * @param array $relations
+     * @return Builder
+     */
+    public function with(array $relations): Builder
+    {
+        return $this->model->with($relations);
+    }
+
+    /**
      * @throws \Exception
      *
      * @return bool|mixed|null

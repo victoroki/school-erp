@@ -2,10 +2,11 @@
 
 namespace App\Services;
 
-use App\Models\StudentFee;
+use App\Models\StudentFeeAssignment;
 use App\Models\FeePayment;
 use App\Models\Student;
 use App\Models\FeeStructure;
+use App\Models\Term;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -14,42 +15,67 @@ class FinanceService
     /**
      * Assign a fee structure to a student
      */
-    public function assignFeeToStudent($studentId, $feeStructureId, $discountAmount = 0)
+    public function assignFeeToStudent(int $studentId, int $feeStructureId, float $discountAmount = 0, ?int $academicYearId = null, ?string $term = null)
     {
         $feeStructure = FeeStructure::findOrFail($feeStructureId);
-        
-        return StudentFee::create([
+
+        $yearId = $academicYearId ?? $feeStructure->academic_year_id;
+        $termValue = $term ?? $feeStructure->term;
+        $termId = $termValue
+            ? Term::where('academic_year_id', $yearId)->where('code', $termValue)->value('id')
+            : null;
+        $finalAmount = max(0, $feeStructure->amount - $discountAmount);
+
+        return StudentFeeAssignment::create([
             'student_id' => $studentId,
             'fee_structure_id' => $feeStructureId,
+            'academic_year_id' => $yearId,
+            'term' => $termValue,
+            'term_id' => $termId,
             'amount' => $feeStructure->amount,
             'discount_amount' => $discountAmount,
-            'final_amount' => $feeStructure->amount - $discountAmount,
-            'due_date' => $feeStructure->due_date,
-            'status' => 'unpaid'
+            'final_amount' => $finalAmount,
+            'assigned_by' => auth()->id(),
+            'assigned_date' => now(),
+            'status' => 'active'
         ]);
     }
 
     /**
      * Batch assign fee structure to all students in a class
      */
-    public function batchAssignFee($feeStructureId, $classId)
+    public function batchAssignFee($feeStructureId, $classId, $academicYearId = null, $term = null)
     {
         $feeStructure = FeeStructure::findOrFail($feeStructureId);
-        $students = Student::whereHas('studentClassEnrollments.classSection.schoolClass', function($q) use ($classId) {
-            $q->where('class_id', $classId);
+
+        // Get all class_section_ids for this class
+        $classSectionIds = \App\Models\ClassSection::where('class_id', $classId)->pluck('class_section_id');
+
+        if ($classSectionIds->isEmpty()) {
+            return 0;
+        }
+
+        // Get students enrolled in ANY section of this class
+        $students = Student::whereHas('studentClassEnrollments', function($q) use ($classSectionIds) {
+            $q->whereIn('class_section_id', $classSectionIds)
+              ->where('is_current', true);
         })->get();
+
+        if ($students->isEmpty()) {
+            return 0;
+        }
 
         $count = 0;
         DB::beginTransaction();
         try {
             foreach ($students as $student) {
                 // Check if already assigned
-                $exists = StudentFee::where('student_id', $student->student_id)
+                $exists = StudentFeeAssignment::where('student_id', $student->student_id)
                     ->where('fee_structure_id', $feeStructureId)
                     ->exists();
 
                 if (!$exists) {
-                    $this->assignFeeToStudent($student->student_id, $feeStructureId);
+                    $this->assignFeeToStudent($student->student_id, $feeStructureId, 0, $academicYearId, $term);
                     $count++;
                 }
             }
@@ -66,22 +92,46 @@ class FinanceService
      */
     public function recordPayment(array $data)
     {
+        // Idempotency: an identical client_reference must never produce a second
+        // payment. The web collection form has no disable-on-submit guard, so a
+        // double-click previously created two payments and two receipts.
+        if (! empty($data['client_reference'])) {
+            $existing = FeePayment::where('client_reference', $data['client_reference'])->first();
+
+            if ($existing) {
+                return $existing;
+            }
+        }
+
         DB::beginTransaction();
         try {
-            $studentFee = StudentFee::findOrFail($data['student_fee_id']);
+            $assignment = StudentFeeAssignment::findOrFail($data['student_fee_assignment_id']);
             
             $payment = FeePayment::create([
-                'student_fee_id' => $data['student_fee_id'],
+                'student_fee_assignment_id' => $data['student_fee_assignment_id'],
                 'amount' => $data['amount'],
                 'payment_date' => $data['payment_date'] ?? now(),
                 'payment_method' => $data['payment_method'],
+                'bank_account_id' => $data['bank_account_id'] ?? null,
                 'transaction_id' => $data['transaction_id'] ?? null,
+                'client_reference' => $data['client_reference'] ?? null,
                 'receipt_number' => $this->generateReceiptNumber(),
                 'remarks' => $data['remarks'] ?? null,
-                'collected_by' => auth()->id(),
+                'collected_by' => auth()->user()?->staff?->staff_id,
             ]);
 
-            $this->updateStudentFeeStatus($studentFee);
+            // Allocate the full payment to the single assignment and post ledger entries.
+            app(\App\Services\LedgerService::class)->allocatePayment(
+                $payment,
+                [['id' => $assignment->id, 'amount' => (float) $data['amount']]],
+                $data['allocation_strategy'] ?? 'manual'
+            );
+
+            // Single bank posting for the money actually received (banked
+            // methods only; cash stays off the bank ledger by design).
+            $this->postFeePaymentToBank($payment);
+
+            $this->updateAssignmentPaymentStatus($assignment);
 
             DB::commit();
             return $payment;
@@ -92,21 +142,114 @@ class FinanceService
     }
 
     /**
-     * Update Student Fee status based on paid amount
+     * The single place a fee payment becomes a bank deposit.
+     *
+     * Exactly one posting per payment: cash payments never touch the bank
+     * ledger (the money is in hand, not in an account), every other method
+     * deposits into the chosen account — or the first active account when the
+     * collector did not pick one. A payment that already has a ledger row is
+     * never posted again, so replays and duplicate calls are harmless.
      */
-    public function updateStudentFeeStatus(StudentFee $studentFee)
+    private function postFeePaymentToBank(FeePayment $payment): void
     {
-        $paidAmount = $studentFee->payments()->sum('amount');
-        
-        if ($paidAmount >= $studentFee->final_amount) {
-            $studentFee->status = 'paid';
-        } elseif ($paidAmount > 0) {
-            $studentFee->status = 'partially_paid';
-        } else {
-            $studentFee->status = 'unpaid';
+        if ($payment->payment_method === 'cash') {
+            return;
         }
 
-        $studentFee->save();
+        if (\App\Services\BankLedger::findFor('FeePayment', $payment->payment_id, 'deposit') !== null) {
+            return; // already posted — never double-post
+        }
+
+        $account = $payment->bank_account_id
+            ? \App\Models\BankAccount::lockForUpdate()->find($payment->bank_account_id)
+            : \App\Models\BankAccount::where('status', 'active')->orderBy('account_id')->first();
+
+        if (! $account) {
+            // No active account exists to receive the deposit. The fee payment
+            // itself is still valid; the deposit is skipped and the fee-to-bank
+            // reconciliation command reports the gap.
+            return;
+        }
+
+        \App\Services\BankLedger::recordDeposit(
+            $account,
+            (float) $payment->amount,
+            $payment->payment_date instanceof \Carbon\Carbon
+                ? $payment->payment_date->toDateString()
+                : (string) $payment->payment_date,
+            \App\Services\BankLedger::describe('FeePayment', $payment->payment_id,
+                'Fee receipt ' . $payment->receipt_number),
+            $payment->transaction_id,
+            auth()->id(),
+            'unreconciled',
+            'FeePayment',
+            $payment->payment_id
+        );
+    }
+
+    /**
+     * Record a payment against a student and split it across one or more
+     * assignments using the recommended (oldest-first by default) allocation.
+     * Used by the "pay total balance" flow.
+     */
+    public function recordTotalPayment(array $data, $assignments)
+    {
+        if (! empty($data['client_reference'])) {
+            $existing = FeePayment::where('client_reference', $data['client_reference'])->first();
+
+            if ($existing) {
+                return $existing;
+            }
+        }
+
+        DB::beginTransaction();
+        try {
+            // Recommend allocation across the provided outstanding assignments.
+            $recommended = app(\App\Services\LedgerService::class)
+                ->recommendAllocation($assignments, (float) $data['amount'], $data['allocation_strategy'] ?? 'oldest_first');
+
+            if (empty($recommended)) {
+                throw new Exception('There is no outstanding balance to allocate this payment against.');
+            }
+
+            $payment = FeePayment::create([
+                'student_fee_assignment_id' => $recommended[0]['id'],
+                'amount' => (float) $data['amount'],
+                'payment_date' => $data['payment_date'] ?? now(),
+                'payment_method' => $data['payment_method'],
+                'bank_account_id' => $data['bank_account_id'] ?? null,
+                'transaction_id' => $data['transaction_id'] ?? null,
+                'client_reference' => $data['client_reference'] ?? null,
+                'receipt_number' => $this->generateReceiptNumber(),
+                'remarks' => ($data['remarks'] ?? null) . ' (Part of total payment)',
+                'collected_by' => auth()->user()?->staff?->staff_id,
+            ]);
+
+            app(\App\Services\LedgerService::class)->allocatePayment(
+                $payment,
+                $recommended,
+                $data['allocation_strategy'] ?? 'oldest_first'
+            );
+
+            // Same single bank posting rule as recordPayment().
+            $this->postFeePaymentToBank($payment);
+
+            DB::commit();
+            return $payment;
+        } catch (Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Update Student Fee Assignment payment status based on paid amount
+     */
+    public function updateAssignmentPaymentStatus(StudentFeeAssignment $assignment)
+    {
+        // Summing $assignment->payments() included reversed payments. Route the
+        // figure through the shared balance service instead.
+        return app(\App\Services\FeeBalanceService::class)->recomputeAssignment($assignment);
     }
 
     private function generateReceiptNumber()
@@ -119,19 +262,24 @@ class FinanceService
      */
     public function getMetrics()
     {
+        $balances = app(\App\Services\FeeBalanceService::class);
+
+        // Money paid back out to parents/students. Only completed refunds have
+        // actually left the school; requested/approved ones are still pending.
+        $totalRefunded = (float) \App\Models\Refund::where('status', 'completed')->sum('amount');
+
         return [
-            'total_receivable' => StudentFee::sum('final_amount'),
-            'total_collected' => FeePayment::sum('amount'),
-            'total_pending' => StudentFee::where('status', '!=', 'paid')->get()->sum('balance'),
-            'collection_rate' => $this->getCollectionRate()
+            'total_receivable' => $balances->totalAssigned(),
+            // Reversed payments no longer inflate "collected".
+            'total_collected' => $balances->totalCollected(),
+            'total_pending' => $balances->outstandingForActive(),
+            'collection_rate' => $this->getCollectionRate(),
+            'total_refunded' => round($totalRefunded, 2),
         ];
     }
 
     private function getCollectionRate()
     {
-        $receivable = StudentFee::sum('final_amount');
-        if ($receivable == 0) return 0;
-        $collected = FeePayment::sum('amount');
-        return round(($collected / $receivable) * 100, 2);
+        return app(\App\Services\FeeBalanceService::class)->collectionRate();
     }
 }

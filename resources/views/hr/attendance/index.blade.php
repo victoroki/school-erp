@@ -77,7 +77,7 @@
                                 <input type="date" name="date" class="form-control form-control-sm" value="{{ $date }}">
                             </div>
                             <div class="col-md-3">
-                                <select name="department_id" class="form-control form-control-sm">
+                                <select name="department_id" class="form-select form-select-sm">
                                     <option value="">All Departments</option>
                                     @foreach($departments as $dept)
                                         <option value="{{ $dept->department_id }}" {{ $departmentId == $dept->department_id ? 'selected' : '' }}>
@@ -129,7 +129,7 @@
                                         <td>{{ $att->time_out ? \Carbon\Carbon::parse($att->time_out)->format('h:i A') : '-' }}</td>
                                         <td>{{ $att->notes ?? '-' }}</td>
                                         <td>
-                                            <a href="{{ route('staff-attendance.edit', $att->id) }}" class="btn btn-sm btn-warning" title="Edit">
+                                            <a href="{{ route('staff-attendance.edit', $att->attendance_id) }}" class="btn btn-sm btn-warning" title="Edit">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                         </td>

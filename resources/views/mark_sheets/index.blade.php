@@ -67,7 +67,13 @@
                             <td class="pl-4">{{ $res->student->admission_no }}</td>
                             <td class="font-weight-bold">{{ $res->student->full_name }}</td>
                             <td class="text-center"><b>{{ number_format($res->marks_obtained, 0) }}</b></td>
-                            <td class="text-center"><span class="badge badge-danger">{{ $res->grade->name ?? '-' }}</span></td>
+                            {{-- Every grade was rendered badge-danger, so a top learner
+                                 looked identical to a failing one. --}}
+                            <td class="text-center">
+                                <span class="badge {{ \App\Support\GradeBadge::for($res->grade->name ?? null) }}">
+                                    {{ $res->grade->name ?? '-' }}
+                                </span>
+                            </td>
                             <td class="small">{{ $res->remarks ?: 'No remarks' }}</td>
                         </tr>
                         @endforeach

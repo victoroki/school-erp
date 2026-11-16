@@ -244,7 +244,7 @@
                                     <li class="list-group-item">
                                         <i class="fas fa-file-alt text-danger"></i> 
                                         <strong>{{ $documentsExpiringSoon->count() }}</strong> documents expiring in 30 days
-                                        <a href="{{ route('staff-documents.index', ['expiring' => 1]) }}" class="float-right">View</a>
+                                        <a href="{{ route('staffDocuments.index', ['expiring' => 1]) }}" class="float-right">View</a>
                                     </li>
                                 @endif
                                 

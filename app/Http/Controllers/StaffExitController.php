@@ -5,12 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Staff;
 use App\Models\StaffExitClearance;
 use App\Models\User;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Laracasts\Flash\Flash;
 
 class StaffExitController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['create', 'store', 'update']);
+    }
+
     public function index()
     {
         $exitingStaff = Staff::whereIn('employment_status', ['resigned', 'terminated'])
@@ -64,9 +71,11 @@ class StaffExitController extends Controller
                 User::where('id', $staff->user_id)->update(['is_active' => false]);
             }
 
+            AuditTrail::log('Staff Exit', 'INITIATE', $clearance->id, null, $clearance->toArray());
+
             DB::commit();
             Flash::success('Exit process initiated successfully.');
-            return redirect()->route('hr.exit.index');
+            return redirect()->route('hr.exit');
         } catch (\Exception $e) {
             DB::rollBack();
             Flash::error('Error initiating exit: ' . $e->getMessage());

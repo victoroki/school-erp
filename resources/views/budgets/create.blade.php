@@ -13,6 +13,10 @@
 
     <div class="content px-3">
 
+        @include('flash::message')
+
+        <div class="clearfix"></div>
+
         @include('adminlte-templates::common.errors')
 
         <div class="card">

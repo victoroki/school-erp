@@ -63,7 +63,7 @@
                                                 <td>{{ $employee->department->name ?? 'N/A' }}</td>
                                                 <td>
                                                     <input type="hidden" name="attendance[{{ $index }}][staff_id]" value="{{ $employee->staff_id }}">
-                                                    <select name="attendance[{{ $index }}][status]" class="form-control form-control-sm status-select" required>
+                                                    <select name="attendance[{{ $index }}][status]" class="form-select form-select-sm status-select" required>
                                                         <option value="present">Present</option>
                                                         <option value="absent">Absent</option>
                                                         <option value="late">Late</option>

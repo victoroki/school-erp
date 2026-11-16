@@ -42,4 +42,14 @@ class Department extends Model
     {
         return $this->hasMany(\App\Models\Staff::class, 'department_id');
     }
+
+    public function hod(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Staff::class, 'hod_id', 'staff_id');
+    }
+
+    public function subjects(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\Subject::class, 'department_id', 'department_id');
+    }
 }

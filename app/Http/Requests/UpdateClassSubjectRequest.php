@@ -24,8 +24,10 @@ class UpdateClassSubjectRequest extends FormRequest
      */
     public function rules()
     {
-        $rules = ClassSubject::$rules;
-        
-        return $rules;
+        // The edit form submits a single subject, so subject_id.* does not apply
+        // to it — the id itself has to be checked.
+        return array_merge(ClassSubject::$rules, [
+            'subject_id' => 'required|integer|exists:subjects,subject_id',
+        ]);
     }
 }

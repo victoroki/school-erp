@@ -1,7 +1,7 @@
 <!-- Student Id Field -->
 <div class="col-sm-12">
     {!! Form::label('student_id', 'Student:') !!}
-    <p>{{ $transportRegistration->student->name ?? 'N/A' }}</p>
+    <p>{{ $transportRegistration->student->full_name ?? 'N/A' }}{{ isset($transportRegistration->student->admission_no) ? ' ('.$transportRegistration->student->admission_no.')' : '' }}</p>
 </div>
 
 <!-- Route Id Field -->
@@ -19,13 +19,13 @@
 <!-- Fee Amount Field -->
 <div class="col-sm-12">
     {!! Form::label('fee_amount', 'Fee Amount:') !!}
-    <p>{{ $transportRegistration->fee_amount }}</p>
+    <p>{{ \App\Support\Money::format($transportRegistration->fee_amount ?? 0) }}</p>
 </div>
 
 <!-- Payment Status Field -->
 <div class="col-sm-12">
     {!! Form::label('payment_status', 'Payment Status:') !!}
-    <p>{{ $transportRegistration->payment_status }}</p>
+    <p>{{ ucfirst(str_replace('_', ' ', $transportRegistration->payment_status ?? '')) }}</p>
 </div>
 
 <!-- Academic Year Id Field -->

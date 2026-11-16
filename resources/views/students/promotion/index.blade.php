@@ -119,8 +119,8 @@
                                             <td class="font-weight-bold">{{ $student->admission_no }}</td>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <img src="{{ $student->avatar_url }}" class="img-circle img-sm mr-2 border shadow-sm" style="width: 25px; height: 25px;">
-                                                    <span>{{ $student->full_name }}</span>
+                                                    @include('students._avatar', ['student' => $student, 'size' => 25])
+                                                    <span class="ml-2">{{ $student->full_name }}</span>
                                                 </div>
                                             </td>
                                         </tr>
@@ -142,13 +142,15 @@
 @push('page_scripts')
 <script>
     $(function() {
-        $('#checkAll, #selectAll').click(function() {
-            $('.student-checkbox').prop('checked', true);
-            $('#checkAll').prop('checked', true);
-        });
-
         $('#checkAll').change(function() {
             $('.student-checkbox').prop('checked', $(this).is(':checked'));
+        });
+
+        $('#selectAll').click(function(e) {
+            e.preventDefault();
+            var allChecked = $('.student-checkbox').length === $('.student-checkbox:checked').length;
+            $('.student-checkbox').prop('checked', !allChecked);
+            $('#checkAll').prop('checked', !allChecked);
         });
     });
 </script>

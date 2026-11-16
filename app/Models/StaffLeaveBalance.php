@@ -13,6 +13,7 @@ class StaffLeaveBalance extends Model
         'staff_id',
         'leave_type_id',
         'academic_year_id',
+        'total_entitlement',
         'total_available',
         'used',
         'remaining',
@@ -20,6 +21,7 @@ class StaffLeaveBalance extends Model
     ];
 
     protected $casts = [
+        'total_entitlement' => 'integer',
         'total_available' => 'integer',
         'used' => 'integer',
         'remaining' => 'integer',

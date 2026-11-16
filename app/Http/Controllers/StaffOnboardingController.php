@@ -10,10 +10,16 @@ use Laracasts\Flash\Flash;
 
 class StaffOnboardingController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['update']);
+    }
+
     public function index()
     {
         $onboardingStaff = Staff::whereHas('onboardingChecklist', function($q) {
-            $q->where('status', '!=', 'completed');
+            $q->where('is_completed', false);
         })->with(['onboardingChecklist', 'department', 'jobPosition'])->get();
 
         return view('hr.onboarding.index', compact('onboardingStaff'));
@@ -41,8 +47,9 @@ class StaffOnboardingController extends Controller
             ->firstOrFail();
 
         $item->update([
-            'status' => 'completed',
+            'is_completed' => true,
             'completed_date' => now(),
+            'completed_by' => auth()->id(),
         ]);
 
         Flash::success('Checklist item marked as completed.');
@@ -66,12 +73,11 @@ class StaffOnboardingController extends Controller
             'Add to payroll system',
         ];
 
-        foreach ($defaultItems as $index => $item) {
+        foreach ($defaultItems as $item) {
             StaffOnboardingChecklist::create([
                 'staff_id' => $staff->staff_id,
-                'item_name' => $item,
-                'item_order' => $index + 1,
-                'status' => 'pending',
+                'checklist_item' => $item,
+                'is_completed' => false,
             ]);
         }
     }
@@ -81,7 +87,7 @@ class StaffOnboardingController extends Controller
         $total = $staff->onboardingChecklist->count();
         if ($total == 0) return 0;
         
-        $completed = $staff->onboardingChecklist->where('status', 'completed')->count();
+        $completed = $staff->onboardingChecklist->where('is_completed', true)->count();
         return round(($completed / $total) * 100);
     }
 }

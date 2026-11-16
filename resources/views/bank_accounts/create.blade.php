@@ -19,7 +19,7 @@
                 <h5 class="card-title text-white font-weight-bold mb-0">Account Information</h5>
             </div>
 
-            {!! Form::open(['route' => 'bank-accounts.store']) !!}
+            {!! Form::open(['route' => 'bankAccounts.store']) !!}
             <div class="card-body">
                 <div class="row">
                     <!-- Account Name Field -->
@@ -89,7 +89,7 @@
 
             <div class="card-footer bg-light py-4 text-center">
                 {!! Form::submit('Save Bank Account', ['class' => 'btn btn-primary rounded-pill px-5 py-2 font-weight-bold shadow-sm']) !!}
-                <a href="{{ route('bank-accounts.index') }}" class="btn btn-outline-secondary rounded-pill px-5 py-2 ml-2">Cancel</a>
+                <a href="{{ route('bankAccounts.index') }}" class="btn btn-outline-secondary rounded-pill px-5 py-2 ml-2">Cancel</a>
             </div>
             {!! Form::close() !!}
         </div>
@@ -102,9 +102,16 @@
 
 @push('page_scripts')
     <script>
-        $(document).ready(function() {
-            $('input[name="opening_balance"]').on('input', function() {
-                $('#current_balance').val($(this).val());
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof window.jQuery === 'undefined') {
+                console.error('jQuery is not loaded; current balance sync disabled.');
+                return;
+            }
+
+            window.jQuery(function($) {
+                $('input[name="opening_balance"]').on('input', function() {
+                    $('#current_balance').val($(this).val());
+                });
             });
         });
     </script>

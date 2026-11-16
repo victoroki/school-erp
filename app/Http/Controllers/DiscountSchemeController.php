@@ -6,6 +6,7 @@ use App\Http\Requests\CreateDiscountSchemeRequest;
 use App\Http\Requests\UpdateDiscountSchemeRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\DiscountSchemeRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -17,6 +18,52 @@ class DiscountSchemeController extends AppBaseController
     public function __construct(DiscountSchemeRepository $discountSchemeRepo)
     {
         $this->discountSchemeRepository = $discountSchemeRepo;
+        $this->middleware('can:fees.view')->only(['index', 'show']);
+        $this->middleware('can:fees.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
+
+    /**
+     * Form input with the checkbox flags normalised.
+     *
+     * An unticked checkbox is simply absent from the request, so reading
+     * $request->all() left the previous value in place: a scheme could be given
+     * "requires approval" or "auto apply" and then never have it removed. The
+     * form posts every field, so an absent flag means false.
+     *
+     * The same applies to the applicable fee categories, but as a list rather
+     * than a flag: an empty tick set is a deliberate instruction to stop scoping
+     * the scheme to any category, and without the marker it would be
+     * indistinguishable from a request that never carried the field.
+     *
+     * @return array<string, mixed>
+     */
+    private function formInput(Request $request): array
+    {
+        $input = $request->all();
+
+        $input['requires_approval'] = $request->boolean('requires_approval');
+        $input['auto_apply'] = $request->boolean('auto_apply');
+
+        if ($request->has('applicable_fee_categories_submitted') || $request->has('applicable_fee_categories')) {
+            $input['applicable_fee_categories'] = array_values(array_map(
+                'intval',
+                (array) $request->input('applicable_fee_categories', [])
+            ));
+        }
+
+        return $input;
+    }
+
+    /**
+     * Fee categories keyed by their id, for the tickable category grid and for
+     * rendering a stored selection by name. Ordered by display_order so the
+     * grid reads in the same sequence as the fee categories module.
+     *
+     * @return \Illuminate\Support\Collection<int, string>
+     */
+    private function feeCategoryNames()
+    {
+        return \App\Models\FeeCategory::orderBy('display_order')->pluck('name', 'category_id');
     }
 
     /**
@@ -35,7 +82,11 @@ class DiscountSchemeController extends AppBaseController
      */
     public function create()
     {
-        return view('discount_schemes.create');
+        $academicYears = \App\Models\AcademicYear::pluck('name', 'academic_year_id');
+
+        return view('discount_schemes.create')
+            ->with('academicYears', $academicYears)
+            ->with('feeCategories', $this->feeCategoryNames());
     }
 
     /**
@@ -43,9 +94,11 @@ class DiscountSchemeController extends AppBaseController
      */
     public function store(CreateDiscountSchemeRequest $request)
     {
-        $input = $request->all();
+        $input = $this->formInput($request);
 
         $discountScheme = $this->discountSchemeRepository->create($input);
+
+        AuditTrail::log('Discount Scheme', 'CREATE', $discountScheme->id, null, $discountScheme->toArray());
 
         Flash::success('Discount Scheme saved successfully.');
 
@@ -65,7 +118,9 @@ class DiscountSchemeController extends AppBaseController
             return redirect(route('fees.discounts.index'));
         }
 
-        return view('discount_schemes.show')->with('discountScheme', $discountScheme);
+        return view('discount_schemes.show')
+            ->with('discountScheme', $discountScheme)
+            ->with('feeCategoryNames', $this->feeCategoryNames());
     }
 
     /**
@@ -81,7 +136,12 @@ class DiscountSchemeController extends AppBaseController
             return redirect(route('fees.discounts.index'));
         }
 
-        return view('discount_schemes.edit')->with('discountScheme', $discountScheme);
+        $academicYears = \App\Models\AcademicYear::pluck('name', 'academic_year_id');
+
+        return view('discount_schemes.edit')
+            ->with('discountScheme', $discountScheme)
+            ->with('academicYears', $academicYears)
+            ->with('feeCategories', $this->feeCategoryNames());
     }
 
     /**
@@ -97,7 +157,10 @@ class DiscountSchemeController extends AppBaseController
             return redirect(route('fees.discounts.index'));
         }
 
-        $discountScheme = $this->discountSchemeRepository->update($request->all(), $id);
+        $oldData = $discountScheme->toArray();
+        $discountScheme = $this->discountSchemeRepository->update($this->formInput($request), $id);
+
+        AuditTrail::log('Discount Scheme', 'UPDATE', $discountScheme->id, $oldData, $discountScheme->toArray());
 
         Flash::success('Discount Scheme updated successfully.');
 
@@ -117,7 +180,10 @@ class DiscountSchemeController extends AppBaseController
             return redirect(route('fees.discounts.index'));
         }
 
+        $oldData = $discountScheme->toArray();
         $this->discountSchemeRepository->delete($id);
+
+        AuditTrail::log('Discount Scheme', 'DELETE', $id, $oldData, null);
 
         Flash::success('Discount Scheme deleted successfully.');
 

@@ -32,173 +32,157 @@
             </div>
         </div>
 
-        @if(request('exam_id'))
-        <div class="row">
-            <div class="col-md-3">
-                <div class="small-box bg-info">
-                    <div class="inner">
-                        <h3>450</h3>
-                        <p>Total Students</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                </div>
+        @if(! request('exam_id'))
+            <div class="alert alert-info border-0 shadow-sm">
+                <i class="fas fa-info-circle mr-2"></i> Please select an exam to view performance analysis.
             </div>
-            <div class="col-md-3">
-                <div class="small-box bg-success">
-                    <div class="inner">
-                        <h3>78.5%</h3>
-                        <p>Pass Rate</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                </div>
+        @elseif(! $analysis || $analysis['overall']['students'] === 0)
+            {{-- Explicit empty state. These screens used to show invented figures
+                 for an exam with no marks at all. --}}
+            <div class="alert alert-warning border-0 shadow-sm">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                No marks have been recorded for this exam yet, so there is nothing to analyse.
             </div>
-            <div class="col-md-3">
-                <div class="small-box bg-warning">
-                    <div class="inner">
-                        <h3>65.2</h3>
-                        <p>Average Score</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="small-box bg-danger">
-                    <div class="inner">
-                        <h3>12</h3>
-                        <p>Subjects Tested</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-book"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card card-outline card-primary">
-                    <div class="card-header">
-                        <h3 class="card-title font-weight-bold">Performance Trends</h3>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="performanceChart" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card card-outline card-success">
-                    <div class="card-header">
-                        <h3 class="card-title font-weight-bold">Grade Distribution</h3>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="gradeChart" height="200"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card card-outline card-danger">
-            <div class="card-header">
-                <h3 class="card-title font-weight-bold">Subject-wise Performance</h3>
-            </div>
-            <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th class="pl-4">Subject</th>
-                            <th class="text-center">Students</th>
-                            <th class="text-center">Average</th>
-                            <th class="text-center">Highest</th>
-                            <th class="text-center">Lowest</th>
-                            <th class="text-center">Pass Rate</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="pl-4 font-weight-bold">Mathematics</td>
-                            <td class="text-center">450</td>
-                            <td class="text-center"><b class="text-primary">68.5</b></td>
-                            <td class="text-center">98</td>
-                            <td class="text-center">32</td>
-                            <td class="text-center"><span class="badge badge-success">75%</span></td>
-                        </tr>
-                        <tr>
-                            <td class="pl-4 font-weight-bold">English</td>
-                            <td class="text-center">450</td>
-                            <td class="text-center"><b class="text-primary">72.3</b></td>
-                            <td class="text-center">95</td>
-                            <td class="text-center">45</td>
-                            <td class="text-center"><span class="badge badge-success">82%</span></td>
-                        </tr>
-                        <tr>
-                            <td class="pl-4 font-weight-bold">Kiswahili</td>
-                            <td class="text-center">450</td>
-                            <td class="text-center"><b class="text-primary">65.8</b></td>
-                            <td class="text-center">92</td>
-                            <td class="text-center">38</td>
-                            <td class="text-center"><span class="badge badge-warning">70%</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
         @else
-        <div class="alert alert-info border-0 shadow-sm">
-            <i class="fas fa-info-circle mr-2"></i> Please select an exam to view performance analysis.
-        </div>
+            @php $overall = $analysis['overall']; @endphp
+
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="small-box bg-info">
+                        <div class="inner">
+                            <h3>{{ number_format($overall['students']) }}</h3>
+                            <p>Learners Assessed</p>
+                        </div>
+                        <div class="icon"><i class="fas fa-users"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small-box bg-success">
+                        <div class="inner">
+                            <h3>{{ number_format($overall['pass_rate'], 1) }}%</h3>
+                            <p>Pass Rate</p>
+                        </div>
+                        <div class="icon"><i class="fas fa-check-circle"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3>{{ number_format($overall['average'], 1) }}</h3>
+                            <p>Average Score (%)</p>
+                        </div>
+                        <div class="icon"><i class="fas fa-chart-line"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="small-box bg-danger">
+                        <div class="inner">
+                            <h3>{{ number_format($overall['subjects_tested']) }}</h3>
+                            <p>Subjects Tested</p>
+                        </div>
+                        <div class="icon"><i class="fas fa-book"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card card-outline card-primary">
+                        <div class="card-header">
+                            {{-- Real series: the mean score of each of the most recent
+                                 exams, oldest first. Exam results carry no term of their
+                                 own, so labelling this "Term 1..Current" was fiction. --}}
+                            <h3 class="card-title font-weight-bold">Average Score by Exam</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="performanceChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card card-outline card-success">
+                        <div class="card-header">
+                            <h3 class="card-title font-weight-bold">Grade Distribution</h3>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="gradeChart" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-outline card-danger">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold">Subject-wise Performance</h3>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="pl-4">Subject</th>
+                                <th class="text-center">Learners</th>
+                                <th class="text-center">Average %</th>
+                                <th class="text-center">Highest %</th>
+                                <th class="text-center">Lowest %</th>
+                                <th class="text-center">Pass Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($analysis['subjects'] as $subject)
+                                <tr>
+                                    <td class="pl-4 font-weight-bold">{{ $subject['name'] }}</td>
+                                    <td class="text-center">{{ number_format($subject['students']) }}</td>
+                                    <td class="text-center"><b class="text-primary">{{ number_format($subject['average'], 1) }}</b></td>
+                                    <td class="text-center">{{ number_format($subject['highest'], 1) }}</td>
+                                    <td class="text-center">{{ number_format($subject['lowest'], 1) }}</td>
+                                    <td class="text-center">
+                                        <span class="badge {{ $subject['pass_rate'] >= 50 ? 'badge-success' : 'badge-warning' }}">
+                                            {{ number_format($subject['pass_rate'], 1) }}%
+                                        </span>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        No subject marks recorded for this exam.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         @endif
     </div>
 
     @push('page_scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <script>
-        @if(request('exam_id'))
-        // Performance Trends Chart
-        const perfCtx = document.getElementById('performanceChart');
-        new Chart(perfCtx, {
+        @if($analysis && $analysis['overall']['students'] > 0)
+        new Chart(document.getElementById('performanceChart'), {
             type: 'line',
             data: {
-                labels: ['Term 1', 'Term 2', 'Term 3', 'Current'],
+                labels: @json($analysis['trend']['labels']),
                 datasets: [{
-                    label: 'Average Score',
-                    data: [62, 65, 68, 65.2],
+                    label: 'Average score (%)',
+                    data: @json($analysis['trend']['data']),
                     borderColor: 'rgb(75, 192, 192)',
                     tension: 0.1
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
+            options: { responsive: true, maintainAspectRatio: false }
         });
 
-        // Grade Distribution Chart
-        const gradeCtx = document.getElementById('gradeChart');
-        new Chart(gradeCtx, {
+        new Chart(document.getElementById('gradeChart'), {
             type: 'doughnut',
             data: {
-                labels: ['A', 'B', 'C', 'D', 'E'],
+                labels: @json($analysis['grades']['labels']),
                 datasets: [{
-                    data: [45, 120, 180, 85, 20],
-                    backgroundColor: [
-                        'rgb(40, 167, 69)',
-                        'rgb(23, 162, 184)',
-                        'rgb(255, 193, 7)',
-                        'rgb(253, 126, 20)',
-                        'rgb(220, 53, 69)'
-                    ]
+                    data: @json($analysis['grades']['counts']),
+                    backgroundColor: @json($analysis['grades']['colours'])
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
+            options: { responsive: true, maintainAspectRatio: false }
         });
         @endif
     </script>

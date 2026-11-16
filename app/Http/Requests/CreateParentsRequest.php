@@ -24,6 +24,6 @@ class CreateParentsRequest extends FormRequest
      */
     public function rules()
     {
-        return Parents::$rules;
+        return Parents::rules();
     }
 }

@@ -146,7 +146,7 @@
                         <textarea name="treatment_given" class="form-control" rows="2" placeholder="e.g. First aid, Paracetamol, Sent home"></textarea>
                     </div>
                     <div class="form-check">
-                        <input type="checkbox" name="notified_parents" class="form-check-input" id="notifyParentsCheckbox">
+                        <input type="checkbox" name="notified_parents" value="1" class="form-check-input" id="notifyParentsCheckbox">
                         <label class="form-check-label" for="notifyParentsCheckbox">Parents / Guardian Notified</label>
                     </div>
                 </div>

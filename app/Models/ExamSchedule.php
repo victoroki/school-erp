@@ -17,6 +17,7 @@ class ExamSchedule extends Model
         'exam_date',
         'start_time',
         'end_time',
+        'duration_minutes',
         'room_id',
         'max_marks',
         'passing_marks'
@@ -24,6 +25,9 @@ class ExamSchedule extends Model
 
     protected $casts = [
         'exam_date' => 'date',
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
+        'duration_minutes' => 'integer',
         'max_marks' => 'decimal:2',
         'passing_marks' => 'decimal:2'
     ];

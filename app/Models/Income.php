@@ -56,6 +56,6 @@ class Income extends Model
 
     public function receivedBy()
     {
-        return $this->belongsTo(Staff::class, 'received_by');
+        return $this->belongsTo(\App\Models\User::class, 'received_by');
     }
 }

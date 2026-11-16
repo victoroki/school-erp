@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateSupplierRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Models\Supplier;
 use App\Repositories\SupplierRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -18,6 +19,11 @@ class SupplierController extends AppBaseController
     public function __construct(SupplierRepository $supplierRepo)
     {
         $this->supplierRepository = $supplierRepo;
+        // Suppliers feed the expense form (supplier_id references), so they
+        // belong to the finance module, not inventory — an Accountant with
+        // finance.* only must be able to maintain their own supplier list.
+        $this->middleware('can:finance.view')->only(['index', 'show']);
+        $this->middleware('can:finance.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -28,15 +34,17 @@ class SupplierController extends AppBaseController
         $query = Supplier::query();
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%')
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
                   ->orWhere('code', 'like', '%' . $request->search . '%');
+            });
         }
 
         if ($request->filled('status')) {
             $query->where('is_active', $request->status == 'active' ? 1 : 0);
         }
 
-        $suppliers = $query->paginate(12);
+        $suppliers = $query->paginate(12)->withQueryString();
 
         return view('suppliers.index')
             ->with('suppliers', $suppliers);
@@ -63,6 +71,8 @@ class SupplierController extends AppBaseController
 
         $supplier = $this->supplierRepository->create($input);
 
+        AuditTrail::log('Supplier', 'CREATE', $supplier->supplier_id, null, $supplier->toArray());
+
         Flash::success('Supplier saved successfully.');
 
         return redirect(route('suppliers.index'));
@@ -73,7 +83,9 @@ class SupplierController extends AppBaseController
      */
     public function show($id)
     {
-        $supplier = Supplier::with(['inventoryItems', 'purchaseOrders'])->find($id);
+        // inventoryItems + purchaseOrders: the profile's activity panels.
+        // expenses: the payee history already captured by the expense form.
+        $supplier = Supplier::with(['inventoryItems.category', 'purchaseOrders', 'expenses.category'])->find($id);
 
         if (empty($supplier)) {
             Flash::error('Supplier not found');
@@ -113,7 +125,10 @@ class SupplierController extends AppBaseController
             return redirect(route('suppliers.index'));
         }
 
+        $oldData = $supplier->toArray();
         $supplier = $this->supplierRepository->update($request->all(), $id);
+
+        AuditTrail::log('Supplier', 'UPDATE', $supplier->supplier_id, $oldData, $supplier->toArray());
 
         Flash::success('Supplier updated successfully.');
 
@@ -135,7 +150,10 @@ class SupplierController extends AppBaseController
             return redirect(route('suppliers.index'));
         }
 
+        $oldData = $supplier->toArray();
         $this->supplierRepository->delete($id);
+
+        AuditTrail::log('Supplier', 'DELETE', $id, $oldData, null);
 
         Flash::success('Supplier deleted successfully.');
 

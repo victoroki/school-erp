@@ -26,7 +26,7 @@
                     <form method="GET">
                         <div class="row">
                             <div class="col-md-3">
-                                <select name="year" class="form-control">
+                                <select name="year" class="form-select">
                                     @for($y = date('Y'); $y >= date('Y') - 3; $y--)
                                         <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
                                     @endfor

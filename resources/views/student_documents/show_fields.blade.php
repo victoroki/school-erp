@@ -1,7 +1,7 @@
 <!-- Student Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('student_id', 'Student Id:') !!}
-    <p>{{ $studentDocument->student_id }}</p>
+    {!! Form::label('student_id', 'Student:') !!}
+    <p>{{ $studentDocument->student->full_name ?? 'N/A' }}{{ isset($studentDocument->student->admission_no) ? ' ('.$studentDocument->student->admission_no.')' : '' }}</p>
 </div>
 
 <!-- Document Type Field -->
@@ -25,6 +25,6 @@
 <!-- Uploaded At Field -->
 <div class="col-sm-12">
     {!! Form::label('uploaded_at', 'Uploaded At:') !!}
-    <p>{{ $studentDocument->uploaded_at }}</p>
+    <p>{{ $studentDocument->uploaded_at ? \Carbon\Carbon::parse($studentDocument->uploaded_at)->format('d/m/Y H:i') : '—' }}</p>
 </div>
 

@@ -13,10 +13,19 @@ use DB;
 
 class FeeDashboardController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:fees.view');
+    }
+
     public function index()
     {
         $currentYear = AcademicYear::where('is_current', true)->first();
         $yearId = $currentYear ? $currentYear->academic_year_id : null;
+
+        // Finance Service metrics
+        $financeService = new \App\Services\FinanceService();
+        $metrics = $financeService->getMetrics();
 
         // 1. Summary Cards
         $totalFeeStructures = FeeStructure::where('status', 'active')
@@ -36,6 +45,25 @@ class FeeDashboardController extends Controller
                 return $q->where('academic_year_id', $yearId);
             })->sum('discount_amount');
 
+        // Outstanding comes from the same engine every other screen uses, so the
+        // dashboard cannot disagree with a student's own balance. It deliberately
+        // replaces `expectedRevenue - total_collected`: that compared the
+        // receivable against gross payments received, so after a refund it still
+        // counted money the school had already handed back and reported less
+        // outstanding than the student's own page.
+        $outstanding = app(\App\Services\FeeBalanceService::class)->outstandingForActive($yearId ?: null);
+
+        // Collected net of refunds, derived from the two figures above rather
+        // than from a separate payment sum — so Expected − Collected =
+        // Outstanding holds by construction instead of usually holding.
+        $collected = round($expectedRevenue - $outstanding, 2);
+
+        // The rate uses the same net figures as the card beside it, or the
+        // percentage would not match the shillings printed underneath it.
+        $collectionRate = $expectedRevenue > 0
+            ? round(max(0, min(100, ($collected / $expectedRevenue) * 100)), 1)
+            : 0;
+
         // Pending Discount Approvals
         $pendingApprovals = StudentDiscount::where('approval_status', 'pending')
              ->when($yearId, function($q) use ($yearId) {
@@ -43,10 +71,8 @@ class FeeDashboardController extends Controller
             })->count();
 
         // 2. Statistics
-        // Assignments
-        $totalStudents = \App\Models\Student::where('status', 'active')->count(); // Assuming active students
+        $totalStudents = \App\Models\Student::where('status', 'active')->count();
         
-        // Count students with at least one active assignment in current year
         $studentsWithFees = StudentFeeAssignment::where('status', 'active')
             ->when($yearId, function($q) use ($yearId) {
                 return $q->where('academic_year_id', $yearId);
@@ -72,8 +98,6 @@ class FeeDashboardController extends Controller
             ->take(5)
             ->get();
 
-        // 4. Quick Actions (Just Links in View)
-
         // 5. Recent Activity (Approvals)
         $recentApprovals = StudentDiscount::with(['student', 'discountScheme', 'requester'])
             ->whereIn('approval_status', ['approved', 'rejected'])
@@ -81,10 +105,20 @@ class FeeDashboardController extends Controller
             ->take(5)
             ->get();
 
+        // Fee data that needs a human decision (a refund paid out for more than
+        // the student paid, a refund ledger row posted in the old direction).
+        // Surfaced as a warning; never corrected automatically.
+        $integrityFindings = app(\App\Services\FeeIntegrityService::class)->findings();
+
         return view('fee_management.dashboard', compact(
             'currentYear',
+            'metrics',
+            'integrityFindings',
             'totalFeeStructures',
             'expectedRevenue',
+            'outstanding',
+            'collected',
+            'collectionRate',
             'totalDiscounts',
             'pendingApprovals',
             'notAssignedCount',

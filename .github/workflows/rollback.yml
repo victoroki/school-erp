@@ -1,0 +1,411 @@
+name: Rollback
+
+# Tag-based re-deploy — re-uploads the tagged commit to the same 3 schools.
+# Uses the same FTP state tracking and post-deploy hook as the main pipeline.
+# Set the tag in `on: workflow_dispatch` or trigger via `gh workflow run`.
+#
+# `required` works exactly as it does in deploy.yml: a school marked required
+# whose secrets are incomplete FAILS the rollback, naming every missing secret.
+# Without it a rollback to an unconfigured school reported success while
+# restoring nothing, which is the worst possible outcome for a rollback.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Deploy tag to re-deploy (e.g. deploy-20241201-183000)'
+        required: true
+        default: ''
+
+concurrency:
+  group: rollback-production
+  cancel-in-progress: false
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────
+  # BUILD — one artifact shared by every school deploy
+  # ──────────────────────────────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    outputs:
+      vendor_changed: ${{ steps.deps.outputs.vendor_changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+
+      - name: Resolve tag
+        id: resolve-tag
+        run: |
+          TAG="${{ inputs.tag }}"
+          if git rev-parse --quiet-verify "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          else
+            LAST=$(git describe --tags --match='deploy-*' --abbrev=0 2>/dev/null || true)
+            if [ -z "${LAST}" ]; then
+              echo "::error::Tag ${TAG} not found and no prior deploy tag exists."
+              exit 1
+            fi
+            echo "tag=${LAST}" >> "$GITHUB_OUTPUT"
+            echo "::notice::Tag ${TAG} not found — rolling back to ${LAST} instead."
+          fi
+
+      - name: Detect dependency changes since that tag
+        id: deps
+        run: |
+          TAG="${{ steps.resolve-tag.outputs.tag }}"
+          COUNT=$(git diff --name-only "${TAG}" HEAD -- composer.json composer.lock | wc -l)
+          if [ "${COUNT}" -gt 0 ]; then
+            echo "vendor_changed=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Dependencies changed since ${TAG} — vendor WILL be uploaded."
+          else
+            echo "vendor_changed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Dependencies unchanged since ${TAG} — vendor upload SKIPPED."
+          fi
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, bcmath, pdo_mysql, fileinfo, openssl, tokenizer, gd
+          coverage: none
+
+      - name: Install Composer dependencies (production)
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Build frontend assets (Vite)
+        run: npm ci && npm run build
+
+      # Same artifact name regardless — the deploy job below stays identical.
+      - name: Upload build artifact (includes vendor)
+        if: steps.deps.outputs.vendor_changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollback-build-${{ github.sha }}
+          retention-days: 30
+          include-hidden-files: true
+          path: |
+            .
+            !.git/**
+            !.github/**
+            !node_modules/**
+            !tests/**
+
+      - name: Upload build artifact (code only — vendor unchanged)
+        if: steps.deps.outputs.vendor_changed == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollback-build-${{ github.sha }}
+          retention-days: 30
+          include-hidden-files: true
+          path: |
+            .
+            !.git/**
+            !.github/**
+            !node_modules/**
+            !tests/**
+            !vendor/**
+
+  # ──────────────────────────────────────────────────────────────────────
+  # DEPLOY — matrix over the 3 school subdomains
+  # ──────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Rollback to ${{ inputs.tag || 'last tag' }} on ${{ matrix.key }}
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Same required/optional split as deploy.yml — set `required: true`
+          # once a school's secrets exist.
+          - key: SCHOOL1
+            required: true
+          - key: SCHOOL2
+            required: false
+          - key: SCHOOL3
+            required: false
+
+    steps:
+      - name: Check configuration
+        id: config-check
+        env:
+          SCHOOL_KEY: ${{ matrix.key }}
+          SCHOOL_REQUIRED: ${{ matrix.required }}
+          FTP_SERVER: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          FTP_USERNAME: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
+          FTP_PASSWORD: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
+          SERVER_DIR: ${{ secrets[format('{0}_SERVER_DIR', matrix.key)] }}
+          APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
+          DB_PASSWORD: ${{ secrets[format('{0}_DB_PASSWORD', matrix.key)] }}
+          HOOK_SECRET: ${{ secrets[format('{0}_DEPLOY_HOOK_SECRET', matrix.key)] }}
+          VENDOR_CHANGED: ${{ needs.build.outputs.vendor_changed }}
+        run: |
+          MISSING=""
+          missing() { if [ -z "$2" ]; then MISSING="${MISSING}${1} "; fi; }
+          missing "${SCHOOL_KEY}_FTP_SERVER"   "${FTP_SERVER}"
+          missing "${SCHOOL_KEY}_FTP_USERNAME" "${FTP_USERNAME}"
+          missing "${SCHOOL_KEY}_FTP_PASSWORD" "${FTP_PASSWORD}"
+          missing "${SCHOOL_KEY}_SERVER_DIR"   "${SERVER_DIR}"
+          missing "${SCHOOL_KEY}_APP_URL"      "${APP_URL}"
+          missing "${SCHOOL_KEY}_DB_PASSWORD"  "${DB_PASSWORD}"
+          MISSING="${MISSING% }"
+
+          if [ -n "${MISSING}" ]; then
+            if [ "${SCHOOL_REQUIRED}" = "true" ]; then
+              echo "::error::${SCHOOL_KEY} is required but its deployment secrets are incomplete, so the tagged build would not be restored. Missing: ${MISSING}"
+              echo "| ${SCHOOL_KEY} | ❌ required — rollback did nothing (missing ${MISSING}) |" >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::${SCHOOL_KEY} was SKIPPED — not configured, so the tagged build was NOT restored there. Missing: ${MISSING}"
+            echo "| ${SCHOOL_KEY} | ⏭️ skipped — rollback did nothing (missing ${MISSING}) |" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          if [ -z "${HOOK_SECRET}" ]; then
+            echo "::error::${SCHOOL_KEY}_DEPLOY_HOOK_SECRET is not set (or empty)."
+            exit 1
+          fi
+
+          echo "server_dir=${SERVER_DIR%/}/" >> "$GITHUB_OUTPUT"
+
+          BASE_EXCLUDE=$(cat <<'EXCL'
+          **/.git*
+          **/.github/**
+          **/node_modules/**
+          **/tests/**
+          .env.example
+          storage/app/public/**
+          storage/logs/**
+          storage/framework/sessions/**
+          storage/framework/cache/**
+          storage/framework/views/**
+          public/storage/**
+          database/*.sql
+          *.md
+          opencode-install.log
+          EXCL
+          )
+
+          if [ "${VENDOR_CHANGED}" != "true" ]; then
+            BASE_EXCLUDE=$(printf '%s\n%s' "${BASE_EXCLUDE}" '**/vendor/**')
+            echo "| ${{ matrix.key }} | rollback: deploying code only (vendor unchanged) |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "| ${{ matrix.key }} | rollback: deploying FULL build incl. vendor |" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          {
+            echo "ftp_exclude<<DEPLOY_EXCLUDE_EOF"
+            printf '%s\n' "${BASE_EXCLUDE}"
+            echo "DEPLOY_EXCLUDE_EOF"
+          } >> "$GITHUB_ENV"
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Download build artifact
+        if: steps.config-check.outputs.skip == 'false'
+        uses: actions/download-artifact@v4
+        with:
+          name: rollback-build-${{ github.sha }}
+          path: .
+
+      - name: Generate per-school .env from secrets
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        env:
+          KEY: ${{ matrix.key }}
+          APP_NAME: ${{ secrets[format('{0}_APP_NAME', matrix.key)] }}
+          APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
+          APP_KEY: ${{ secrets[format('{0}_APP_KEY', matrix.key)] }}
+          DB_HOST: ${{ secrets[format('{0}_DB_HOST', matrix.key)] }}
+          DB_DATABASE: ${{ secrets[format('{0}_DB_DATABASE', matrix.key)] }}
+          DB_USERNAME: ${{ secrets[format('{0}_DB_USERNAME', matrix.key)] }}
+          DB_PASSWORD: ${{ secrets[format('{0}_DB_PASSWORD', matrix.key)] }}
+          DEPLOY_HOOK_SECRET: ${{ secrets[format('{0}_DEPLOY_HOOK_SECRET', matrix.key)] }}
+          SETUP_TOKEN: ${{ secrets[format('{0}_SETUP_TOKEN', matrix.key)] }}
+          SAAS_OWNER_EMAIL: ${{ secrets[format('{0}_SAAS_OWNER_EMAIL', matrix.key)] }}
+          SAAS_OWNER_PASSWORD: ${{ secrets[format('{0}_SAAS_OWNER_PASSWORD', matrix.key)] }}
+          SAAS_OWNER_NAME: ${{ secrets[format('{0}_SAAS_OWNER_NAME', matrix.key)] }}
+          MAIL_HOST: ${{ secrets[format('{0}_MAIL_HOST', matrix.key)] }}
+          MAIL_PORT: ${{ secrets[format('{0}_MAIL_PORT', matrix.key)] }}
+          MAIL_USERNAME: ${{ secrets[format('{0}_MAIL_USERNAME', matrix.key)] }}
+          MAIL_PASSWORD: ${{ secrets[format('{0}_MAIL_PASSWORD', matrix.key)] }}
+          MAIL_FROM_ADDRESS: ${{ secrets[format('{0}_MAIL_FROM_ADDRESS', matrix.key)] }}
+        run: |
+          set -e
+          mkdir -p storage/framework/cache/data storage/framework/sessions \
+                   storage/framework/views storage/logs storage/app/public bootstrap/cache
+
+          {
+            echo "APP_NAME='${APP_NAME}'"
+            echo "APP_ENV=production"
+            echo "APP_KEY=${APP_KEY}"
+            echo "APP_DEBUG=false"
+            echo "APP_URL='${APP_URL}'"
+            echo ""
+            echo "# Secret token for the one-time school setup link"
+            echo "SETUP_TOKEN='${SETUP_TOKEN}'"
+            echo ""
+            echo "# Platform Owner account (SaaS provider) — seeded by db:seed"
+            echo "SAAS_OWNER_EMAIL='${SAAS_OWNER_EMAIL}'"
+            echo "SAAS_OWNER_PASSWORD='${SAAS_OWNER_PASSWORD}'"
+            echo "SAAS_OWNER_NAME='Platform Owner'"
+            echo ""
+            echo "LOG_CHANNEL=stack"
+            echo "LOG_LEVEL=error"
+            echo ""
+            echo "DB_CONNECTION=mysql"
+            echo "DB_HOST='${DB_HOST:-127.0.0.1}'"
+            echo "DB_PORT=3306"
+            echo "DB_DATABASE='${DB_DATABASE}'"
+            echo "DB_USERNAME='${DB_USERNAME}'"
+            echo "DB_PASSWORD='${DB_PASSWORD}'"
+            echo ""
+            echo "BROADCAST_DRIVER=log"
+            echo "CACHE_DRIVER=file"
+            echo "FILESYSTEM_DISK=local"
+            echo "QUEUE_CONNECTION=database"
+            echo "SESSION_DRIVER=file"
+            echo "SESSION_LIFETIME=120"
+            echo ""
+            echo "MEMCACHED_HOST=127.0.0.1"
+            echo "REDIS_HOST=127.0.0.1"
+            echo "REDIS_PASSWORD=null"
+            echo "REDIS_PORT=6379"
+            echo ""
+            echo "MAIL_MAILER=smtp"
+            echo "MAIL_HOST='${MAIL_HOST}'"
+            echo "MAIL_PORT=${MAIL_PORT:-587}"
+            echo "MAIL_USERNAME='${MAIL_USERNAME}'"
+            echo "MAIL_PASSWORD='${MAIL_PASSWORD}'"
+            echo "MAIL_ENCRYPTION=tls"
+            echo "MAIL_FROM_ADDRESS='${MAIL_FROM_ADDRESS}'"
+            echo "MAIL_FROM_NAME=\"${APP_NAME}\""
+            echo ""
+            echo "# Token required by public/deploy-hook.php"
+            echo "DEPLOY_HOOK_SECRET='${DEPLOY_HOOK_SECRET}'"
+          } > .env
+          chmod 600 .env || true
+
+          if [ -z "${DEPLOY_HOOK_SECRET}" ]; then
+            echo "::error::${KEY}_DEPLOY_HOOK_SECRET resolved to an empty string."
+            exit 1
+          fi
+          echo ".env generated for ${KEY} ($(wc -l < .env) lines, hook secret ${#DEPLOY_HOOK_SECRET} chars)"
+
+      - name: FTP deploy to cPanel
+        if: steps.config-check.outputs.skip == 'false'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          username: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
+          password: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
+          protocol: ${{ secrets[format('{0}_FTP_PROTOCOL', matrix.key)] || 'ftp' }}
+          port: ${{ secrets[format('{0}_FTP_PORT', matrix.key)] || '21' }}
+          server-dir: ${{ steps.config-check.outputs.server_dir }}
+          state-name: ${{ matrix.key }}-rollback-ftp-state.json
+          dangerous-clean-slate: false
+          exclude: ${{ env.ftp_exclude }}
+
+      - name: Install lftp
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        run: |
+          if ! command -v lftp >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq lftp >/dev/null
+          fi
+
+      - name: Verify uploaded files (FTP listing)
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          FTP_USERNAME: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
+          FTP_PASSWORD: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
+        run: |
+          set -uo pipefail
+          DIR="${{ steps.config-check.outputs.server_dir }}"
+          echo "Remote ${DIR}public/ on ${FTP_SERVER}:"
+          lftp -u "${FTP_USERNAME},${FTP_PASSWORD}" "${FTP_SERVER}" \
+            -e "set ssl:check-hostname off; cls -l --sort=date '${DIR}public/deploy-hook.php'; echo '--- directory ---'; cls -l --sort=date '${DIR}public/' | head -n 25; bye" \
+            || echo "::warning::FTP listing failed — verify credentials and SERVER_DIR."
+
+      - name: Trigger post-deploy hook (migrate, storage:link, caches)
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        env:
+          APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
+          TOKEN: ${{ secrets[format('{0}_DEPLOY_HOOK_SECRET', matrix.key)] }}
+        run: |
+          set -uo pipefail
+          HOOK_URL="${APP_URL%/}/deploy-hook.php"
+          echo "Calling ${HOOK_URL} ..."
+          UA="Mozilla/5.0 (X11; Linux x86_64) SchoolERP-Deploy/1.0"
+
+          ROOT_RESULT=$(curl -sS -o /dev/null -w '%{http_code} -> %{redirect_url}' "${APP_URL%/}/" \
+            -A "$UA" --max-time 60) || ROOT_RESULT="000"
+          echo "Site root -> ${ROOT_RESULT}"
+
+          PROBE_HEADERS="$(mktemp)"
+          PROBE_CODE=$(curl -sS -o /dev/null -w '%{http_code}' -D "$PROBE_HEADERS" \
+            "$HOOK_URL" \
+            -A "$UA" --max-time 60) || PROBE_CODE="000"
+          echo "Pre-flight GET -> HTTP ${PROBE_CODE} (405 expected)"
+          cat "$PROBE_HEADERS" || true
+
+          RESPONSE="$(mktemp)"
+          RESP_HEADERS="$(mktemp)"
+          HTTP_CODE=$(curl -sS -o "$RESPONSE" -w '%{http_code}' -D "$RESP_HEADERS" \
+            -X POST "$HOOK_URL" \
+            -A "$UA" \
+            -H "X-Deploy-Token: ${TOKEN}" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -H "Accept: application/json" \
+            -H "Referer: ${APP_URL%/}/" \
+            -H "X-Requested-With: XMLHttpRequest" \
+            --data "deploy=1" \
+            --max-time 300 \
+            --retry 2 --retry-delay 5) || HTTP_CODE="000"
+
+          echo "--- Hook response (HTTP ${HTTP_CODE}) ---"
+          cat "$RESPONSE" || true
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "POST returned ${HTTP_CODE} — retrying as authenticated GET..."
+            sleep 2
+            HTTP_CODE=$(curl -sS -o "$RESPONSE" -w '%{http_code}' -D "$RESP_HEADERS" \
+              -G "$HOOK_URL" \
+              --data-urlencode "token=${TOKEN}" \
+              -A "$UA" \
+              -H "Accept: application/json" \
+              --max-time 300) || HTTP_CODE="000"
+            echo "--- Fallback GET response (HTTP ${HTTP_CODE}) ---"
+            cat "$RESPONSE" || true
+          fi
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "| Rollback hook | ✅ success |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## Rollback to ${{ matrix.key }} FAILED at post-deploy hook"
+              echo ""
+              echo "| probe | result | expected |"
+              echo "|---|---|---|"
+              echo "| GET site root | ${ROOT_RESULT} | 200 |"
+              echo "| GET deploy-hook.php | ${PROBE_CODE} | 405 |"
+              echo "| POST/GET deploy-hook.php | ${HTTP_CODE} | 200 |"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "Hook FAILED with HTTP ${HTTP_CODE}" >&2
+            exit 1
+          fi

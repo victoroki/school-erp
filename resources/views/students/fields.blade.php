@@ -34,14 +34,6 @@
                     {!! Form::label('nemis_number', 'NEMIS Number:') !!}
                     {!! Form::text('nemis_number', null, ['class' => 'form-control', 'placeholder' => 'NEMIS ID']) !!}
                 </div>
-                <div class="form-group col-sm-3">
-                    {!! Form::label('upi_number', 'UPI Number:') !!}
-                    {!! Form::text('upi_number', null, ['class' => 'form-control', 'placeholder' => 'UPI ID']) !!}
-                </div>
-                <div class="form-group col-sm-3">
-                    {!! Form::label('roll_number', 'Roll Number:') !!}
-                    {!! Form::text('roll_number', null, ['class' => 'form-control', 'maxlength' => 20]) !!}
-                </div>
             </div>
             <div class="row">
                 <div class="form-group col-sm-4">
@@ -74,7 +66,7 @@
             <div class="row">
                 <div class="form-group col-sm-4">
                     {!! Form::label('date_of_birth', 'Date of Birth:') !!} <span class="required-star">*</span>
-                    {!! Form::date('date_of_birth', null, ['class' => 'form-control', 'required']) !!}
+                    {!! Form::date('date_of_birth', (isset($student) && $student->date_of_birth) ? $student->date_of_birth->format('Y-m-d') : null, ['class' => 'form-control', 'required']) !!}
                 </div>
                 <div class="form-group col-sm-4">
                     {!! Form::label('gender', 'Gender:') !!} <span class="required-star">*</span>
@@ -94,10 +86,6 @@
                     {!! Form::label('religion', 'Religion:') !!}
                     {!! Form::text('religion', null, ['class' => 'form-control', 'maxlength' => 50]) !!}
                 </div>
-                <div class="form-group col-sm-4">
-                    {!! Form::label('student_category', 'Category:') !!}
-                    {!! Form::text('student_category', null, ['class' => 'form-control', 'placeholder' => 'e.g., General, SC, ST']) !!}
-                </div>
             </div>
         </div>
     </div>
@@ -109,10 +97,6 @@
         </div>
         <div class="card-body">
             <div class="row">
-                <div class="form-group col-sm-12">
-                    {!! Form::label('address', 'Permanent Address:') !!}
-                    {!! Form::textarea('address', null, ['class' => 'form-control', 'rows' => 2]) !!}
-                </div>
             </div>
             <div class="row">
                 <div class="form-group col-sm-3">
@@ -129,7 +113,7 @@
                 </div>
                 <div class="form-group col-sm-3">
                     {!! Form::label('country', 'Country:') !!} <span class="required-star">*</span>
-                    {!! Form::text('country', 'Kenya', ['class' => 'form-control', 'required', 'maxlength' => 50]) !!}
+                    {!! Form::text('country', (isset($student) && $student->country) ? $student->country : 'Kenya', ['class' => 'form-control', 'required', 'maxlength' => 50]) !!}
                 </div>
             </div>
         </div>
@@ -171,14 +155,6 @@
                     {!! Form::label('medications', 'Active Medications:') !!}
                     {!! Form::textarea('medications', null, ['class' => 'form-control', 'rows' => 2]) !!}
                 </div>
-                <div class="form-group col-sm-3">
-                    {!! Form::label('doctor_name', 'Family Doctor:') !!}
-                    {!! Form::text('doctor_name', null, ['class' => 'form-control']) !!}
-                </div>
-                <div class="form-group col-sm-3">
-                    {!! Form::label('doctor_phone', 'Doctor Phone:') !!}
-                    {!! Form::text('doctor_phone', null, ['class' => 'form-control']) !!}
-                </div>
             </div>
         </div>
     </div>
@@ -192,7 +168,7 @@
             <div class="row">
                 <div class="form-group col-sm-4">
                     {!! Form::label('admission_date', 'Admission Date:') !!} <span class="required-star">*</span>
-                    {!! Form::date('admission_date', date('Y-m-d'), ['class' => 'form-control', 'required']) !!}
+                    {!! Form::date('admission_date', (isset($student) && $student->admission_date) ? $student->admission_date->format('Y-m-d') : date('Y-m-d'), ['class' => 'form-control', 'required']) !!}
                 </div>
                 <div class="form-group col-sm-4">
                     {!! Form::label('enrollment_status', 'Enrollment Status:') !!}
@@ -200,12 +176,19 @@
                 </div>
                 <div class="form-group col-sm-4">
                     {!! Form::label('photo', 'Student Photo:') !!}
-                    <div class="input-group">
-                        <div class="custom-file">
-                            {!! Form::file('photo', ['class' => 'custom-file-input', 'id' => 'photo']) !!}
+                    <div class="d-flex align-items-start">
+                        <div class="custom-file flex-grow-1">
+                            {!! Form::file('photo', ['class' => 'custom-file-input', 'id' => 'photo', 'accept' => 'image/*']) !!}
                             {!! Form::label('photo', 'Choose file', ['class' => 'custom-file-label']) !!}
                         </div>
+                        <div class="ml-3 text-center" id="photo-preview-wrap" style="display: {{ (isset($student) && $student->has_photo) ? 'block' : 'none' }};">
+                            <img id="photo-preview" src="{{ (isset($student) && $student->has_photo) ? $student->avatar_url : '' }}" alt="Photo preview" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                        </div>
                     </div>
+                    <div id="photo-feedback" class="mt-2">
+                        <span id="photo-filename" class="d-none badge badge-success"><i class="fas fa-check-circle"></i> Selected: </span>
+                    </div>
+                    <small class="form-text text-muted" id="photo-hint">{{ (isset($student) && $student->has_photo) ? 'Current photo on file — choose a new file to replace it.' : 'JPG or PNG, max 2MB.' }}</small>
                 </div>
             </div>
             
@@ -263,8 +246,8 @@
             <p class="text-muted small mb-4">Complete this section if you want to enroll the student in a class immediately upon admission.</p>
             <div class="row">
                 <div class="form-group col-sm-6">
-                    {!! Form::label('class_section_id', 'Class Section:') !!}
-                    {!! Form::select('class_section_id', ['' => 'Select Class Section'] + $classSections, null, ['class' => 'form-control select2']) !!}
+                    {!! Form::label('class_section_id', 'Class Section:') !!} <span class="required-star">*</span>
+                    {!! Form::select('class_section_id', ['' => 'Select Class Section'] + $classSections, null, ['class' => 'form-control select2', 'required']) !!}
                 </div>
                 <div class="form-group col-sm-3">
                     {!! Form::label('academic_year_id', 'Academic Year:') !!}
@@ -281,8 +264,6 @@
 </div>
 
 @push('page_css')
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css">
     <style>
         .select2-container .select2-selection--single {
             height: 38px !important;
@@ -297,22 +278,88 @@
 @endpush
 
 @push('page_scripts')
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    $(document).ready(function() {
-        // Handle file input label
-        $('.custom-file-input').on('change', function() {
-            let fileName = $(this).val().split('\\').pop();
-            $(this).next('.custom-file-label').addClass("selected").html(fileName);
-        });
+    // Photo upload feedback — vanilla JS on purpose: the Vite bundle loads as
+    // a deferred module, so jQuery is not defined when this classic script
+    // runs. No jQuery, no DOMContentLoaded dependency — the listener is
+    // attached directly to the input element that exists right above it.
+    (function () {
+        var input = document.getElementById('photo');
+        if (!input) {
+            return;
+        }
 
-        // Initialize Select2
-        $('.select2').select2({
-            theme: 'bootstrap4',
-            placeholder: "Select an option",
-            allowClear: true,
-            width: '100%'
+        var label = input.nextElementSibling;
+        var previewWrap = document.getElementById('photo-preview-wrap');
+        var previewImg = document.getElementById('photo-preview');
+        var filenameBadge = document.getElementById('photo-filename');
+        var hint = document.getElementById('photo-hint');
+
+        input.addEventListener('change', function () {
+            var file = this.files && this.files[0];
+            if (!file) {
+                return;
+            }
+
+            if (label) {
+                label.textContent = file.name;
+                label.classList.add('selected');
+            }
+
+            if (filenameBadge) {
+                filenameBadge.classList.remove('d-none');
+                filenameBadge.innerHTML = '<i class="fas fa-check-circle"></i> Selected: ' + file.name;
+            }
+
+            if (hint) {
+                hint.classList.remove('text-muted');
+                hint.classList.add('text-success');
+            }
+
+            if (file.type && file.type.indexOf('image/') === 0) {
+                var reader = new FileReader();
+                reader.onload = function (ev) {
+                    if (previewImg) {
+                        previewImg.src = ev.target.result;
+                    }
+                    if (previewWrap) {
+                        previewWrap.style.display = 'block';
+                    }
+                    if (hint) {
+                        hint.textContent = 'New photo selected — it will be saved when you submit the form.';
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else if (hint) {
+                hint.textContent = 'Please choose an image file (JPG or PNG).';
+            }
         });
-    });
+    })();
+
+    // Initialize Select2 — safe even if jQuery is not ready yet.
+    (function () {
+        function initSelect2() {
+            if (window.jQuery && window.jQuery.fn && window.jQuery.fn.select2) {
+                window.jQuery('.select2').select2({
+                    theme: 'bootstrap4',
+                    placeholder: 'Select an option',
+                    allowClear: true,
+                    width: '100%'
+                });
+                return true;
+            }
+            return false;
+        }
+
+        if (!initSelect2()) {
+            var tries = 0;
+            var timer = setInterval(function () {
+                tries++;
+                if (initSelect2() || tries > 100) {
+                    clearInterval(timer);
+                }
+            }, 50);
+        }
+    })();
 </script>
 @endpush

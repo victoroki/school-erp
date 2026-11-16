@@ -6,7 +6,7 @@ use App\Http\Requests\CreateVehicleRequest;
 use App\Http\Requests\UpdateVehicleRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\VehicleRepository;
-use App\Models\Staff;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -18,13 +18,8 @@ class VehicleController extends AppBaseController
     public function __construct(VehicleRepository $vehicleRepo)
     {
         $this->vehicleRepository = $vehicleRepo;
-    }
-
-    private function getDropdownData()
-    {
-        return [
-            'drivers' => Staff::where('staff_type', 'driver')->pluck('first_name', 'staff_id')
-        ];
+        $this->middleware('can:transport.view')->only(['index', 'show']);
+        $this->middleware('can:transport.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -43,8 +38,7 @@ class VehicleController extends AppBaseController
      */
     public function create()
     {
-        $dropdownData = $this->getDropdownData();
-        return view('vehicles.create', $dropdownData);
+        return view('vehicles.create');
     }
 
     /**
@@ -56,6 +50,8 @@ class VehicleController extends AppBaseController
 
         $vehicle = $this->vehicleRepository->create($input);
 
+        AuditTrail::log('Vehicle', 'CREATE', $vehicle->vehicle_id, null, $vehicle->toArray());
+
         Flash::success('Vehicle saved successfully.');
 
         return redirect(route('vehicles.index'));
@@ -66,7 +62,7 @@ class VehicleController extends AppBaseController
      */
     public function show($id)
     {
-        $vehicle = $this->vehicleRepository->find($id);
+        $vehicle = \App\Models\Vehicle::with('driver')->find($id);
 
         if (empty($vehicle)) {
             Flash::error('Vehicle not found');
@@ -90,8 +86,7 @@ class VehicleController extends AppBaseController
             return redirect(route('vehicles.index'));
         }
 
-        $dropdownData = $this->getDropdownData();
-        return view('vehicles.edit', array_merge(['vehicle' => $vehicle], $dropdownData));
+        return view('vehicles.edit', ['vehicle' => $vehicle]);
     }
 
     /**
@@ -107,7 +102,10 @@ class VehicleController extends AppBaseController
             return redirect(route('vehicles.index'));
         }
 
+        $oldData = $vehicle->toArray();
         $vehicle = $this->vehicleRepository->update($request->all(), $id);
+
+        AuditTrail::log('Vehicle', 'UPDATE', $vehicle->vehicle_id, $oldData, $vehicle->toArray());
 
         Flash::success('Vehicle updated successfully.');
 
@@ -129,7 +127,10 @@ class VehicleController extends AppBaseController
             return redirect(route('vehicles.index'));
         }
 
+        $oldData = $vehicle->toArray();
         $this->vehicleRepository->delete($id);
+
+        AuditTrail::log('Vehicle', 'DELETE', $id, $oldData, null);
 
         Flash::success('Vehicle deleted successfully.');
 

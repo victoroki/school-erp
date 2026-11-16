@@ -35,7 +35,7 @@
                                 </a>
                             </li>
                             <li class="mb-3">
-                                <a href="#" class="d-flex align-items-center text-dark font-weight-bold text-decoration-none opacity-50">
+                                <a href="{{ route('financial-reports.balance-sheet') }}" class="d-flex align-items-center text-dark font-weight-bold text-decoration-none">
                                     <i class="fas fa-chevron-right mr-2 text-primary small"></i> Balance Sheet
                                 </a>
                             </li>
@@ -66,7 +66,7 @@
                                 </a>
                             </li>
                             <li class="mb-3">
-                                <a href="#" class="d-flex align-items-center text-dark font-weight-bold text-decoration-none opacity-50">
+                                <a href="{{ route('financial-reports.fee-collection-trends') }}" class="d-flex align-items-center text-dark font-weight-bold text-decoration-none">
                                     <i class="fas fa-chevron-right mr-2 text-success small"></i> Fee Collection Trends
                                 </a>
                             </li>
@@ -86,11 +86,13 @@
                         <p class="text-muted small">Records for tracking changes and ensuring accuracy.</p>
                         <hr class="my-4">
                         <ul class="list-unstyled">
+                            @if(auth()->user()->hasAnyRole(['Super Admin']))
                             <li class="mb-3">
                                 <a href="{{ route('audit-trail.index') }}" class="d-flex align-items-center text-dark font-weight-bold text-decoration-none">
                                     <i class="fas fa-chevron-right mr-2 text-info small"></i> Financial Audit Trail
                                 </a>
                             </li>
+                            @endif
                             <li class="mb-3">
                                 <a href="{{ route('bank-reconciliations.index') }}" class="d-flex align-items-center text-dark font-weight-bold text-decoration-none">
                                     <i class="fas fa-chevron-right mr-2 text-info small"></i> Reconciliation Reports

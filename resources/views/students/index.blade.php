@@ -50,7 +50,7 @@
                                 <div class="input-group-prepend">
                                     <span class="input-group-text bg-white border-right-0"><i class="fas fa-search text-muted"></i></span>
                                 </div>
-                                <input type="text" name="q" value="{{ request('q') }}" class="form-control border-left-0" placeholder="Name, Adm No, NEMIS/UPI...">
+                                <input type="text" name="q" value="{{ request('q') }}" class="form-control border-left-0" placeholder="Name, Adm No, NEMIS...">
                             </div>
                         </div>
                     </div>

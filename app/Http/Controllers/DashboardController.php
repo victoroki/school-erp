@@ -6,238 +6,430 @@ use App\Models\Student;
 use App\Models\User;
 use App\Models\SchoolClass;
 use App\Models\FeePayment;
-use App\Models\ExamResult;
-use App\Models\Attendance;
+use App\Models\StudentFeeAssignment;
+use App\Models\AuditTrail;
+use App\Models\LeaveApplication;
+use App\Models\InventoryItem;
+use App\Models\Requisition;
+use App\Models\Book;
+use App\Models\BookIssue;
+use App\Models\Hostel;
+use App\Models\HostelAllocation;
+use App\Models\Route as TransportRoute;
+use App\Models\Vehicle;
+use App\Models\Exam;
+use App\Models\Subject;
+use App\Services\MenuService;
+use App\Services\DashboardWidgetService;
+use App\Services\ModuleManager;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        return view('dashboard');
+        $user = Auth::user();
+        $user->load('roles');
+        $roleName = strtolower($user->roles->first()->role_name ?? 'administrator');
+
+        // Recent-activity tiles are drawn from the audit trail, so they share
+        // its platform-Owner-only visibility.
+        $isPrivileged = $user->isOwner();
+
+        $widgetService = app(DashboardWidgetService::class);
+        $widgetConfig = $widgetService->modules();
+        $alertConfig = $widgetService->alerts();
+
+        // A tile is visible only when the user holds its permission AND its
+        // module is enabled in Administration → Modules (same gating the
+        // sidebar applies) — disabled modules never surface tiles or their
+        // summary counts on the dashboard.
+        $moduleManager = app(ModuleManager::class);
+        $visibleModules = [];
+        foreach ($widgetConfig as $key => $widget) {
+            if (! $this->moduleIsActive($widget['module'] ?? $key)) {
+                continue;
+            }
+            if (MenuService::canSee($user, $widget['permission'])) {
+                $visibleModules[$key] = $widget;
+                $visibleModules[$key]['data'] = ($widget['summary'])();
+            }
+        }
+
+        $counts = $this->getAlertCounts();
+
+        $visibleAlerts = [];
+        foreach ($alertConfig as $alert) {
+            if (! $this->moduleIsActive($alert['module'] ?? '')) {
+                continue;
+            }
+            if (!MenuService::canSee($user, $alert['permission'])) {
+                continue;
+            }
+            if (!($alert['visible'])($counts)) {
+                continue;
+            }
+            $visibleAlerts[] = [
+                'type'   => $alert['type'],
+                'icon'   => $alert['icon'],
+                'title'  => ($alert['title'])($counts),
+                'desc'   => ($alert['desc'])($counts),
+                'action' => $alert['action'],
+                'actionRoute' => $alert['actionRoute'],
+            ];
+        }
+
+        $recentActivity = [];
+        if ($isPrivileged) {
+            $recentActivity = AuditTrail::with('user')
+                ->latest()
+                ->limit(6)
+                ->get()
+                ->map(fn($a) => [
+                    'module' => ucfirst($a->module ?? 'System'),
+                    'action' => ucfirst($a->action ?? 'Action'),
+                    'user'   => optional($a->user)->name ?? 'System',
+                    'time'   => $a->created_at->diffForHumans(),
+                ]);
+        }
+
+        $keyMetrics = $this->getKeyMetrics($user, $roleName);
+        $chartSeries = $this->getChartSeries($user);
+
+        return view('dashboard', compact(
+            'user', 'roleName',
+            'keyMetrics', 'chartSeries',
+            'recentActivity',
+            'visibleModules', 'visibleAlerts', 'moduleManager'
+        ));
     }
 
     public function getData(Request $request)
     {
-        $range = $request->get('range', 'year');
-        
-        // Get statistics
-        $statistics = $this->getStatistics();
-        
-        // Get chart data
-        $chartData = $this->getChartData($range);
-        
-        // Get recent activities
-        $recentActivities = $this->getRecentActivities();
-        
-        // Get notices
-        $notices = $this->getNotices();
-        
-        // Get schedule
-        $schedule = $this->getSchedule();
-        
+        $user = Auth::user();
+
+        // Each statistic is tagged with the permission that governs it and
+        // only included when the user holds it — never leak global numbers
+        // to roles without module access.
+        $statistics = [];
+        $charts = [];
+
+        if ($this->moduleIsActive('students') && MenuService::canSee($user, ['students.view'])) {
+            $statistics['total_students'] = Student::count();
+
+            $trend = $this->getEnrollmentTrend();
+            $charts['enrollment_trend'] = [
+                'labels' => array_map(fn ($l) => substr($l, 0, 3), $trend['labels']),
+                'data'   => $trend['data'],
+            ];
+        }
+
+        if ($this->moduleIsActive('hr') && MenuService::canSee($user, ['hr.view'])) {
+            $statistics['total_teachers'] = User::whereHas('roles', fn($q) => $q->where('role_name', 'teacher'))->count();
+        }
+
+        if ($this->moduleIsActive('academics') && MenuService::canSee($user, ['academics.view'])) {
+            $statistics['total_classes'] = SchoolClass::count();
+        }
+
+        if ($this->moduleIsActive('fees') && MenuService::canSee($user, ['fees.view', 'fees.collect', 'finance.view'])) {
+            $statistics['monthly_revenue'] = FeePayment::notReversed()
+                ->whereMonth('payment_date', now()->month)
+                ->whereYear('payment_date', now()->year)
+                ->sum('amount');
+        }
+
         return response()->json([
             'statistics' => $statistics,
-            'charts' => $chartData,
-            'activities' => $recentActivities,
-            'notices' => $notices,
-            'schedule' => $schedule
+            'charts'     => $charts,
         ]);
     }
 
-    private function getStatistics()
+    /**
+     * Whether a dashboard surface's governing module is enabled.
+     *
+     * Mirrors the sidebar's module gating: unknown keys (no row in the
+     * modules table) are treated as active so nothing vanishes before the
+     * installer opts into the module registry.
+     */
+    private function moduleIsActive(string $key): bool
     {
-        $totalStudents = Student::count();
-        $totalTeachers = User::whereHas('roles', function($query) {
-            $query->where('name', 'teacher');
-        })->count();
-        $totalClasses = SchoolClass::count();
-        $monthlyRevenue = FeePayment::whereMonth('created_at', Carbon::now()->month)
-            ->whereYear('created_at', Carbon::now()->year)
-            ->sum('amount');
+        return app(ModuleManager::class)->isActive($key);
+    }
+
+    private function getAlertCounts(): array
+    {
+        $outstanding = $this->outstandingFees();
 
         return [
-            'total_students' => $totalStudents,
-            'total_teachers' => $totalTeachers,
-            'total_classes' => $totalClasses,
-            'monthly_revenue' => $monthlyRevenue
+            'pendingFeeCount'          => $outstanding['count'],
+            'pendingFeeAmount'         => $outstanding['amount'],
+            'pendingLeaveCount'        => $this->pendingLeaveCount(),
+            'pendingRequisitionsCount' => Requisition::where('status', 'Pending')->count(),
+            'lowStockCount'            => InventoryItem::whereRaw('quantity <= minimum_quantity')->count(),
         ];
     }
 
-    private function getChartData($range)
+    /**
+     * Build the "Key Metrics" summary cards as permission-tagged widget
+     * definitions, then filter them server-side before the view sees them.
+     *
+     * Role-specific variants (finance / HR) keep their tailored cards; the
+     * default set shows one card per governed module. Any card whose
+     * permission the user lacks is dropped — nothing is hidden via CSS/JS,
+     * and card values are evaluated only after the permission check passes.
+     */
+    private function getKeyMetrics(User $user, string $roleName): array
     {
-        $enrollmentData = $this->getEnrollmentTrend($range);
-        $classDistribution = $this->getClassDistribution();
+        $isFinance = in_array($roleName, ['finance', 'accountant', 'bursar']);
+        $isHR      = in_array($roleName, ['hr', 'human resources', 'hr manager']);
 
-        return [
-            'enrollment_trend' => $enrollmentData,
-            'class_distribution' => $classDistribution
-        ];
-    }
-
-    private function getEnrollmentTrend($range)
-    {
-        $months = [];
-        $counts = [];
-        
-        switch ($range) {
-            case 'today':
-                // Get hourly data for today
-                for ($i = 0; $i < 24; $i++) {
-                    $hour = Carbon::today()->addHours($i);
-                    $months[] = $hour->format('H:00');
-                    $counts[] = Student::whereDate('created_at', Carbon::today())
-                        ->whereHour('created_at', $i)
-                        ->count();
-                }
-                break;
-                
-            case 'week':
-                // Get daily data for the week
-                for ($i = 6; $i >= 0; $i--) {
-                    $date = Carbon::today()->subDays($i);
-                    $months[] = $date->format('D');
-                    $counts[] = Student::whereDate('created_at', $date)->count();
-                }
-                break;
-                
-            case 'month':
-                // Get daily data for the month
-                for ($i = 30; $i >= 0; $i--) {
-                    $date = Carbon::today()->subDays($i);
-                    $months[] = $date->format('M d');
-                    $counts[] = Student::whereDate('created_at', $date)->count();
-                }
-                break;
-                
-            case 'year':
-            default:
-                // Get monthly data for the year
-                for ($i = 11; $i >= 0; $i--) {
-                    $month = Carbon::today()->subMonths($i);
-                    $months[] = $month->format('M');
-                    $counts[] = Student::whereYear('created_at', $month->year)
-                        ->whereMonth('created_at', $month->month)
-                        ->count();
-                }
-                break;
+        if ($isFinance && MenuService::canSee($user, ['fees.view', 'fees.collect'])) {
+            $cards = [
+                [
+                    'module' => 'fees',
+                    'permission' => ['fees.view', 'fees.collect'],
+                    'col' => 'col-md-4', 'route' => 'fee-management.index',
+                    'icon' => 'fa-money-bill-wave', 'color' => 'ic-green',
+                    'badge' => 'Today', 'badgeClass' => 'sb-none',
+                    'title' => 'Daily Collections',
+                    // payment_date is the business date every report filters on
+                    // (collections, payment methods, receipt register); created_at
+                    // is when the row was written, which for a back-dated or
+                    // synced payment is a different day. notReversed() is
+                    // mandatory for money — a voided receipt is not income.
+                    'value' => fn() => \App\Support\Money::format(
+                        FeePayment::whereDate('payment_date', today())->notReversed()->sum('amount')
+                    ),
+                    'foot'  => 'Payments received today',
+                ],
+                [
+                    'module' => 'fees',
+                    'permission' => ['fees.view', 'fees.collect'],
+                    'col' => 'col-md-4', 'route' => 'fee-management.index',
+                    'icon' => 'fa-calendar-check', 'color' => 'ic-blue',
+                    'badge' => now()->format('M'), 'badgeClass' => 'sb-none',
+                    'title' => 'Monthly Revenue',
+                    'value' => fn() => \App\Support\Money::format(
+                        FeePayment::whereMonth('payment_date', now()->month)
+                            ->whereYear('payment_date', now()->year)
+                            ->notReversed()
+                            ->sum('amount')
+                    ),
+                    'foot'  => 'Total collected this month',
+                ],
+                [
+                    'module' => 'fees',
+                    'permission' => ['fees.view', 'fees.collect'],
+                    'col' => 'col-md-4', 'route' => 'fee-management.index',
+                    'icon' => 'fa-exclamation-circle', 'color' => 'ic-red',
+                    'badge' => 'Urgent', 'badgeClass' => 'sb-down',
+                    'title' => 'Outstanding Fees',
+                    'value' => fn() => 'KES ' . number_format($this->outstandingFees()['amount'], 0),
+                    'foot' => fn() => 'Across ' . number_format($this->outstandingFees()['count']) . ' accounts',
+                ],
+            ];
+        } elseif ($isHR && MenuService::canSee($user, ['hr.view'])) {
+            $cards = [
+                [
+                    'module' => 'hr',
+                    'permission' => ['hr.view'],
+                    'col' => 'col-md-6', 'route' => 'staff.index',
+                    'icon' => 'fa-users', 'color' => 'ic-blue',
+                    'badge' => 'Active', 'badgeClass' => 'sb-none',
+                    'title' => 'Total Staff',
+                    'value' => fn() => number_format(User::whereHas('roles')->count()),
+                    'foot'  => 'Academic & support combined',
+                ],
+                [
+                    'module' => 'hr',
+                    'permission' => ['hr.view'],
+                    'col' => 'col-md-6', 'route' => 'leave-applications.index',
+                    'icon' => 'fa-user-clock', 'color' => 'ic-yellow',
+                    'badge' => fn() => $this->pendingLeaveCount() > 0 ? 'Pending' : 'Clear',
+                    'badgeClass' => fn() => $this->pendingLeaveCount() > 0 ? 'sb-down' : 'sb-up',
+                    'title' => 'Leave Requests',
+                    'value' => fn() => $this->pendingLeaveCount(),
+                    'foot'  => 'Awaiting your review',
+                ],
+            ];
+        } else {
+            $cards = [
+                [
+                    'module' => 'students',
+                    'permission' => ['students.view'],
+                    'col' => 'col-xl-3 col-sm-6', 'route' => 'students.index',
+                    'icon' => 'fa-user-graduate', 'color' => 'ic-blue',
+                    'badge' => fn() => number_format(Student::where('is_active', true)->count()),
+                    'badgeIcon' => 'fa-check', 'badgeClass' => 'sb-up',
+                    'title' => 'Total Students',
+                    'value' => fn() => number_format(Student::count()),
+                    'foot'  => 'Enrolled students',
+                ],
+                [
+                    'module' => 'hr',
+                    'permission' => ['hr.view'],
+                    'col' => 'col-xl-3 col-sm-6', 'route' => 'staff.index',
+                    'icon' => 'fa-users', 'color' => 'ic-purple',
+                    'badge' => 'Active', 'badgeClass' => 'sb-none',
+                    'title' => 'Active Staff',
+                    'value' => fn() => number_format(User::whereHas('roles')->count()),
+                    'foot'  => 'Academic & support',
+                ],
+                [
+                    'module' => 'academics',
+                    'permission' => ['academics.view'],
+                    'col' => 'col-xl-3 col-sm-6', 'route' => 'school-classes.index',
+                    'icon' => 'fa-chalkboard', 'color' => 'ic-green',
+                    'badge' => 'Units', 'badgeClass' => 'sb-none',
+                    'title' => 'Total Classes',
+                    'value' => fn() => number_format(SchoolClass::count()),
+                    'foot'  => 'Academic groups',
+                ],
+                [
+                    'module' => 'fees',
+                    'permission' => ['fees.view', 'fees.collect'],
+                    'col' => 'col-xl-3 col-sm-6', 'route' => 'fee-management.index',
+                    'icon' => 'fa-coins', 'color' => 'ic-yellow',
+                    'badge' => now()->format('M'), 'badgeClass' => 'sb-none',
+                    'title' => 'Monthly Rev',
+                    // Abbreviated to thousands for this compact tile, but the
+                    // figure must still be non-reversed and dated by payment_date.
+                    'value' => fn() => 'KES ' . number_format(
+                        FeePayment::whereMonth('payment_date', now()->month)
+                            ->whereYear('payment_date', now()->year)
+                            ->notReversed()
+                            ->sum('amount') / 1000,
+                        1
+                    ) . 'k',
+                    'foot'  => fn() => 'Pending: ' . number_format($this->outstandingFees()['amount'] / 1000, 1) . 'k',
+                ],
+            ];
         }
 
-        return [
-            'labels' => $months,
-            'data' => $counts
-        ];
+        // Filter by permission AND module state BEFORE evaluating any card data.
+        return collect($cards)
+            ->filter(fn($card) => $this->moduleIsActive($card['module'] ?? ''))
+            ->filter(fn($card) => MenuService::canSee($user, $card['permission']))
+            ->map(function ($card) {
+                foreach (['value', 'badge', 'badgeClass', 'foot'] as $key) {
+                    if (($card[$key] ?? null) instanceof \Closure) {
+                        $card[$key] = ($card[$key])();
+                    }
+                }
+                unset($card['permission']);
+                return $card;
+            })
+            ->values()
+            ->all();
     }
 
-    private function getClassDistribution()
+    /**
+     * Build the "Growth & Revenue" chart datasets, one per governed module.
+     * A dataset is computed and exposed to the view only when the user holds
+     * the underlying permission — the chart panel itself is hidden when no
+     * dataset survives filtering.
+     */
+    private function getChartSeries(User $user): array
     {
-        $classes = SchoolClass::withCount('students')->get();
-        
-        $labels = [];
-        $data = [];
-        
-        foreach ($classes as $class) {
-            $labels[] = $class->name;
-            $data[] = $class->students_count;
+        $series = [];
+
+        if ($this->moduleIsActive('students') && MenuService::canSee($user, ['students.view'])) {
+            $series['admissions'] = $this->getEnrollmentTrend();
         }
-        
+
+        if ($this->moduleIsActive('fees') && MenuService::canSee($user, ['fees.view', 'fees.collect', 'finance.view'])) {
+            $series['revenue'] = $this->getFeeTrend();
+        }
+
+        return $series;
+    }
+
+    private function getEnrollmentTrend(): array
+    {
+        $months = $this->monthWindow(12);
+        $counts = $this->monthlyTotals(Student::query(), 'created_at', 'COUNT(*)', $months);
+
         return [
-            'labels' => $labels,
-            'data' => $data
+            'labels' => $months->map->format('M Y')->all(),
+            'data'   => $months->map(fn ($m) => (int) ($counts[$m->format('Y-m')] ?? 0))->all(),
         ];
     }
 
-    private function getRecentActivities()
+    private function getFeeTrend(): array
     {
-        // In a real application, you would fetch actual activities from your models
-        // For now, we'll return sample data but in a production environment, you would do something like:
-        // $activities = ActivityLog::latest()->limit(10)->get();
-        
+        $months = $this->monthWindow(6);
+        // Revenue trend: payment_date (the business date every report uses)
+        // and reversals excluded, matching the collections report the same
+        // figures are reconciled against.
+        $sums = $this->monthlyTotals(FeePayment::notReversed(), 'payment_date', 'SUM(amount)', $months);
+
         return [
-            [
-                'activity' => 'New student admission',
-                'date' => '2 hours ago',
-                'user' => 'Admin'
-            ],
-            [
-                'activity' => 'Fee payment received',
-                'date' => '4 hours ago',
-                'user' => 'Finance'
-            ],
-            [
-                'activity' => 'Exam results published',
-                'date' => '1 day ago',
-                'user' => 'Academic'
-            ],
-            [
-                'activity' => 'Teacher attendance recorded',
-                'date' => '1 day ago',
-                'user' => 'HR'
-            ],
-            [
-                'activity' => 'Library book issued',
-                'date' => '2 days ago',
-                'user' => 'Librarian'
-            ]
+            'labels' => $months->map->format('M')->all(),
+            'data'   => $months->map(fn ($m) => (float) ($sums[$m->format('Y-m')] ?? 0))->all(),
         ];
     }
 
-    private function getNotices()
+    /**
+     * First day of each of the last $count months, oldest first.
+     */
+    private function monthWindow(int $count): \Illuminate\Support\Collection
     {
-        // In a real application, you would fetch actual notices from your models
-        // For now, we'll return sample data but in a production environment, you would do something like:
-        // $notices = Notice::orderBy('priority', 'desc')->orderBy('created_at', 'desc')->limit(5)->get();
-        
-        return [
-            [
-                'title' => 'School Closure Notice',
-                'content' => 'School will be closed on Monday for maintenance.',
-                'priority' => 'High',
-                'posted_at' => '2 days ago'
-            ],
-            [
-                'title' => 'Parent-Teacher Meeting',
-                'content' => 'PTM scheduled for next Friday at 2 PM.',
-                'priority' => 'Medium',
-                'posted_at' => '3 days ago'
-            ],
-            [
-                'title' => 'Sports Day Announcement',
-                'content' => 'Annual sports day on 15th of this month.',
-                'priority' => 'Low',
-                'posted_at' => '1 week ago'
-            ]
-        ];
+        return collect(range($count - 1, 0))
+            ->map(fn ($i) => Carbon::today()->startOfMonth()->subMonths($i));
     }
 
-    private function getSchedule()
+    /**
+     * One grouped query for a whole trend window instead of one per month.
+     * A plain range on the date column keeps any index on it usable, which
+     * whereYear()/whereMonth() (functions on the column) do not.
+     *
+     * @return array<string, float|int> keyed by 'Y-m'
+     */
+    private function monthlyTotals($query, string $column, string $aggregate, \Illuminate\Support\Collection $months): array
     {
-        // In a real application, you would fetch actual schedule from your models
-        // For now, we'll return sample data but in a production environment, you would do something like:
-        // $schedule = Schedule::whereDate('date', Carbon::today())->orderBy('start_time')->get();
-        
-        return [
-            [
-                'title' => 'Morning Assembly',
-                'time' => '8:00 AM - 8:30 AM',
-                'location' => 'Main Hall'
-            ],
-            [
-                'title' => 'Grade 1 Math Class',
-                'time' => '9:00 AM - 10:00 AM',
-                'location' => 'Room 101'
-            ],
-            [
-                'title' => 'Grade 2 Science',
-                'time' => '10:30 AM - 11:30 AM',
-                'location' => 'Lab 2'
-            ],
-            [
-                'title' => 'Lunch Break',
-                'time' => '12:00 PM - 1:00 PM',
-                'location' => 'Cafeteria'
-            ]
-        ];
+        $wrapped = $query->getQuery()->getGrammar()->wrap($column);
+        $bucket = $query->getConnection()->getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', {$wrapped})"
+            : "DATE_FORMAT({$wrapped}, '%Y-%m')";
+
+        return $query
+            ->where($column, '>=', $months->first()->toDateString())
+            ->where($column, '<', $months->last()->copy()->addMonth()->toDateString())
+            ->selectRaw("{$bucket} as bucket, {$aggregate} as total")
+            ->groupByRaw($bucket)
+            ->toBase()
+            ->pluck('total', 'bucket')
+            ->all();
     }
+
+    /**
+     * Unpaid active fee balances, summed in SQL rather than hydrating every
+     * assignment. Memoised: the alert strip and the metric cards both use it.
+     *
+     * @return array{count:int, amount:float}
+     */
+    private function outstandingFees(): array
+    {
+        return $this->outstanding ??= (function () {
+            $row = StudentFeeAssignment::where('status', 'active')
+                ->whereRaw('COALESCE(paid_amount, 0) < final_amount')
+                ->selectRaw('COUNT(*) as n, COALESCE(SUM(final_amount - COALESCE(paid_amount, 0)), 0) as amount')
+                ->toBase()
+                ->first();
+
+            return ['count' => (int) $row->n, 'amount' => (float) $row->amount];
+        })();
+    }
+
+    private function pendingLeaveCount(): int
+    {
+        return $this->pendingLeaves ??= LeaveApplication::where('application_status', 'pending')->count();
+    }
+
+    private ?array $outstanding = null;
+
+    private ?int $pendingLeaves = null;
 }

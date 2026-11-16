@@ -6,6 +6,7 @@ use App\Http\Requests\CreateClassSectionRequest;
 use App\Http\Requests\UpdateClassSectionRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\ClassSectionRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -19,10 +20,8 @@ class ClassSectionController extends AppBaseController
         $this->classSectionRepository = $classSectionRepo;
 
         $this->middleware('auth');
-        $this->middleware('can:class-sections.index')->only(['index', 'show']);
-        $this->middleware('can:class-sections.create')->only(['create', 'store']);
-        $this->middleware('can:class-sections.edit')->only(['edit', 'update']);
-        $this->middleware('can:class-sections.delete')->only('destroy');
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.settings.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -80,7 +79,9 @@ class ClassSectionController extends AppBaseController
 
         $classSection = $this->classSectionRepository->create($input);
 
-        Flash::success('Class Section saved successfully.');
+        AuditTrail::log('Class Roster', 'CREATE', $classSection->class_section_id, null, $classSection->toArray());
+
+        Flash::success('Class Roster saved successfully.');
 
         return redirect(route('class-sections.index'));
     }
@@ -93,10 +94,13 @@ class ClassSectionController extends AppBaseController
         $classSection = $this->classSectionRepository->find($id);
 
         if (empty($classSection)) {
-            Flash::error('Class Section not found');
+            Flash::error('Class Roster not found');
 
             return redirect(route('class-sections.index'));
         }
+
+        // Eager load relations for display
+        $classSection->load(['academicYear', 'schoolClass', 'section', 'classroom', 'classTeacher']);
 
         return view('class_sections.show')->with('classSection', $classSection);
     }
@@ -109,7 +113,7 @@ class ClassSectionController extends AppBaseController
         $classSection = $this->classSectionRepository->find($id);
 
         if (empty($classSection)) {
-            Flash::error('Class Section not found');
+            Flash::error('Class Roster not found');
 
             return redirect(route('class-sections.index'));
         }
@@ -142,14 +146,17 @@ class ClassSectionController extends AppBaseController
         $classSection = $this->classSectionRepository->find($id);
 
         if (empty($classSection)) {
-            Flash::error('Class Section not found');
+            Flash::error('Class Roster not found');
 
             return redirect(route('class-sections.index'));
         }
 
+        $oldData = $classSection->toArray();
         $classSection = $this->classSectionRepository->update($request->all(), $id);
 
-        Flash::success('Class Section updated successfully.');
+        AuditTrail::log('Class Roster', 'UPDATE', $classSection->class_section_id, $oldData, $classSection->toArray());
+
+        Flash::success('Class Roster updated successfully.');
 
         return redirect(route('class-sections.index'));
     }
@@ -164,14 +171,17 @@ class ClassSectionController extends AppBaseController
         $classSection = $this->classSectionRepository->find($id);
 
         if (empty($classSection)) {
-            Flash::error('Class Section not found');
+            Flash::error('Class Roster not found');
 
             return redirect(route('class-sections.index'));
         }
 
+        $oldData = $classSection->toArray();
         $this->classSectionRepository->delete($id);
 
-        Flash::success('Class Section deleted successfully.');
+        AuditTrail::log('Class Roster', 'DELETE', $id, $oldData, null);
+
+        Flash::success('Class Roster deleted successfully.');
 
         return redirect(route('class-sections.index'));
     }

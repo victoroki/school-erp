@@ -60,6 +60,11 @@
         }
         
         .photo-area img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-area .initials {
+            width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 3rem; font-weight: 700;
+        }
         
         .details {
             margin-top: 110px;
@@ -122,7 +127,11 @@
                 </div>
                 
                 <div class="photo-area">
-                    <img src="{{ $student->avatar_url }}" alt="{{ $student->full_name }}">
+                    @if($student->has_photo && $student->avatar_url)
+                        <img src="{{ $student->avatar_url }}" alt="{{ $student->full_name }}">
+                    @else
+                        <div class="initials" style="background-color: {{ $student->avatar_color }};">{{ $student->initials }}</div>
+                    @endif
                 </div>
                 
                 <div class="details">

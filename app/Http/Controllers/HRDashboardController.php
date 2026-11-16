@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\DB;
 
 class HRDashboardController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:hr.view');
+    }
+
     public function index()
     {
         // Summary Cards

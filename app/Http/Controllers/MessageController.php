@@ -6,7 +6,9 @@ use App\Http\Requests\CreateMessageRequest;
 use App\Http\Requests\UpdateMessageRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\MessageRepository;
+use App\Models\Message;
 use App\Models\User;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use Illuminate\Support\Arr;
@@ -19,6 +21,8 @@ class MessageController extends AppBaseController
     public function __construct(MessageRepository $messageRepo)
     {
         $this->messageRepository = $messageRepo;
+        $this->middleware('can:communication.view')->only(['index', 'show']);
+        $this->middleware('can:communication.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getDropdownData()
@@ -30,10 +34,25 @@ class MessageController extends AppBaseController
 
     /**
      * Display a listing of the Message.
+     *
+     * PHASE 5 privacy fix: the repository paginate() exposed EVERY message on
+     * the platform to anyone reaching this list. School leadership
+     * (communication.manage — the console roles) keep the full audit history;
+     * everyone else sees only their own sent/received messages — a DM between
+     * two staff members is no longer platform-readable.
      */
     public function index(Request $request)
     {
-        $messages = $this->messageRepository->paginate(10);
+        $user = $request->user();
+        $query = Message::with(['sender', 'receiver']);
+
+        if (!$user->hasPermission('communication.manage')) {
+            $query->where(function ($q) use ($user) {
+                $q->where('sender_id', $user->id)->orWhere('receiver_id', $user->id);
+            });
+        }
+
+        $messages = $query->orderBy('created_at', 'desc')->paginate(10);
 
         return view('messages.index')
             ->with('messages', $messages);
@@ -57,6 +76,8 @@ class MessageController extends AppBaseController
 
         $message = $this->messageRepository->create($input);
 
+        AuditTrail::log('Message', 'CREATE', $message->message_id, null, $message->toArray());
+
         Flash::success('Message sent successfully.');
 
         return redirect(route('messages.index'));
@@ -64,6 +85,9 @@ class MessageController extends AppBaseController
 
     /**
      * Display the specified Message.
+     *
+     * PHASE 5: participants-or-console only (mirrors the index rule) — an
+     * IDOR via message_id no longer leaks other people's DMs.
      */
     public function show($id)
     {
@@ -74,6 +98,10 @@ class MessageController extends AppBaseController
 
             return redirect(route('messages.index'));
         }
+
+        $user = request()->user();
+        $participant = $message->sender_id === $user->id || $message->receiver_id === $user->id;
+        abort_unless($participant || $user->hasPermission('communication.manage'), 403);
 
         return view('messages.show')->with('message', $message);
     }
@@ -108,7 +136,10 @@ class MessageController extends AppBaseController
             return redirect(route('messages.index'));
         }
 
+        $oldData = $message->toArray();
         $message = $this->messageRepository->update($request->all(), $id);
+
+        AuditTrail::log('Message', 'UPDATE', $message->message_id, $oldData, $message->toArray());
 
         Flash::success('Message updated successfully.');
 
@@ -130,7 +161,10 @@ class MessageController extends AppBaseController
             return redirect(route('messages.index'));
         }
 
+        $oldData = $message->toArray();
         $this->messageRepository->delete($id);
+
+        AuditTrail::log('Message', 'DELETE', $id, $oldData, null);
 
         Flash::success('Message deleted successfully.');
 

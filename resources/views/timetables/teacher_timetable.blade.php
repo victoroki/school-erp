@@ -1,295 +1,417 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-3 align-items-center">
-                <div class="col-sm-6">
-                    <h1 class="m-0 text-dark">
-                        <i class="fas fa-user-clock text-info mr-2"></i>
-                        @if($isAdmin && $viewingStaff->staff_id != ($staff->staff_id ?? 0))
-                            <span class="text-muted">Viewing:</span> {{ $viewingStaff->full_name }}'s Timetable
-                        @else
-                            My Teaching Schedule
-                        @endif
-                    </h1>
-                    <p class="text-muted mb-0">{{ $viewingStaff->designation }} | {{ $viewingStaff->department->name ?? 'Academic Dept' }}</p>
-                </div>
-                <div class="col-sm-6 text-right d-print-none">
-                    <div class="btn-group shadow-sm">
-                        <button onclick="window.print()" class="btn btn-outline-info">
-                            <i class="fas fa-print mr-1"></i> Print
-                        </button>
-                        <button class="btn btn-outline-info">
-                            <i class="fas fa-file-pdf mr-1"></i> PDF
-                        </button>
-                    </div>
-                </div>
+<div class="dash-wrap">
+    {{-- ① HEADER --}}
+    <div class="row align-items-center mb-4">
+        <div class="col-md-7">
+            <h1 class="dash-heading">
+                @if($isAdmin && $viewingStaff && $viewingStaff->staff_id != ($staff->staff_id ?? 0))
+                    {{ $viewingStaff->full_name }}'s Schedule
+                @else
+                    My Teaching Schedule
+                @endif
+            </h1>
+            <p class="dash-sub">
+                {{ $viewingStaff->designation ?? 'Academic Staff' }}
+                @if(isset($viewingStaff->department) && $viewingStaff->department)
+                    · {{ $viewingStaff->department->name }}
+                @endif
+            </p>
+        </div>
+        <div class="col-md-5 text-md-right mt-2 mt-md-0">
+            <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                <button onclick="window.print()" class="btn-dash btn-ghost">
+                    <i class="fas fa-print mr-2"></i> Print Schedule
+                </button>
+                @if($isAdmin && $viewingStaff)
+                <a href="{{ route('timetables.index') }}" class="btn-dash btn-primary-dash">
+                    <i class="fas fa-plus mr-2"></i> Manage Lessons
+                </a>
+                @endif
             </div>
         </div>
     </div>
 
-    <div class="content px-3">
-        @include('flash::message')
+    @include('flash::message')
 
-        <!-- Admin Selection & Filters -->
-        <div class="card card-outline card-info elevation-2 mb-4 d-print-none">
-            <div class="card-body py-3">
-                {!! Form::open(['route' => 'timetables.teacher', 'method' => 'GET', 'class' => 'row align-items-end']) !!}
-                    @if($isAdmin)
-                        <div class="form-group col-md-4 mb-0">
-                            <label class="small text-uppercase text-muted font-weight-bold">Select Teacher</label>
-                            <select name="staff_id" class="form-control select2 shadow-sm" onchange="this.form.submit()">
-                                @foreach($allTeachers as $t)
-                                    <option value="{{ $t->staff_id }}" {{ $viewingStaff->staff_id == $t->staff_id ? 'selected' : '' }}>
-                                        {{ $t->full_name }} ({{ $t->employee_id }})
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endif
-                    
-                    <div class="form-group col-md-3 mb-0">
-                        <label class="small text-uppercase text-muted font-weight-bold">Academic Year</label>
-                        {!! Form::select('academic_year_id', $academicYearOptions, $selectedAcademicYearId, ['class' => 'form-control shadow-sm', 'onchange' => 'this.form.submit()']) !!}
-                    </div>
-
-                    <div class="form-group col-md-3 mb-0">
-                        <label class="small text-uppercase text-muted font-weight-bold">Term</label>
-                        <select class="form-control shadow-sm" disabled>
-                            <option>Term 1 (Current)</option>
-                            <option>Term 2</option>
-                            <option>Term 3</option>
+    {{-- ② FILTERS --}}
+    <div class="dash-panel mb-4">
+        <div class="dash-panel-body p-3">
+            {!! Form::open(['route' => 'timetables.teacher', 'method' => 'GET', 'class' => 'row g-3 align-items-end']) !!}
+                @if($isAdmin)
+                    <div class="col-lg-4 col-md-6">
+                        <label class="filter-label">Teacher</label>
+                        <select name="staff_id" class="filter-input" onchange="this.form.submit()">
+                            @foreach($allTeachers as $t)
+                                <option value="{{ $t->staff_id }}" {{ $viewingStaff && $viewingStaff->staff_id == $t->staff_id ? 'selected' : '' }}>
+                                    {{ $t->full_name }} ({{ $t->employee_number }})
+                                </option>
+                            @endforeach
                         </select>
                     </div>
+                @endif
 
-                    <div class="col-md-2 text-right">
-                        <a href="{{ route('timetables.teacher') }}" class="btn btn-default btn-block">
-                            <i class="fas fa-sync-alt mr-1"></i> Reset
-                        </a>
-                    </div>
-                {!! Form::close() !!}
+                <div class="col-lg-3 col-md-6">
+                    <label class="filter-label">Academic Year</label>
+                    {!! Form::select('academic_year_id', $academicYearOptions, $selectedAcademicYearId, ['class' => 'filter-input', 'onchange' => 'this.form.submit()']) !!}
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <label class="filter-label d-none d-md-block">&nbsp;</label>
+                    <a href="{{ route('timetables.teacher') }}" class="btn-dash btn-ghost w-100 py-2">
+                        <i class="fas fa-undo mr-2"></i> Reset
+                    </a>
+                </div>
+            {!! Form::close() !!}
+        </div>
+    </div>
+
+    {{-- When no staff member can be resolved, show a friendly empty state --}}
+    @if(!$viewingStaff)
+        <div class="tt-empty" style="padding: 3rem 1rem; margin-bottom: 1rem;">
+            <i class="fas fa-user-slash"></i>
+            <p style="font-weight: 800; color: var(--text); margin-bottom: 0.25rem;">
+                @if($allTeachers->isEmpty())
+                    No teaching staff found.
+                @else
+                    Teacher records not found.
+                @endif
+            </p>
+            <p style="margin: 0;">Please contact your administrator or select a teacher from the filter above.</p>
+        </div>
+    @endif
+
+    {{-- ③ METRIC CARDS --}}
+    @php
+        $teachingPeriods = $periods->where('type', 'period')->count();
+        $freeCount = max(0, (count($daysOfWeek) * $teachingPeriods) - $timetables->count());
+    @endphp
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="dash-panel h-100 p-4 text-center">
+                <div class="w-icon-box bg-blue-light text-blue mb-3 mx-auto"><i class="fas fa-book-open"></i></div>
+                <h3 class="w-value">{{ $timetables->count() }}</h3>
+                <p class="w-label">Weekly Lessons</p>
             </div>
         </div>
-
-        <!-- Summary Stats Cards -->
-        <div class="row">
-            <div class="col-md-3">
-                <div class="info-box shadow-sm border-left border-info" style="border-left-width: 4px !important;">
-                    <span class="info-box-icon bg-info elevation-1"><i class="fas fa-layer-group"></i></span>
-                    <div class="info-box-content">
-                        <span class="info-box-text text-uppercase x-small font-weight-bold">Weekly Load</span>
-                        <span class="info-box-number h4 mb-0">{{ $timetables->count() }} <small class="text-muted">Lessons</small></span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="info-box shadow-sm border-left border-success" style="border-left-width: 4px !important;">
-                    <span class="info-box-icon bg-success elevation-1"><i class="fas fa-calendar-day"></i></span>
-                    <div class="info-box-content">
-                        <span class="info-box-text text-uppercase x-small font-weight-bold">Today's Load</span>
-                        <span class="info-box-number h4 mb-0">{{ $todayClasses->count() }} <small class="text-muted">Lessons</small></span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="info-box shadow-sm border-left border-warning" style="border-left-width: 4px !important;">
-                    <span class="info-box-icon bg-warning elevation-1 text-white"><i class="fas fa-clock"></i></span>
-                    <div class="info-box-content">
-                        <span class="info-box-text text-uppercase x-small font-weight-bold">Credit Hours</span>
-                        <span class="info-box-number h4 mb-0">{{ number_format($timetables->count() * 0.75, 1) }} <small class="text-muted">Hrs/Wk</small></span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="info-box shadow-sm border-left border-danger" style="border-left-width: 4px !important;">
-                    <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-mug-hot"></i></span>
-                    <div class="info-box-content">
-                        <span class="info-box-text text-uppercase x-small font-weight-bold">Free Periods</span>
-                        @php $freeCount = (count($daysOfWeek) * count($periods)) - $timetables->count(); @endphp
-                        <span class="info-box-number h4 mb-0">{{ max(0, $freeCount) }} <small class="text-muted">Slots</small></span>
-                    </div>
-                </div>
+        <div class="col-6 col-lg-3">
+            <div class="dash-panel h-100 p-4 text-center">
+                <div class="w-icon-box bg-emerald-light text-emerald mb-3 mx-auto"><i class="fas fa-calendar-check"></i></div>
+                <h3 class="w-value">{{ $todayClasses->count() }}</h3>
+                <p class="w-label">Today</p>
             </div>
         </div>
-
-        <div class="row">
-            <!-- Weekly Grid -->
-            <div class="col-lg-9">
-                <div class="card card-outline card-info elevation-2">
-                    <div class="card-header border-0 bg-white">
-                        <h3 class="card-title font-weight-bold">
-                            <i class="fas fa-table mr-1"></i> Weekly Teaching Grid
-                        </h3>
-                        <div class="card-tools">
-                            <span class="badge badge-light border x-small"><i class="fas fa-circle text-info mr-1"></i> Teaching</span>
-                            <span class="badge badge-light border x-small ml-2"><i class="fas fa-square text-muted border mr-1"></i> Free</span>
-                        </div>
-                    </div>
-                    <div class="card-body p-0 table-responsive">
-                        <table class="table table-bordered table-fixed mb-0">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th style="width: 120px;" class="text-center align-middle">
-                                        <div class="small text-muted font-weight-bold">TIME / DAY</div>
-                                    </th>
-                                    @foreach($daysOfWeek as $dayKey => $dayLabel)
-                                        @php $isToday = strtolower(now()->format('l')) == $dayKey; @endphp
-                                        <th class="text-center {{ $isToday ? 'bg-info text-white' : '' }}" style="min-width: 140px;">
-                                            <div class="font-weight-bold">{{ $dayLabel }}</div>
-                                            @if($isToday) <div class="x-small text-uppercase opacity-75">Today</div> @endif
-                                        </th>
-                                    @endforeach
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($periods as $period)
-                                    @php
-                                        $pStart = \Carbon\Carbon::parse($period->start_time);
-                                        $pEnd = \Carbon\Carbon::parse($period->end_time);
-                                        $isNow = now()->between($pStart, $pEnd);
-                                    @endphp
-                                    <tr>
-                                        <td class="bg-light text-center align-middle px-1 py-3 {{ $isNow ? 'border-left border-info' : '' }}" style="{{ $isNow ? 'border-left-width: 5px !important;' : '' }}">
-                                            <div class="font-weight-bold small">{{ $period->name }}</div>
-                                            <div class="x-small text-muted">{{ $period->start_time }}</div>
-                                            <div class="x-small text-muted">- {{ $period->end_time }}</div>
-                                            @if($isNow)
-                                                <div class="badge badge-info mt-1 animate__animated animate__flash animate__infinite">NOW</div>
-                                            @endif
-                                        </td>
-                                        @foreach($daysOfWeek as $dayKey => $dayLabel)
-                                            @php
-                                                $entry = $schedule[$dayKey][$period->period_id] ?? null;
-                                                $isToday = strtolower(now()->format('l')) == $dayKey;
-                                                
-                                                // Color generation based on class
-                                                $colors = ['info', 'primary', 'indigo', 'navy', 'teal', 'success'];
-                                                $colorIdx = ($entry ? $entry->class_section_id : 0) % count($colors);
-                                                $theme = $colors[$colorIdx];
-                                            @endphp
-                                            <td class="p-1 align-top {{ $isToday ? 'bg-light-info' : '' }}" style="height: 100px;">
-                                                @if($entry)
-                                                    <div class="h-100 p-2 rounded shadow-xs border-left border-{{ $theme }} bg-white lesson-card transition-all" style="border-left-width: 4px !important;">
-                                                        <div class="d-flex justify-content-between align-items-start mb-1">
-                                                            <span class="badge badge-{{ $theme }} x-small px-2">{{ $entry->classSection->class->name ?? '' }} {{ $entry->classSection->section->name ?? '' }}</span>
-                                                            @if($isAdmin)
-                                                                <a href="{{ route('timetables.edit', $entry->timetable_id) }}" class="text-muted x-small hover-info d-print-none"><i class="fas fa-edit"></i></a>
-                                                            @endif
-                                                        </div>
-                                                        <div class="font-weight-bold small text-dark line-clamp-2" title="{{ $entry->subject->name }}">
-                                                            {{ $entry->subject->name }}
-                                                        </div>
-                                                        <div class="x-small text-muted mt-auto pt-2 border-top-dashed">
-                                                            <i class="fas fa-door-open mr-1"></i> Room {{ $entry->classroom->room_number }}
-                                                        </div>
-                                                        <div class="d-print-none mt-2">
-                                                            <a href="#" class="btn btn-xs btn-outline-{{ $theme }} btn-block">
-                                                                <i class="fas fa-check-circle mr-1"></i> Attendance
-                                                            </a>
-                                                        </div>
-                                                    </div>
-                                                @else
-                                                    <div class="h-100 rounded border border-dashed d-flex align-items-center justify-content-center text-muted font-italic x-small bg-light-soft opacity-50">
-                                                        <span>Free Slot</span>
-                                                    </div>
-                                                @endif
-                                            </td>
-                                        @endforeach
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <div class="col-6 col-lg-3">
+            <div class="dash-panel h-100 p-4 text-center">
+                <div class="w-icon-box bg-amber-light text-amber mb-3 mx-auto"><i class="fas fa-clock"></i></div>
+                <h3 class="w-value">{{ number_format($timetables->count() * 0.75, 1) }}</h3>
+                <p class="w-label">Credit Hours</p>
             </div>
-
-            <!-- Sidebar Info -->
-            <div class="col-lg-3">
-                <!-- Today's Classes Widget REFINED -->
-                <div class="card card-outline card-success elevation-2 mb-4 d-print-none">
-                    <div class="card-header">
-                        <h3 class="card-title font-weight-bold"><i class="fas fa-running mr-1"></i> Today's Activity</h3>
-                    </div>
-                    <div class="card-body p-0">
-                        @forelse($todayClasses as $lesson)
-                            @php
-                                $startTime = \Carbon\Carbon::parse($lesson->period->start_time);
-                                $isNext = $startTime->isFuture() && (!isset($foundNext) || !$foundNext);
-                                if($isNext) $foundNext = true;
-                            @endphp
-                            <div class="p-3 border-bottom {{ $isNext ? 'bg-light-success' : '' }}">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span class="text-xs font-weight-bold text-success">{{ $lesson->period->start_time }} - {{ $lesson->period->end_time }}</span>
-                                    @if($isNext)
-                                        <span class="badge badge-success animate__animated animate__pulse animate__infinite">NEXT CLASS</span>
-                                    @endif
-                                </div>
-                                <div class="font-weight-bold text-dark">{{ $lesson->subject->name }}</div>
-                                <div class="text-muted x-small">
-                                    <i class="fas fa-users mr-1"></i> {{ $lesson->classSection->class->name ?? '' }} {{ $lesson->classSection->section->name ?? '' }} | Room {{ $lesson->classroom->room_number }}
-                                </div>
-                            </div>
-                        @empty
-                            <div class="p-4 text-center text-muted">
-                                <i class="fas fa-check-circle fa-2x mb-2 opacity-25"></i>
-                                <p class="small mb-0">No classes remaining today.</p>
-                            </div>
-                        @endforelse
-                    </div>
-                </div>
-
-                <!-- Assignment Summary -->
-                <div class="card card-outline card-info elevation-2">
-                    <div class="card-header">
-                        <h3 class="card-title font-weight-bold"><i class="fas fa-book mr-1"></i> Subjects Taught</h3>
-                    </div>
-                    <div class="card-body p-0">
-                        <ul class="list-group list-group-flush">
-                            @forelse($assignments as $a)
-                                <li class="list-group-item">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1 font-weight-bold x-small">{{ $a->subject->name }}</h6>
-                                    </div>
-                                    <p class="mb-1 text-muted x-small">
-                                        {{ $a->classSection->class->name ?? '' }} {{ $a->classSection->section->name ?? '' }}
-                                    </p>
-                                    @php 
-                                        $weeklyMatches = $timetables->where('class_section_id', $a->class_section_id)->where('subject_id', $a->subject_id)->count();
-                                    @endphp
-                                    <span class="badge badge-light border x-small">{{ $weeklyMatches }} Lessons/Wk</span>
-                                </li>
-                            @empty
-                                <li class="list-group-item text-center py-4 text-muted x-small">No direct subject assignments found.</li>
-                            @endforelse
-                        </ul>
-                    </div>
-                </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="dash-panel h-100 p-4 text-center">
+                <div class="w-icon-box bg-rose-light text-rose mb-3 mx-auto"><i class="fas fa-hourglass-half"></i></div>
+                <h3 class="w-value">{{ $freeCount }}</h3>
+                <p class="w-label">Free Slots</p>
             </div>
         </div>
     </div>
 
-    <style>
-        .x-small { font-size: 0.70rem; }
-        .bg-light-info { background-color: rgba(23, 162, 184, 0.05); }
-        .bg-light-success { background-color: rgba(40, 167, 69, 0.05); }
-        .bg-light-soft { background-color: rgba(0, 0, 0, 0.02); }
-        .border-top-dashed { border-top: 1px dashed #dee2e6; }
-        .lesson-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important; z-index: 10; cursor: pointer; }
-        .transition-all { transition: all 0.2s ease; }
-        .table-fixed { table-layout: fixed; }
-        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        
-        @media print {
-            .main-sidebar, .main-header, .d-print-none, .card-tools, .info-box { display: none !important; }
-            .content-wrapper { margin-left: 0 !important; width: 100% !important; padding: 0 !important; }
-            .card { box-shadow: none !important; border: 1px solid #ddd !important; }
-            .table { width: 100% !important; border: 1px solid #333 !important; }
-            .badge { border: 1px solid #333 !important; color: black !important; background: white !important; }
-            .text-white { color: black !important; }
-            .bg-info, .bg-success, .bg-primary, .bg-indigo { background-color: #f8f9fa !important; border: 1px solid #ddd !important; }
-            .lesson-card { border: 1px solid #999 !important; background-color: #fff !important; }
-            .text-muted { color: #555 !important; }
-        }
-    </style>
+    {{-- ④ WEEKLY GRID (desktop) --}}
+    <div class="dash-panel mb-4 d-none d-lg-block">
+        <div class="dash-panel-header">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-th-large text-indigo"></i>
+                <h3 class="dash-panel-title">Weekly Grid</h3>
+            </div>
+            <span class="badge-count">{{ $timetables->count() }} Lessons</span>
+        </div>
+        <div class="table-responsive">
+            <table class="tt-grid mb-0">
+                <thead>
+                    <tr>
+                        <th class="tt-time-col">Time</th>
+                        @foreach($daysOfWeek as $dayKey => $dayLabel)
+                            @php $isToday = strtolower(now()->format('l')) == $dayKey; @endphp
+                            <th class="tt-day {{ $isToday ? 'tt-today' : '' }}">
+                                <span class="tt-day-name">{{ $dayLabel }}</span>
+                                @if($isToday) <span class="tt-today-pill">Today</span> @endif
+                            </th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($periods as $period)
+                        @php
+                            $isBreak = ($period->type ?? 'period') === 'break';
+                            $pStart = \Carbon\Carbon::parse($period->start_time);
+                            $pEnd = \Carbon\Carbon::parse($period->end_time);
+                            $isNow = !$isBreak && now()->between($pStart, $pEnd);
+                        @endphp
+                        <tr class="{{ $isBreak ? 'tt-break-row' : '' }}">
+                            <td class="tt-time-col {{ $isNow ? 'tt-now' : '' }}">
+                                <div class="tt-period-name">{{ $period->name }}</div>
+                                <div class="tt-period-time">{{ $pStart->format('h:i A') }}</div>
+                                @if($isNow) <span class="tt-now-pill">Now</span> @endif
+                            </td>
+                            @foreach($daysOfWeek as $dayKey => $dayLabel)
+                                @php
+                                    $entry = $schedule[$dayKey][$period->period_id] ?? null;
+                                    $isToday = strtolower(now()->format('l')) == $dayKey;
+                                @endphp
+                                <td class="tt-cell {{ $isToday ? 'tt-cell-today' : '' }}">
+                                    @if($isBreak)
+                                        <div class="tt-break">
+                                            <i class="fas fa-mug-hot"></i>
+                                            <span>Break</span>
+                                        </div>
+                                    @elseif($entry)
+                                        <div class="tt-lesson" style="--subj: {{ $entry->subject_id % 6 }}">
+                                            <div class="tt-lesson-top">
+                                                <span class="tt-class">{{ $entry->classSection->class->name ?? '' }} {{ $entry->classSection->section->name ?? '' }}</span>
+                                                @if($isAdmin)
+                                                    <a href="{{ route('timetables.edit', $entry->timetable_id) }}" class="tt-edit" title="Edit lesson">
+                                                        <i class="fas fa-pen"></i>
+                                                    </a>
+                                                @endif
+                                            </div>
+                                            <div class="tt-subject">{{ $entry->subject->name }}</div>
+                                            <div class="tt-room"><i class="fas fa-map-marker-alt"></i> {{ $entry->classroom->room_number ?? 'Room' }}</div>
+                                        </div>
+                                    @else
+                                        <div class="tt-free"></div>
+                                    @endif
+                                </td>
+                            @endforeach
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {{-- ⑤ MOBILE VIEW: day tabs + cards --}}
+    <div class="d-lg-none mb-4">
+        <div class="tt-mobile-tabs mb-3">
+            @foreach($daysOfWeek as $dayKey => $dayLabel)
+                @php $isToday = strtolower(now()->format('l')) == $dayKey; @endphp
+                <button type="button" class="tt-day-tab {{ $isToday ? 'active' : '' }}" data-day="{{ $dayKey }}">
+                    {{ $dayLabel }}
+                </button>
+            @endforeach
+        </div>
+
+        <div id="tt-mobile-panels">
+            @foreach($daysOfWeek as $dayKey => $dayLabel)
+                @php
+                    $isToday = strtolower(now()->format('l')) == $dayKey;
+                    $dayLessons = collect();
+                    foreach ($periods as $period) {
+                        $entry = $schedule[$dayKey][$period->period_id] ?? null;
+                        if ($entry) $dayLessons->push($entry);
+                    }
+                @endphp
+                <div class="tt-day-panel {{ $isToday ? '' : 'd-none' }}" data-panel="{{ $dayKey }}">
+                    @forelse($dayLessons as $entry)
+                        <div class="tt-mobile-card" style="--subj: {{ $entry->subject_id % 6 }}">
+                            <div class="tt-mobile-time">
+                                <span class="tt-mobile-start">{{ \Carbon\Carbon::parse($entry->period->start_time)->format('h:i') }}</span>
+                                <span class="tt-mobile-end">{{ \Carbon\Carbon::parse($entry->period->end_time)->format('h:i A') }}</span>
+                            </div>
+                            <div class="tt-mobile-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <span class="tt-class">{{ $entry->classSection->class->name ?? '' }} {{ $entry->classSection->section->name ?? '' }}</span>
+                                    <span class="tt-room"><i class="fas fa-map-marker-alt"></i> {{ $entry->classroom->room_number ?? '-' }}</span>
+                                </div>
+                                <div class="tt-subject">{{ $entry->subject->name }}</div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="tt-empty">
+                            <i class="fas fa-calendar-day"></i>
+                            <p>No classes scheduled for {{ $dayLabel }}.</p>
+                        </div>
+                    @endforelse
+                </div>
+            @endforeach
+        </div>
+    </div>
+</div>
+
+<style>
+/* ── Design tokens (matches Teacher Workload / Academic Dashboard) ── */
+:root {
+    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --emerald: #10b981; --emerald-light: #ecfdf5;
+    --amber: #f59e0b; --amber-light: #fffbeb;
+    --rose: #f43f5e; --rose-light: #fff1f2;
+    --blue: #3b82f6; --blue-light: #eff6ff;
+    --slate: #64748b; --slate-light: #f1f5f9;
+    --text: #0f172a; --muted: #64748b;
+    --border: #e2e8f0; --border-soft: #f1f5f9;
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --subj-0: #4f46e5; --subj-0-soft: #eef2ff;
+    --subj-1: #0d9488; --subj-1-soft: #f0fdfa;
+    --subj-2: #d97706; --subj-2-soft: #fffbeb;
+    --subj-3: #dc2626; --subj-3-soft: #fef2f2;
+    --subj-4: #7c3aed; --subj-4-soft: #f5f3ff;
+    --subj-5: #0369a1; --subj-5-soft: #f0f9ff;
+}
+
+.bg-blue-light { background: var(--blue-light); } .text-blue { color: var(--blue); }
+.bg-emerald-light { background: var(--emerald-light); } .text-emerald { color: var(--emerald); }
+.bg-amber-light { background: var(--amber-light); } .text-amber { color: var(--amber); }
+.bg-rose-light { background: var(--rose-light); } .text-rose { color: var(--rose); }
+.text-indigo { color: var(--indigo); }
+
+.dash-wrap { padding: 1.25rem; background: #fafafa; min-height: 100vh; }
+.dash-heading { font-size: 1.5rem; font-weight: 850; color: var(--text); letter-spacing: -0.04em; margin-bottom: 0.125rem; }
+.dash-sub { font-size: 0.875rem; color: var(--muted); font-weight: 500; }
+
+.dash-panel { background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03); }
+.dash-panel-header { padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--border-soft); display: flex; align-items: center; justify-content: space-between; }
+.dash-panel-title { font-size: 0.875rem; font-weight: 800; color: var(--text); margin: 0; }
+.dash-panel-body { padding: 1.25rem; }
+
+.w-icon-box { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+.w-value { font-size: 1.375rem; font-weight: 850; margin: 0; letter-spacing: -0.02em; color: var(--text); }
+.w-label { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 0.125rem 0 0; }
+
+.filter-label { font-size: 0.65rem; font-weight: 800; color: var(--slate); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; display: block; }
+.filter-input { width: 100%; border-radius: 8px; border: 1px solid var(--border); background: #fff; padding: 0.5rem 0.875rem; font-size: 0.813rem; font-weight: 600; color: var(--text); transition: border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); appearance: none; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.875rem center; background-size: 10px; padding-right: 2.25rem; }
+.filter-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); outline: none; }
+
+.btn-dash { display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 0.813rem; font-weight: 750; text-decoration: none !important; cursor: pointer; transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out); }
+.btn-dash:active { transform: scale(0.97); }
+.btn-primary-dash { background: var(--indigo); color: #fff; padding: 0.5rem 1rem; border: 1px solid var(--indigo); }
+.btn-ghost { background: #fff; border: 1px solid var(--border); color: var(--text); padding: 0.5rem 1rem; }
+@media (hover: hover) and (pointer: fine) {
+    .btn-primary-dash:hover { background: #4338ca; border-color: #4338ca; color: #fff; }
+    .btn-ghost:hover { background: var(--slate-light); color: var(--text); }
+}
+
+.badge-count { background: var(--indigo-light); color: var(--indigo); font-size: 0.688rem; font-weight: 800; padding: 0.25rem 0.5rem; border-radius: 6px; }
+.gap-2 { gap: 0.5rem; }
+.g-3 > * { margin-bottom: 1rem; }
+
+/* ── Weekly grid ── */
+.tt-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.tt-grid thead th { background: #f8fafc; font-size: 0.688rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate); padding: 0.75rem 0.5rem; border-bottom: 1px solid var(--border); }
+.tt-grid tbody td { padding: 0.5rem; border-bottom: 1px solid var(--border-soft); border-right: 1px solid var(--border-soft); vertical-align: top; }
+.tt-grid tbody tr:last-child td { border-bottom: 0; }
+.tt-grid tbody td:last-child { border-right: 0; }
+
+.tt-time-col { width: 96px; background: #fcfcfd; text-align: center; vertical-align: middle !important; position: relative; }
+.tt-period-name { font-size: 0.75rem; font-weight: 800; color: var(--text); }
+.tt-period-time { font-size: 0.688rem; color: var(--muted); margin-top: 2px; }
+.tt-now { background: var(--indigo-light) !important; }
+.tt-now-pill { position: absolute; top: 0.375rem; left: 0; right: 0; font-size: 0.563rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--indigo); }
+
+.tt-day { position: relative; text-align: center; }
+.tt-grid thead th.tt-today { background: var(--indigo-light); color: var(--indigo); }
+.tt-today-pill { display: inline-block; margin-left: 0.375rem; font-size: 0.563rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; background: var(--indigo); color: #fff; border-radius: 4px; padding: 0.1rem 0.375rem; vertical-align: middle; }
+.tt-grid tbody td.tt-cell-today { background: #fbfcff; }
+
+.tt-break-row td { background: #fffbeb !important; }
+.tt-break { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 84px; color: #b45309; font-size: 0.688rem; font-weight: 700; gap: 0.375rem; }
+.tt-break i { font-size: 1rem; opacity: 0.7; }
+
+.tt-lesson { display: flex; flex-direction: column; gap: 0.25rem; height: 100%; min-height: 84px; padding: 0.625rem 0.75rem; border-radius: 10px; background: #fff; border: 1px solid var(--border); border-left: 3px solid var(--subj-0, var(--indigo)); transition: transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out), border-color 160ms var(--ease-out); }
+.tt-lesson[style*="--subj: 0"] { border-left-color: var(--subj-0); }
+.tt-lesson[style*="--subj: 1"] { border-left-color: var(--subj-1); }
+.tt-lesson[style*="--subj: 2"] { border-left-color: var(--subj-2); }
+.tt-lesson[style*="--subj: 3"] { border-left-color: var(--subj-3); }
+.tt-lesson[style*="--subj: 4"] { border-left-color: var(--subj-4); }
+.tt-lesson[style*="--subj: 5"] { border-left-color: var(--subj-5); }
+@media (hover: hover) and (pointer: fine) {
+    .tt-lesson:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); }
+}
+.tt-lesson-top { display: flex; align-items: center; justify-content: space-between; gap: 0.25rem; }
+.tt-class { font-size: 0.625rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--slate); background: var(--slate-light); border-radius: 5px; padding: 0.15rem 0.4rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt-subject { font-size: 0.813rem; font-weight: 800; color: var(--text); line-height: 1.2; }
+.tt-room { font-size: 0.688rem; color: var(--muted); display: flex; align-items: center; gap: 0.25rem; }
+.tt-edit { color: #94a3b8; font-size: 0.625rem; transition: color 150ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .tt-edit:hover { color: var(--indigo); } }
+
+.tt-free { height: 100%; min-height: 84px; border: 1px dashed var(--border); border-radius: 8px; }
+
+/* ── Mobile view ── */
+.tt-mobile-tabs { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 0.25rem; -webkit-overflow-scrolling: touch; }
+.tt-day-tab { flex-shrink: 0; border: 1px solid var(--border); background: #fff; color: var(--slate); border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 750; cursor: pointer; transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out), color 160ms var(--ease-out), border-color 160ms var(--ease-out); }
+.tt-day-tab:active { transform: scale(0.96); }
+.tt-day-tab.active { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+
+.tt-day-panel { animation: ttFade 200ms var(--ease-out); }
+@keyframes ttFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+.tt-mobile-card { display: flex; background: #fff; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 0.75rem; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03); }
+.tt-mobile-time { flex-shrink: 0; width: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; border-right: 1px solid var(--border-soft); gap: 0.125rem; }
+.tt-mobile-start { font-size: 0.875rem; font-weight: 800; color: var(--text); }
+.tt-mobile-end { font-size: 0.625rem; color: var(--muted); }
+.tt-mobile-body { flex: 1; padding: 0.75rem 0.875rem; border-left: 3px solid var(--subj-0, var(--indigo)); }
+.tt-mobile-body[style*="--subj: 0"] { border-left-color: var(--subj-0); }
+.tt-mobile-body[style*="--subj: 1"] { border-left-color: var(--subj-1); }
+.tt-mobile-body[style*="--subj: 2"] { border-left-color: var(--subj-2); }
+.tt-mobile-body[style*="--subj: 3"] { border-left-color: var(--subj-3); }
+.tt-mobile-body[style*="--subj: 4"] { border-left-color: var(--subj-4); }
+.tt-mobile-body[style*="--subj: 5"] { border-left-color: var(--subj-5); }
+
+.tt-empty { background: #fff; border: 1px dashed var(--border); border-radius: 12px; text-align: center; padding: 2.5rem 1rem; color: var(--muted); }
+.tt-empty i { font-size: 1.5rem; opacity: 0.4; margin-bottom: 0.5rem; }
+.tt-empty p { margin: 0; font-size: 0.813rem; font-weight: 600; }
+
+/* ── Print ── */
+@media print {
+    @page { size: A4 landscape; margin: 10mm; }
+    .dash-wrap { padding: 0; background: #fff; min-height: 0; }
+    .btn-dash, .tt-mobile-tabs, .d-lg-none, .dash-panel form, .dash-panel-header .badge-count { display: none !important; }
+    .dash-panel { border: 1px solid #e2e8f0 !important; box-shadow: none !important; }
+    .tt-grid thead th { background: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .tt-today, .tt-today .tt-day-name { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .tt-break-row td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .content-wrapper { margin-left: 0 !important; }
+    .main-sidebar, .main-header, .main-footer { display: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tt-lesson, .btn-dash, .tt-day-tab, .tt-edit { transition: none; }
+    .tt-day-panel { animation: none; }
+    .tt-lesson:hover { transform: none; box-shadow: none; }
+}
+</style>
+
+@push('page_scripts')
+<script>
+(function () {
+    'use strict';
+
+    // Day tab switching (dependency-free — no jQuery, works with deferred bundles)
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('.tt-day-tab'));
+    var panels = Array.prototype.slice.call(document.querySelectorAll('.tt-day-panel'));
+
+    function activate(dayKey) {
+        tabs.forEach(function (tab) {
+            tab.classList.toggle('active', tab.getAttribute('data-day') === dayKey);
+        });
+        panels.forEach(function (panel) {
+            panel.classList.toggle('d-none', panel.getAttribute('data-panel') !== dayKey);
+        });
+    }
+
+    tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            activate(tab.getAttribute('data-day'));
+        });
+    });
+
+    // Jump to a day from the query string if present
+    var params = new URLSearchParams(window.location.search);
+    var dayParam = params.get('day');
+    if (dayParam && panels.some(function (p) { return p.getAttribute('data-panel') === dayParam; })) {
+        activate(dayParam);
+    }
+})();
+</script>
+@endpush
 @endsection

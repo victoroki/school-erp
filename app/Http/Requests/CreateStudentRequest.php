@@ -32,6 +32,9 @@ class CreateStudentRequest extends FormRequest
         $rules['class_section_id'] = 'nullable|exists:class_sections,class_section_id';
         $rules['academic_year_id'] = 'nullable|required_with:class_section_id|exists:academic_years,academic_year_id';
         $rules['roll_number_enrollment'] = 'nullable|string|max:20';
+
+        // Photo upload
+        $rules['photo'] = 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048';
         
         return $rules;
     }

@@ -1,48 +1,58 @@
-<!-- Account Name Field -->
-<div class="col-sm-12">
-    {!! Form::label('account_name', 'Account Name:') !!}
-    <p>{{ $bankAccount->account_name }}</p>
+<!-- Bank Account Overview Card -->
+<div class="detail-card">
+    <div class="detail-card-head">
+        <i class="fas fa-circle-info text-indigo mr-2"></i> Overview
+    </div>
+    <div class="detail-card-body">
+        <div class="detail-row">
+            <span class="detail-row-label">Account Name</span>
+            <span class="detail-row-value">{{ $bankAccount->account_name }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-row-label">Account Number</span>
+            <span class="detail-row-value">{{ $bankAccount->account_number }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-row-label">Bank Name</span>
+            <span class="detail-row-value">{{ $bankAccount->bank_name }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-row-label">Branch</span>
+            <span class="detail-row-value">{{ $bankAccount->branch_name }}</span>
+        </div>
+        @if(!empty($bankAccount->ifsc_code))
+            <div class="detail-row">
+                <span class="detail-row-label">Bank / Branch Code</span>
+                <span class="detail-row-value">{{ $bankAccount->ifsc_code }}</span>
+            </div>
+        @endif
+    </div>
 </div>
 
-<!-- Account Number Field -->
-<div class="col-sm-12">
-    {!! Form::label('account_number', 'Account Number:') !!}
-    <p>{{ $bankAccount->account_number }}</p>
+<!-- Balances Card -->
+<div class="detail-card mt-3">
+    <div class="detail-card-head">
+        <i class="fas fa-scale-balanced text-indigo mr-2"></i> Balances
+    </div>
+    <div class="detail-card-body">
+        <div class="detail-row">
+            <span class="detail-row-label">Opening Balance</span>
+            <span class="detail-row-value">{{ \App\Support\Money::format($bankAccount->opening_balance ?? 0) }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-row-label">Current Balance</span>
+            <span class="detail-row-value" style="color: #4338ca; font-size: 1.05rem; font-weight: 800;">
+                {{ \App\Support\Money::format($bankAccount->current_balance ?? 0) }}
+            </span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-row-label">Account Type</span>
+            <span class="detail-row-value">
+                <span class="badge px-3 py-2 rounded-pill font-weight-bold"
+                      style="background: #eef2ff; color: #4338ca;">
+                    {{ ucwords(str_replace('_', ' ', $bankAccount->account_type ?? 'Account')) }}
+                </span>
+            </span>
+        </div>
+    </div>
 </div>
-
-<!-- Bank Name Field -->
-<div class="col-sm-12">
-    {!! Form::label('bank_name', 'Bank Name:') !!}
-    <p>{{ $bankAccount->bank_name }}</p>
-</div>
-
-<!-- Branch Name Field -->
-<div class="col-sm-12">
-    {!! Form::label('branch_name', 'Branch Name:') !!}
-    <p>{{ $bankAccount->branch_name }}</p>
-</div>
-
-<!-- Ifsc Code Field -->
-<div class="col-sm-12">
-    {!! Form::label('ifsc_code', 'Ifsc Code:') !!}
-    <p>{{ $bankAccount->ifsc_code }}</p>
-</div>
-
-<!-- Opening Balance Field -->
-<div class="col-sm-12">
-    {!! Form::label('opening_balance', 'Opening Balance:') !!}
-    <p>{{ $bankAccount->opening_balance }}</p>
-</div>
-
-<!-- Current Balance Field -->
-<div class="col-sm-12">
-    {!! Form::label('current_balance', 'Current Balance:') !!}
-    <p>{{ $bankAccount->current_balance }}</p>
-</div>
-
-<!-- Account Type Field -->
-<div class="col-sm-12">
-    {!! Form::label('account_type', 'Account Type:') !!}
-    <p>{{ $bankAccount->account_type }}</p>
-</div>
-

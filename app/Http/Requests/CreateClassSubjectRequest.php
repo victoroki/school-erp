@@ -22,6 +22,18 @@ class CreateClassSubjectRequest extends FormRequest
      *
      * @return array
      */
+    /**
+     * The bulk create form submits subject_id[] while the single-assignment form
+     * submits a bare subject_id. Normalising the single case to a list here means
+     * one set of rules validates both shapes.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('subject_id') && ! is_array($this->input('subject_id'))) {
+            $this->merge(['subject_id' => [$this->input('subject_id')]]);
+        }
+    }
+
     public function rules()
     {
         return ClassSubject::$rules;

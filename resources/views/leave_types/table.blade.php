@@ -1,6 +1,6 @@
 <div class="card-body p-0">
     <div class="table-responsive">
-        <table class="table" id="leave-types-table">
+        <table class="table" id="leaveTypes-table">
             <thead>
             <tr>
                 <th>Name</th>
@@ -16,15 +16,21 @@
                     <td>{{ $leaveType->name }}</td>
                     <td>{{ $leaveType->days_allowed }}</td>
                     <td>{{ $leaveType->description }}</td>
-                    <td>{{ $leaveType->is_paid }}</td>
+                    <td>
+                        @if($leaveType->is_paid)
+                            <span class="badge bg-success">Yes</span>
+                        @else
+                            <span class="badge bg-secondary">No</span>
+                        @endif
+                    </td>
                     <td  style="width: 120px">
-                        {!! Form::open(['route' => ['leaveTypes.destroy', $leaveType->id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['leaveTypes.destroy', $leaveType->leave_type_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('leaveTypes.show', [$leaveType->id]) }}"
+                            <a href="{{ route('leaveTypes.show', [$leaveType->leave_type_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('leaveTypes.edit', [$leaveType->id]) }}"
+                            <a href="{{ route('leaveTypes.edit', [$leaveType->leave_type_id]) }}"
                                class='btn btn-default btn-xs'>
                                 <i class="far fa-edit"></i>
                             </a>

@@ -6,36 +6,182 @@ use Illuminate\Database\Seeder;
 use App\Models\Role;
 use App\Models\Permission;
 use App\Models\RolePermission;
-use App\Models\User;
-use App\Models\UserRole;
 
 class RbacSeeder extends Seeder
 {
+    /**
+     * Role -> permission name mappings.
+     *
+     * Super Admin: all permissions (53)
+     * Admin:       all except users.*, roles.*, permissions.*
+     * Teacher:     5 scoped/basic permissions (academics.view + attendance + marks enter + schedule view + own results)
+     * Accountant:  finance.* + fees.* (8 permissions)
+     * Parent:      2 scoped permissions (homework.view, student-notices.view)
+     * Student:     2 scoped permissions (homework.view, student-notices.view)
+     */
+    private array $rolePermissions = [
+        'Owner' => [
+            'users.view', 'users.manage',
+            'roles.view', 'roles.manage',
+            'permissions.view', 'permissions.manage',
+            'students.view', 'students.manage', 'students.import', 'students.export',
+            'academics.view', 'academics.settings.manage', 'academics.attendance.manage',
+            'exams.marks.enter-own', 'exams.schedule.view', 'exams.results.view-own',
+            'exams.publish', 'exams.grading.manage', 'exams.results.view-all',
+            'exams.analysis.view', 'exams.report-cards.export', 'exams.approve', 'exams.import',
+            'fees.view', 'fees.manage', 'fees.approve', 'fees.collect', 'fees.print',
+            'finance.view', 'finance.manage', 'finance.approve',
+            'hr.view', 'hr.manage', 'hr.approve', 'hr.leave.apply',
+            'inventory.view', 'inventory.manage', 'inventory.approve',
+            'library.view', 'library.manage',
+            'hostel.view', 'hostel.manage',
+            'transport.view', 'transport.manage',
+            'communication.view', 'communication.manage', 'communication.dashboard', 'communication.compose', 'communication.send', 'communication.history.index', 'communication.history.show',
+            'discipline.view', 'discipline.manage',
+            'medical.view', 'medical.manage',
+            'homework.view', 'homework.manage',
+            'student-notices.view', 'student-notices.manage',
+            'parents.view', 'parents.manage',
+            'audit-trail.index',
+        ],
+        'Super Admin' => [
+            'users.view', 'users.manage',
+            'roles.view', 'roles.manage',
+            'permissions.view', 'permissions.manage',
+            'students.view', 'students.manage', 'students.import', 'students.export',
+            'academics.view', 'academics.settings.manage', 'academics.attendance.manage',
+            'exams.marks.enter-own', 'exams.schedule.view', 'exams.results.view-own',
+            'exams.publish', 'exams.grading.manage', 'exams.results.view-all',
+            'exams.analysis.view', 'exams.report-cards.export', 'exams.approve', 'exams.import',
+            'fees.view', 'fees.manage', 'fees.approve', 'fees.collect', 'fees.print',
+            'finance.view', 'finance.manage', 'finance.approve',
+            'hr.view', 'hr.manage', 'hr.approve', 'hr.leave.apply',
+            'inventory.view', 'inventory.manage', 'inventory.approve',
+            'library.view', 'library.manage',
+            'hostel.view', 'hostel.manage',
+            'transport.view', 'transport.manage',
+            'communication.view', 'communication.manage', 'communication.dashboard', 'communication.compose', 'communication.send', 'communication.history.index', 'communication.history.show',
+            'discipline.view', 'discipline.manage',
+            'medical.view', 'medical.manage',
+            'homework.view', 'homework.manage',
+            'student-notices.view', 'student-notices.manage',
+            'parents.view', 'parents.manage',
+            'audit-trail.index',
+        ],
+        'Admin' => [
+            'students.view', 'students.manage', 'students.import', 'students.export',
+            'academics.view', 'academics.settings.manage', 'academics.attendance.manage',
+            'exams.marks.enter-own', 'exams.schedule.view', 'exams.results.view-own',
+            'exams.publish', 'exams.grading.manage', 'exams.results.view-all',
+            'exams.analysis.view', 'exams.report-cards.export', 'exams.approve', 'exams.import',
+            'fees.view', 'fees.manage', 'fees.approve', 'fees.collect', 'fees.print',
+            'finance.view', 'finance.manage', 'finance.approve',
+            'hr.view', 'hr.manage', 'hr.approve', 'hr.leave.apply',
+            'inventory.view', 'inventory.manage', 'inventory.approve',
+            'library.view', 'library.manage',
+            'hostel.view', 'hostel.manage',
+            'transport.view', 'transport.manage',
+            'communication.view', 'communication.manage', 'communication.dashboard', 'communication.compose', 'communication.send', 'communication.history.index', 'communication.history.show',
+            'discipline.view', 'discipline.manage',
+            'medical.view', 'medical.manage',
+            'homework.view', 'homework.manage',
+            'student-notices.view', 'student-notices.manage',
+            'parents.view', 'parents.manage',
+            'audit-trail.index',
+        ],
+        'Teacher' => [
+            'academics.view',
+            'academics.attendance.manage',
+            'exams.marks.enter-own',
+            'exams.schedule.view',
+            'exams.results.view-own',
+            'hr.leave.apply',
+            'homework.view', 'homework.manage',
+            'student-notices.view', 'student-notices.manage',
+        ],
+        'Accountant' => [
+            'finance.view',
+            'finance.manage',
+            'finance.approve',
+            'fees.view',
+            'fees.manage',
+            'fees.approve',
+            'fees.collect',
+            'fees.print',
+        ],
+        'Parent' => [
+            'homework.view',
+            'student-notices.view',
+        ],
+        'Student' => [
+            'homework.view',
+            'student-notices.view',
+        ],
+    ];
+
     public function run(): void
     {
-        $admin = Role::firstOrCreate(['role_name' => 'Super Admin'], ['description' => 'Super Administrator with full access']);
+        // 1. Create roles (idempotent)
         $roles = [
-            ['role_name' => 'Admin', 'description' => 'Administrator'],
-            ['role_name' => 'Teacher', 'description' => 'Teacher role'],
-            ['role_name' => 'Accountant', 'description' => 'Accountant role'],
-            ['role_name' => 'Parent', 'description' => 'Parent role'],
-            ['role_name' => 'Student', 'description' => 'Student role'],
+            ['role_name' => 'Owner',       'description' => 'Platform owner (SaaS provider): sole access to modules, audit trail and system logs', 'is_protected' => true, 'is_hidden' => true],
+            ['role_name' => 'Super Admin', 'description' => 'School Super Administrator with all permissions (except the platform Administration module)', 'is_protected' => true],
+            ['role_name' => 'Admin',       'description' => 'Administrator with full access except user/role/permission management'],
+            ['role_name' => 'Teacher',     'description' => 'Teacher with scoped academic and exam permissions'],
+            ['role_name' => 'Accountant',  'description' => 'Accountant with finance and fees permissions'],
+            ['role_name' => 'Parent',      'description' => 'Parent portal user (ownership-scoped via Policy)'],
+            ['role_name' => 'Student',     'description' => 'Student portal user (ownership-scoped via Policy)'],
         ];
 
-        foreach ($roles as $r) {
-            Role::firstOrCreate(['role_name' => $r['role_name']], ['description' => $r['description']]);
+        foreach ($roles as $role) {
+            $existing = Role::where('role_name', $role['role_name'])->first();
+
+            if ($existing) {
+                $existing->update([
+                    'is_protected' => $role['is_protected'] ?? false,
+                    'is_hidden' => $role['is_hidden'] ?? false,
+                ]);
+            } else {
+                Role::create([
+                    'role_name' => $role['role_name'],
+                    'description' => $role['description'],
+                    'is_protected' => $role['is_protected'] ?? false,
+                    'is_hidden' => $role['is_hidden'] ?? false,
+                ]);
+            }
         }
 
-        $superAdmin = Role::where('role_name', 'Super Admin')->first();
+        // 2. Reconcile permissions for each role (removes old, adds new)
+        foreach ($this->rolePermissions as $roleName => $permissionNames) {
+            $role = Role::where('role_name', $roleName)->first();
+            if (!$role) {
+                continue;
+            }
 
-        $permissions = Permission::pluck('permission_id')->all();
-        foreach ($permissions as $pid) {
-            RolePermission::firstOrCreate(['role_id' => $superAdmin->role_id, 'permission_id' => $pid]);
-        }
+            $newIds = empty($permissionNames)
+                ? []
+                : Permission::whereIn('permission_name', $permissionNames)
+                    ->pluck('permission_id')
+                    ->all();
 
-        $user = User::first();
-        if ($user) {
-            UserRole::firstOrCreate(['user_id' => $user->id, 'role_id' => $superAdmin->role_id]);
+            $currentIds = RolePermission::where('role_id', $role->role_id)
+                ->pluck('permission_id')
+                ->all();
+
+            $toRemove = array_diff($currentIds, $newIds);
+            $toAdd    = array_diff($newIds, $currentIds);
+
+            if (!empty($toRemove)) {
+                RolePermission::where('role_id', $role->role_id)
+                    ->whereIn('permission_id', $toRemove)
+                    ->delete();
+            }
+
+            foreach ($toAdd as $permissionId) {
+                RolePermission::create([
+                    'role_id'       => $role->role_id,
+                    'permission_id' => $permissionId,
+                ]);
+            }
         }
     }
 }

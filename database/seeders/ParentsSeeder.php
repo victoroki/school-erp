@@ -3,222 +3,73 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Models\Student;
 use App\Models\Parents;
 
 class ParentsSeeder extends Seeder
 {
+    // MUST stay identical to StudentParentRelationshipSeeder::GIVEN_NAMES so
+    // generated parent emails can be resolved when relationships are created.
+    private const GIVEN_NAMES = ['David', 'Mary', 'James', 'Grace', 'Peter', 'Faith', 'John', 'Esther', 'George', 'Sarah', 'Paul', 'Ruth', 'Stephen', 'Mercy', 'Daniel', 'Lucy', 'Samuel', 'Joyce', 'Michael', 'Agnes', 'Joseph', 'Rose', 'Brian', 'Janet', 'Charles', 'Catherine', 'Patrick', 'Maryanne', 'Kennedy', 'Veronica'];
+
     public function run(): void
     {
-        $parents = [
-            // Parents for Grade 1 Students
-            [
-                'first_name' => 'David',
-                'last_name' => 'Johnson',
-                'relationship' => 'father',
-                'email' => 'david.johnson@email.com',
-                'phone' => '555-1001',
-                'alternate_phone' => '555-1101',
-                'occupation' => 'Software Engineer',
-            ],
-            [
-                'first_name' => 'Emily',
-                'last_name' => 'Johnson',
-                'relationship' => 'mother',
-                'email' => 'emily.johnson@email.com',
-                'phone' => '555-1002',
-                'alternate_phone' => '555-1102',
-                'occupation' => 'Marketing Manager',
-            ],
-            [
-                'first_name' => 'Carlos',
-                'last_name' => 'Martinez',
-                'relationship' => 'father',
-                'email' => 'carlos.martinez@email.com',
-                'phone' => '555-1003',
-                'alternate_phone' => '555-1103',
-                'occupation' => 'Restaurant Owner',
-            ],
-            [
-                'first_name' => 'Maria',
-                'last_name' => 'Martinez',
-                'relationship' => 'mother',
-                'email' => 'maria.martinez@email.com',
-                'phone' => '555-1004',
-                'alternate_phone' => '555-1104',
-                'occupation' => 'Nurse',
-            ],
-            [
-                'first_name' => 'Robert',
-                'last_name' => 'Brown',
-                'relationship' => 'father',
-                'email' => 'robert.brown@email.com',
-                'phone' => '555-1005',
-                'alternate_phone' => '555-1105',
-                'occupation' => 'Teacher',
-            ],
-            
-            // Parents for Grade 2 Students
-            [
-                'first_name' => 'Jennifer',
-                'last_name' => 'Davis',
-                'relationship' => 'mother',
-                'email' => 'jennifer.davis@email.com',
-                'phone' => '555-1006',
-                'alternate_phone' => '555-1106',
-                'occupation' => 'Accountant',
-            ],
-            [
-                'first_name' => 'Michael',
-                'last_name' => 'Wilson',
-                'relationship' => 'father',
-                'email' => 'michael.wilson@email.com',
-                'phone' => '555-1007',
-                'alternate_phone' => '555-1107',
-                'occupation' => 'Police Officer',
-            ],
-            [
-                'first_name' => 'Lisa',
-                'last_name' => 'Garcia',
-                'relationship' => 'mother',
-                'email' => 'lisa.garcia@email.com',
-                'phone' => '555-1008',
-                'alternate_phone' => '555-1108',
-                'occupation' => 'Doctor',
-            ],
-            
-            // Parents for Grade 3 Students
-            [
-                'first_name' => 'Antonio',
-                'last_name' => 'Rodriguez',
-                'relationship' => 'father',
-                'email' => 'antonio.rodriguez@email.com',
-                'phone' => '555-1009',
-                'alternate_phone' => '555-1109',
-                'occupation' => 'Construction Manager',
-            ],
-            [
-                'first_name' => 'Patricia',
-                'last_name' => 'Lewis',
-                'relationship' => 'mother',
-                'email' => 'patricia.lewis@email.com',
-                'phone' => '555-1010',
-                'alternate_phone' => '555-1110',
-                'occupation' => 'Lawyer',
-            ],
-            [
-                'first_name' => 'Kevin',
-                'last_name' => 'Lee',
-                'relationship' => 'father',
-                'email' => 'kevin.lee@email.com',
-                'phone' => '555-1011',
-                'alternate_phone' => '555-1111',
-                'occupation' => 'IT Consultant',
-            ],
-            
-            // Parents for Grade 4 Students
-            [
-                'first_name' => 'Sarah',
-                'last_name' => 'Walker',
-                'relationship' => 'mother',
-                'email' => 'sarah.walker@email.com',
-                'phone' => '555-1012',
-                'alternate_phone' => '555-1112',
-                'occupation' => 'Pharmacist',
-            ],
-            [
-                'first_name' => 'Thomas',
-                'last_name' => 'Hall',
-                'relationship' => 'father',
-                'email' => 'thomas.hall@email.com',
-                'phone' => '555-1013',
-                'alternate_phone' => '555-1113',
-                'occupation' => 'Electrician',
-            ],
-            [
-                'first_name' => 'Michelle',
-                'last_name' => 'Allen',
-                'relationship' => 'mother',
-                'email' => 'michelle.allen@email.com',
-                'phone' => '555-1014',
-                'alternate_phone' => '555-1114',
-                'occupation' => 'Graphic Designer',
-            ],
-            
-            // Parents for Grade 5 Students
-            [
-                'first_name' => 'Christopher',
-                'last_name' => 'Young',
-                'relationship' => 'father',
-                'email' => 'christopher.young@email.com',
-                'phone' => '555-1015',
-                'alternate_phone' => '555-1115',
-                'occupation' => 'Business Owner',
-            ],
-            [
-                'first_name' => 'Amanda',
-                'last_name' => 'Hernandez',
-                'relationship' => 'mother',
-                'email' => 'amanda.hernandez@email.com',
-                'phone' => '555-1016',
-                'alternate_phone' => '555-1116',
-                'occupation' => 'Real Estate Agent',
-            ],
-            [
-                'first_name' => 'Daniel',
-                'last_name' => 'King',
-                'relationship' => 'father',
-                'email' => 'daniel.king@email.com',
-                'phone' => '555-1017',
-                'alternate_phone' => '555-1117',
-                'occupation' => 'Mechanic',
-            ],
-            
-            // Guardian for Alumni Student
-            [
-                'first_name' => 'Jessica',
-                'last_name' => 'Wright',
-                'relationship' => 'mother',
-                'email' => 'jessica.wright@email.com',
-                'phone' => '555-1018',
-                'alternate_phone' => '555-1118',
-                'occupation' => 'Social Worker',
-            ],
-            [
-                'first_name' => 'Richard',
-                'last_name' => 'Lopez',
-                'relationship' => 'father',
-                'email' => 'richard.lopez@email.com',
-                'phone' => '555-1019',
-                'alternate_phone' => '555-1119',
-                'occupation' => 'Chef',
-            ],
-            
-            // Guardian for Transferred/Inactive Students
-            [
-                'first_name' => 'Nicole',
-                'last_name' => 'Hill',
-                'relationship' => 'mother',
-                'email' => 'nicole.hill@email.com',
-                'phone' => '555-1020',
-                'alternate_phone' => '555-1120',
-                'occupation' => 'Bank Manager',
-            ],
-            [
-                'first_name' => 'Melissa',
-                'last_name' => 'Green',
-                'relationship' => 'mother',
-                'email' => 'melissa.green@email.com',
-                'phone' => '555-1021',
-                'alternate_phone' => '555-1121',
-                'occupation' => 'Veterinarian',
-            ],
-        ];
-
-        foreach ($parents as $data) {
-            Parents::firstOrCreate(
-                ['email' => $data['email']],
-                $data
-            );
+        $students = Student::all();
+        if ($students->count() === 0) {
+            return;
         }
+
+        $givenNames = self::GIVEN_NAMES;
+
+        $occupations = ['Business Owner', 'Teacher', 'Civil Servant', 'Farmer', 'Nurse', 'Police Officer',
+            'Accountant', 'Driver', 'Entrepreneur', 'Doctor', 'Lecturer', 'Shopkeeper', 'Fashion Designer',
+            'Mechanic', 'Banker', 'Farmer', 'Journalist', 'Pharmacist', 'Engineer', 'Lawyer'];
+
+        foreach ($students as $student) {
+            // Deterministic pseudo-random seed so a reseed keeps the same parents
+            $idx = (int) substr(str_replace(['/', 'ADM'], '', $student->admission_no), -3);
+
+            $first = $givenNames[$idx % count($givenNames)];
+            $last = $student->last_name; // share the child's Kenyan surname
+            $email = strtolower($first . '.' . $last . str_pad((string)($idx + 1), 3, '0', STR_PAD_LEFT) . '@example.co.ke');
+
+            $homeCounty = $student->county ?: 'Nairobi';
+
+            $parents = [
+                [
+                    'first_name' => $first,
+                    'last_name' => $last,
+                    'relationship' => 'father',
+                    'email' => $email,
+                    'phone' => $this->phone(720, $idx),
+                    'alternate_phone' => $this->phone(733, $idx),
+                    'occupation' => $occupations[$idx % count($occupations)],
+                ],
+            ];
+
+            // Give roughly half the students a second (mother) guardian
+            if ($idx % 2 === 0) {
+                $motherFirst = $givenNames[($idx + 3) % count($givenNames)];
+                $parents[] = [
+                    'first_name' => $motherFirst,
+                    'last_name' => $last,
+                    'relationship' => 'mother',
+                    'email' => strtolower($motherFirst . '.' . $last . str_pad((string)($idx + 2), 3, '0', STR_PAD_LEFT) . '@example.co.ke'),
+                    'phone' => $this->phone(721, $idx),
+                    'alternate_phone' => $this->phone(734, $idx),
+                    'occupation' => $occupations[($idx + 5) % count($occupations)],
+                ];
+            }
+
+            foreach ($parents as $data) {
+                Parents::firstOrCreate(['email' => $data['email']], $data);
+            }
+        }
+    }
+
+    private function phone(int $prefix, int $idx): string
+    {
+        $suffix = str_pad((string)(100000 + ($idx * 23) % 900000), 6, '0', STR_PAD_LEFT);
+        return '0' . $prefix . $suffix;
     }
 }

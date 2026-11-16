@@ -11,7 +11,7 @@ Student Document Details
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right"
-                       href="{{ route('studentDocuments.index') }}">
+                       href="{{ route('student-documents.index') }}">
                                                     Back
                                             </a>
                 </div>

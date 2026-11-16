@@ -54,8 +54,9 @@
                                 <th class="text-center" style="width: 80px">Rank</th>
                                 <th>Student Name</th>
                                 <th class="text-center">Subjects</th>
-                                <th class="text-center">Total Marks</th>
-                                <th class="text-center">Mean Score</th>
+                                <th class="text-center">Total (%)</th>
+                                <th class="text-center">Mean (%)</th>
+                                <th class="text-center">Grade</th>
                                 <th class="text-center">Status</th>
                             </tr>
                         </thead>
@@ -71,10 +72,22 @@
                                 </td>
                                 <td class="font-weight-bold">{{ $rank->student->full_name }}</td>
                                 <td class="text-center">{{ $rank->subjects_count }}</td>
-                                <td class="text-center"><b class="text-primary">{{ number_format($rank->total_marks, 0) }}</b></td>
-                                <td class="text-center"><b class="text-danger">{{ number_format($rank->mean_score, 1) }}%</b></td>
+                                <td class="text-center"><b class="text-primary">{{ number_format($rank->total_percentage, 1) }}%</b></td>
+                                <td class="text-center"><b class="text-danger">{{ number_format($rank->mean_percentage, 1) }}%</b></td>
                                 <td class="text-center">
-                                    <span class="badge badge-success">Passed</span>
+                                    @if($rank->grade)
+                                        <span class="badge badge-info">{{ $rank->grade }}</span>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
+                                <td class="text-center">
+                                    {{-- Was a hardcoded green "Passed" on every row. --}}
+                                    @if($rank->passed)
+                                        <span class="badge badge-success">Passed</span>
+                                    @else
+                                        <span class="badge badge-danger">Below {{ number_format($rank->threshold, 0) }}%</span>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach

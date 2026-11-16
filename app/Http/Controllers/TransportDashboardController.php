@@ -9,6 +9,11 @@ use Illuminate\Http\Request;
 
 class TransportDashboardController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:transport.view');
+    }
+
     public function index()
     {
         $stats = [

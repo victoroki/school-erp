@@ -1,70 +1,95 @@
+{{--
+    Card shells only — one per class, no subject rows.
+
+    The grid is scoped to the current academic year, so a class appears exactly
+    once. Each card ships its counts, a search haystack and its destructive
+    targets; the subject list arrives from class-subjects.curriculum the first
+    time the card is opened, which is what keeps a 14-class school from
+    rendering 336 <li> rows (and 336 forms) before anything is readable.
+--}}
 @if($classSubjects->isEmpty())
-    <div class="alert alert-info text-center">
-        <i class="fas fa-info-circle mr-2"></i> No class subjects found. Assign some subjects to classes to get started.
+    <div class="cs-empty">
+        <div class="cs-empty-icon"><i class="fas fa-book-reader"></i></div>
+        <h2 class="cs-empty-title">No subjects assigned for {{ $currentYear->name }} yet</h2>
+        <p class="cs-empty-text">
+            Assign subjects to a class to build its curriculum. Each class keeps its
+            own subject list per academic year.
+        </p>
+        <a href="{{ route('class-subjects.create') }}" class="btn-dash btn-primary-dash mt-3">
+            <i class="fas fa-plus me-1"></i> Assign subjects
+        </a>
     </div>
 @else
     <div class="row" id="class-subjects-grid">
-        @foreach($classSubjects as $className => $subjectsGroup)
-            <div class="col-lg-4 col-md-6 col-sm-12 class-group" data-group-name="{{ strtolower($className) }}">
-                <div class="card card-primary card-outline mb-4 h-100">
-                    <div class="card-header">
-                        <h3 class="card-title text-bold text-capitalize">
-                           <i class="fas fa-book-reader text-primary mr-2"></i> {{ $className }}
-                        </h3>
-                        <div class="card-tools">
-                             <span class="badge badge-primary mr-2">{{ $subjectsGroup->count() }} Subjects</span>
-                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                <i class="fas fa-minus"></i>
+        @foreach($classSubjects as $group)
+            <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12 class-group mb-3"
+                 data-group
+                 data-class-id="{{ $group->class_id }}"
+                 data-subject-count="{{ $group->subject_count }}"
+                 data-search="{{ $group->search }}">
+
+                {{-- <details> rather than a button + aria-expanded: the browser
+                     owns the open state, so collapsing works without JS and the
+                     disclosure is announced correctly by screen readers. --}}
+                <details class="cs-disclosure" data-card>
+                    <summary class="cs-header">
+                        <span class="cs-chevron" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+                        <span class="cs-title">{{ $group->class_name }}</span>
+
+                        <span class="cs-header-actions">
+                            @if($group->archived_count > 0)
+                                {{-- Archived subjects stay visible in the list, so the
+                                     count has to stay visible with the card shut. --}}
+                                <span class="cs-badge cs-badge-warn"
+                                      title="{{ $group->archived_count }} archived subject(s) in this class">
+                                    {{ $group->archived_count }} archived
+                                </span>
+                            @endif
+
+                            <span class="cs-badge cs-badge-count">
+                                {{ $group->subject_count }} {{ Str::plural('subject', $group->subject_count) }}
+                            </span>
+
+                            {{-- Data, not markup: one shared form at the foot of
+                                 the page submits whichever card was pressed, and
+                                 the confirmation is read in JS. An inline
+                                 onclick also broke on any subject name
+                                 containing an apostrophe. --}}
+                            <button type="button" class="action-btn btn-delete" data-clear
+                                    data-class-id="{{ $group->class_id }}"
+                                    data-year-id="{{ $group->academic_year_id }}"
+                                    data-confirm="Remove all {{ $group->subject_count }} subject(s) from {{ $group->class_name }}? Subjects in other years are not affected."
+                                    title="Clear all {{ $group->subject_count }} subjects from {{ $group->class_name }}">
+                                <i class="far fa-trash-alt"></i>
+                                <span class="sr-only">Clear all subjects from {{ $group->class_name }}</span>
                             </button>
-                        </div>
+                        </span>
+                    </summary>
+
+                    <div class="cs-body" id="cs-body-{{ $group->class_id }}">
+                        <ul class="cs-list" data-list>
+                            <noscript>
+                                <li class="cs-hint">Turn on JavaScript to load this class&rsquo;s subjects.</li>
+                            </noscript>
+                        </ul>
                     </div>
-                    <div class="card-body p-0" style="max-height: 350px; overflow-y: auto;">
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped mb-0 table-sm">
-                                <thead class="bg-light sticky-top">
-                                <tr>
-                                    <th style="width: 40%">Subject</th>
-                                    <th style="width: 30%">Academic Year</th>
-                                    <th style="width: 30%" class="text-center">Action</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @foreach($subjectsGroup as $classSubject)
-                                    <tr class="subject-row" data-subject-name="{{ strtolower($classSubject->subject->name) }}">
-                                        <td class="align-middle font-weight-bold">
-                                            {{ $classSubject->subject->name }}
-                                        </td>
-                                        <td class="align-middle">
-                                            <span class="badge badge-light border">{{ $classSubject->academicYear->name }}</span>
-                                        </td>
-                                        <td class="text-center align-middle">
-                                            {!! Form::open(['route' => ['class-subjects.destroy', $classSubject->class_subject_id], 'method' => 'delete']) !!}
-                                            <div class='btn-group'>
-                                                <a href="{{ route('class-subjects.show', [$classSubject->class_subject_id]) }}"
-                                                   class='btn btn-xs btn-default text-info shadow-sm' title="View">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="{{ route('class-subjects.edit', [$classSubject->class_subject_id]) }}"
-                                                   class='btn btn-xs btn-default text-primary shadow-sm' title="Edit">
-                                                    <i class="fas fa-pencil-alt"></i>
-                                                </a>
-                                                {!! Form::button('<i class="fas fa-trash text-danger"></i>', [
-                                                    'type' => 'submit',
-                                                    'class' => 'btn btn-xs btn-default shadow-sm',
-                                                    'onclick' => "return confirm('Are you sure you want to delete this?')",
-                                                    'title' => 'Delete'
-                                                ]) !!}
-                                            </div>
-                                            {!! Form::close() !!}
-                                        </td>
-                                    </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+
+                    <footer class="cs-footer">
+                        <span>{{ $group->weekly_periods }} periods / week</span>
+                        <span>{{ $currentYear->name }}</span>
+                    </footer>
+                </details>
             </div>
         @endforeach
     </div>
+
+    {{-- Two forms for the whole page instead of one per subject row: the delete
+         target and the class/year pair are set by JS just before submitting. --}}
+    {!! Form::open(['route' => ['class-subjects.destroy', 0], 'method' => 'delete', 'id' => 'classSubjectDeleteForm', 'class' => 'd-none']) !!}
+    {!! Form::close() !!}
+
+    {!! Form::open(['route' => 'class-subjects.bulk-delete', 'method' => 'post', 'id' => 'classSubjectClearForm', 'class' => 'd-none']) !!}
+        {!! Form::hidden('class_id', '') !!}
+        {!! Form::hidden('academic_year_id', '') !!}
+    {!! Form::close() !!}
 @endif

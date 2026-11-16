@@ -3,24 +3,24 @@
         <table class="table" id="library-members-table">
             <thead>
             <tr>
-                <th>User</th>
+                <th>Member</th>
                 <th>Member Type</th>
                 <th>Reference</th>
                 <th>Membership Date</th>
                 <th>Max Allowed Books</th>
                 <th>Status</th>
-                <th colspan="3">Action</th>
+                <th style="width: 120px">Action</th>
             </tr>
             </thead>
             <tbody>
             @foreach($libraryMembers as $libraryMember)
                 <tr>
-                    <td>{{ $libraryMember->user_id }}</td>
-                    <td>{{ $libraryMember->member_type }}</td>
-                    <td>{{ $libraryMember->reference_id }}</td>
-                    <td>{{ $libraryMember->membership_date }}</td>
+                    <td>{{ $libraryMember->display_name }}</td>
+                    <td>{{ ucfirst($libraryMember->member_type ?? '') }}</td>
+                    <td>{{ $libraryMember->reference_id ?? '—' }}</td>
+                    <td>{{ $libraryMember->membership_date ? \Carbon\Carbon::parse($libraryMember->membership_date)->format('d/m/Y') : '—' }}</td>
                     <td>{{ $libraryMember->max_allowed_books }}</td>
-                    <td>{{ $libraryMember->status }}</td>
+                    <td>{{ ucfirst($libraryMember->status ?? '') }}</td>
                     <td  style="width: 120px">
                         {!! Form::open(['route' => ['library-members.destroy', $libraryMember->member_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>

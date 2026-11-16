@@ -17,6 +17,7 @@ class LibraryDashboardController extends Controller
     public function __construct(LibraryService $libraryService)
     {
         $this->libraryService = $libraryService;
+        $this->middleware('can:library.view');
     }
 
     public function index()
@@ -25,13 +26,13 @@ class LibraryDashboardController extends Controller
         $stats = $this->libraryService->getDashboardStats();
 
         // Get recent issues (last 10)
-        $recentIssues = BookIssue::with(['book', 'member.user', 'issuer'])
+        $recentIssues = BookIssue::with(['book', 'member.user', 'member.student', 'member.staff', 'issuer'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
 
         // Get overdue books
-        $overdueBooks = BookIssue::with(['book', 'member.user'])
+        $overdueBooks = BookIssue::with(['book', 'member.user', 'member.student', 'member.staff'])
             ->where('status', 'issued')
             ->where('due_date', '<', Carbon::now())
             ->orderBy('due_date', 'asc')

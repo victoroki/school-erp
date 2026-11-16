@@ -8,6 +8,7 @@ use App\Http\Controllers\AppBaseController;
 use App\Models\SmsTemplate;
 use App\Models\TemplateCategory;
 use App\Repositories\SmsTemplateRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -19,6 +20,8 @@ class SmsTemplateController extends AppBaseController
     public function __construct(SmsTemplateRepository $smsTemplateRepo)
     {
         $this->smsTemplateRepository = $smsTemplateRepo;
+        $this->middleware('can:communication.view')->only(['index', 'show']);
+        $this->middleware('can:communication.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getDropdownData()
@@ -43,7 +46,7 @@ class SmsTemplateController extends AppBaseController
             $query->where('status', $request->status);
         }
 
-        $smsTemplates = $query->paginate(10);
+        $smsTemplates = $query->paginate(10)->withQueryString();
         $dropdownData = $this->getDropdownData();
 
         return view('sms_templates.index', compact('smsTemplates', 'dropdownData'));
@@ -67,6 +70,8 @@ class SmsTemplateController extends AppBaseController
         $input['created_by'] = auth()->id();
 
         $smsTemplate = $this->smsTemplateRepository->create($input);
+
+        AuditTrail::log('SMS Template', 'CREATE', $smsTemplate->template_id, null, $smsTemplate->toArray());
 
         Flash::success('Sms Template saved successfully.');
 
@@ -119,7 +124,10 @@ class SmsTemplateController extends AppBaseController
             return redirect(route('smsTemplates.index'));
         }
 
+        $oldData = $smsTemplate->toArray();
         $smsTemplate = $this->smsTemplateRepository->update($request->all(), $id);
+
+        AuditTrail::log('SMS Template', 'UPDATE', $smsTemplate->template_id, $oldData, $smsTemplate->toArray());
 
         Flash::success('Sms Template updated successfully.');
 
@@ -141,7 +149,10 @@ class SmsTemplateController extends AppBaseController
             return redirect(route('smsTemplates.index'));
         }
 
+        $oldData = $smsTemplate->toArray();
         $this->smsTemplateRepository->delete($id);
+
+        AuditTrail::log('SMS Template', 'DELETE', $id, $oldData, null);
 
         Flash::success('Sms Template deleted successfully.');
 

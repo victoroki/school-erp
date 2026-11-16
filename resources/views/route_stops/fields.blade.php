@@ -39,13 +39,3 @@
     {!! Form::label('status', 'Status:') !!}
     {!! Form::select('status', ['active' => 'Active', 'inactive' => 'Inactive'], null, ['class' => 'form-control']) !!}
 </div>
-
-@push('page_scripts')
-    <script>
-        $(document).ready(function() {
-            $('.select2').select2({
-                theme: 'bootstrap4'
-            });
-        });
-    </script>
-@endpush

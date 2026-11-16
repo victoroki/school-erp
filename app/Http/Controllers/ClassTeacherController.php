@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ClassSection;
 use App\Models\Staff;
 use App\Models\AcademicYear;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -13,6 +14,8 @@ class ClassTeacherController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('can:academics.view')->only(['index']);
+        $this->middleware('can:academics.settings.manage')->only(['update']);
     }
 
     public function index(Request $request)
@@ -27,7 +30,10 @@ class ClassTeacherController extends Controller
 
         $classSections = ClassSection::with(['class', 'section', 'classTeacher'])
             ->where('academic_year_id', $selectedAcademicYearId)
-            ->get();
+            ->orderBy('class_id')
+            ->orderBy('section_id')
+            ->paginate(15)
+            ->appends($request->query());
 
         $teachers = Staff::where('staff_type', 'teaching')
             ->active()
@@ -39,9 +45,17 @@ class ClassTeacherController extends Controller
 
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'teacher_id' => 'required|exists:staff,staff_id',
+        ]);
+
         $classSection = ClassSection::findOrFail($id);
+
+        $old = $classSection->class_teacher_id;
         $classSection->class_teacher_id = $request->get('teacher_id');
         $classSection->save();
+
+        AuditTrail::log('Academic', 'CLASS TEACHER ASSIGNED', $classSection->class_section_id, ['class_teacher_id' => $old], ['class_teacher_id' => $classSection->class_teacher_id]);
 
         Flash::success('Class Teacher updated successfully.');
         return redirect(route('class-teachers.index'));

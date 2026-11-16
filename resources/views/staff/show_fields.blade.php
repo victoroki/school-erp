@@ -1,13 +1,13 @@
 <!-- User Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('user_id', 'User Id:') !!}
-    <p>{{ $staff->user_id }}</p>
+    {!! Form::label('user_id', 'Portal Account:') !!}
+    <p>{{ $staff->user->name ?? 'No portal account linked' }}</p>
 </div>
 
 <!-- Employee Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('employee_id', 'Employee Id:') !!}
-    <p>{{ $staff->employee_id }}</p>
+    {!! Form::label('employee_id', 'Employee No:') !!}
+    <p>{{ $staff->employee_number ?? '—' }}</p>
 </div>
 
 <!-- First Name Field -->
@@ -19,7 +19,7 @@
 <!-- Middle Name Field -->
 <div class="col-sm-12">
     {!! Form::label('middle_name', 'Middle Name:') !!}
-    <p>{{ $staff->middle_name }}</p>
+    <p>{{ $staff->middle_name ?? '—' }}</p>
 </div>
 
 <!-- Last Name Field -->
@@ -31,25 +31,25 @@
 <!-- Date Of Birth Field -->
 <div class="col-sm-12">
     {!! Form::label('date_of_birth', 'Date Of Birth:') !!}
-    <p>{{ $staff->date_of_birth }}</p>
+    <p>{{ $staff->kenyan_dob ?? $staff->date_of_birth?->format('d/m/Y') ?? '—' }}</p>
 </div>
 
 <!-- Gender Field -->
 <div class="col-sm-12">
     {!! Form::label('gender', 'Gender:') !!}
-    <p>{{ $staff->gender }}</p>
+    <p>{{ ucfirst($staff->gender) }}</p>
 </div>
 
 <!-- Joining Date Field -->
 <div class="col-sm-12">
     {!! Form::label('joining_date', 'Joining Date:') !!}
-    <p>{{ $staff->joining_date }}</p>
+    <p>{{ $staff->date_of_joining ? \Carbon\Carbon::parse($staff->date_of_joining)->format('d/m/Y') : '—' }}</p>
 </div>
 
 <!-- Department Id Field -->
 <div class="col-sm-12">
-    {!! Form::label('department_id', 'Department Id:') !!}
-    <p>{{ $staff->department_id }}</p>
+    {!! Form::label('department_id', 'Department:') !!}
+    <p>{{ $staff->department->name ?? 'Not assigned' }}</p>
 </div>
 
 <!-- Designation Field -->
@@ -73,13 +73,13 @@
 <!-- Email Field -->
 <div class="col-sm-12">
     {!! Form::label('email', 'Email:') !!}
-    <p>{{ $staff->email }}</p>
+    <p>{{ $staff->email ?: $staff->work_email ?? '—' }}</p>
 </div>
 
 <!-- Phone Field -->
 <div class="col-sm-12">
     {!! Form::label('phone', 'Phone:') !!}
-    <p>{{ $staff->phone }}</p>
+    <p>{{ $staff->phone ?: $staff->phone_primary ?? '—' }}</p>
 </div>
 
 <!-- Address Field -->
@@ -103,18 +103,18 @@
 <!-- Photo Url Field -->
 <div class="col-sm-12">
     {!! Form::label('photo_url', 'Photo Url:') !!}
-    <p>{{ $staff->photo_url }}</p>
+    <p>{{ $staff->photo_url ? 'On file' : 'No photo uploaded' }}</p>
 </div>
 
 <!-- Staff Type Field -->
 <div class="col-sm-12">
     {!! Form::label('staff_type', 'Staff Type:') !!}
-    <p>{{ $staff->staff_type }}</p>
+    <p>{{ ucfirst(str_replace('_', ' ', $staff->staff_type ?? '')) ?: '—' }}</p>
 </div>
 
 <!-- Status Field -->
 <div class="col-sm-12">
     {!! Form::label('status', 'Status:') !!}
-    <p>{{ $staff->status }}</p>
+    <p>{{ ucfirst(str_replace('_', ' ', $staff->employment_status ?? $staff->status ?? '')) ?: '—' }}</p>
 </div>
 

@@ -6,6 +6,7 @@ use App\Http\Requests\CreateLeaveTypeRequest;
 use App\Http\Requests\UpdateLeaveTypeRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\LeaveTypeRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -17,6 +18,8 @@ class LeaveTypeController extends AppBaseController
     public function __construct(LeaveTypeRepository $leaveTypeRepo)
     {
         $this->leaveTypeRepository = $leaveTypeRepo;
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -46,6 +49,8 @@ class LeaveTypeController extends AppBaseController
         $input = $request->all();
 
         $leaveType = $this->leaveTypeRepository->create($input);
+
+        AuditTrail::log('Leave Type', 'CREATE', $leaveType->id, null, $leaveType->toArray());
 
         Flash::success('Leave Type saved successfully.');
 
@@ -97,7 +102,10 @@ class LeaveTypeController extends AppBaseController
             return redirect(route('leaveTypes.index'));
         }
 
+        $oldData = $leaveType->toArray();
         $leaveType = $this->leaveTypeRepository->update($request->all(), $id);
+
+        AuditTrail::log('Leave Type', 'UPDATE', $leaveType->id, $oldData, $leaveType->toArray());
 
         Flash::success('Leave Type updated successfully.');
 
@@ -119,7 +127,10 @@ class LeaveTypeController extends AppBaseController
             return redirect(route('leaveTypes.index'));
         }
 
+        $oldData = $leaveType->toArray();
         $this->leaveTypeRepository->delete($id);
+
+        AuditTrail::log('Leave Type', 'DELETE', $id, $oldData, null);
 
         Flash::success('Leave Type deleted successfully.');
 

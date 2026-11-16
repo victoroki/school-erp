@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\ExamSchedule;
+use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\Subject;
 use Illuminate\Http\Request;
@@ -14,9 +15,18 @@ use Illuminate\Support\Facades\DB;
 
 class ExamDashboardController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:academics.settings.manage');
+    }
+
     public function index()
     {
         $now = Carbon::now();
+
+        $user = auth()->user();
+        $viewAll = $user->hasPermission('exams.results.view-all');
+        $hasSettings = $user->hasPermission('academics.settings.manage');
 
         // Key Metrics
         $upcomingExamsCount = Exam::where('start_date', '>', $now)->count();
@@ -53,11 +63,31 @@ class ExamDashboardController extends Controller
             ->orderBy('grading_scales.min_percentage', 'desc')
             ->get();
 
-        // Recent Activities
+        // Recent Activities - scoped for teachers so they only see their own classes' results
         $recentResults = ExamResult::with(['student', 'subject', 'exam'])
+            ->when(!$viewAll && !$hasSettings, function ($query) use ($user) {
+                return app(\App\Services\TeacherScopeService::class)->scopeByClassSections($query, $user);
+            })
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
+
+        // Class-wise performance for diversity
+        $classPerformance = SchoolClass::with(['classSections.examResults'])
+            ->get()
+            ->map(function($class) {
+                $results = $class->classSections->flatMap->examResults;
+                $avg = $results->avg('marks_obtained');
+                $count = $results->count();
+                return (object)[
+                    'name' => $class->name,
+                    'avg_marks' => $avg ? round($avg, 1) : 0,
+                    'total_results' => $count,
+                    'pass_rate' => $count > 0 ? round(($results->where('marks_obtained', '>=', 40)->count() / $count) * 100, 1) : 0
+                ];
+            })->filter(fn($c) => $c->total_results > 0)
+            ->sortByDesc('avg_marks')
+            ->values();
 
         return view('exam_dashboard.index', compact(
             'upcomingExamsCount',
@@ -69,7 +99,8 @@ class ExamDashboardController extends Controller
             'nextExam',
             'performanceTrends',
             'gradeDistribution',
-            'recentResults'
+            'recentResults',
+            'classPerformance'
         ));
     }
 }

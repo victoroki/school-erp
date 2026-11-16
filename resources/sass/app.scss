@@ -1,5 +1,39 @@
 // Variables
 @import 'variables';
 
-// Bootstrap
-@import '~admin-lte/build/scss/adminlte';
+// AdminLTE, without the parts no screen uses.
+//
+// The stock `adminlte` entry compiled to 1.2 MB of CSS, most of it skins for
+// plugins this app never loads (fullcalendar, sweetalert2, toastr, maps,
+// sliders, switches) and page templates it never renders (mailbox, kanban,
+// lockscreen, e-commerce). This is the same import order as
+// admin-lte/build/scss/adminlte.scss with those parts left out.
+@import '~bootstrap/scss/functions';
+@import '~admin-lte/build/scss/bootstrap-variables';
+@import '~bootstrap/scss/bootstrap';
+
+@import '~admin-lte/build/scss/variables';
+@import '~admin-lte/build/scss/variables-alt';
+@import '~admin-lte/build/scss/mixins';
+
+@import '~admin-lte/build/scss/parts/core';
+@import '~admin-lte/build/scss/parts/components';
+
+// Extra components still referenced by views.
+@import '~admin-lte/build/scss/small-box';
+@import '~admin-lte/build/scss/info-box';
+@import '~admin-lte/build/scss/timeline';
+@import '~admin-lte/build/scss/products';
+
+// Page templates still referenced by views.
+@import '~admin-lte/build/scss/pages/login_and_register';
+@import '~admin-lte/build/scss/pages/invoice';
+@import '~admin-lte/build/scss/pages/profile';
+@import '~admin-lte/build/scss/pages/projects';
+
+// Plugin skins for the plugins actually loaded (Select2, iCheck).
+@import '~admin-lte/build/scss/plugins/mixins';
+@import '~admin-lte/build/scss/plugins/select2';
+@import '~admin-lte/build/scss/plugins/icheck-bootstrap';
+
+@import '~admin-lte/build/scss/parts/miscellaneous';

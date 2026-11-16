@@ -4,9 +4,9 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-12">
-                    <h1>
-                    Create Student Parent Relationships
+                <div class="col-sm-6">
+                    <h1 class="text-primary font-weight-bold">
+                        <i class="fas fa-users mr-2"></i> Link Parent to Student
                     </h1>
                 </div>
             </div>
@@ -16,26 +16,32 @@
     <div class="content px-3">
 
         @include('adminlte-templates::common.errors')
+        @include('flash::message')
 
-        <div class="card">
+        <div class="card card-outline card-primary shadow-sm">
+            <form action="{{ route('student-parent-relationships.store') }}" method="POST">
+                @csrf
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Search for a student and a parent/guardian, then link them. Tick
+                        <strong>Primary Contact</strong> if this parent is the student's main point of contact.
+                    </p>
 
-            {!! Form::open(['route' => 'student-parent-relationships.store']) !!}
+                    <div class="row">
+                        @include('student_parent_relationships.fields')
+                    </div>
 
-            <div class="card-body">
-
-                <div class="row">
-                    @include('student_parent_relationships.fields')
                 </div>
 
-            </div>
+                <div class="card-footer text-right bg-white">
+                    <a href="{{ route('student-parent-relationships.index') }}" class="btn btn-light border mr-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-link mr-1"></i> Link Parent
+                    </button>
+                </div>
 
-            <div class="card-footer">
-                {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('student-parent-relationships.index') }}" class="btn btn-default"> Cancel </a>
-            </div>
-
-            {!! Form::close() !!}
-
+            </form>
         </div>
     </div>
 @endsection

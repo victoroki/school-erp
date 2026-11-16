@@ -6,47 +6,56 @@ use App\Models\Budget;
 use App\Models\FinancialYear;
 use App\Models\ExpenseCategory;
 use App\Models\IncomeCategory;
-use App\Models\Expenses;
-use App\Models\Income;
-use App\Models\FeePayment;
+use App\Models\AuditTrail;
+use App\Http\Requests\CreateBudgetRequest;
+use App\Http\Requests\UpdateBudgetRequest;
+use App\Services\FinancialMetrics;
 use Illuminate\Http\Request;
 use Flash;
 
 class BudgetController extends AppBaseController
 {
-    public function index()
+    public function __construct()
     {
-        $financialYears = FinancialYear::orderBy('start_date', 'desc')->get();
-        $activeYear = FinancialYear::where('status', 'open')->first();
-        
-        $budgets = Budget::with('financialYear')
-            ->when($activeYear, function($q) use ($activeYear) {
-                $q->where('financial_year_id', $activeYear->id);
-            })
-            ->get();
+        $this->middleware('can:finance.view')->only(['index', 'show', 'vsActual']);
+        $this->middleware('can:finance.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
 
-        return view('budgets.index', compact('budgets', 'financialYears', 'activeYear'));
+    public function index(Request $request)
+    {
+        $activeYear = FinancialYear::where('status', 'open')->first();
+        $selectedYear = $request->filled('financial_year_id') ? $request->input('financial_year_id') : ($activeYear->id ?? null);
+
+        $budgets = Budget::with('financialYear')
+            ->when($selectedYear, function ($q) use ($selectedYear) {
+                $q->where('financial_year_id', $selectedYear);
+            })
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        $financialYearOptions = FinancialYear::orderBy('start_date', 'desc')->pluck('name', 'id');
+
+        return view('budgets.index', compact('budgets', 'financialYearOptions', 'selectedYear', 'activeYear'));
     }
 
     public function create()
     {
         $financialYears = FinancialYear::where('status', 'open')->pluck('name', 'id');
-        $expenseCategories = ExpenseCategory::pluck('name', 'id');
-        $incomeCategories = IncomeCategory::pluck('name', 'id');
+        $expenseCategories = ExpenseCategory::pluck('name', 'category_id');
+        $incomeCategories = IncomeCategory::pluck('name', 'category_id');
 
         return view('budgets.create', compact('financialYears', 'expenseCategories', 'incomeCategories'));
     }
 
-    public function store(Request $request)
+    public function store(CreateBudgetRequest $request)
     {
-        $request->validate([
-            'financial_year_id' => 'required',
-            'category_type' => 'required|in:income,expense',
-            'category_id' => 'required',
-            'amount' => 'required|numeric|min:0',
-        ]);
+        $input = $request->validated() + ['created_by' => auth()->id()];
+        $input['include_fees'] = $request->boolean('include_fees');
 
-        Budget::create($request->all() + ['created_by' => auth()->id()]);
+        $budget = Budget::create($input);
+
+        AuditTrail::log('Budget', 'CREATE', $budget->id, null, $budget->toArray());
 
         Flash::success('Budget entry saved successfully.');
         return redirect(route('budgets.index'));
@@ -73,14 +82,32 @@ class BudgetController extends AppBaseController
             return redirect(route('budgets.index'));
         }
 
-        $financialYears = FinancialYear::where('status', 'open')->pluck('name', 'id');
-        $expenseCategories = ExpenseCategory::pluck('name', 'id');
-        $incomeCategories = IncomeCategory::pluck('name', 'id');
+        $openYearIds = FinancialYear::where('status', 'open')->pluck('id');
+        $financialYears = FinancialYear::orderBy('start_date', 'desc')
+            ->pluck('name', 'id')
+            ->mapWithKeys(function ($name, $id) use ($openYearIds) {
+                return $openYearIds->contains($id)
+                    ? [$id => $name]
+                    : [$id => $name . ' (closed)'];
+            });
+
+        // A budget whose year was closed must still render its stored year,
+        // otherwise Form::model silently falls back to the first option and
+        // saving reassigns the budget to a different financial year.
+        if (!$financialYears->has($budget->financial_year_id)) {
+            $storedYear = FinancialYear::find($budget->financial_year_id);
+            if ($storedYear) {
+                $financialYears->prepend($storedYear->name . ' (closed)', $storedYear->id);
+            }
+        }
+
+        $expenseCategories = ExpenseCategory::pluck('name', 'category_id');
+        $incomeCategories = IncomeCategory::pluck('name', 'category_id');
 
         return view('budgets.edit', compact('budget', 'financialYears', 'expenseCategories', 'incomeCategories'));
     }
 
-    public function update($id, Request $request)
+    public function update($id, UpdateBudgetRequest $request)
     {
         $budget = Budget::find($id);
 
@@ -89,14 +116,10 @@ class BudgetController extends AppBaseController
             return redirect(route('budgets.index'));
         }
 
-        $request->validate([
-            'financial_year_id' => 'required',
-            'category_type' => 'required|in:income,expense',
-            'category_id' => 'required',
-            'amount' => 'required|numeric|min:0',
-        ]);
+        $oldData = $budget->toArray();
+        $budget->update($request->validated() + ['include_fees' => $request->boolean('include_fees')]);
 
-        $budget->update($request->all());
+        AuditTrail::log('Budget', 'UPDATE', $budget->id, $oldData, $budget->toArray());
 
         Flash::success('Budget updated successfully.');
         return redirect(route('budgets.index'));
@@ -111,7 +134,10 @@ class BudgetController extends AppBaseController
             return redirect(route('budgets.index'));
         }
 
+        $oldData = $budget->toArray();
         $budget->delete();
+
+        AuditTrail::log('Budget', 'DELETE', $id, $oldData, null);
 
         Flash::success('Budget deleted successfully.');
         return redirect(route('budgets.index'));
@@ -128,20 +154,25 @@ class BudgetController extends AppBaseController
         $budgets = Budget::where('financial_year_id', $activeYear->id)->get();
         
         $comparison = $budgets->map(function($budget) use ($activeYear) {
-            $actual = 0;
             if ($budget->category_type == 'expense') {
-                $actual = Expenses::where('category_id', $budget->category_id)
-                    ->whereBetween('expense_date', [$activeYear->start_date, $activeYear->end_date])
-                    ->whereIn('status', ['paid', 'approved'])
-                    ->sum('amount');
+                // Accrual basis (approved + paid): the actual spend this year
+                // is what was committed, not only what has left the bank.
+                $actual = FinancialMetrics::categorySpendTotal(
+                    (int) $budget->category_id,
+                    $activeYear->start_date,
+                    $activeYear->end_date,
+                    FinancialMetrics::BASIS_COMMITTED
+                );
             } else {
-                // Simplified: assuming fees are categorized or just total income
-                $actual = Income::where('category_id', $budget->category_id)
-                    ->whereBetween('income_date', [$activeYear->start_date, $activeYear->end_date])
-                    ->where('status', 'active')
-                    ->sum('amount');
-                
-                // If it's a specific "Fees" category, we might add FeePayment sum
+                // Income actuals count fee payments only when the budget row
+                // opts in — otherwise a "Fees" budget reads short because fee
+                // payments carry no income category (audit F-2).
+                $actual = FinancialMetrics::incomeForCategory(
+                    (int) $budget->category_id,
+                    $activeYear->start_date,
+                    $activeYear->end_date,
+                    (bool) $budget->include_fees
+                );
             }
 
             return (object) [

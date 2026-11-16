@@ -108,7 +108,7 @@
                                     <table class="table table-sm table-striped">
                                         <thead>
                                             <tr>
-                                                <th>Student ID</th>
+                                                <th>Admission No</th>
                                                 <th>Name</th>
                                                 <th>Pickup Stop</th>
                                                 <th>Status</th>
@@ -118,8 +118,8 @@
                                         <tbody>
                                             @forelse($route->studentAssignments->where('status', 'active') as $assignment)
                                                 <tr>
-                                                    <td>{{ $assignment->student->student_id }}</td>
-                                                    <td>{{ $assignment->student->first_name }} {{ $assignment->student->last_name }}</td>
+                                                    <td>{{ $assignment->student->admission_no ?? '—' }}</td>
+                                                    <td>{{ $assignment->student->full_name }}</td>
                                                     <td>{{ $assignment->pickupStop->stop_name ?? 'N/A' }}</td>
                                                     <td><span class="badge badge-success">Active</span></td>
                                                     <td>

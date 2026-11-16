@@ -30,7 +30,7 @@
                     <!-- Member Field -->
                     <div class="col-sm-12">
                         {!! Form::label('member', 'Member:') !!}
-                        <p>{{ $bookIssue->member->reference_id ?? 'N/A' }}</p>
+                        <p>{{ $bookIssue->member->display_name ?? $bookIssue->member->reference_id ?? 'N/A' }}</p>
                     </div>
 
                     <!-- Issue Date Field -->

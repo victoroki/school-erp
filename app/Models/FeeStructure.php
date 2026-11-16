@@ -44,6 +44,39 @@ class FeeStructure extends Model
         'status' => 'required|in:active,inactive,draft,archived'
     ];
 
+    /**
+     * $rules plus the rules that need a closure (and so cannot live in a static
+     * property initializer).
+     */
+    public static function validationRules(): array
+    {
+        return array_merge(self::$rules, [
+            'term' => ['nullable', self::termBelongsToSelectedYear()],
+        ]);
+    }
+
+    /**
+     * A term code is only unique within an academic year, so a term belonging to a
+     * year other than the selected Academic Year must be rejected. Without this the
+     * stored code cannot be resolved back to a term for the fee's own year.
+     */
+    public static function termBelongsToSelectedYear(): \Closure
+    {
+        return function (string $attribute, $value, \Closure $fail) {
+            if (blank($value)) {
+                return;
+            }
+
+            $belongsToYear = Term::where('academic_year_id', request()->input('academic_year_id'))
+                ->where('code', $value)
+                ->exists();
+
+            if (! $belongsToYear) {
+                $fail('The selected term does not belong to the chosen academic year.');
+            }
+        };
+    }
+
     public function category(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(\App\Models\FeeCategory::class, 'category_id', 'category_id');

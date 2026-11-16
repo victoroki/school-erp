@@ -29,8 +29,8 @@
                     <div class="card-body p-0">
                         <div class="row text-center py-4">
                             <div class="col-md-3 border-right">
-                                <h2 class="text-info font-weight-bold mb-0">{{ $schoolClass->numeric_value }}</h2>
-                                <span class="text-muted text-uppercase small font-weight-bold">Numeric Value</span>
+                                <h2 class="text-info font-weight-bold mb-0">{{ $schoolClass->numeric_value ?? '&mdash;' }}</h2>
+                                <span class="text-muted text-uppercase small font-weight-bold">Level / Order</span>
                             </div>
                             <div class="col-md-3 border-right">
                                 <h2 class="text-success font-weight-bold mb-0">{{ $schoolClass->classSections->count() }}</h2>
@@ -93,7 +93,7 @@
                         <ul class="nav nav-tabs" id="classTab" role="tablist">
                             <li class="nav-item">
                                 <a class="nav-link active" id="sections-tab" data-toggle="pill" href="#sections" role="tab" aria-controls="sections" aria-selected="true">
-                                    <i class="fas fa-layer-group mr-1"></i> Class Sections
+                                    <i class="fas fa-layer-group mr-1"></i> Class Rosters
                                 </a>
                             </li>
                             <li class="nav-item">

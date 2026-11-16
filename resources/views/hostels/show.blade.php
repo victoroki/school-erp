@@ -108,7 +108,7 @@
                                     <table class="table table-sm table-striped">
                                         <thead>
                                             <tr>
-                                                <th>Student ID</th>
+                                                <th>Admission No</th>
                                                 <th>Name</th>
                                                 <th>Room</th>
                                                 <th>Bed</th>
@@ -118,8 +118,8 @@
                                         <tbody>
                                             @foreach($hostel->hostelAllocations->where('status', 'active') as $allocation)
                                                 <tr>
-                                                    <td>{{ $allocation->student->student_id }}</td>
-                                                    <td>{{ $allocation->student->first_name }} {{ $allocation->student->last_name }}</td>
+                                                    <td>{{ $allocation->student->admission_no ?? '—' }}</td>
+                                                    <td>{{ $allocation->student->full_name }}</td>
                                                     <td>Room {{ $allocation->room->room_number }}</td>
                                                     <td>{{ $allocation->bed_number }}</td>
                                                     <td>{{ $allocation->allocation_date->format('d M, Y') }}</td>

@@ -8,10 +8,16 @@
                     <h1>Books</h1>
                 </div>
                 <div class="col-sm-6">
-                    <a class="btn btn-primary float-right"
-                       href="{{ route('books.create') }}">
-                        Add New
-                    </a>
+                    <div class="float-right">
+                        <a class="btn btn-outline-secondary mr-2"
+                           href="{{ route('books.import') }}">
+                            <i class="fas fa-file-excel mr-1"></i> Import Books
+                        </a>
+                        <a class="btn btn-primary"
+                           href="{{ route('books.create') }}">
+                            Add New
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

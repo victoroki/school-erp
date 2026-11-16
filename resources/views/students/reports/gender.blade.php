@@ -81,28 +81,67 @@
 </style>
 
 @push('page_scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Using fixed Chart.js version for stability -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <script>
     $(function () {
-        var ctx = document.getElementById('genderChart').getContext('2d');
-        var genderChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: {!! json_encode($data->pluck('gender')->map(fn($g) => ucfirst($g))) !!},
-                datasets: [{
-                    data: {!! json_encode($data->pluck('count')) !!},
-                    backgroundColor: ['#007bff', '#e83e8c', '#6c757d'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'bottom' }
-                }
+        const renderGenderChart = () => {
+            const chartData = {!! json_encode($data->pluck('count')) !!};
+            if (!chartData || chartData.length === 0) {
+                console.warn("No gender data available for charting.");
+                return;
             }
-        });
+
+            const ctx = document.getElementById('genderChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut', // Pie or Doughnut looks more premium
+                data: {
+                    labels: {!! json_encode($data->pluck('gender')->map(fn($g) => ucfirst((string)$g))) !!},
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: [
+                            '#3b82f6', // Male (Blue)
+                            '#f43f5e', // Female (Pink)
+                            '#6b7280', // Other/Unknown (Gray)
+                            '#fbbf24', // Amber
+                            '#10b981'  // Emerald
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff',
+                        hoverOffset: 12
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: { size: 12, weight: 'bold' },
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            padding: 12,
+                            cornerRadius: 8,
+                            titleFont: { size: 14 }
+                        }
+                    }
+                }
+            });
+        };
+
+        // Delay slightly to ensure reliable rendering
+        if (typeof Chart !== 'undefined') {
+            renderGenderChart();
+        } else {
+            console.error("Chart.js library failed to load.");
+        }
     });
 </script>
 @endpush

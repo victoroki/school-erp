@@ -1,41 +1,30 @@
-<!-- Financial Year Field -->
-<div class="col-sm-12">
-    {!! Form::label('financial_year_id', 'Financial Year:') !!}
-    <p>{{ $budget->financialYear->name }}</p>
-</div>
-
-<!-- Category Field -->
-<div class="col-sm-12">
-    {!! Form::label('category_id', 'Category:') !!}
-    <p>{{ $budget->category ? $budget->category->name : 'N/A' }}</p>
-</div>
-
-<!-- Category Type Field -->
-<div class="col-sm-12">
-    {!! Form::label('category_type', 'Category Type:') !!}
-    <p>{{ ucfirst($budget->category_type) }}</p>
-</div>
-
-<!-- Amount Field -->
-<div class="col-sm-12">
-    {!! Form::label('amount', 'Amount:') !!}
-    <p>KES {{ number_format($budget->amount, 2) }}</p>
-</div>
-
-<!-- Alert Threshold Field -->
-<div class="col-sm-12">
-    {!! Form::label('alert_threshold', 'Alert Threshold:') !!}
-    <p>{{ $budget->alert_threshold }}%</p>
-</div>
-
-<!-- Created At Field -->
-<div class="col-sm-12">
-    {!! Form::label('created_at', 'Created At:') !!}
-    <p>{{ $budget->created_at }}</p>
-</div>
-
-<!-- Updated At Field -->
-<div class="col-sm-12">
-    {!! Form::label('updated_at', 'Updated At:') !!}
-    <p>{{ $budget->updated_at }}</p>
+<!-- Overview -->
+<div class="detail-card">
+    <div class="detail-card-head">
+        <i class="fas fa-info-circle mr-2"></i> Overview
+    </div>
+    <div class="detail-row">
+        <span class="detail-row-label">Financial Year</span>
+        <span class="detail-row-value">{{ $budget->financialYear->name }}</span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-row-label">Category</span>
+        <span class="detail-row-value">{{ $budget->category ? $budget->category->name : 'N/A' }}</span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-row-label">Category Type</span>
+        <span class="detail-row-value">{{ ucfirst($budget->category_type) }}</span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-row-label">Alert Threshold</span>
+        <span class="detail-row-value">{{ \App\Support\Money::whole($budget->alert_threshold) }}%</span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-row-label">Created At</span>
+        <span class="detail-row-value">{{ $budget->created_at ? $budget->created_at->format('d M, Y') : '—' }}</span>
+    </div>
+    <div class="detail-row">
+        <span class="detail-row-label">Updated At</span>
+        <span class="detail-row-value">{{ $budget->updated_at ? $budget->updated_at->format('d M, Y') : '—' }}</span>
+    </div>
 </div>

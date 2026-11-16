@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
@@ -20,26 +21,28 @@
                 <div class="row">
                     <!-- Student Field -->
                     <div class="form-group col-sm-6">
-                        {!! Form::label('student_id', 'Student:') !!}
-                        {!! Form::select('student_id', $students, null, ['class' => 'form-control select2', 'placeholder' => 'Select Student', 'required']) !!}
+                        {!! Form::label('student_id', 'Student') !!}
+                        {!! Form::select('student_id', $students, null, ['class' => 'form-control select2', 'placeholder' => 'Search students by name or admission no.', 'required' => 'required']) !!}
                     </div>
 
                     <!-- Route Field -->
                     <div class="form-group col-sm-6">
-                        {!! Form::label('route_id', 'Route:') !!}
-                        {!! Form::select('route_id', $routes, request('route_id'), ['class' => 'form-control select2', 'placeholder' => 'Select Route', 'required', 'id' => 'route_select']) !!}
+                        {!! Form::label('route_id', 'Route') !!}
+                        {!! Form::select('route_id', $routes, request('route_id'), ['class' => 'form-control select2', 'placeholder' => 'Search routes', 'required' => 'required', 'id' => 'route_select']) !!}
                     </div>
 
                     <!-- Pickup Stop Field -->
                     <div class="form-group col-sm-6">
-                        {!! Form::label('pickup_stop_id', 'Pickup Stop:') !!}
-                        {!! Form::select('pickup_stop_id', [], null, ['class' => 'form-control select2', 'placeholder' => 'Select Stop', 'id' => 'pickup_stop_select']) !!}
+                        {!! Form::label('pickup_stop_id', 'Pickup Stop') !!}
+                        {!! Form::select('pickup_stop_id', [], request('pickup_stop_id'), ['class' => 'form-control select2', 'id' => 'pickup_stop_select', 'disabled' => 'disabled']) !!}
+                        <small class="form-text text-muted" id="pickup_stop_help">Choose a route first.</small>
                     </div>
 
                     <!-- Drop Stop Field -->
                     <div class="form-group col-sm-6">
-                        {!! Form::label('drop_stop_id', 'Drop Stop:') !!}
-                        {!! Form::select('drop_stop_id', [], null, ['class' => 'form-control select2', 'placeholder' => 'Select Stop', 'id' => 'drop_stop_select']) !!}
+                        {!! Form::label('drop_stop_id', 'Drop Stop') !!}
+                        {!! Form::select('drop_stop_id', [], request('drop_stop_id'), ['class' => 'form-control select2', 'id' => 'drop_stop_select', 'disabled' => 'disabled']) !!}
+                        <small class="form-text text-muted" id="drop_stop_help">Choose a route first.</small>
                     </div>
 
                     <!-- Academic Year Field -->
@@ -71,37 +74,4 @@
     </div>
 @endsection
 
-@push('page_scripts')
-    <script>
-        $(document).ready(function() {
-            $('.select2').select2({
-                theme: 'bootstrap4'
-            });
-
-            $('#route_select').on('change', function() {
-                var routeId = $(this).val();
-                if (routeId) {
-                    $.ajax({
-                        url: '/api/routes/' + routeId + '/stops',
-                        type: 'GET',
-                        dataType: 'json',
-                        success: function(data) {
-                            $('#pickup_stop_select').empty().append('<option value="">Select Stop</option>');
-                            $('#drop_stop_select').empty().append('<option value="">Select Stop</option>');
-                            $.each(data, function(key, stop) {
-                                var option = '<option value="' + stop.stop_id + '">' + stop.stop_name + ' (' + stop.stop_time + ')</option>';
-                                $('#pickup_stop_select').append(option);
-                                $('#drop_stop_select').append(option);
-                            });
-                        }
-                    });
-                }
-            });
-
-            // Trigger change if route_id is in URL
-            if($('#route_select').val()) {
-                $('#route_select').trigger('change');
-            }
-        });
-    </script>
-@endpush
+@include('student_transport_assignments._stop_cascade')

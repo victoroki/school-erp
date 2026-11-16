@@ -7,6 +7,7 @@ use App\Models\LeaveType;
 use App\Models\Staff;
 use App\Models\StaffLeaveBalance;
 use App\Models\AcademicYear;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,9 +15,59 @@ use Laracasts\Flash\Flash;
 
 class LeaveApplicationController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:hr.approve')->only(['approve']);
+    }
+
+    /**
+     * True when the user may apply for leave: either a full HR manager
+     * (hr.manage) or a staff member with the scoped hr.leave.apply permission
+     * (teachers applying for their own leave).
+     */
+    private function canApplyForLeave(): bool
+    {
+        $user = Auth::user();
+
+        return $user
+            && ($user->hasPermission('hr.manage') || $user->hasPermission('hr.leave.apply'));
+    }
+
+    /**
+     * True when the user may view all leave applications (HR manager).
+     */
+    private function canViewAllLeave(): bool
+    {
+        return (bool) Auth::user()?->hasPermission('hr.view');
+    }
+
     public function index(Request $request)
     {
+        $user = Auth::user();
+
+        if (!$user || (!$user->hasPermission('hr.view') && !$user->hasPermission('hr.leave.apply'))) {
+            abort(403);
+        }
+
         $query = LeaveApplication::with(['staff', 'leaveType', 'reliefStaff']);
+
+        // Staff members who only hold hr.leave.apply see only their own applications.
+        $viewAll = $user->hasPermission('hr.view');
+        $currentStaff = Staff::where('user_id', $user->id)->first();
+
+        if (!$viewAll) {
+            if (!$currentStaff) {
+                abort(403);
+            }
+            $query->where('staff_id', $currentStaff->staff_id);
+        }
+
+        // Leave balances and applications hang off a staff record, so the apply
+        // button is only meaningful once the user has one. Without this the
+        // button rendered for every HR user and bounced off create() for the
+        // admins/owners who are not on the staff roster.
+        $canApplyForLeave = $currentStaff !== null
+            && ($user->hasPermission('hr.manage') || $user->hasPermission('hr.leave.apply'));
 
         // Filters
         if ($request->filled('status')) {
@@ -31,15 +82,17 @@ class LeaveApplicationController extends Controller
             $query->where('leave_type_id', $request->leave_type_id);
         }
 
-        $applications = $query->latest()->paginate(20);
+        $applications = $query->latest()->paginate(20)->withQueryString();
         $leaveTypes = LeaveType::where('status', 'active')->get();
-        $staff = Staff::where('employment_status', 'active')->get();
+        $staff = $viewAll ? Staff::where('employment_status', 'active')->get() : collect();
 
-        return view('hr.leave.index', compact('applications', 'leaveTypes', 'staff'));
+        return view('hr.leave.index', compact('applications', 'leaveTypes', 'staff', 'viewAll', 'canApplyForLeave'));
     }
 
     public function create()
     {
+        abort_unless($this->canApplyForLeave(), 403);
+
         $leaveTypes = LeaveType::where('status', 'active')->get();
         $currentYear = AcademicYear::where('is_current', true)->first();
         
@@ -68,6 +121,8 @@ class LeaveApplicationController extends Controller
 
     public function store(Request $request)
     {
+        abort_unless($this->canApplyForLeave(), 403);
+
         $request->validate([
             'leave_type_id' => 'required|exists:leave_types,leave_type_id',
             'start_date' => 'required|date|after_or_equal:today',
@@ -123,12 +178,22 @@ class LeaveApplicationController extends Controller
             'submitted_date' => now(),
         ]);
 
+        AuditTrail::log('Leave', 'CREATE', $leave->id, null, $leave->toArray());
+
         Flash::success('Leave application submitted successfully.');
         return redirect()->route('leave-applications.index');
     }
 
     public function show(LeaveApplication $leaveApplication)
     {
+        $user = Auth::user();
+
+        if (!$user->hasPermission('hr.view')) {
+            // Staff member with hr.leave.apply may only view their own applications.
+            $currentStaff = Staff::where('user_id', $user->id)->first();
+            abort_unless($currentStaff && $leaveApplication->staff_id == $currentStaff->staff_id, 403);
+        }
+
         $leaveApplication->load(['staff', 'leaveType', 'reliefStaff']);
         return view('hr.leave.show', compact('leaveApplication'));
     }
@@ -137,58 +202,93 @@ class LeaveApplicationController extends Controller
     {
         $leave = LeaveApplication::findOrFail($id);
         $user = Auth::user();
-        $currentStaff = Staff::where('user_id', $user->id)->first();
 
-        // Determine approval level
-        $isHOD = $currentStaff && $leave->staff->department_id == $currentStaff->department_id 
-                 && $leave->staff->department->hod_id == $currentStaff->staff_id;
-        $isHR = $user->hasRole('HR Manager') || $user->hasRole('Admin');
+        // HR approval is the single finalizing action (user decision): an
+        // hr.approve holder approves the leave once and the balance is
+        // deducted immediately. The HOD step stays informational.
+        if (!$user->hasPermission('hr.approve')) {
+            abort(403);
+        }
+
+        if ($leave->application_status !== 'pending') {
+            Flash::error('Only pending applications can be approved.');
+            return redirect()->back();
+        }
 
         DB::beginTransaction();
         try {
-            if ($isHOD && $leave->hod_approval_status == 'pending') {
+            // Record the HR approval and finalize in one step.
+            $leave->update([
+                'hr_approval_status' => 'approved',
+                'hr_approved_by' => $user->id,
+                'hr_approval_date' => now(),
+                'hr_comments' => $request->comments,
+                'final_status' => 'approved',
+                'application_status' => 'approved',
+            ]);
+
+            // Record the department HOD as approved too when the approver
+            // happens to be that HOD, so the workflow card doesn't show a
+            // permanently pending HOD badge after finalization.
+            $currentStaff = Staff::where('user_id', $user->id)->first();
+            if ($currentStaff
+                && $leave->staff
+                && $leave->staff->department_id == $currentStaff->department_id
+                && optional($leave->staff->department)->hod_id == $currentStaff->staff_id
+                && $leave->hod_approval_status == 'pending') {
                 $leave->update([
                     'hod_approval_status' => 'approved',
                     'hod_approved_by' => $user->id,
                     'hod_approval_date' => now(),
                     'hod_comments' => $request->comments,
                 ]);
-                Flash::success('Leave approved by HOD.');
-            } elseif ($isHR && $leave->hr_approval_status == 'pending') {
-                $leave->update([
-                    'hr_approval_status' => 'approved',
-                    'hr_approved_by' => $user->id,
-                    'hr_approval_date' => now(),
-                    'hr_comments' => $request->comments,
-                ]);
+            }
 
-                // If both approvals done, finalize
-                if ($leave->hod_approval_status == 'approved') {
-                    $leave->update([
-                        'final_status' => 'approved',
-                        'application_status' => 'approved',
+            // Deduct from the staff member's leave balance for the current
+            // academic year. Balance rows are not provisioned automatically
+            // anywhere yet, so build one from the leave type's entitlement
+            // when missing instead of silently skipping the deduction.
+            $currentYear = AcademicYear::where('is_current', true)->first();
+
+            if (!$currentYear) {
+                Flash::warning('Leave approved, but no current academic year is configured; the leave balance was not deducted.');
+            } else {
+                $balance = StaffLeaveBalance::where('staff_id', $leave->staff_id)
+                    ->where('leave_type_id', $leave->leave_type_id)
+                    ->where('academic_year_id', $currentYear->academic_year_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$balance) {
+                    $balance = StaffLeaveBalance::create([
+                        'staff_id'          => $leave->staff_id,
+                        'leave_type_id'     => $leave->leave_type_id,
+                        'academic_year_id'  => $currentYear->academic_year_id,
+                        'total_entitlement' => $leave->leaveType->days_allowed,
+                        'carried_forward'   => 0,
+                        'total_available'   => $leave->leaveType->days_allowed,
+                        'used'              => 0,
+                        'remaining'         => $leave->leaveType->days_allowed,
                     ]);
-
-                    // Deduct from leave balance
-                    $currentYear = AcademicYear::where('is_current', true)->first();
-                    $balance = StaffLeaveBalance::where('staff_id', $leave->staff_id)
-                        ->where('leave_type_id', $leave->leave_type_id)
-                        ->where('academic_year_id', $currentYear->academic_year_id ?? null)
-                        ->first();
-
-                    if ($balance) {
-                        $balance->used += $leave->working_days;
-                        $balance->remaining = $balance->total_available - $balance->used;
-                        $balance->save();
-                    }
                 }
 
-                Flash::success('Leave approved by HR.');
-            } else {
-                Flash::error('You are not authorized to approve this leave.');
-                DB::rollBack();
-                return redirect()->back();
+                $remainingBefore = $balance->remaining;
+
+                $balance->used += $leave->working_days;
+                $balance->remaining = $balance->total_available - $balance->used;
+                $balance->save();
+
+                // If the deduction pushes remaining below zero, let the
+                // balance go negative rather than hiding the over-use, and
+                // warn HR so they can top up the entitlement first.
+                if ($balance->remaining < 0) {
+                    Flash::warning("Leave approved, but the staff member had only {$remainingBefore} day(s) remaining of the {$leave->working_days} requested. Balance went negative — review the entitlement.");
+                } else {
+                    Flash::success("Leave approved and {$leave->working_days} day(s) deducted from the balance.");
+                }
             }
+
+            AuditTrail::log('Leave', 'APPROVE', $leave->id, null, $leave->toArray());
 
             DB::commit();
             return redirect()->route('leave-applications.show', $leave->id);
@@ -201,17 +301,31 @@ class LeaveApplicationController extends Controller
 
     public function reject($id, Request $request)
     {
+        // PHASE 5 security fix: reject() had no authorization at all — any
+        // authenticated web session could reject any application. Same rule
+        // as approve(): hr.approve holders or the applicant's HOD.
+        $user = Auth::user();
+        $leave = LeaveApplication::with('staff.department')->findOrFail($id);
+        $currentStaff = Staff::where('user_id', $user->id)->first();
+
+        $isHod = $currentStaff
+            && $leave->staff
+            && $leave->staff->department_id === $currentStaff->department_id
+            && optional($leave->staff->department)->hod_id === $currentStaff->staff_id;
+
+        abort_unless($user->hasPermission('hr.approve') || $isHod, 403);
+
         $request->validate([
             'rejection_reason' => 'required|string|min:10',
         ]);
 
-        $leave = LeaveApplication::findOrFail($id);
-        
         $leave->update([
             'application_status' => 'rejected',
             'final_status' => 'rejected',
             'rejection_reason' => $request->rejection_reason,
         ]);
+
+        AuditTrail::log('Leave', 'REJECT', $leave->id, ['application_status' => 'pending'], $leave->toArray());
 
         Flash::success('Leave application rejected.');
         return redirect()->route('leave-applications.index');
@@ -224,7 +338,9 @@ class LeaveApplicationController extends Controller
             return redirect()->back();
         }
 
+        $oldData = $leaveApplication->toArray();
         $leaveApplication->delete();
+        AuditTrail::log('Leave', 'DELETE', $leaveApplication->id, $oldData, null);
         Flash::success('Leave application deleted successfully.');
         return redirect()->route('leave-applications.index');
     }

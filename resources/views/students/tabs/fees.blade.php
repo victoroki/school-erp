@@ -59,12 +59,23 @@
                             </thead>
                             <tbody>
                                 @foreach($student->payments->take(10) as $payment)
-                                    <tr>
-                                        <td>{{ $payment->payment_date->format('d M, Y') }}</td>
-                                        <td class="font-weight-bold">{{ $payment->receipt_number }}</td>
-                                        <td class="font-weight-bold text-success">KES {{ number_format($payment->amount, 2) }}</td>
-                                        <td><span class="badge badge-info">{{ $payment->payment_method }}</span></td>
-                                        <td>{{ $payment->collectedBy->name ?? 'N/A' }}</td>
+                                    {{-- A reversed payment is retained so the history is
+                                         complete, but it is no longer money received. --}}
+                                    <tr class="{{ $payment->isReversed() ? 'opacity-50' : '' }}">
+                                        <td>{{ $payment->payment_date ? $payment->payment_date->format('d M, Y') : '—' }}</td>
+                                        <td class="font-weight-bold">
+                                            {{ $payment->receipt_number }}
+                                            @if($payment->isReversed())
+                                                <span class="badge badge-danger ml-1">VOID</span>
+                                            @endif
+                                        </td>
+                                        <td class="font-weight-bold {{ $payment->isReversed() ? 'text-muted text-decoration-line-through' : 'text-success' }}">KES {{ number_format($payment->amount, 2) }}</td>
+                                        <td>
+                                            <span class="badge badge-info">
+                                                {{ $payment->payment_method ? \Illuminate\Support\Str::title(str_replace('_', ' ', $payment->payment_method)) : 'Unspecified' }}
+                                            </span>
+                                        </td>
+                                        <td>{{ $payment->collectedBy->full_name ?? 'N/A' }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

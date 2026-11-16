@@ -44,7 +44,9 @@
     </div>
 </div>
 
-{!! Form::hidden('created_by', Auth::id()) !!}
+{{-- created_by is set server-side from the authenticated user in
+     ExamResultController::store/update/saveOne. It must never come from the
+     request, or a crafted POST could attribute marks to another user. --}}
 
 @push('page_scripts')
 <script>
@@ -58,7 +60,7 @@
         // Note: Real implementation would need routes for these.
         $('#class_section_id').on('change', function() {
             // Simplified for demonstration - usually you'd hit an API endpoint here
-            console.log("Class section changed to: " + $(this).val());
+            // Class section changed
         });
     });
 </script>

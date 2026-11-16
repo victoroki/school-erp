@@ -9,6 +9,15 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+    # ── Storage symlink fallback (shared hosting) ─────────────────────────
+    # When FollowSymLinks is disabled, Apache refuses to serve files through
+    # the public/storage symlink created by `storage:link` (403/404). This
+    # rewrite serves them directly from the real directory instead. It is a
+    # no-op on hosts where the symlink works fine.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^storage/(.*)$ storage/app/public/$1 [L]
+
     # Redirect Trailing Slashes If Not A Folder...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_URI} (.+)/$

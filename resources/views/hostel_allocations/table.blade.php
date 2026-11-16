@@ -4,7 +4,8 @@
             <thead>
             <tr>
                 <th>Student</th>
-                <th>Hostel & Room</th>
+                <th>Class / Stream</th>
+                <th>Hostel &amp; Room</th>
                 <th>Bed</th>
                 <th>Dates</th>
                 <th>Status</th>
@@ -12,19 +13,22 @@
             </tr>
             </thead>
             <tbody>
-            @foreach($hostelAllocations as $hostelAllocation)
-                <tr>
+            @forelse($hostelAllocations as $hostelAllocation)
+                <tr class="{{ $hostelAllocation->status !== 'active' ? 'text-muted' : '' }}">
                     <td>
-                        <strong>{{ $hostelAllocation->student->first_name ?? 'N/A' }} {{ $hostelAllocation->student->last_name ?? '' }}</strong><br>
-                        <small class="text-muted"><i class="fas fa-id-card mr-1"></i>{{ $hostelAllocation->student->student_id ?? 'N/A' }}</small>
+                        <strong>{{ optional($hostelAllocation->student)->first_name ?? 'N/A' }} {{ optional($hostelAllocation->student)->last_name ?? '' }}</strong><br>
+                        <small class="text-muted"><i class="fas fa-id-card mr-1"></i>{{ optional($hostelAllocation->student)->admission_no ?? 'N/A' }}</small>
+                    </td>
+                    <td><small>{{ $hostelAllocation->class_info }}</small></td>
+                    <td>
+                        {{ optional($hostelAllocation->hostel)->name ?? 'N/A' }}<br>
+                        <small class="badge badge-light border">Room: {{ optional($hostelAllocation->room)->room_number ?? 'N/A' }}</small>
                     </td>
                     <td>
-                        {{ $hostelAllocation->hostel->name ?? 'N/A' }}<br>
-                        <small class="badge badge-light border">Room: {{ $hostelAllocation->room->room_number ?? 'N/A' }}</small>
+                        <span class="badge badge-light border">{{ $hostelAllocation->bed_number ?? '—' }}</span>
                     </td>
-                    <td><span class="badge badge-light border">{{ $hostelAllocation->bed_number ?? 'N/A' }}</span></td>
                     <td>
-                        <small><strong>Allot:</strong> {{ $hostelAllocation->allocation_date->format('d M, Y') }}</small>
+                        <small><strong>Allot:</strong> {{ optional($hostelAllocation->allocation_date)->format('d M, Y') }}</small>
                         @if($hostelAllocation->vacating_date)
                             <br><small><strong>Vacate:</strong> {{ $hostelAllocation->vacating_date->format('d M, Y') }}</small>
                         @endif
@@ -44,25 +48,25 @@
                         {!! Form::open(['route' => ['hostel-allocations.destroy', $hostelAllocation->allocation_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
                             @if($hostelAllocation->status === 'active')
-                                <button type="button" class="btn btn-outline-warning btn-xs" 
-                                        data-toggle="modal" data-target="#checkoutModal{{ $hostelAllocation->allocation_id }}" 
+                                <button type="button" class="btn btn-outline-warning btn-xs"
+                                        data-toggle="modal" data-target="#checkoutModal{{ $hostelAllocation->allocation_id }}"
                                         title="Checkout Student">
                                     <i class="fas fa-sign-out-alt"></i>
                                 </button>
-                                <a href="{{ route('hostel-allocations.transfer-form', [$hostelAllocation->allocation_id]) }}"
+                                <a href="{{ route('hostel-allocations.transfer-form', $hostelAllocation->allocation_id) }}"
                                    class='btn btn-outline-info btn-xs' title="Transfer Room">
                                     <i class="fas fa-exchange-alt"></i>
                                 </a>
                             @endif
-                            <a href="{{ route('hostel-allocations.show', [$hostelAllocation->allocation_id]) }}"
+                            <a href="{{ route('hostel-allocations.show', $hostelAllocation->allocation_id) }}"
                                class='btn btn-outline-primary btn-xs' title="View Details">
                                 <i class="far fa-eye"></i>
                             </a>
-                            <a href="{{ route('hostel-allocations.edit', [$hostelAllocation->allocation_id]) }}"
+                            <a href="{{ route('hostel-allocations.edit', $hostelAllocation->allocation_id) }}"
                                class='btn btn-outline-secondary btn-xs' title="Edit">
                                 <i class="far fa-edit"></i>
                             </a>
-                            {!! Form::button('<i class="far fa-trash-alt"></i>', ['type' => 'submit', 'class' => 'btn btn-outline-danger btn-xs', 'title' => 'Delete', 'onclick' => "return confirm('Are you sure you want to delete this allocation?')"]) !!}
+                            {!! Form::button('<i class="far fa-trash-alt"></i>', ['type' => 'submit', 'class' => 'btn btn-outline-danger btn-xs', 'title' => 'Delete', 'onclick' => "return confirm('Delete this allocation record? The bed will be freed if it is still active.')"]) !!}
                         </div>
                         {!! Form::close() !!}
 
@@ -73,15 +77,20 @@
                                     <div class="modal-content">
                                         {!! Form::open(['route' => ['hostel-allocations.checkout', $hostelAllocation->allocation_id]]) !!}
                                         <div class="modal-header">
-                                            <h5 class="modal-title">Checkout Student: {{ optional($hostelAllocation->student)->first_name ?? 'Unknown Student' }}</h5>
+                                            <h5 class="modal-title">Checkout {{ optional($hostelAllocation->student)->first_name ?? 'Student' }}</h5>
                                             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                                 <span aria-hidden="true">&times;</span>
                                             </button>
                                         </div>
                                         <div class="modal-body text-left">
-                                            <div class="form-group font-weight-normal">
+                                            <p class="mb-2">
+                                                Room <strong>{{ optional($hostelAllocation->room)->room_number ?? 'N/A' }}</strong>,
+                                                bed <strong>{{ $hostelAllocation->bed_number ?? '—' }}</strong>.
+                                                This frees the bed and marks the allocation vacated.
+                                            </p>
+                                            <div class="form-group font-weight-normal mb-0">
                                                 {!! Form::label('checkout_notes', 'Checkout Notes:') !!}
-                                                {!! Form::textarea('checkout_notes', null, ['class' => 'form-control', 'rows' => 3, 'placeholder' => 'Reason for vacating, damages etc.']) !!}
+                                                {!! Form::textarea('checkout_notes', null, ['class' => 'form-control', 'rows' => 3, 'placeholder' => 'Reason for vacating, damages, keys returned...']) !!}
                                             </div>
                                         </div>
                                         <div class="modal-footer">
@@ -95,14 +104,48 @@
                         @endif
                     </td>
                 </tr>
-            @endforeach
+            @empty
+                <tr>
+                    <td colspan="7" class="text-center py-4">
+                        <i class="fas fa-bed fa-2x text-muted mb-2 d-block"></i>
+                        <strong>No allocations found</strong>
+                        <p class="text-muted small mb-2">
+                            @php
+                                $hasFilters = request()->filled('search')
+                                    || request()->filled('hostel_id')
+                                    || request()->filled('class_id')
+                                    || request()->filled('section_id')
+                                    || request()->filled('status')
+                                    || request()->filled('academic_year_id');
+                            @endphp
+                            @if($hasFilters)
+                                No allocation matches the filters. Try widening the search or reset them.
+                            @else
+                                No student has been given a bed yet.
+                            @endif
+                        </p>
+                        <a href="{{ route('hostel-allocations.create') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus mr-1"></i> Allocate a Bed
+                        </a>
+                        <a href="{{ route('hostel-allocations.bulk-form') }}" class="btn btn-info btn-sm">
+                            <i class="fas fa-users mr-1"></i> Bulk Allocation
+                        </a>
+                    </td>
+                </tr>
+            @endforelse
             </tbody>
         </table>
     </div>
 
-    <div class="card-footer clearfix">
-        <div class="float-right">
-            @include('adminlte-templates::common.paginate', ['records' => $hostelAllocations])
+    @if($hostelAllocations->hasPages())
+        <div class="card-footer clearfix">
+            <div class="float-left text-muted small pt-2">
+                Showing {{ $hostelAllocations->firstItem() }}–{{ $hostelAllocations->lastItem() }}
+                of {{ $hostelAllocations->total() }}
+            </div>
+            <div class="float-right">
+                @include('adminlte-templates::common.paginate', ['records' => $hostelAllocations])
+            </div>
         </div>
-    </div>
+    @endif
 </div>

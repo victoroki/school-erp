@@ -4,9 +4,9 @@
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
-                <div class="col-sm-12">
-                    <h1>
-                        Edit Student Parent Relationship
+                <div class="col-sm-6">
+                    <h1 class="text-primary font-weight-bold">
+                        <i class="fas fa-users mr-2"></i> Edit Parent Link
                     </h1>
                 </div>
             </div>
@@ -17,9 +17,9 @@
 
         @include('adminlte-templates::common.errors')
 
-        <div class="card">
+        <div class="card card-outline card-primary shadow-sm">
 
-            {!! Form::model($studentParentRelationship, ['route' => ['student-parent-relationships.update', $student-parent-relationship->id], 'method' => 'patch']) !!}
+            {!! Form::model($studentParentRelationship, ['route' => ['student-parent-relationships.update', $studentParentRelationship->id], 'method' => 'patch']) !!}
 
             <div class="card-body">
                 <div class="row">
@@ -27,9 +27,11 @@
                 </div>
             </div>
 
-            <div class="card-footer">
-                {!! Form::submit('Save', ['class' => 'btn btn-primary']) !!}
-                <a href="{{ route('student-parent-relationships.index') }}" class="btn btn-default"> Cancel </a>
+            <div class="card-footer text-right bg-white">
+                <a href="{{ route('student-parent-relationships.index') }}" class="btn btn-light border mr-2">Cancel</a>
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="fas fa-save mr-1"></i> Save Changes
+                </button>
             </div>
 
             {!! Form::close() !!}

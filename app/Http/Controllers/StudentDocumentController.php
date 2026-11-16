@@ -6,6 +6,7 @@ use App\Http\Requests\CreateStudentDocumentRequest;
 use App\Http\Requests\UpdateStudentDocumentRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\StudentDocumentRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use Illuminate\Support\Facades\Storage;
@@ -19,6 +20,8 @@ class StudentDocumentController extends AppBaseController
     public function __construct(StudentDocumentRepository $studentDocumentRepo)
     {
         $this->studentDocumentRepository = $studentDocumentRepo;
+        $this->middleware('can:students.view')->only(['index', 'show']);
+        $this->middleware('can:students.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -27,8 +30,10 @@ class StudentDocumentController extends AppBaseController
     private function getDropdownData()
     {
         return [
-            'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' - ', student_id) as full_name")
-                ->pluck('full_name', 'student_id')
+            // `dropdown_name` alias: `full_name` would be shadowed by the
+            // Student fullName accessor and resolve to empty strings.
+            'students' => Student::selectRaw("student_id, CONCAT(first_name, ' ', last_name, ' - ', student_id) as dropdown_name")
+                ->pluck('dropdown_name', 'student_id')
                 ->toArray(),
             'documentTypes' => [
                 'birth_certificate' => 'Birth Certificate',
@@ -87,7 +92,7 @@ class StudentDocumentController extends AppBaseController
             });
         }
 
-        $studentDocuments = $query->with(['student.studentClassEnrollments.classSection'])
+        $studentDocuments = $query->with(['student.activeEnrollment.classSection.schoolClass', 'student.activeEnrollment.classSection.section'])
             ->orderBy('uploaded_at', 'desc')
             ->paginate(15)
             ->appends($request->all());
@@ -148,6 +153,8 @@ class StudentDocumentController extends AppBaseController
 
         $studentDocument = $this->studentDocumentRepository->create($input);
 
+        AuditTrail::log('Student Document', 'CREATE', $studentDocument->document_id, null, $studentDocument->toArray());
+
         Flash::success('Student Document saved successfully.');
 
         return redirect(route('student-documents.index'));
@@ -158,7 +165,7 @@ class StudentDocumentController extends AppBaseController
      */
     public function show($id)
     {
-        $studentDocument = $this->studentDocumentRepository->find($id);
+        $studentDocument = \App\Models\StudentDocument::with('student')->find($id);
 
         if (empty($studentDocument)) {
             Flash::error('Student Document not found');
@@ -224,7 +231,10 @@ class StudentDocumentController extends AppBaseController
             }
         }
 
+        $oldData = $studentDocument->toArray();
         $studentDocument = $this->studentDocumentRepository->update($input, $id);
+
+        AuditTrail::log('Student Document', 'UPDATE', $studentDocument->document_id, $oldData, $studentDocument->toArray());
 
         Flash::success('Student Document updated successfully.');
 
@@ -251,7 +261,10 @@ class StudentDocumentController extends AppBaseController
             Storage::disk('public')->delete($studentDocument->file_path);
         }
 
+        $oldData = $studentDocument->toArray();
         $this->studentDocumentRepository->delete($id);
+
+        AuditTrail::log('Student Document', 'DELETE', $id, $oldData, null);
 
         Flash::success('Student Document deleted successfully.');
 

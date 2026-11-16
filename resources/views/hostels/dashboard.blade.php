@@ -41,7 +41,7 @@
             <div class="col-lg-3 col-6">
                 <div class="small-box bg-warning">
                     <div class="inner">
-                        <h3>{{ $stats['total_capacity'] - $stats['total_occupied'] }}</h3>
+                        <h3>{{ $stats['vacant_beds'] }}</h3>
                         <p>Available Beds</p>
                     </div>
                     <div class="icon">

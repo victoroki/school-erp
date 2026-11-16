@@ -8,6 +8,7 @@ use App\Http\Controllers\AppBaseController;
 use App\Models\EmailTemplate;
 use App\Models\TemplateCategory;
 use App\Repositories\EmailTemplateRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -19,6 +20,8 @@ class EmailTemplateController extends AppBaseController
     public function __construct(EmailTemplateRepository $emailTemplateRepo)
     {
         $this->emailTemplateRepository = $emailTemplateRepo;
+        $this->middleware('can:communication.view')->only(['index', 'show']);
+        $this->middleware('can:communication.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getDropdownData()
@@ -43,7 +46,7 @@ class EmailTemplateController extends AppBaseController
             $query->where('status', $request->status);
         }
 
-        $emailTemplates = $query->paginate(10);
+        $emailTemplates = $query->paginate(10)->withQueryString();
         $dropdownData = $this->getDropdownData();
 
         return view('email_templates.index', compact('emailTemplates', 'dropdownData'));
@@ -67,6 +70,8 @@ class EmailTemplateController extends AppBaseController
         $input['created_by'] = auth()->id();
 
         $emailTemplate = $this->emailTemplateRepository->create($input);
+
+        AuditTrail::log('Email Template', 'CREATE', $emailTemplate->template_id, null, $emailTemplate->toArray());
 
         Flash::success('Email Template saved successfully.');
 
@@ -119,7 +124,10 @@ class EmailTemplateController extends AppBaseController
             return redirect(route('emailTemplates.index'));
         }
 
+        $oldData = $emailTemplate->toArray();
         $emailTemplate = $this->emailTemplateRepository->update($request->all(), $id);
+
+        AuditTrail::log('Email Template', 'UPDATE', $emailTemplate->template_id, $oldData, $emailTemplate->toArray());
 
         Flash::success('Email Template updated successfully.');
 
@@ -141,7 +149,10 @@ class EmailTemplateController extends AppBaseController
             return redirect(route('emailTemplates.index'));
         }
 
+        $oldData = $emailTemplate->toArray();
         $this->emailTemplateRepository->delete($id);
+
+        AuditTrail::log('Email Template', 'DELETE', $id, $oldData, null);
 
         Flash::success('Email Template deleted successfully.');
 

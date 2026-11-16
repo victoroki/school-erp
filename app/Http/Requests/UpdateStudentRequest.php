@@ -30,6 +30,7 @@ class UpdateStudentRequest extends FormRequest
         $studentId = $this->route('student');
         $rules['admission_no'] .= '|' . Rule::unique('students', 'admission_no')->ignore($studentId, 'student_id');
         $rules['user_id'] .= '|' . Rule::unique('students', 'user_id')->ignore($studentId, 'student_id');
+        $rules['photo'] = 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048';
         return $rules;
     }
 }

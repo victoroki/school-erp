@@ -9,6 +9,11 @@ use Illuminate\Http\Request;
 
 class TransportReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:transport.view');
+    }
+
     public function index()
     {
         return view('transport.reports.index');

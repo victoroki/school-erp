@@ -2,13 +2,36 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\GeneratesDailySequenceNumber;
 use Illuminate\Database\Eloquent\Model;
 
 class Requisition extends Model
 {
+    use GeneratesDailySequenceNumber;
+
     public $table = 'requisitions';
 
     protected $primaryKey = 'requisition_id';
+
+    protected static function sequenceColumn(): string
+    {
+        return 'requisition_number';
+    }
+
+    protected static function sequencePrefix(): string
+    {
+        return 'REQ-';
+    }
+
+    /**
+     * REQ-YYYYMMDD-NNN. Sequential and retried against the unique index
+     * rather than random, so two requisitions raised at the same instant can
+     * never share a number.
+     */
+    public static function generateNumber(): string
+    {
+        return static::nextSequenceNumber();
+    }
 
     public $fillable = [
         'requisition_number',
@@ -69,6 +92,16 @@ class Requisition extends Model
     public function items()
     {
         return $this->hasMany(\App\Models\RequisitionItem::class, 'requisition_id');
+    }
+
+    /**
+     * Purchase orders generated from this requisition. Currently at most one
+     * (created at approval time), but a hasMany keeps the door open for split
+     * orders across suppliers without another migration.
+     */
+    public function purchaseOrders()
+    {
+        return $this->hasMany(\App\Models\PurchaseOrder::class, 'requisition_id', 'requisition_id');
     }
 
     // Accessor methods

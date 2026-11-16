@@ -7,17 +7,16 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
-    /**
-     * Define the application's command schedule.
-     */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->command('communication:fee-reminders')->dailyAt('08:00')->withoutOverlapping();
+
+        // Term status follows the term dates, so it needs re-deriving as the
+        // year moves along. Early morning so anything reading the current term
+        // during the school day sees the right one.
+        $schedule->command('academic:sync-terms')->dailyAt('00:15')->withoutOverlapping();
     }
 
-    /**
-     * Register the commands for the application.
-     */
     protected function commands(): void
     {
         $this->load(__DIR__.'/Commands');

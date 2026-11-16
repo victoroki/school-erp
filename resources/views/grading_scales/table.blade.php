@@ -30,9 +30,9 @@
                         <span class="text-muted">{{ $gradingScale->description ?? '--' }}</span>
                     </td>
                     <td style="width: 120px" class="text-center">
-                        {!! Form::open(['route' => ['grading-scales.destroy', $gradingScale->grade_id], 'method' => 'delete']) !!}
+                        {!! Form::open(['route' => ['gradingScales.destroy', $gradingScale->grade_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>
-                            <a href="{{ route('grading-scales.edit', [$gradingScale->grade_id]) }}"
+                            <a href="{{ route('gradingScales.edit', [$gradingScale->grade_id]) }}"
                                class='btn btn-light btn-sm' title="Edit">
                                 <i class="far fa-edit text-primary"></i>
                             </a>

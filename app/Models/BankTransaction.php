@@ -18,7 +18,10 @@ class BankTransaction extends Model
         'reference_number',
         'source_account_id',
         'target_account_id',
-        'created_by'
+        'source_type',
+        'source_id',
+        'created_by',
+        'status'
     ];
 
     protected $casts = [

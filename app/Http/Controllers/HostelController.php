@@ -6,6 +6,7 @@ use App\Http\Requests\CreateHostelRequest;
 use App\Http\Requests\UpdateHostelRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\HostelRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -17,13 +18,15 @@ class HostelController extends AppBaseController
     public function __construct(HostelRepository $hostelRepo)
     {
         $this->hostelRepository = $hostelRepo;
+        $this->middleware('can:hostel.view')->only(['index', 'show']);
+        $this->middleware('can:hostel.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getDropdownData()
     {
         return [
-            'staff' => \App\Models\Staff::selectRaw("id, CONCAT(first_name, ' ', last_name) as name")
-                ->pluck('name', 'id')
+            'staff' => \App\Models\Staff::selectRaw("staff_id, CONCAT(first_name, ' ', last_name) as name")
+                ->pluck('name', 'staff_id')
                 ->toArray()
         ];
     }
@@ -56,6 +59,8 @@ class HostelController extends AppBaseController
         $input = $request->all();
 
         $hostel = $this->hostelRepository->create($input);
+
+        AuditTrail::log('Hostel', 'CREATE', $hostel->hostel_id, null, $hostel->toArray());
 
         Flash::success('Hostel saved successfully.');
 
@@ -105,7 +110,10 @@ class HostelController extends AppBaseController
             return redirect(route('hostels.index'));
         }
 
+        $oldData = $hostel->toArray();
         $hostel = $this->hostelRepository->update($request->all(), $id);
+
+        AuditTrail::log('Hostel', 'UPDATE', $hostel->hostel_id, $oldData, $hostel->toArray());
 
         Flash::success('Hostel updated successfully.');
 
@@ -130,7 +138,10 @@ class HostelController extends AppBaseController
             return redirect()->back();
         }
 
+        $oldData = $hostel->toArray();
         $this->hostelRepository->delete($id);
+
+        AuditTrail::log('Hostel', 'DELETE', $id, $oldData, null);
 
         Flash::success('Hostel deleted successfully.');
 

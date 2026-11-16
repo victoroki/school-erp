@@ -29,10 +29,10 @@
                     </td>
                     <td class="align-middle">
                         <div class="d-flex align-items-center">
-                            <img src="{{ $student->avatar_url }}" class="img-circle img-sm mr-2 border shadow-sm" style="width: 38px; height: 38px; object-fit: cover;">
-                            <div>
+                            @include('students._avatar', ['student' => $student, 'size' => 38])
+                            <div class="ml-2">
                                 <div class="font-weight-bold">{{ $student->full_name }}</div>
-                                <div class="x-small text-muted">{{ $student->roll_number ? 'Roll: '.$student->roll_number : '' }}</div>
+                                <div class="x-small text-muted">{{ $student->nemis_number ? 'NEMIS: '.$student->nemis_number : '' }}</div>
                             </div>
                         </div>
                     </td>

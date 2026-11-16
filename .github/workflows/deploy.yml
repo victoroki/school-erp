@@ -1,0 +1,631 @@
+name: Build & Deploy
+
+# Deploys the SAME build to 3 school subdomains over FTP (cPanel, no SSH).
+# After each upload the per-school deploy-hook.php endpoint runs
+# migrations / storage:link / config caches over HTTP.
+#
+# Real hostnames & paths live ONLY in GitHub Secrets:
+#   SCHOOL1_FTP_SERVER, SCHOOL1_SERVER_DIR, SCHOOL1_APP_URL, ...
+#
+# vendor/ is only uploaded when composer.json/composer.lock changed since
+# the last successful deploy tag — UI-only pushes skip ~30MB of FTP time.
+#
+# REQUIRED vs OPTIONAL SCHOOLS
+# Each matrix entry carries `required`. It decides what an unconfigured school
+# does, and it exists because a skip used to be indistinguishable from a
+# deploy: the step reported "skip=true", every later step was skipped, and the
+# run concluded SUCCESS — so a school that received nothing looked exactly like
+# one that had been updated.
+#
+#   required: true   the school is live. Incomplete secrets FAIL the run, naming
+#                    every missing secret, and tag-release does not run.
+#   required: false  not provisioned yet. The deploy is skipped and reported as
+#                    a warning; the run stays green.
+#
+# Flip a school to `required: true` as soon as its secrets exist, so a future
+# silent skip cannot pass for a deploy.
+
+on:
+  push:
+    branches: [feat/rbac-consolidated-permissions]   # change to main when you go live
+  workflow_dispatch:
+
+# Same trigger as test.yml: a push runs both workflows in parallel. The deploy
+# still gates on the test job below, so the FTP upload only starts once the
+# migrations + suite have passed in this run.
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false   # never kill a mid-deploy to one school
+
+# Least privilege by default; only tag-release escalates (below).
+permissions:
+  contents: read
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────
+  # TEST — gate: migrations + PHPUnit must pass before anything ships
+  # (runs the same steps as test.yml, inline, inside this pipeline so the
+  # deploy is blocked in the SAME run — a workflow_call dependency would be
+  # fine too, but inline keeps the run log in one place)
+  # ──────────────────────────────────────────────────────────────────────
+  test:
+    name: Tests (migrations + PHPUnit)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: school_erp_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, bcmath, pdo_mysql, fileinfo, openssl, tokenizer, gd, zip
+          coverage: none
+
+      - name: Install Composer dependencies (with dev)
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Create .env for CI
+        run: |
+          mkdir -p storage/framework/cache/data storage/framework/sessions \
+                   storage/framework/views storage/logs storage/app/public bootstrap/cache
+          {
+            echo "APP_NAME='School ERP'"
+            echo "APP_ENV=testing"
+            echo "APP_KEY="
+            echo "APP_DEBUG=true"
+            echo "APP_URL=http://localhost"
+            echo ""
+            echo "LOG_CHANNEL=stack"
+            echo "LOG_LEVEL=error"
+            echo ""
+            echo "DB_CONNECTION=mysql"
+            echo "DB_HOST=127.0.0.1"
+            echo "DB_PORT=3306"
+            echo "DB_DATABASE=school_erp_test"
+            echo "DB_USERNAME=root"
+            echo "DB_PASSWORD=root"
+            echo ""
+            echo "CACHE_DRIVER=array"
+            echo "QUEUE_CONNECTION=sync"
+            echo "SESSION_DRIVER=array"
+            echo "MAIL_MAILER=array"
+          } > .env
+
+      - name: Generate app key
+        run: php artisan key:generate --force
+
+      # Fails fast on a bad migration before the multi-minute suite runs.
+      - name: Run all migrations on a clean database
+        run: php artisan migrate --force
+
+      - name: Run seeders
+        run: php artisan db:seed --force
+
+      - name: Run test suite
+        run: php artisan test
+
+  # ──────────────────────────────────────────────────────────────────────
+  # BUILD — one artifact shared by every school deploy
+  # ──────────────────────────────────────────────────────────────────────
+  build:
+    name: Build
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      vendor_changed: ${{ steps.deps.outputs.vendor_changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # full history so we can diff against deploy tags
+
+      - name: Detect dependency changes since last deploy
+        id: deps
+        run: |
+          LAST_TAG=$(git describe --tags --match='deploy-*' --abbrev=0 2>/dev/null || true)
+
+          if [ -z "${LAST_TAG}" ]; then
+            echo "vendor_changed=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::No previous deploy tag — vendor will be uploaded."
+          else
+            COUNT=$(git diff --name-only "${LAST_TAG}" HEAD -- composer.json composer.lock | wc -l)
+            if [ "${COUNT}" -gt 0 ]; then
+              echo "vendor_changed=true" >> "$GITHUB_OUTPUT"
+              echo "::notice::Dependencies changed since ${LAST_TAG} — vendor WILL be uploaded."
+            else
+              echo "vendor_changed=false" >> "$GITHUB_OUTPUT"
+              echo "::notice::Dependencies unchanged since ${LAST_TAG} — vendor upload SKIPPED."
+            fi
+          fi
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, bcmath, pdo_mysql, fileinfo, openssl, tokenizer, gd
+          coverage: none
+
+      - name: Install Composer dependencies (production)
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Build frontend assets (Vite)
+        run: npm ci && npm run build
+
+      # Same artifact name either way — the deploy job stays identical.
+      - name: Upload build artifact (includes vendor)
+        if: steps.deps.outputs.vendor_changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build-${{ github.sha }}
+          retention-days: 30
+          include-hidden-files: true   # .htaccess MUST ship with the build
+          path: |
+            .
+            !.git/**
+            !.github/**
+            !node_modules/**
+            !tests/**
+
+      - name: Upload build artifact (code only — vendor unchanged)
+        if: steps.deps.outputs.vendor_changed == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build-${{ github.sha }}
+          retention-days: 30
+          include-hidden-files: true
+          path: |
+            .
+            !.git/**
+            !.github/**
+            !node_modules/**
+            !tests/**
+            !vendor/**
+
+  # ──────────────────────────────────────────────────────────────────────
+  # DEPLOY — matrix over the 3 school subdomains
+  # ──────────────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to ${{ matrix.key }}
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false           # one school failing must not block the others
+      matrix:
+        include:
+          # SCHOOL2/SCHOOL3 have no deployment secrets yet, so they are marked
+          # optional: their deploy is skipped, loudly, without failing the run.
+          # Set `required: true` once their secrets are added under
+          # Settings → Secrets → Actions.
+          - key: SCHOOL1
+            required: true
+          - key: SCHOOL2
+            required: false
+          - key: SCHOOL3
+            required: false
+
+    steps:
+      # Decides whether this school deploys at all: a configured school gets a
+      # normalized server-dir and the right FTP exclusion list, an optional
+      # school without secrets is skipped with a warning, and a REQUIRED school
+      # without secrets fails the run outright.
+      - name: Check configuration
+        id: config-check
+        env:
+          SCHOOL_KEY: ${{ matrix.key }}
+          SCHOOL_REQUIRED: ${{ matrix.required }}
+          FTP_SERVER: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          FTP_USERNAME: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
+          FTP_PASSWORD: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
+          SERVER_DIR: ${{ secrets[format('{0}_SERVER_DIR', matrix.key)] }}
+          APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
+          DB_PASSWORD: ${{ secrets[format('{0}_DB_PASSWORD', matrix.key)] }}
+          HOOK_SECRET: ${{ secrets[format('{0}_DEPLOY_HOOK_SECRET', matrix.key)] }}
+          VENDOR_CHANGED: ${{ needs.build.outputs.vendor_changed }}
+        run: |
+          # Every secret the upload and the post-deploy hook genuinely need.
+          # The FTP credentials are checked here too: they were missing from
+          # this gate, so a school could pass configuration and only fail a few
+          # minutes later inside the FTP action, with a far less obvious message.
+          MISSING=""
+          missing() { if [ -z "$2" ]; then MISSING="${MISSING}${1} "; fi; }
+          missing "${SCHOOL_KEY}_FTP_SERVER"   "${FTP_SERVER}"
+          missing "${SCHOOL_KEY}_FTP_USERNAME" "${FTP_USERNAME}"
+          missing "${SCHOOL_KEY}_FTP_PASSWORD" "${FTP_PASSWORD}"
+          missing "${SCHOOL_KEY}_SERVER_DIR"   "${SERVER_DIR}"
+          missing "${SCHOOL_KEY}_APP_URL"      "${APP_URL}"
+          missing "${SCHOOL_KEY}_DB_PASSWORD"  "${DB_PASSWORD}"
+          MISSING="${MISSING% }"
+
+          if [ -n "${MISSING}" ]; then
+            if [ "${SCHOOL_REQUIRED}" = "true" ]; then
+              # A school that must ship but cannot is a FAILURE, not a skip.
+              # This is precisely the case that used to conclude SUCCESS while
+              # uploading nothing at all.
+              echo "::error::${SCHOOL_KEY} is required but its deployment secrets are incomplete, so nothing would be uploaded. Missing: ${MISSING}"
+              echo "| ${SCHOOL_KEY} | ❌ required — nothing uploaded (missing ${MISSING}) |" >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::${SCHOOL_KEY} was SKIPPED — no deployment is configured for it, so nothing was uploaded. Missing: ${MISSING}"
+            echo "| ${SCHOOL_KEY} | ⏭️ skipped — not configured (missing ${MISSING}) |" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # Mandatory: without the hook secret the generated server .env would
+          # carry DEPLOY_HOOK_SECRET='' and public/deploy-hook.php would 403
+          # every post-deploy call ("Invalid or missing X-Deploy-Token").
+          # Fail here, naming the exact secret, instead of five steps later.
+          if [ -z "${HOOK_SECRET}" ]; then
+            echo "::error::${SCHOOL_KEY}_DEPLOY_HOOK_SECRET is not set (or empty). Add it under Settings → Secrets → Actions — the post-deploy hook cannot authenticate without it."
+            exit 1
+          fi
+
+          # FTP-Deploy-Action requires the path to end with a slash.
+          echo "server_dir=${SERVER_DIR%/}/" >> "$GITHUB_OUTPUT"
+
+          # Files that must never be uploaded OR deleted on the server:
+          # student photos, uploaded documents, logs, sessions, .env…
+          BASE_EXCLUDE=$(cat <<'EXCL'
+          **/.git*
+          **/.github/**
+          **/node_modules/**
+          **/tests/**
+          .env.example
+          storage/app/public/**
+          storage/logs/**
+          storage/framework/sessions/**
+          storage/framework/cache/**
+          storage/framework/views/**
+          public/storage/**
+          database/*.sql
+          *.md
+          opencode-install.log
+          EXCL
+          )
+
+          if [ "${VENDOR_CHANGED}" != "true" ]; then
+            BASE_EXCLUDE=$(printf '%s\n%s' "${BASE_EXCLUDE}" '**/vendor/**')
+            echo "| ${{ matrix.key }} | deploying code only (vendor unchanged) |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "| ${{ matrix.key }} | deploying FULL build incl. vendor |" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          {
+            echo "ftp_exclude<<DEPLOY_EXCLUDE_EOF"
+            printf '%s\n' "${BASE_EXCLUDE}"
+            echo "DEPLOY_EXCLUDE_EOF"
+          } >> "$GITHUB_ENV"
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Download build artifact
+        if: steps.config-check.outputs.skip == 'false'
+        uses: actions/download-artifact@v4
+        with:
+          name: app-build-${{ github.sha }}
+          path: .
+
+      - name: Generate per-school .env from secrets
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        env:
+          KEY: ${{ matrix.key }}
+          APP_NAME: ${{ secrets[format('{0}_APP_NAME', matrix.key)] }}
+          APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
+          APP_KEY: ${{ secrets[format('{0}_APP_KEY', matrix.key)] }}
+          DB_HOST: ${{ secrets[format('{0}_DB_HOST', matrix.key)] }}
+          DB_DATABASE: ${{ secrets[format('{0}_DB_DATABASE', matrix.key)] }}
+          DB_USERNAME: ${{ secrets[format('{0}_DB_USERNAME', matrix.key)] }}
+          DB_PASSWORD: ${{ secrets[format('{0}_DB_PASSWORD', matrix.key)] }}
+          DEPLOY_HOOK_SECRET: ${{ secrets[format('{0}_DEPLOY_HOOK_SECRET', matrix.key)] }}
+          SETUP_TOKEN: ${{ secrets[format('{0}_SETUP_TOKEN', matrix.key)] }}
+          SAAS_OWNER_EMAIL: ${{ secrets[format('{0}_SAAS_OWNER_EMAIL', matrix.key)] }}
+          SAAS_OWNER_PASSWORD: ${{ secrets[format('{0}_SAAS_OWNER_PASSWORD', matrix.key)] }}
+          SAAS_OWNER_NAME: ${{ secrets[format('{0}_SAAS_OWNER_NAME', matrix.key)] }}
+          MAIL_HOST: ${{ secrets[format('{0}_MAIL_HOST', matrix.key)] }}
+          MAIL_PORT: ${{ secrets[format('{0}_MAIL_PORT', matrix.key)] }}
+          MAIL_USERNAME: ${{ secrets[format('{0}_MAIL_USERNAME', matrix.key)] }}
+          MAIL_PASSWORD: ${{ secrets[format('{0}_MAIL_PASSWORD', matrix.key)] }}
+          MAIL_FROM_ADDRESS: ${{ secrets[format('{0}_MAIL_FROM_ADDRESS', matrix.key)] }}
+        run: |
+          set -e
+          # Runtime directories the app needs on a fresh server
+          mkdir -p storage/framework/cache/data storage/framework/sessions \
+                   storage/framework/views storage/logs storage/app/public bootstrap/cache
+
+          {
+            echo "APP_NAME='${APP_NAME}'"
+            echo "APP_ENV=production"
+            echo "APP_KEY=${APP_KEY}"
+            echo "APP_DEBUG=false"
+            echo "APP_URL='${APP_URL}'"
+            echo ""
+            echo "# Secret token for the one-time school setup link"
+            echo "SETUP_TOKEN='${SETUP_TOKEN}'"
+            echo ""
+            echo "# Platform Owner account (SaaS provider) — seeded by db:seed"
+            echo "SAAS_OWNER_EMAIL='${SAAS_OWNER_EMAIL}'"
+            echo "SAAS_OWNER_PASSWORD='${SAAS_OWNER_PASSWORD}'"
+            echo "SAAS_OWNER_NAME='Platform Owner'"
+            echo ""
+            echo "LOG_CHANNEL=stack"
+            echo "LOG_LEVEL=error"
+            echo ""
+            echo "DB_CONNECTION=mysql"
+            echo "DB_HOST='${DB_HOST:-127.0.0.1}'"
+            echo "DB_PORT=3306"
+            echo "DB_DATABASE='${DB_DATABASE}'"
+            echo "DB_USERNAME='${DB_USERNAME}'"
+            echo "DB_PASSWORD='${DB_PASSWORD}'"
+            echo ""
+            echo "BROADCAST_DRIVER=log"
+            echo "CACHE_DRIVER=file"
+            echo "FILESYSTEM_DISK=local"
+            echo "QUEUE_CONNECTION=database"
+            echo "SESSION_DRIVER=file"
+            echo "SESSION_LIFETIME=120"
+            echo ""
+            echo "MEMCACHED_HOST=127.0.0.1"
+            echo "REDIS_HOST=127.0.0.1"
+            echo "REDIS_PASSWORD=null"
+            echo "REDIS_PORT=6379"
+            echo ""
+            echo "MAIL_MAILER=smtp"
+            echo "MAIL_HOST='${MAIL_HOST}'"
+            echo "MAIL_PORT=${MAIL_PORT:-587}"
+            echo "MAIL_USERNAME='${MAIL_USERNAME}'"
+            echo "MAIL_PASSWORD='${MAIL_PASSWORD}'"
+            echo "MAIL_ENCRYPTION=tls"
+            echo "MAIL_FROM_ADDRESS='${MAIL_FROM_ADDRESS}'"
+            echo "MAIL_FROM_NAME=\"${APP_NAME}\""
+            echo ""
+            echo "# Token required by public/deploy-hook.php"
+            echo "DEPLOY_HOOK_SECRET='${DEPLOY_HOOK_SECRET}'"
+          } > .env
+          chmod 600 .env || true
+
+          # Belt & suspenders: config-check already gates on this, but verify
+          # what actually landed in the env. Log the LENGTH only — never the value.
+          if [ -z "${DEPLOY_HOOK_SECRET}" ]; then
+            echo "::error::${KEY}_DEPLOY_HOOK_SECRET resolved to an empty string in the .env-generation step."
+            exit 1
+          fi
+          echo ".env generated for ${KEY} ($(wc -l < .env) lines, hook secret ${#DEPLOY_HOOK_SECRET} chars)"
+
+      # Diagnose connection problems BEFORE the upload step: tries plain FTP,
+      # explicit FTPS (AUTH TLS), and implicit FTPS so a timeout tells us WHERE
+      # it broke (firewall vs TLS requirement vs wrong port).
+      - name: Probe FTP connectivity
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          FTP_USERNAME: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
+          FTP_PASSWORD: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
+        run: |
+          set -uo pipefail
+          # Normalize the host: tolerate an accidental scheme/path/port in the secret.
+          HOST="${FTP_SERVER}"
+          HOST="${HOST#*://}"
+          HOST="${HOST%%/*}"
+          HOST="${HOST%%:*}"
+          CREDS="${FTP_USERNAME}:${FTP_PASSWORD}"
+
+          probe() {
+            local label="$1"; shift
+            local out
+            if out=$(curl -sS --connect-timeout 15 --max-time 30 -u "$CREDS" "$@" -o /dev/null 2>&1); then
+              echo "$label -> OK"
+              return 0
+            fi
+            echo "$label -> FAIL: $(printf '%s' "$out" | tail -n 1)"
+          }
+
+          probe "plain FTP :21       " "ftp://${HOST}/"
+          probe "explicit FTPS :21   " --ssl-reqd "ftp://${HOST}/"
+          probe "implicit FTPS :990  " --ssl-reqd "ftps://${HOST}:990/"
+
+          echo "::notice::All three timed out => host firewall drops runner IPs (check cPanel CSF/cPHulkD, or allow-list GitHub Actions ranges). Plain FTP failed but explicit FTPS worked => set ${{ matrix.key }}_FTP_PROTOCOL=ftps."
+
+      # State-tracked FTP sync: files deleted locally are removed from the
+      # server, EXCEPT everything matching `exclude`.
+      - name: FTP deploy to cPanel
+        if: steps.config-check.outputs.skip == 'false'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          username: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
+          password: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
+          protocol: ${{ secrets[format('{0}_FTP_PROTOCOL', matrix.key)] || 'ftp' }}
+          port: ${{ secrets[format('{0}_FTP_PORT', matrix.key)] || '21' }}
+          server-dir: ${{ steps.config-check.outputs.server_dir }}
+          # v2 state name: forces one full resync after the SERVER_DIR secret was
+          # corrected to the FTP-account root (so the artifact's public/ IS the
+          # subdomain docroot). A stale incremental state would otherwise think
+          # the (wrong) target folder already matches and upload nothing.
+          state-name: ${{ matrix.key }}-ftp-state-v2.json
+          dangerous-clean-slate: false
+          exclude: ${{ env.ftp_exclude }}
+
+      # ubuntu-latest does not ship lftp; install it before the listing probe.
+      - name: Install lftp
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        run: |
+          if ! command -v lftp >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq lftp >/dev/null
+          fi
+
+      # Proof of placement: shows the remote timestamps so a docroot mismatch
+      # (files landing in one folder while the domain serves another) is
+      # visible directly in the run log.
+      - name: Verify uploaded files (FTP listing)
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        env:
+          FTP_SERVER: ${{ secrets[format('{0}_FTP_SERVER', matrix.key)] }}
+          FTP_USERNAME: ${{ secrets[format('{0}_FTP_USERNAME', matrix.key)] }}
+          FTP_PASSWORD: ${{ secrets[format('{0}_FTP_PASSWORD', matrix.key)] }}
+        run: |
+          set -uo pipefail
+          DIR="${{ steps.config-check.outputs.server_dir }}"
+          echo "Remote ${DIR}public/ on ${FTP_SERVER}:"
+          lftp -u "${FTP_USERNAME},${FTP_PASSWORD}" "${FTP_SERVER}" \
+            -e "set ssl:check-hostname off; cls -l --sort=date '${DIR}public/deploy-hook.php'; echo '--- directory ---'; cls -l --sort=date '${DIR}public/' | head -n 25; bye" \
+            || echo "::warning::FTP listing failed — verify credentials and SERVER_DIR."
+
+      - name: Trigger post-deploy hook (migrate, storage:link, caches)
+        if: steps.config-check.outputs.skip == 'false'
+        shell: bash
+        env:
+          APP_URL: ${{ secrets[format('{0}_APP_URL', matrix.key)] }}
+          TOKEN: ${{ secrets[format('{0}_DEPLOY_HOOK_SECRET', matrix.key)] }}
+        run: |
+          set -uo pipefail
+          HOOK_URL="${APP_URL%/}/deploy-hook.php"
+          echo "Calling ${HOOK_URL} ..."
+          UA="Mozilla/5.0 (X11; Linux x86_64) SchoolERP-Deploy/1.0"
+
+          # 0) Sanity: is the site itself reachable at all?
+          ROOT_RESULT=$(curl -sS -o /dev/null -w '%{http_code} -> %{redirect_url}' "${APP_URL%/}/" \
+            -A "$UA" --max-time 60) || ROOT_RESULT="000"
+          echo "Site root -> ${ROOT_RESULT}"
+
+          # 1) Pre-flight: the hook answers any token-less GET with 405 + JSON.
+          PROBE_HEADERS="$(mktemp)"
+          PROBE_CODE=$(curl -sS -o /dev/null -w '%{http_code}' -D "$PROBE_HEADERS" \
+            "$HOOK_URL" \
+            -A "$UA" --max-time 60) || PROBE_CODE="000"
+          echo "Pre-flight GET -> HTTP ${PROBE_CODE} (405 expected)"
+          cat "$PROBE_HEADERS" || true
+
+          # 2) The actual authenticated POST. A Content-Type: application/json
+          #    header with an EMPTY body is a classic LiteSpeed anti-bot
+          #    signature and gets answered 406 before PHP runs (the hook itself
+          #    only ever returns 405/403/200/500). Send a tiny urlencoded body
+          #    instead — deploy-hook.php ignores the payload entirely.
+          RESPONSE="$(mktemp)"
+          RESP_HEADERS="$(mktemp)"
+          HTTP_CODE=$(curl -sS -o "$RESPONSE" -w '%{http_code}' -D "$RESP_HEADERS" \
+            -X POST "$HOOK_URL" \
+            -A "$UA" \
+            -H "X-Deploy-Token: ${TOKEN}" \
+            -H "Content-Type: application/x-www-form-urlencoded" \
+            -H "Accept: application/json" \
+            -H "Referer: ${APP_URL%/}/" \
+            -H "X-Requested-With: XMLHttpRequest" \
+            --data "deploy=1" \
+            --max-time 300 \
+            --retry 2 --retry-delay 5) || HTTP_CODE="000"
+
+          echo "--- Hook response (HTTP ${HTTP_CODE}) ---"
+          cat "$RESPONSE" || true
+
+          # 3) WAF fallback: many shared hosts (ModSecurity/LiteSpeed) kill
+          # automated POSTs with 403/406 but leave plain GETs alone. The hook
+          # accepts ?token=… on GET for exactly this case.
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "POST returned ${HTTP_CODE} — retrying as authenticated GET..."
+            sleep 2
+            HTTP_CODE=$(curl -sS -o "$RESPONSE" -w '%{http_code}' -D "$RESP_HEADERS" \
+              -G "$HOOK_URL" \
+              --data-urlencode "token=${TOKEN}" \
+              -A "$UA" \
+              -H "Accept: application/json" \
+              --max-time 300) || HTTP_CODE="000"
+            echo "--- Fallback GET response (HTTP ${HTTP_CODE}) ---"
+            cat "$RESPONSE" || true
+          fi
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "| Post-deploy hook | ✅ success |" >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## Deploy to ${{ matrix.key }} FAILED at post-deploy hook"
+              echo ""
+              echo "| probe | result | expected |"
+              echo "|---|---|---|"
+              echo "| GET site root | ${ROOT_RESULT} | 200 |"
+              echo "| GET deploy-hook.php | ${PROBE_CODE} | 405 |"
+              echo "| POST deploy-hook.php (or GET fallback) | ${HTTP_CODE} | 200 |"
+              echo ""
+              echo '```'
+              echo "--- GET deploy-hook.php headers ---"
+              cat "$PROBE_HEADERS" || true
+              echo "--- POST headers ---"
+              cat "$RESP_HEADERS" || true
+              echo "--- POST body ---"
+              head -c 4000 "$RESPONSE" || true
+              echo '```'
+              echo ""
+              echo "**Diagnosis guide:**"
+              echo "- Root redirects (302) to a working app while GET hook = 404 with"
+              echo "  Laravel headers → an OLD copy of the app is live and the freshly FTP'd"
+              echo "  tree is NOT what the domain serves. Check cPanel: domain document root"
+              echo "  must be SERVER_DIR/public, and deploy-hook.php must exist there."
+              echo "- GET hook = 405/403-JSON but POST = 403/406 → WAF blocks POSTs; the GET"
+              echo "  fallback should have handled it. If the fallback ALSO fails, ask the"
+              echo "  host to whitelist ${HOOK_URL}."
+              echo "- Fallback GET = 403 \"Invalid or missing X-Deploy-Token\" while the probe = 405"
+              echo "  means the hook is live but has NO usable expected token — almost always"
+              echo "  ${{ matrix.key }}_DEPLOY_HOOK_SECRET unset/empty (the pipeline writes the server"
+              echo "  .env FROM that secret). Verify it exists in Settings → Secrets → Actions."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "Hook FAILED with HTTP ${HTTP_CODE}" >&2
+            exit 1
+          fi
+
+  # ──────────────────────────────────────────────────────────────────────
+  # TAG — record exactly what is live after ALL schools deployed fine
+  # ──────────────────────────────────────────────────────────────────────
+  tag-release:
+    name: Tag release
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required to create & push the deploy-* tag
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create & push deploy tag
+        id: tag
+        run: |
+          TAG="deploy-$(date -u +%Y%m%d-%H%M%S)"
+          git config user.name  "deploy-bot"
+          git config user.email "actions@github.com"
+          git tag -a "${TAG}" -m "Deployed from commit ${GITHUB_SHA::7}. Every school marked required in the deploy matrix shipped. Any school reported as skipped was NOT updated by this run and is not running this commit."
+          git push origin "${TAG}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        run: |
+          {
+            echo "## Release tagged 🏷️"
+            echo ""
+            echo "\`${{ steps.tag.outputs.tag }}\` pushed — use this tag as the rollback input."
+            echo ""
+            echo "This tag exists only because every \`required\` school deployed successfully."
+            echo "Schools skipped for missing secrets are listed in this run's summary; those"
+            echo "schools were not updated by this run and are therefore not on this commit."
+          } >> "$GITHUB_STEP_SUMMARY"

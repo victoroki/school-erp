@@ -7,6 +7,7 @@
 .env
 .env.backup
 .env.production
+.env.testing
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
@@ -19,3 +20,43 @@ yarn-error.log
 vendor.zip
 bootstrap.zip
 *.zip
+
+# Laravel specific
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/logs/*
+!.gitignore
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build artifacts
+/public/build
+/public/mix-manifest.json
+
+# AI context file (paste into new chat sessions)
+CONTEXT1.md
+
+# Dev scratch files & local DB dumps
+/check_*.php
+/inspect_*.php
+/verify_*.php
+/test_menu.php
+/render_output.html
+/*.log
+/database.sql
+/school-erp-db.sql
+/tmp_*
+
+# Local editor / AI-tool folders
+/.idea/
+/.opencode/
+/.vscode/
+/.qoder/
+
+# Runtime user uploads
+/public/uploads/

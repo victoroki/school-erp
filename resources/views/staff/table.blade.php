@@ -27,24 +27,24 @@
             <tbody>
             @foreach($staff as $staff)
                 <tr>
-                    <td>{{ $staff->user_id }}</td>
-                    <td>{{ $staff->employee_id }}</td>
+                    <td>{{ $staff->user->name ?? '—' }}</td>
+                    <td>{{ $staff->employee_number ?? '—' }}</td>
                     <td>{{ $staff->first_name }}</td>
                     <!-- <td>{{ $staff->middle_name }}</td> -->
                     <td>{{ $staff->last_name }}</td>
-                    <td>{{ $staff->date_of_birth }}</td>
-                    <td>{{ $staff->gender }}</td>
-                    <td>{{ $staff->joining_date }}</td>
-                    <td>{{ $staff->department_id }}</td>
+                    <td>{{ $staff->date_of_birth?->format('d/m/Y') ?? '—' }}</td>
+                    <td>{{ ucfirst($staff->gender ?? '') }}</td>
+                    <td>{{ $staff->date_of_joining?->format('d/m/Y') ?? '—' }}</td>
+                    <td>{{ $staff->department->name ?? 'N/A' }}</td>
                     <td>{{ $staff->designation }}</td>
                     <td>{{ $staff->qualification }}</td>
                     <td>{{ $staff->experience }}</td>
-                    <td>{{ $staff->email }}</td>
-                    <td>{{ $staff->phone }}</td>
+                    <td>{{ $staff->email ?: $staff->work_email ?? '—' }}</td>
+                    <td>{{ $staff->phone ?: $staff->phone_primary ?? '—' }}</td>
                     <td>{{ $staff->city }}</td>
                     <td>{{ $staff->country }}</td>
-                    <td>{{ $staff->staff_type }}</td>
-                    <td>{{ $staff->status }}</td>
+                    <td>{{ ucfirst(str_replace('_', ' ', $staff->staff_type ?? '')) }}</td>
+                    <td>{{ ucfirst(str_replace('_', ' ', $staff->employment_status ?? $staff->status ?? '')) }}</td>
                     <td  style="width: 120px">
                         {!! Form::open(['route' => ['staff.destroy', $staff->staff_id], 'method' => 'delete']) !!}
                         <div class='btn-group'>

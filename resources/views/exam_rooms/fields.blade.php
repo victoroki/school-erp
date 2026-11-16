@@ -20,10 +20,10 @@
     </div>
 
     <div class="form-group col-sm-12">
-        <div class="custom-control custom-switch">
+        <div class="custom-control custom-switch pr-2">
             {!! Form::hidden('status', 0) !!}
             {!! Form::checkbox('status', 1, null, ['class' => 'custom-control-input', 'id' => 'roomStatus']) !!}
-            {!! Form::label('roomStatus', 'Active for use', ['class' => 'custom-control-input-label']) !!}
+            {!! Form::label('roomStatus', 'Active for use', ['class' => 'custom-control-label font-weight-bold']) !!}
         </div>
     </div>
 </div>

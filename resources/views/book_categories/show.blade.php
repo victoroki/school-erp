@@ -11,7 +11,7 @@ Book Category Details
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right"
-                       href="{{ route('book-categories.index') }}">
+                       href="{{ route('bookCategories.index') }}">
                                                     Back
                                             </a>
                 </div>

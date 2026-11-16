@@ -22,11 +22,15 @@
     <label>Available Placeholders (Click to insert):</label>
     <div class="btn-group d-block">
         <button type="button" class="btn btn-xs btn-outline-info insert-var" data-var="{student_name}">{student_name}</button>
-        <button type="button" class="btn btn-xs btn-outline-info insert-var" data-var="{parent_name}">{parent_name}</button>
-        <button type="button" class="btn btn-xs btn-outline-info insert-var" data-var="{class}">{class}</button>
-        <button type="button" class="btn btn-xs btn-outline-info insert-var" data-var="{fee_balance}">{fee_balance}</button>
-        <button type="button" class="btn btn-xs btn-outline-info insert-var" data-var="{date}">{date}</button>
+        <button type="button" class="btn btn-xs btn-outline-info insert-var" data-var="{student_class}">{student_class}</button>
+        <button type="button" class="btn btn-xs btn-outline-info insert-var" data-var="{school_name}">{school_name}</button>
     </div>
+    <small class="form-text text-muted">
+        These three are the only ones Compose supplies. {student_name} and {student_class} are filled for
+        the All Students, Class and Class Section groups, but the All Parents and All Staff groups carry
+        no per-person details, so a template using them should only be sent to a student group. Any other
+        token is sent to the recipient as literal text.
+    </small>
     {!! Form::hidden('variables', null, ['id' => 'variables_field']) !!}
 </div>
 

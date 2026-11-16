@@ -8,6 +8,7 @@ use App\Http\Controllers\AppBaseController;
 use App\Models\InventoryCategory;
 use App\Models\InventoryItem;
 use App\Models\Supplier;
+use App\Models\AuditTrail;
 use App\Repositories\InventoryItemRepository;
 use Illuminate\Http\Request;
 use Flash;
@@ -20,6 +21,8 @@ class InventoryItemController extends AppBaseController
     public function __construct(InventoryItemRepository $inventoryItemRepo)
     {
         $this->inventoryItemRepository = $inventoryItemRepo;
+        $this->middleware('can:inventory.view')->only(['index', 'show']);
+        $this->middleware('can:inventory.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     private function getdropdownData(){
@@ -73,7 +76,7 @@ class InventoryItemController extends AppBaseController
             'out_of_stock' => InventoryItem::where('quantity', '<=', 0)->count(),
         ];
 
-        $inventoryItems = $query->paginate(15);
+        $inventoryItems = $query->paginate(15)->withQueryString();
         $dropdownData = $this->getdropdownData();
 
         return view('inventory_items.index')
@@ -121,6 +124,8 @@ class InventoryItemController extends AppBaseController
 
         $inventoryItem = $this->inventoryItemRepository->create($input);
 
+        AuditTrail::log('Inventory Item', 'CREATE', $inventoryItem->item_id, null, $inventoryItem->toArray());
+
         Flash::success('Inventory Item saved successfully.');
 
         return redirect(route('inventory-items.index'));
@@ -131,7 +136,7 @@ class InventoryItemController extends AppBaseController
      */
     public function show($id)
     {
-        $inventoryItem = InventoryItem::with(['category', 'supplier', 'transactions.user'])->find($id);
+        $inventoryItem = InventoryItem::with(['category', 'supplier', 'transactions.handledBy'])->find($id);
 
         if (empty($inventoryItem)) {
             Flash::error('Inventory Item not found');
@@ -177,7 +182,10 @@ class InventoryItemController extends AppBaseController
             return redirect(route('inventory-items.index'));
         }
 
+        $oldData = $inventoryItem->toArray();
         $inventoryItem = $this->inventoryItemRepository->update($request->all(), $id);
+
+        AuditTrail::log('Inventory Item', 'UPDATE', $inventoryItem->item_id, $oldData, $inventoryItem->toArray());
 
         Flash::success('Inventory Item updated successfully.');
 
@@ -199,7 +207,10 @@ class InventoryItemController extends AppBaseController
             return redirect(route('inventory-items.index'));
         }
 
+        $oldData = $inventoryItem->toArray();
         $this->inventoryItemRepository->delete($id);
+
+        AuditTrail::log('Inventory Item', 'DELETE', $id, $oldData, null);
 
         Flash::success('Inventory Item deleted successfully.');
 

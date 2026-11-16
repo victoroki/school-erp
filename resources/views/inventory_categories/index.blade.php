@@ -54,7 +54,7 @@
                                     <div class="small text-muted">Items</div>
                                 </div>
                                 <div class="col-6 py-1">
-                                    <div class="font-weight-bold text-dark h5 mb-0">KES {{ number_format($totalValue, 0) }}</div>
+                                    <div class="font-weight-bold text-dark h5 mb-0">{{ \App\Support\Money::format($totalValue) }}</div>
                                     <div class="small text-muted">Value</div>
                                 </div>
                             </div>

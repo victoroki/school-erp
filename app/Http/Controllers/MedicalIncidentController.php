@@ -4,12 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\MedicalIncident;
 use App\Models\Student;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 use Auth;
 
 class MedicalIncidentController extends Controller
 {
+    public function __construct()
+    {
+        // PHASE 6: explicit medical permissions (seeded for Owner/Super
+        // Admin/Admin) — the students.* proxy was removed.
+        $this->middleware('can:medical.view')->only(['index', 'show']);
+        $this->middleware('can:medical.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
+    }
+
     public function index()
     {
         $medicalIncidents = MedicalIncident::with(['student', 'marker'])
@@ -43,10 +52,12 @@ class MedicalIncidentController extends Controller
         $data['marked_by'] = Auth::id();
         $data['notified_parents'] = $request->has('notified_parents');
 
-        MedicalIncident::create($data);
+        $incident = MedicalIncident::create($data);
+
+        AuditTrail::log('Medical Incident', 'CREATE', $incident->medical_incident_id, null, $incident->toArray());
 
         Flash::success('Medical incident logged successfully.');
 
-        return redirect()->back();
+        return redirect(route('medical-incidents.index'));
     }
 }

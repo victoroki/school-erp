@@ -8,6 +8,7 @@ use App\Http\Controllers\AppBaseController;
 use App\Models\Department;
 use App\Repositories\JobPositionRepository;
 use Illuminate\Http\Request;
+use App\Models\AuditTrail;
 use Flash;
 
 class JobPositionController extends AppBaseController
@@ -18,6 +19,8 @@ class JobPositionController extends AppBaseController
     public function __construct(JobPositionRepository $jobPositionRepo)
     {
         $this->jobPositionRepository = $jobPositionRepo;
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -55,9 +58,12 @@ class JobPositionController extends AppBaseController
 
         $jobPosition = $this->jobPositionRepository->create($input);
 
+        // Audit Log
+        AuditTrail::log('Job Position', 'CREATE', $jobPosition->position_id, null, $jobPosition->toArray());
+
         Flash::success('Job Position saved successfully.');
 
-        return redirect(route('jobPositions.index'));
+        return redirect(route('job-positions.index'));
     }
 
     /**
@@ -65,12 +71,12 @@ class JobPositionController extends AppBaseController
      */
     public function show($id)
     {
-        $jobPosition = $this->jobPositionRepository->find($id);
+        $jobPosition = \App\Models\JobPosition::with('department')->find($id);
 
         if (empty($jobPosition)) {
             Flash::error('Job Position not found');
 
-            return redirect(route('jobPositions.index'));
+            return redirect(route('job-positions.index'));
         }
 
         return view('job_positions.show')->with('jobPosition', $jobPosition);
@@ -83,17 +89,16 @@ class JobPositionController extends AppBaseController
     {
         $jobPosition = $this->jobPositionRepository->find($id);
         $dropdownData = $this->getdropdownData();
+        
         if (empty($jobPosition)) {
             Flash::error('Job Position not found');
 
-            return redirect(route('jobPositions.index'));
+            return redirect(route('job-positions.index'));
         }
 
         return view('job_positions.edit', array_merge(
-            [
-                'jobPosition', $jobPosition,
-                $dropdownData
-            ]
+            ['jobPosition' => $jobPosition],
+            $dropdownData
         ));
     }
 
@@ -107,14 +112,18 @@ class JobPositionController extends AppBaseController
         if (empty($jobPosition)) {
             Flash::error('Job Position not found');
 
-            return redirect(route('jobPositions.index'));
+            return redirect(route('job-positions.index'));
         }
 
+        $oldData = $jobPosition->toArray();
         $jobPosition = $this->jobPositionRepository->update($request->all(), $id);
+
+        // Audit Log
+        AuditTrail::log('Job Position', 'UPDATE', $jobPosition->position_id, $oldData, $jobPosition->toArray());
 
         Flash::success('Job Position updated successfully.');
 
-        return redirect(route('jobPositions.index'));
+        return redirect(route('job-positions.index'));
     }
 
     /**
@@ -129,13 +138,17 @@ class JobPositionController extends AppBaseController
         if (empty($jobPosition)) {
             Flash::error('Job Position not found');
 
-            return redirect(route('jobPositions.index'));
+            return redirect(route('job-positions.index'));
         }
 
+        $oldData = $jobPosition->toArray();
         $this->jobPositionRepository->delete($id);
+
+        // Audit Log
+        AuditTrail::log('Job Position', 'DELETE', $id, $oldData, null);
 
         Flash::success('Job Position deleted successfully.');
 
-        return redirect(route('jobPositions.index'));
+        return redirect(route('job-positions.index'));
     }
 }

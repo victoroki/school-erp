@@ -16,6 +16,9 @@ use App\Repositories\DepartmentRepository;
 use App\Http\Controllers\AppBaseController;
 use App\Models\Department;
 use App\Models\User;
+use App\Models\JobPosition;
+use App\Models\AuditTrail;
+use App\Services\TeacherOnboardingService;
 
 class StaffController extends AppBaseController
 {
@@ -31,14 +34,15 @@ class StaffController extends AppBaseController
     public function __construct(
         StaffRepository $staffRepo,
         UserRoleRepository $userRepo,
-        DepartmentRepository $departmentRepo
+        DepartmentRepository $departmentRepo,
+        private TeacherOnboardingService $teacherOnboarding
     ) {
         $this->staffRepository = $staffRepo;
         $this->userRepository = $userRepo;
         $this->departmentRepository = $departmentRepo;
 
-        // Apply middleware for authentication
-        $this->middleware('auth');
+        $this->middleware('can:hr.view')->only(['index', 'show']);
+        $this->middleware('can:hr.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -46,15 +50,27 @@ class StaffController extends AppBaseController
      */
     public function index(Request $request)
     {
-        // Authorization check
-        // if (Gate::denies('view-staff')) {
-        //     abort(403, 'Unauthorized to view staff list');
-        // }
+        $query = $this->staffRepository->model()::query();
 
-        $staff = $this->staffRepository->paginate(10);
+        // Search Filter
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%$search%")
+                  ->orWhere('last_name', 'like', "%$search%")
+                  ->orWhere('employee_number', 'like', "%$search%")
+                  ->orWhere('work_email', 'like', "%$search%");
+            });
+        }
 
-        return view('staff.index')
-            ->with('staff', $staff);
+        // Staff Type Filter
+        if ($request->filled('staff_type')) {
+            $query->where('staff_type', $request->get('staff_type'));
+        }
+
+        $staff = $query->with(['department', 'jobPosition'])->paginate(12)->withQueryString();
+
+        return view('staff.index')->with('staff', $staff);
     }
 
     /**
@@ -70,8 +86,9 @@ class StaffController extends AppBaseController
         // Get dropdown data
         $users = User::pluck('name', 'id')->toArray();
         $departments = Department::pluck('name', 'department_id')->toArray();
+        $jobPositions = JobPosition::pluck('title', 'position_id')->toArray();
 
-        return view('staff.create', compact('users', 'departments'));
+        return view('staff.create', compact('users', 'departments', 'jobPositions'));
     }
 
     /**
@@ -87,16 +104,53 @@ class StaffController extends AppBaseController
         try {
             $input = $request->validated();
 
+            // Convert empty strings to null for nullable fields to avoid DB issues
+            foreach (['employee_number', 'job_position_id', 'designation', 'basic_salary', 'middle_name'] as $field) {
+                if (isset($input[$field]) && $input[$field] === '') {
+                    $input[$field] = null;
+                }
+            }
+
+            // The staff table declares these NOT NULL without a default, so a blank
+            // submission must still send a value or the insert is rejected.
+            foreach (['current_address', 'city', 'country'] as $field) {
+                if (! isset($input[$field]) || $input[$field] === null) {
+                    $input[$field] = '';
+                }
+            }
+
             // Handle photo upload
             if ($request->hasFile('photo')) {
                 $photoPath = $request->file('photo')->store('staff-photos', 'public');
                 $input['photo_url'] = Storage::url($photoPath);
             }
 
+            // A teaching hire is onboarded through the shared service, which also
+            // mints the portal login and mails the teacher an expiring
+            // account-setup link. It is the only path from this form that may
+            // create a user, so the portal fields are discarded for every other
+            // staff type before anything else looks at them.
+            if (($input['staff_type'] ?? null) === 'teaching') {
+                $result = $this->teacherOnboarding->onboard(array_merge($input, [
+                    'login_email' => $input['personal_email'] ?? $input['work_email'],
+                ]));
+
+                Flash::success('Staff saved successfully. An account-setup email has been sent to '
+                    . $result['user']->email . ' — they set their own password through the secure, '
+                    . 'expiring link inside it.');
+
+                return redirect(route('staff.index'));
+            }
+
+            unset($input['personal_email'], $input['tsc_number'], $input['login_email']);
+
             // Ensure created_by is set
             $input['created_by'] = Auth::id();
 
             $staff = $this->staffRepository->create($input);
+
+            // Audit Log
+            AuditTrail::log('Staff', 'CREATE', $staff->staff_id, null, $staff->toArray());
 
             Flash::success('Staff saved successfully.');
 
@@ -118,7 +172,7 @@ class StaffController extends AppBaseController
         //     abort(403, 'Unauthorized to view staff');
         // }
 
-        $staff = $this->staffRepository->find($id);
+        $staff = Staff::with(['department', 'jobPosition', 'user'])->find($id);
 
         if (empty($staff)) {
             Flash::error('Staff not found');
@@ -146,10 +200,11 @@ class StaffController extends AppBaseController
         }
 
         // Get dropdown data
-        $users = $this->userRepository->pluck('name', 'id')->toArray();
-        $departments = $this->departmentRepository->pluck('name', 'id')->toArray();
+        $users = User::pluck('name', 'id')->toArray();
+        $departments = Department::pluck('name', 'department_id')->toArray();
+        $jobPositions = JobPosition::pluck('title', 'position_id')->toArray();
 
-        return view('staff.edit', compact('staff', 'users', 'departments'));
+        return view('staff.edit', compact('staff', 'users', 'departments', 'jobPositions'));
     }
 
     /**
@@ -172,6 +227,21 @@ class StaffController extends AppBaseController
         try {
             $input = $request->validated();
 
+            // Convert empty strings to null for nullable fields to avoid DB issues
+            foreach (['employee_number', 'job_position_id', 'designation', 'basic_salary', 'middle_name'] as $field) {
+                if (isset($input[$field]) && $input[$field] === '') {
+                    $input[$field] = null;
+                }
+            }
+
+            // The staff table declares these NOT NULL without a default, so a blank
+            // submission must still send a value or the update is rejected.
+            foreach (['current_address', 'city', 'country'] as $field) {
+                if (! isset($input[$field]) || $input[$field] === null) {
+                    $input[$field] = '';
+                }
+            }
+
             // Handle photo upload
             if ($request->hasFile('photo')) {
                 // Delete old photo if exists
@@ -186,7 +256,11 @@ class StaffController extends AppBaseController
 
             $input['updated_by'] = Auth::id();
 
+            $oldData = $staff->toArray();
             $staff = $this->staffRepository->update($input, $id);
+
+            // Audit Log
+            AuditTrail::log('Staff', 'UPDATE', $staff->staff_id, $oldData, $staff->toArray());
 
             Flash::success('Staff updated successfully.');
 
@@ -222,7 +296,11 @@ class StaffController extends AppBaseController
                 Storage::disk('public')->delete($photoPath);
             }
 
+            $oldData = $staff->toArray();
             $this->staffRepository->delete($id);
+
+            // Audit Log
+            AuditTrail::log('Staff', 'DELETE', $id, $oldData, null);
 
             Flash::success('Staff deleted successfully.');
 

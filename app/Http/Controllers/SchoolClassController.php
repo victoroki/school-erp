@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateSchoolClassRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\SchoolClassRepository;
 use App\Models\SchoolClass;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -20,10 +21,8 @@ class SchoolClassController extends AppBaseController
         $this->schoolClassRepository = $schoolClassRepo;
 
         $this->middleware('auth');
-        $this->middleware('can:school-classes.index')->only(['index', 'show']);
-        $this->middleware('can:school-classes.create')->only(['create', 'store']);
-        $this->middleware('can:school-classes.edit')->only(['edit', 'update']);
-        $this->middleware('can:school-classes.delete')->only('destroy');
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.settings.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -31,7 +30,8 @@ class SchoolClassController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $schoolClasses = SchoolClass::withCount(['sections', 'classSubjects'])
+        $schoolClasses = SchoolClass::with('sections')
+            ->withCount(['sections', 'classSubjects'])
             ->orderBy('numeric_value')
             ->paginate(12);
 
@@ -56,6 +56,8 @@ class SchoolClassController extends AppBaseController
 
         $schoolClass = $this->schoolClassRepository->create($input);
 
+        AuditTrail::log('School Class', 'CREATE', $schoolClass->class_id, null, $schoolClass->toArray());
+
         Flash::success('School Class saved successfully.');
 
         return redirect(route('school-classes.index'));
@@ -66,17 +68,20 @@ class SchoolClassController extends AppBaseController
      */
     public function show($id)
     {
-        $schoolClass = $this->schoolClassRepository->with([
-            'classSections.section', 
-            'classSections.academicYear', 
-            'classSubjects.subject'
-        ])->find($id);
+        $schoolClass = $this->schoolClassRepository->find($id);
 
         if (empty($schoolClass)) {
             Flash::error('School Class not found');
 
             return redirect(route('school-classes.index'));
         }
+
+        // Eager load relations
+        $schoolClass->load([
+            'classSections.section', 
+            'classSections.academicYear', 
+            'classSubjects.subject'
+        ]);
 
         // Count students in this class across all sections
         $studentCount = \App\Models\StudentClassEnrollment::whereIn('class_section_id', $schoolClass->classSections->pluck('class_section_id'))->count();
@@ -115,7 +120,10 @@ class SchoolClassController extends AppBaseController
             return redirect(route('school-classes.index'));
         }
 
+        $oldData = $schoolClass->toArray();
         $schoolClass = $this->schoolClassRepository->update($request->all(), $id);
+
+        AuditTrail::log('School Class', 'UPDATE', $schoolClass->class_id, $oldData, $schoolClass->toArray());
 
         Flash::success('School Class updated successfully.');
 
@@ -137,7 +145,10 @@ class SchoolClassController extends AppBaseController
             return redirect(route('school-classes.index'));
         }
 
+        $oldData = $schoolClass->toArray();
         $this->schoolClassRepository->delete($id);
+
+        AuditTrail::log('School Class', 'DELETE', $id, $oldData, null);
 
         Flash::success('School Class deleted successfully.');
 

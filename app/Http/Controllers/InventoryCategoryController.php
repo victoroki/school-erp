@@ -6,6 +6,7 @@ use App\Http\Requests\CreateInventoryCategoryRequest;
 use App\Http\Requests\UpdateInventoryCategoryRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\InventoryCategoryRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -17,6 +18,8 @@ class InventoryCategoryController extends AppBaseController
     public function __construct(InventoryCategoryRepository $inventoryCategoryRepo)
     {
         $this->inventoryCategoryRepository = $inventoryCategoryRepo;
+        $this->middleware('can:inventory.view')->only(['index', 'show']);
+        $this->middleware('can:inventory.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -34,7 +37,8 @@ class InventoryCategoryController extends AppBaseController
             ->with(['inventoryItems' => function($q) {
                 $q->select('item_id', 'category_id', 'quantity', 'cost_per_unit');
             }])
-            ->paginate(12);
+            ->paginate(12)
+            ->withQueryString();
 
         return view('inventory_categories.index')
             ->with('inventoryCategories', $inventoryCategories);
@@ -56,6 +60,8 @@ class InventoryCategoryController extends AppBaseController
         $input = $request->all();
 
         $inventoryCategory = $this->inventoryCategoryRepository->create($input);
+
+        AuditTrail::log('Inventory Category', 'CREATE', $inventoryCategory->category_id, null, $inventoryCategory->toArray());
 
         Flash::success('Inventory Category saved successfully.');
 
@@ -109,7 +115,10 @@ class InventoryCategoryController extends AppBaseController
             return redirect(route('inventory-categories.index'));
         }
 
+        $oldData = $inventoryCategory->toArray();
         $inventoryCategory = $this->inventoryCategoryRepository->update($request->all(), $id);
+
+        AuditTrail::log('Inventory Category', 'UPDATE', $inventoryCategory->category_id, $oldData, $inventoryCategory->toArray());
 
         Flash::success('Inventory Category updated successfully.');
 
@@ -131,7 +140,10 @@ class InventoryCategoryController extends AppBaseController
             return redirect(route('inventory-categories.index'));
         }
 
+        $oldData = $inventoryCategory->toArray();
         $this->inventoryCategoryRepository->delete($id);
+
+        AuditTrail::log('Inventory Category', 'DELETE', $id, $oldData, null);
 
         Flash::success('Inventory Category deleted successfully.');
 

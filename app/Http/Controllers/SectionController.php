@@ -6,6 +6,7 @@ use App\Http\Requests\CreateSectionRequest;
 use App\Http\Requests\UpdateSectionRequest;
 use App\Http\Controllers\AppBaseController;
 use App\Repositories\SectionRepository;
+use App\Models\AuditTrail;
 use Illuminate\Http\Request;
 use Flash;
 
@@ -19,10 +20,8 @@ class SectionController extends AppBaseController
         $this->sectionRepository = $sectionRepo;
 
         $this->middleware('auth');
-        $this->middleware('can:sections.index')->only(['index', 'show']);
-        $this->middleware('can:sections.create')->only(['create', 'store']);
-        $this->middleware('can:sections.edit')->only(['edit', 'update']);
-        $this->middleware('can:sections.delete')->only('destroy');
+        $this->middleware('can:academics.view')->only(['index', 'show']);
+        $this->middleware('can:academics.settings.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
     /**
@@ -62,6 +61,8 @@ class SectionController extends AppBaseController
 
         $section = $this->sectionRepository->create($input);
 
+        AuditTrail::log('Section', 'CREATE', $section->section_id, null, $section->toArray());
+
         Flash::success('Section saved successfully.');
 
         return redirect(route('sections.index'));
@@ -72,7 +73,7 @@ class SectionController extends AppBaseController
      */
     public function show($id)
     {
-        $section = $this->sectionRepository->find($id);
+        $section = \App\Models\Section::with('schoolClass')->find($id);
 
         if (empty($section)) {
             Flash::error('Section not found');
@@ -117,7 +118,10 @@ class SectionController extends AppBaseController
             return redirect(route('sections.index'));
         }
 
+        $oldData = $section->toArray();
         $section = $this->sectionRepository->update($request->all(), $id);
+
+        AuditTrail::log('Section', 'UPDATE', $section->section_id, $oldData, $section->toArray());
 
         Flash::success('Section updated successfully.');
 
@@ -139,7 +143,10 @@ class SectionController extends AppBaseController
             return redirect(route('sections.index'));
         }
 
+        $oldData = $section->toArray();
         $this->sectionRepository->delete($id);
+
+        AuditTrail::log('Section', 'DELETE', $id, $oldData, null);
 
         Flash::success('Section deleted successfully.');
 

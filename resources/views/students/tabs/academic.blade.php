@@ -41,6 +41,8 @@
                 <h6 class="mb-0 font-weight-bold"><i class="fas fa-history mr-2"></i> Academic Journey</h6>
             </div>
             <div class="card-body">
+                {{-- Served by Student::getAcademicJourneyAttribute() — the accessor
+                     eager-loads class section and academic year. --}}
                 @if($student->academic_journey->count() > 0)
                     @foreach($student->academic_journey as $enrollment)
                         <div class="timeline-item">

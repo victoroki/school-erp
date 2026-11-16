@@ -8,4 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 class ExamRoom extends Model
 {
     use HasFactory;
+
+    public $fillable = [
+        'room_no',
+        'name',
+        'capacity',
+        'description',
+        'status'
+    ];
 }

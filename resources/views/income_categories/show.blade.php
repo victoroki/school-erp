@@ -11,7 +11,7 @@ Income Category Details
                 </div>
                 <div class="col-sm-6">
                     <a class="btn btn-default float-right"
-                       href="{{ route('income-categories.index') }}">
+                       href="{{ route('incomeCategories.index') }}">
                                                     Back
                                             </a>
                 </div>

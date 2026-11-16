@@ -25,8 +25,8 @@ class TransportAssignment extends Model
         'vehicle_id' => 'integer',
         'driver_id' => 'integer',
         'assistant_id' => 'integer',
-        'departure_time' => 'time',
-        'return_time' => 'time',
+        'departure_time' => 'datetime:H:i:s',
+        'return_time' => 'datetime:H:i:s',
         'status' => 'string'
     ];
 
