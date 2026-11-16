@@ -73,7 +73,7 @@
     .stat-box.blue { border-bottom-color: #3b82f6; }
     .stat-box.green { border-bottom-color: #10b981; }
     .stat-box.orange { border-bottom-color: #f59e0b; }
-    .stat-box.purple { border-bottom-color: #8b5cf6; }
+    .stat-box.purple { border-bottom-color: #2f5596; }
 
     .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;}
     .stat-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
@@ -198,7 +198,7 @@
         <!-- Documents -->
         <div class="stat-box purple">
             <div class="stat-header">
-                <div class="stat-icon" style="background:#f5f3ff; color:#8b5cf6;"><i class="fas fa-file-alt"></i></div>
+                <div class="stat-icon" style="background:#f5f3ff; color:#2f5596;"><i class="fas fa-file-alt"></i></div>
                 <div class="stat-title">DOCUMENTS</div>
             </div>
             <div>

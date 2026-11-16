@@ -7,8 +7,8 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; color: #1e293b; font-size: 9pt; line-height: 1.4; padding: 15mm; }
 
-        .report-header { text-align: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #4f46e5; }
-        .school-name { font-size: 18pt; font-weight: 900; color: #4f46e5; }
+        .report-header { text-align: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #1d3f7a; }
+        .school-name { font-size: 18pt; font-weight: 900; color: #1d3f7a; }
         .report-title { font-size: 11pt; font-weight: 700; color: #475569; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
         .report-date { font-size: 8pt; color: #94a3b8; margin-top: 4px; }
 
@@ -19,7 +19,7 @@
         .metric-value { font-size: 12pt; font-weight: 900; font-family: 'Consolas', monospace; margin-top: 2px; }
         .metric-value.total { color: #1e293b; }
         .metric-value.discount { color: #f59e0b; }
-        .metric-value.expected { color: #4f46e5; }
+        .metric-value.expected { color: #1d3f7a; }
         .metric-value.collected { color: #10b981; }
 
         .section-title { font-size: 10pt; font-weight: 800; color: #1e293b; margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
@@ -68,7 +68,7 @@
         <div class="metric-row">
             <div class="metric-card" style="background: #f8fafc;">
                 <div class="metric-label">Collection Rate</div>
-                <div class="metric-value" style="color: #4f46e5; font-size: 14pt;">{{ $collectionRate }}%</div>
+                <div class="metric-value" style="color: #1d3f7a; font-size: 14pt;">{{ $collectionRate }}%</div>
             </div>
         </div>
     </div>

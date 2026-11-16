@@ -128,7 +128,7 @@
 .dash-sub { font-size: .813rem; color: #64748b; font-weight: 500; margin: 0; }
 .cs-year-chip {
     display: inline-flex; align-items: center;
-    background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe;
+    background: #eef3fa; color: #17325f; border: 1px solid #c4d3ea;
     border-radius: 999px; padding: .125rem .5625rem;
     font-size: .6875rem; font-weight: 700; line-height: 1.6;
 }
@@ -174,8 +174,8 @@
 }
 .cs-search-input::-webkit-search-cancel-button { display: none; }
 .cs-search-input:focus {
-    background: #fff; border-color: #6366f1; outline: none;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, .12);
+    background: #fff; border-color: #2f5596; outline: none;
+    box-shadow: 0 0 0 3px rgba(47, 85, 150, .12);
 }
 .cs-search-clear {
     position: absolute; right: .5rem; top: 50%; transform: translateY(-50%);
@@ -199,11 +199,11 @@
                 transform 150ms cubic-bezier(.23, 1, .32, 1);
 }
 .btn-dash:active { transform: scale(0.97); }
-.btn-primary-dash { background: #4f46e5; color: #fff; border-color: #4f46e5; }
-.btn-primary-dash:hover { background: #4338ca; box-shadow: 0 4px 12px rgba(79, 70, 229, .22); }
+.btn-primary-dash { background: #1d3f7a; color: #fff; border-color: #1d3f7a; }
+.btn-primary-dash:hover { background: #17325f; box-shadow: 0 4px 12px rgba(29, 63, 122, .22); }
 .btn-ghost { background: #fff; color: #64748b; border-color: #e2e8f0; }
 .btn-ghost:hover { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
-.btn-ghost[aria-pressed="true"] { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+.btn-ghost[aria-pressed="true"] { background: #eef3fa; color: #17325f; border-color: #c4d3ea; }
 
 /* Bootstrap's grid gives .col-* no display rule, but AdminLTE utilities can —
    make the filter's `hidden` attribute authoritative. */
@@ -233,7 +233,7 @@
     transition: background-color 150ms ease;
 }
 .cs-header:hover { background: #f8fafc; }
-.cs-header:focus-visible { outline: 2px solid #6366f1; outline-offset: -2px; }
+.cs-header:focus-visible { outline: 2px solid #2f5596; outline-offset: -2px; }
 .cs-disclosure[open] > .cs-header { border-bottom-color: #f1f5f9; }
 .cs-chevron {
     flex: none; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;
@@ -254,7 +254,7 @@
     font-size: .625rem; font-weight: 800; padding: .15rem .4rem; line-height: 1.5;
     white-space: nowrap;
 }
-.cs-badge-count { background: #eef2ff; color: #4338ca; }
+.cs-badge-count { background: #eef3fa; color: #17325f; }
 .cs-badge-warn { background: #fffbeb; color: #b45309; }
 .cs-badge-archived { background: #f1f5f9; color: #64748b; text-transform: uppercase; letter-spacing: .04em; }
 
@@ -268,7 +268,7 @@
 .cs-hint-error { color: #b45309; }
 .cs-retry {
     border: 0; background: none; padding: 0; font: inherit; font-weight: 800;
-    color: #4338ca; text-decoration: underline; cursor: pointer;
+    color: #17325f; text-decoration: underline; cursor: pointer;
 }
 .cs-item {
     display: flex; align-items: center; justify-content: space-between; gap: .5rem;
@@ -297,7 +297,7 @@
 }
 .action-btn:hover { background: #f1f5f9; color: #0f172a; border-color: #e2e8f0; }
 .action-btn:active { transform: scale(0.9); }
-.action-btn:focus-visible { outline: 2px solid #6366f1; outline-offset: 1px; }
+.action-btn:focus-visible { outline: 2px solid #2f5596; outline-offset: 1px; }
 .btn-delete:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
 
 .cs-footer {
@@ -318,7 +318,7 @@
 }
 .cs-empty-icon {
     width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
-    background: #eef2ff; color: #4f46e5; border-radius: 14px; font-size: 1.25rem; margin-bottom: 1rem;
+    background: #eef3fa; color: #1d3f7a; border-radius: 14px; font-size: 1.25rem; margin-bottom: 1rem;
 }
 .cs-empty-title { font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0 0 .375rem; }
 .cs-empty-text { font-size: .8125rem; color: #64748b; margin: 0; max-width: 44ch; }

@@ -27,6 +27,26 @@ class StudentClassEnrollmentController extends AppBaseController
         $this->middleware('can:students.manage')->only(['create', 'store', 'edit', 'update', 'destroy']);
     }
 
+    private function classSectionOptions(): array
+    {
+        return ClassSection::with(['class', 'section', 'academicYear'])
+            ->get()
+            ->mapWithKeys(function ($cs) {
+                $name = ($cs->class && $cs->class->name ? $cs->class->name : 'Class')
+                    . ' - ' . ($cs->section && $cs->section->name ? $cs->section->name : 'Section')
+                    . ' (' . ($cs->academicYear && $cs->academicYear->name ? $cs->academicYear->name : 'Year') . ')';
+                return [$cs->class_section_id => $name];
+            })
+            ->toArray();
+    }
+
+    private const STATUS_OPTIONS = [
+        'active' => 'Active',
+        'transferred' => 'Transferred',
+        'completed' => 'Completed',
+        'dropped' => 'Dropped',
+    ];
+
     private function getDropdownData(){
         return [
             'students' => Student::orderBy('first_name', 'asc')->get()
@@ -34,15 +54,7 @@ class StudentClassEnrollmentController extends AppBaseController
                     return [$s->student_id => $s->first_name . ' ' . $s->last_name . ' (' . $s->admission_no . ')'];
                 })
                 ->toArray(),
-            'classSections' => ClassSection::with(['class', 'section', 'academicYear'])
-                ->get()
-                ->mapWithKeys(function ($cs) {
-                    $name = ($cs->class && $cs->class->name ? $cs->class->name : 'Class')
-                        . ' - ' . ($cs->section && $cs->section->name ? $cs->section->name : 'Section')
-                        . ' (' . ($cs->academicYear && $cs->academicYear->name ? $cs->academicYear->name : 'Year') . ')';
-                    return [$cs->class_section_id => $name];
-                })
-                ->toArray(),
+            'classSections' => $this->classSectionOptions(),
             'academicYears' => AcademicYear::pluck('name', 'academic_year_id')//where('status', 'active')
                 ->toArray(),
             'statusOptions' => [
@@ -59,10 +71,37 @@ class StudentClassEnrollmentController extends AppBaseController
      */
     public function index(Request $request)
     {
-        $studentClassEnrollments = $this->studentClassEnrollmentRepository->paginate(10);
+        // Eager-loaded (it ran four lookups per row) and filterable: with a
+        // whole school enrolled, a bare paginated list was not findable.
+        $studentClassEnrollments = StudentClassEnrollment::query()
+            ->with([
+                'student:student_id,first_name,middle_name,last_name,admission_no',
+                'classSection.class',
+                'classSection.section',
+                'academicYear',
+            ])
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $term = trim($request->q);
+                $query->whereHas('student', function ($s) use ($term) {
+                    $s->where('admission_no', 'like', "%{$term}%")
+                        ->orWhere('first_name', 'like', "%{$term}%")
+                        ->orWhere('last_name', 'like', "%{$term}%");
+                });
+            })
+            ->when($request->filled('class_section_id'), fn ($q) => $q->where('class_section_id', $request->class_section_id))
+            ->when($request->filled('academic_year_id'), fn ($q) => $q->where('academic_year_id', $request->academic_year_id))
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+            ->latest('enrollment_date')
+            ->latest('enrollment_id')
+            ->paginate(15)
+            ->withQueryString();
 
-        return view('student_class_enrollments.index')
-            ->with('studentClassEnrollments', $studentClassEnrollments);
+        return view('student_class_enrollments.index', [
+            'studentClassEnrollments' => $studentClassEnrollments,
+            'classSections' => $this->classSectionOptions(),
+            'academicYears' => AcademicYear::pluck('name', 'academic_year_id')->toArray(),
+            'statusOptions' => self::STATUS_OPTIONS,
+        ]);
     }
 
     /**

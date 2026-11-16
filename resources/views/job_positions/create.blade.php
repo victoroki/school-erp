@@ -52,7 +52,7 @@
 
 <style>
 :root {
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --slate: #64748b; --slate-light: #f1f5f9;
     --text: #0f172a; --muted: #64748b;
@@ -70,7 +70,7 @@
 
 .btn-dash { display: inline-flex; align-items: center; justify-content: center; padding: 0.625rem 1.25rem; border-radius: 10px; font-size: 0.875rem; font-weight: 750; transition: all 200ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; }
 .btn-indigo { background: var(--indigo); color: #fff; }
-.btn-indigo:hover { background: #4338ca; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.2); }
+.btn-indigo:hover { background: #17325f; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(29, 63, 122, 0.2); }
 .btn-ghost { background: #fff; border: 1px solid var(--border); color: var(--text); }
 .btn-ghost:hover { background: var(--slate-light); }
 
@@ -79,6 +79,6 @@
 /* Form Enhancements */
 .form-group label { font-weight: 750; color: var(--text); margin-bottom: 0.5rem; font-size: 0.875rem; }
 .form-control { border-radius: 10px; border: 1px solid var(--border); padding: 0.625rem 0.875rem; font-size: 0.9375rem; transition: all 150ms ease; }
-.form-control:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
+.form-control:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.1); }
 </style>
 @endsection

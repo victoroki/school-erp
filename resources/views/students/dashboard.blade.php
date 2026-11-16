@@ -264,7 +264,7 @@
         
         .bg-primary-gradient { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important; }
         .bg-emerald-gradient { background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; }
-        .bg-indigo-gradient { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important; }
+        .bg-indigo-gradient { background: linear-gradient(135deg, #2f5596 0%, #1d3f7a 100%) !important; }
         .bg-rose-gradient { background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important; }
         
         .summary-card { border: none !important; border-radius: 20px; color: white !important; }
@@ -332,7 +332,7 @@
                             labels: {!! json_encode($studentsByClass->pluck('class_name')) !!},
                             datasets: [{
                                 data: {!! json_encode($studentsByClass->pluck('total')) !!},
-                                backgroundColor: '#6366f1',
+                                backgroundColor: '#2f5596',
                                 borderRadius: 6,
                                 barThickness: 20
                             }]

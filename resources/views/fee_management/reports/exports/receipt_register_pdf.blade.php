@@ -7,8 +7,8 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; color: #1e293b; font-size: 8pt; line-height: 1.4; padding: 10mm; }
 
-        .report-header { text-align: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid #4f46e5; }
-        .school-name { font-size: 16pt; font-weight: 900; color: #4f46e5; }
+        .report-header { text-align: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid #1d3f7a; }
+        .school-name { font-size: 16pt; font-weight: 900; color: #1d3f7a; }
         .report-title { font-size: 10pt; font-weight: 700; color: #475569; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
         .report-date { font-size: 7pt; color: #94a3b8; margin-top: 4px; }
         .filter-label { font-size: 7.5pt; color: #475569; margin-top: 4px; font-weight: 600; }
@@ -32,8 +32,8 @@
         .strike { text-decoration: line-through; }
 
         .day-head td {
-            background: #eef2ff; color: #4f46e5; font-weight: 800; font-size: 7.5pt;
-            padding: 4px 6px; border-bottom: 1px solid #e0e7ff; text-transform: uppercase; letter-spacing: 0.04em;
+            background: #eef3fa; color: #1d3f7a; font-weight: 800; font-size: 7.5pt;
+            padding: 4px 6px; border-bottom: 1px solid #dde7f4; text-transform: uppercase; letter-spacing: 0.04em;
         }
 
         .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 6.5pt; font-weight: 700; text-transform: uppercase; }

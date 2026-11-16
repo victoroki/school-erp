@@ -18,7 +18,7 @@
 .report-wrap .select2-container--default .select2-selection--single .select2-selection__placeholder { color: var(--slate-400); }
 .report-wrap .select2-container--default.select2-container--focus .select2-selection--single {
     border-color: var(--indigo);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    box-shadow: 0 0 0 3px rgba(29, 63, 122, 0.12);
 }
 .report-wrap .select2-dropdown { border-color: var(--border); border-radius: 8px; }
 .report-wrap .select2-results__option { font-size: 0.85rem; padding: 0.5rem 0.75rem; }
@@ -134,7 +134,7 @@
 
 <style>
 :root {
-    --indigo:#4f46e5; --indigo-light:#eef2ff; --amber:#f59e0b; --amber-600:#d97706; --amber-light:#fffbeb;
+    --indigo:#1d3f7a; --indigo-light:#eef3fa; --amber:#f59e0b; --amber-600:#d97706; --amber-light:#fffbeb;
     --emerald:#10b981; --emerald-light:#ecfdf5; --rose:#f43f5e; --rose-light:#fff1f2;
     --slate-50:#f8fafc; --slate-100:#f1f5f9; --slate-200:#e2e8f0; --slate-300:#cbd5e1; --slate-400:#94a3b8;
     --slate-500:#64748b; --slate-600:#475569; --slate-700:#334155; --slate-800:#1e293b; --slate-900:#0f172a;

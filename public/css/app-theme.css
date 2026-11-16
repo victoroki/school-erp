@@ -24,9 +24,9 @@
 
     --indigo-50:  oklch(0.962 0.018 272);
     --indigo-100: oklch(0.930 0.034 272);
-    --indigo-500: oklch(0.555 0.210 272);
-    --indigo-600: oklch(0.511 0.230 272);
-    --indigo-700: oklch(0.457 0.220 272);
+    --indigo-500: oklch(0.370 0.095 258);
+    --indigo-600: oklch(0.320 0.095 258);
+    --indigo-700: oklch(0.270 0.095 258);
 
     --amber-50:  oklch(0.980 0.022 95);
     --amber-100: oklch(0.962 0.044 95);
@@ -61,7 +61,7 @@
 
     --shadow-card:     0 1px 2px oklch(0.206 0.010 264 / 0.05);
     --shadow-dropdown: 0 10px 32px oklch(0.206 0.010 264 / 0.12), 0 2px 6px oklch(0.206 0.010 264 / 0.06);
-    --ring:            0 0 0 3px oklch(0.511 0.230 272 / 0.18);
+    --ring:            0 0 0 3px oklch(0.320 0.095 258 / 0.18);
 
     --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
@@ -846,99 +846,6 @@ label .text-danger {
     margin: 1rem 1.5rem 0;
 }
 
-/* ── Main header ───────────────────────────────────────────────────── */
-
-.main-header .user-menu .nav-link {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-}
-
-.header-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--indigo-600);
-    color: oklch(0.99 0.004 272);
-    font-size: 0.75rem;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    letter-spacing: 0.02em;
-    flex-shrink: 0;
-}
-
-.header-user-name {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--slate-700);
-}
-
-.header-user-menu {
-    min-width: 240px;
-}
-
-.header-user-menu .menu-identity {
-    padding: 0.6rem 0.7rem 0.7rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-}
-
-.header-user-menu .menu-identity strong {
-    font-size: 0.875rem;
-    color: var(--slate-900);
-}
-
-.header-user-menu .menu-identity span {
-    font-size: 0.78rem;
-    color: var(--slate-500);
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.header-user-menu .role-chip {
-    align-self: flex-start;
-    margin-top: 0.35rem;
-}
-
-.main-header .dropdown-menu .dropdown-item i {
-    width: 1.1rem;
-    color: var(--slate-400);
-    margin-right: 0.4rem;
-}
-
-/* ── Sidebar quick find ────────────────────────────────────────────── */
-
-.search-wrapper .search-kbd {
-    margin-left: auto;
-    font: 600 0.65rem/1 var(--font-sans);
-    color: oklch(0.600 0.014 264);
-    border: 1px solid oklch(1 0 0 / 0.12);
-    border-radius: 5px;
-    padding: 0.2rem 0.35rem;
-    pointer-events: none;
-}
-
-.search-wrapper:focus-within .search-kbd {
-    display: none;
-}
-
-.nav-sidebar .is-search-hidden {
-    display: none !important;
-}
-
-.sidebar-search-empty {
-    padding: 0.75rem 1.25rem;
-    font-size: 0.8rem;
-    color: oklch(0.600 0.014 264);
-}
-
-.nav-sidebar .search-hit > .nav-link p {
-    color: oklch(0.960 0.004 264);
-}
-
 /* ── Utilities that generated views lean on ────────────────────────── */
 
 .shadow-sm {
@@ -981,4 +888,286 @@ hr {
         box-shadow: none;
         border-color: #ddd;
     }
+}
+
+/* ===================================================================
+   SHARED PAGE PATTERNS
+   One vocabulary for list and form screens: page header, filters,
+   list card, row actions, status labels. New and rebuilt screens use
+   these instead of inventing their own per view.
+   =================================================================== */
+
+.page {
+    padding: 24px 28px 40px;
+    max-width: 1440px;
+}
+
+.page-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.page-head h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    color: var(--shell-ink);
+}
+
+.page-head p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--shell-muted);
+}
+
+.page-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--shell-border);
+}
+
+.filter-bar .form-group {
+    margin: 0;
+    flex: 1 1 170px;
+    min-width: 0;
+}
+
+.filter-bar .filter-search {
+    flex: 2 1 240px;
+}
+
+.filter-bar label {
+    font-size: 12px;
+    color: var(--shell-muted);
+    margin-bottom: 4px;
+}
+
+.filter-bar .filter-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.list-card {
+    background: #fff;
+    border: 1px solid var(--shell-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.list-card .table {
+    margin: 0;
+}
+
+.list-card .table thead th {
+    background: var(--shell-bg);
+}
+
+.list-card .table td {
+    border-top: 1px solid #f0f2f6;
+}
+
+.list-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+    border-top: 1px solid var(--shell-border);
+    font-size: 13px;
+    color: var(--shell-muted);
+}
+
+.list-foot .pagination {
+    margin: 0;
+}
+
+.cell-main {
+    display: block;
+    font-weight: 600;
+    color: var(--shell-ink);
+}
+
+.cell-sub {
+    display: block;
+    font-size: 12.5px;
+    color: var(--shell-muted);
+}
+
+.row-actions {
+    display: inline-flex;
+    gap: 4px;
+    justify-content: flex-end;
+}
+
+.row-actions form {
+    display: inline;
+    margin: 0;
+}
+
+.icon-btn {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--shell-muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 120ms ease, color 120ms ease, transform 120ms var(--ease-out);
+}
+
+.icon-btn:hover {
+    background: var(--shell-hover);
+    color: var(--shell-ink);
+    text-decoration: none;
+}
+
+.icon-btn:active {
+    transform: scale(0.94);
+}
+
+.icon-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.icon-btn.is-danger:hover {
+    background: #fdf1f2;
+    color: #b42335;
+}
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--shell-ink-2);
+    white-space: nowrap;
+}
+
+.status::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--shell-faint);
+}
+
+.status.is-good::before    { background: #12805c; }
+.status.is-warning::before { background: #d68a0c; }
+.status.is-danger::before  { background: #c62d3f; }
+.status.is-info::before    { background: var(--accent); }
+
+@media (max-width: 640px) {
+    .page { padding: 18px 16px 32px; }
+    .page-actions, .page-actions .btn { width: 100%; }
+}
+
+/* ===================================================================
+   ONE BUTTON VOCABULARY
+   Across the views, btn-success / btn-info were used for ordinary save,
+   add and submit actions and btn-warning for edits, so the same kind of
+   action wore four colours. Primary is navy, secondary is the neutral
+   ghost, and only destructive actions keep their own colour (red).
+   Status colour stays on badges, where it means something.
+   =================================================================== */
+
+.btn-success,
+.btn-info {
+    background-color: var(--shell-accent, #1d3f7a);
+    border-color: var(--shell-accent, #1d3f7a);
+    color: #fff;
+}
+
+.btn-success:hover,
+.btn-info:hover,
+.btn-success:focus,
+.btn-info:focus,
+.btn-success:not(:disabled):not(.disabled):active,
+.btn-info:not(:disabled):not(.disabled):active {
+    background-color: #17325f;
+    border-color: #17325f;
+    color: #fff;
+    filter: none;
+}
+
+.btn-warning {
+    background-color: #fff;
+    border: 1px solid var(--border-strong);
+    color: var(--slate-700);
+}
+
+.btn-warning:hover,
+.btn-warning:focus,
+.btn-warning:not(:disabled):not(.disabled):active {
+    background-color: var(--slate-50);
+    border-color: var(--slate-400);
+    color: var(--slate-900);
+    filter: none;
+}
+
+.btn-outline-success,
+.btn-outline-info,
+.btn-outline-warning {
+    color: #1d3f7a;
+    border-color: #c4d3ea;
+    background: #fff;
+}
+
+.btn-outline-success:hover,
+.btn-outline-info:hover,
+.btn-outline-warning:hover {
+    color: #fff;
+    background: #1d3f7a;
+    border-color: #1d3f7a;
+}
+
+/* Table row actions: quiet icons whatever colour class a view gave them;
+   delete still reads as destructive on hover. */
+.table td .btn-group .btn-info,
+.table td .btn-group .btn-success,
+.table td .btn-group .btn-warning,
+.table td .btn-group .btn-primary,
+.table td .btn-group .btn-default,
+.table td > .btn-sm.btn-info,
+.table td > .btn-sm.btn-warning,
+.table td > .btn-sm.btn-default {
+    background: transparent;
+    border-color: transparent;
+    color: var(--slate-500);
+}
+
+.table td .btn-group .btn:hover {
+    background: var(--slate-100);
+    color: var(--slate-900);
+}
+
+.table td .btn-group .btn-danger {
+    background: transparent;
+    border-color: transparent;
+    color: var(--slate-500);
+}
+
+.table td .btn-group .btn-danger:hover {
+    background: #fdf1f2;
+    color: #b42335;
 }

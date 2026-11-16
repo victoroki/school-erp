@@ -14,7 +14,7 @@
         .text-success { color: #059669; }
         .text-danger { color: #dc2626; }
         .badge { padding: 2px 6px; border-radius: 10px; font-size: 9px; color: #fff; }
-        .badge-primary { background: #4f46e5; }
+        .badge-primary { background: #1d3f7a; }
         .badge-secondary { background: #6b7280; }
         .footer { margin-top: 15px; font-size: 9px; color: #999; text-align: center; }
     </style>

@@ -113,7 +113,7 @@
             width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
         }
-        .page-heading-icon.indigo { background: #eef2ff; color: #4338ca; }
+        .page-heading-icon.indigo { background: #eef3fa; color: #17325f; }
         .page-heading-title { font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.2; }
         .page-heading-sub { color: #64748b; font-size: 0.85rem; font-weight: 600; margin: 2px 0 0; }
 
@@ -126,7 +126,7 @@
             box-shadow: 0 0 0 4px #f1f5f9;
         }
         .audit-marker.create { background: #059669; }
-        .audit-marker.update { background: #4338ca; }
+        .audit-marker.update { background: #17325f; }
         .audit-marker.delete { background: #e11d48; }
         .audit-marker.other, .audit-marker.logout, .audit-marker.login { background: #d97706; }
 

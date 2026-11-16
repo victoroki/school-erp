@@ -187,7 +187,7 @@
 /* ── Emil Kowalski Utility Suite ── */
 :root {
     --blue: #3b82f6; --blue-light: #eff6ff;
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --amber: #f59e0b; --amber-light: #fffbeb;
     --amber-dark: #b45309;

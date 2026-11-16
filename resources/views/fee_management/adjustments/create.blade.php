@@ -3,8 +3,8 @@
 @section('content')
 <style>
     .fa-cr {
-        --fa-indigo-600: oklch(0.511 0.230 272);
-        --fa-indigo-500: oklch(0.555 0.210 272);
+        --fa-indigo-600: oklch(0.320 0.095 258);
+        --fa-indigo-500: oklch(0.370 0.095 258);
         --fa-indigo-100: oklch(0.930 0.034 272);
         --fa-indigo-50:  oklch(0.962 0.018 272);
         --fa-slate-900:  oklch(0.206 0.010 264);
@@ -89,7 +89,7 @@
     .fa-cr .select2-container--default .select2-selection--single .select2-selection__placeholder { color: var(--fa-slate-400); }
     .fa-cr .select2-container--default.select2-container--focus .select2-selection--single {
         border-color: var(--fa-indigo-600);
-        box-shadow: 0 0 0 3px oklch(0.511 0.230 272 / 0.12);
+        box-shadow: 0 0 0 3px oklch(0.320 0.095 258 / 0.12);
     }
 
     /* ── Fee preview panel ── */

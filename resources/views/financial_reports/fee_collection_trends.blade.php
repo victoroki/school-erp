@@ -163,7 +163,7 @@
 <style>
 :root {
     --blue: #3b82f6; --blue-light: #eff6ff;
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --amber: #f59e0b; --amber-light: #fffbeb;
     --amber-dark: #b45309;
@@ -238,8 +238,8 @@
                 {
                     label: 'Expected',
                     data: expected,
-                    backgroundColor: 'rgba(79, 70, 229, 0.15)',
-                    borderColor: 'rgba(79, 70, 229, 0.8)',
+                    backgroundColor: 'rgba(29, 63, 122, 0.15)',
+                    borderColor: 'rgba(29, 63, 122, 0.8)',
                     borderWidth: 2,
                     borderRadius: 4,
                 },

@@ -46,7 +46,7 @@
         $totalSections = $classSections->count();
         $assignedCount = $classSections->whereNotNull('class_teacher_id')->count();
         $unassignedCount = $totalSections - $assignedCount;
-        $avatarColors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#f6a821', '#e9506d'];
+        $avatarColors = ['#2f5596', '#1d3f7a', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#f6a821', '#e9506d'];
     @endphp
     <div class="stats-strip mb-4 px-1">
         <div class="stat-chip">
@@ -147,9 +147,9 @@
 
 <style>
     :root {
-        --indigo: #4f46e5;
-        --indigo-dark: #4338ca;
-        --indigo-light: #eef2ff;
+        --indigo: #1d3f7a;
+        --indigo-dark: #17325f;
+        --indigo-light: #eef3fa;
         --emerald: #10b981;
         --amber-bg: #fffbeb;
         --amber: #d97706;
@@ -179,7 +179,7 @@
         background-repeat: no-repeat;
         background-position: right 14px center;
     }
-    .filter-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); outline: none; }
+    .filter-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); outline: none; }
     .ct-filter-switch { margin-top: 0.6rem; }
 
     /* Icon + select combined field — icon is a flex sibling, immune to
@@ -191,7 +191,7 @@
         cursor: pointer;
     }
     .filter-field:hover { border-color: #cbd5e1; }
-    .filter-field:focus-within { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); }
+    .filter-field:focus-within { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); }
     .filter-field > i { color: var(--muted); font-size: 0.85rem; margin-right: 11px; min-width: 15px; text-align: center; }
     .filter-field > select {
         -webkit-appearance: none !important; -moz-appearance: none !important; appearance: none !important;
@@ -209,7 +209,7 @@
         display: flex; align-items: center; transition: border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
     }
     .filter-input-wrap .select2-container--bootstrap4.select2-container--focus .select2-selection--single {
-        border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
+        border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08);
     }
     .filter-input-wrap .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
         padding-left: 2.4rem; color: var(--text); font-weight: 600; font-size: 0.875rem; line-height: 42px;

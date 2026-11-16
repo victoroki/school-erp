@@ -3,7 +3,7 @@
 @section('content')
 <style>
     .fa-cr {
-        --fa-indigo-600: oklch(0.511 0.230 272);
+        --fa-indigo-600: oklch(0.320 0.095 258);
         --fa-indigo-50:  oklch(0.962 0.018 272);
         --fa-slate-900:  oklch(0.206 0.010 264);
         --fa-slate-700:  oklch(0.372 0.016 264);
@@ -20,7 +20,7 @@
         --fa-rose-50:    oklch(0.969 0.015 12);
         --fa-amber-600:  oklch(0.666 0.179 58);
         --fa-amber-50:   oklch(0.980 0.022 95);
-        --fa-violet-500: oklch(0.606 0.180 278);
+        --fa-violet-500: oklch(0.470 0.095 258);
         --fa-violet-50:  oklch(0.960 0.022 302);
         --fa-ease-out:   cubic-bezier(0.23, 1, 0.32, 1);
         --fa-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", Menlo, Consolas, monospace;

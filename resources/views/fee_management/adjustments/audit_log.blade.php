@@ -3,7 +3,7 @@
 @section('content')
 <style>
     .fa-cr {
-        --fa-indigo-600: oklch(0.511 0.230 272);
+        --fa-indigo-600: oklch(0.320 0.095 258);
         --fa-indigo-50:  oklch(0.962 0.018 272);
         --fa-slate-900:  oklch(0.206 0.010 264);
         --fa-slate-700:  oklch(0.372 0.016 264);

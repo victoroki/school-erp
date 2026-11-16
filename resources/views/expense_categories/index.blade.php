@@ -35,7 +35,7 @@
 /* ── Emil Kowalski Utility Suite ── */
 :root {
     --blue: #3b82f6; --blue-light: #eff6ff;
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --amber: #f59e0b; --amber-light: #fffbeb;
     --rose: #f43f5e; --rose-light: #fff1f2;
@@ -62,7 +62,7 @@
 /* Buttons */
 .btn-dash { display: inline-flex; align-items: center; justify-content: center; padding: .5rem 1rem; border-radius: 8px; font-size: .813rem; font-weight: 600; transition: all 150ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; cursor: pointer; }
 .btn-primary-dash { background: var(--indigo); color: #fff; border-color: var(--indigo); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-.btn-primary-dash:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); color: #fff; }
+.btn-primary-dash:hover { background: #17325f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(29, 63, 122, 0.2); color: #fff; }
 .btn-ghost { background: transparent; color: var(--muted); border-color: transparent; }
 .btn-ghost:hover { background: #f1f5f9; color: var(--text); }
 

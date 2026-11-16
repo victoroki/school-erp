@@ -13,7 +13,7 @@
         .section-header td { background: #f9fafb; font-weight: 700; font-size: 10px; text-transform: uppercase; color: #374151; padding: 8px 10px; }
         .total-row td { font-weight: 800; border-top: 2px solid #e5e7eb; font-size: 12px; padding: 10px; }
         .net-row td { font-weight: 800; font-size: 13px; padding: 12px 10px; }
-        .net-positive td { background: #eef2ff; color: #4338ca; }
+        .net-positive td { background: #eef3fa; color: #17325f; }
         .net-negative td { background: #fff1f2; color: #e11d48; }
         .text-right { text-align: right; }
         .text-emerald { color: #059669; }
@@ -50,7 +50,7 @@
             </td>
             <td style="width:33%;padding:8px;border:1px solid #e5e7eb;border-radius:4px;">
                 <div style="font-size:9px;color:#6b7280;text-transform:uppercase;font-weight:700;">Net {{ $netProfit >= 0 ? 'Profit' : 'Loss' }}</div>
-                <div style="font-size:14px;font-weight:800;color:{{ $netProfit >= 0 ? '#4338ca' : '#e11d48' }};">KES {{ number_format($netProfit, 2) }}</div>
+                <div style="font-size:14px;font-weight:800;color:{{ $netProfit >= 0 ? '#17325f' : '#e11d48' }};">KES {{ number_format($netProfit, 2) }}</div>
             </td>
         </tr>
     </table>

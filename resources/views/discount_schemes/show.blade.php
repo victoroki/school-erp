@@ -159,8 +159,8 @@
 
 <style>
 :root {
-    --indigo: #4f46e5;
-    --indigo-light: #eef2ff;
+    --indigo: #1d3f7a;
+    --indigo-light: #eef3fa;
     --amber: #f59e0b;
     --amber-light: #fffbeb;
     --emerald: #10b981;
@@ -208,9 +208,9 @@
 
 /* Hero Card */
 .hero-card {
-    background: linear-gradient(135deg, var(--indigo) 0%, #6366f1 100%);
+    background: linear-gradient(135deg, var(--indigo) 0%, #2f5596 100%);
     border-radius: 16px; padding: 2rem; color: #fff;
-    box-shadow: 0 4px 24px rgba(79, 70, 229, 0.25);
+    box-shadow: 0 4px 24px rgba(29, 63, 122, 0.25);
 }
 .hero-value {
     font-size: 3rem; font-weight: 900; letter-spacing: -0.03em; line-height: 1;

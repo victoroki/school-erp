@@ -147,7 +147,7 @@
 
 <style>
 :root {
-    --indigo: #4f46e5; --indigo-light: #eef2ff; --indigo-soft: #e0e7ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa; --indigo-soft: #dde7f4;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --amber: #f59e0b; 
     --slate: #475569; --slate-light: #f1f5f9;
@@ -182,13 +182,13 @@
 .border-bottom-soft:last-child { border-bottom: none; }
 
 .btn-indigo-hub { background: var(--indigo); color: #fff; padding: 0.65rem 1.5rem; border-radius: 10px; border: none; font-size: 0.85rem; transition: all 200ms; }
-.btn-indigo-hub:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+.btn-indigo-hub:hover { background: #17325f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(29, 63, 122, 0.2); }
 
-.btn-dash-emerald { background: var(--emerald); color: #fff; padding: 0.65rem 1.25rem; border-radius: 10px; font-size: 0.85rem; font-weight: 800; border: none; text-decoration: none !important; transition: all 200ms; }
-.btn-dash-emerald:hover { background: #059669; transform: translateY(-1px); }
+.btn-dash-emerald { background: #1d3f7a; color: #fff; padding: 0.65rem 1.25rem; border-radius: 10px; font-size: 0.85rem; font-weight: 800; border: none; text-decoration: none !important; transition: all 200ms; }
+.btn-dash-emerald:hover { background: #17325f; transform: translateY(-1px); }
 
 .btn-hub-link { font-size: 0.75rem; font-weight: 800; color: var(--indigo); text-decoration: none !important; transition: all 150ms; display: flex; align-items: center; }
-.btn-hub-link:hover { color: #4338ca; transform: translateX(3px); }
+.btn-hub-link:hover { color: #17325f; transform: translateX(3px); }
 
 .hub-fee-row:hover .hub-actions { opacity: 1; }
 .hub-actions { transition: opacity 200ms; }

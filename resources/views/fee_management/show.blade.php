@@ -331,8 +331,8 @@
 
 <style>
 :root {
-    --indigo: #4f46e5;
-    --indigo-light: #eef2ff;
+    --indigo: #1d3f7a;
+    --indigo-light: #eef3fa;
     --amber: #f59e0b;
     --amber-600: #d97706;
     --amber-light: #fffbeb;
@@ -373,9 +373,9 @@
 .btn-primary-custom {
     display: inline-flex; align-items: center; padding: 0.5rem 1.25rem; border-radius: 8px;
     font-size: 0.75rem; font-weight: 800; border: none; text-decoration: none !important; cursor: pointer;
-    background: var(--emerald); color: #fff; transition: all 160ms var(--ease-out);
+    background: #1d3f7a; color: #fff; transition: all 160ms var(--ease-out);
 }
-.btn-primary-custom:hover { background: #059669; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+.btn-primary-custom:hover { background: #17325f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
 .btn-primary-custom:active { transform: scale(0.97); }
 
 .btn-ghost-custom {
@@ -414,7 +414,7 @@
 .progress-label { font-size: 0.7rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.04em; }
 .progress-percent { font-size: 0.75rem; font-weight: 800; color: var(--indigo); }
 .progress-bar { height: 8px; background: var(--slate-100); border-radius: 4px; overflow: hidden; }
-.progress-fill { height: 100%; background: linear-gradient(90deg, var(--indigo), #6366f1); border-radius: 4px; transition: width 400ms var(--ease-out); }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--indigo), #2f5596); border-radius: 4px; transition: width 400ms var(--ease-out); }
 
 /* Financial Card */
 .financial-card {

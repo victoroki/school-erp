@@ -424,7 +424,7 @@
             </button>
         </div>
 
-        <div class="dash-panel mb-4" style="border-color: #c7d2fe;">
+        <div class="dash-panel mb-4" style="border-color: #c4d3ea;">
             <div class="dash-panel-header">
                 <div class="d-flex align-items-center gap-2">
                     <i class="fas fa-check-circle text-indigo"></i>
@@ -560,7 +560,7 @@
 <style>
 /* ── Design tokens ── */
 :root {
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --amber: #f59e0b; --amber-light: #fffbeb;
     --rose: #f43f5e; --rose-light: #fff1f2;
@@ -591,7 +591,7 @@
 
 .filter-label { font-size: 0.65rem; font-weight: 800; color: var(--slate); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; display: block; }
 .filter-input { width: 100%; border-radius: 8px; border: 1px solid var(--border); background: #fff; padding: 0.5rem 0.875rem; font-size: 0.813rem; font-weight: 600; color: var(--text); transition: border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out); appearance: none; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 0.875rem center; background-size: 10px; padding-right: 2.25rem; }
-.filter-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); outline: none; }
+.filter-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); outline: none; }
 
 .btn-dash { display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 0.813rem; font-weight: 750; text-decoration: none !important; cursor: pointer; transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out), border-color 160ms var(--ease-out); }
 .btn-dash:active { transform: scale(0.97); }
@@ -599,7 +599,7 @@
 .btn-ghost { background: #fff; border: 1px solid var(--border); color: var(--text); padding: 0.5rem 1rem; }
 .btn-xs { padding: 0.2rem 0.5rem; font-size: 0.688rem; border-radius: 6px; }
 @media (hover: hover) and (pointer: fine) {
-    .btn-primary-dash:hover { background: #4338ca; border-color: #4338ca; color: #fff; }
+    .btn-primary-dash:hover { background: #17325f; border-color: #17325f; color: #fff; }
     .btn-ghost:hover { background: var(--slate-light); color: var(--text); }
 }
 
@@ -626,10 +626,10 @@
 }
 .stepper-item.active .stepper-circle {
     background: var(--indigo); color: #fff; border-color: var(--indigo);
-    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+    box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.15);
 }
 .stepper-item.completed .stepper-circle {
-    background: var(--emerald); color: #fff; border-color: var(--emerald);
+    background: #1d3f7a; color: #fff; border-color: var(--emerald);
 }
 .stepper-label {
     font-size: 0.625rem; font-weight: 700; text-transform: uppercase;

@@ -61,7 +61,7 @@
 .subject-check-content { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1rem; transition: all 200ms var(--ease-out); display: flex; flex-direction: column; gap: 0.25rem; }
 .subject-check-card:hover .subject-check-content { border-color: var(--indigo); background-color: #f8fafc; }
 
-.subject-check-input:checked + .subject-check-content { background: var(--indigo-light); border-color: var(--indigo); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1); }
+.subject-check-input:checked + .subject-check-content { background: var(--indigo-light); border-color: var(--indigo); box-shadow: 0 4px 12px rgba(29, 63, 122, 0.1); }
 
 .subject-check-name { font-size: 0.875rem; font-weight: 700; color: var(--text); }
 .subject-check-badge { font-size: 0.625rem; font-weight: 800; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; }

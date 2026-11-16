@@ -185,7 +185,7 @@ function confirmRefundCompletion(button) {
 
 <style>
 :root{
-    --indigo:#4f46e5; --indigo-light:#eef2ff; --amber:#f59e0b; --amber-600:#d97706; --amber-light:#fffbeb;
+    --indigo:#1d3f7a; --indigo-light:#eef3fa; --amber:#f59e0b; --amber-600:#d97706; --amber-light:#fffbeb;
     --emerald:#10b981; --emerald-light:#ecfdf5; --rose:#f43f5e; --rose-light:#fff1f2;
     --slate-50:#f8fafc; --slate-100:#f1f5f9; --slate-200:#e2e8f0; --slate-300:#cbd5e1; --slate-400:#94a3b8;
     --slate-500:#64748b; --slate-600:#475569; --slate-700:#334155; --slate-800:#1e293b; --slate-900:#0f172a;

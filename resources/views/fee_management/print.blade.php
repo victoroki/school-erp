@@ -18,12 +18,12 @@
             background: #fff; color: #334155; font-size: 13px; font-weight: 600;
             cursor: pointer; margin: 0 8px;
         }
-        .no-print button.primary { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+        .no-print button.primary { background: #1d3f7a; color: #fff; border-color: #1d3f7a; }
         .no-print button:hover { opacity: 0.9; }
 
         /* Header */
-        .statement-header { text-align: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #4f46e5; }
-        .school-name { font-size: 22pt; font-weight: 900; color: #4f46e5; letter-spacing: -0.02em; }
+        .statement-header { text-align: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid #1d3f7a; }
+        .school-name { font-size: 22pt; font-weight: 900; color: #1d3f7a; letter-spacing: -0.02em; }
         .statement-title { font-size: 13pt; font-weight: 700; color: #475569; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
         .statement-date { font-size: 9pt; color: #94a3b8; margin-top: 4px; }
 
@@ -45,7 +45,7 @@
         .summary-card-value.total { color: #1e293b; }
         .summary-card-value.paid { color: #10b981; }
         .summary-card-value.balance { color: #f43f5e; }
-        .summary-card-value.rate { color: #4f46e5; }
+        .summary-card-value.rate { color: #1d3f7a; }
 
         /* Tables */
         .section-title { font-size: 11pt; font-weight: 800; color: #1e293b; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }

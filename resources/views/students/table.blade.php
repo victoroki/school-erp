@@ -62,18 +62,18 @@
                         {!! $student->status_badge !!}
                     </td>
                     <td class="align-middle text-right pr-4">
-                        <div class='btn-group shadow-sm'>
-                            <a href="{{ route('students.show', [$student->student_id]) }}" class='btn btn-light btn-sm border' title="View Profile">
-                                <i class="far fa-eye text-primary"></i>
+                        <div class="row-actions">
+                            <a href="{{ route('students.show', [$student->student_id]) }}" class="icon-btn" title="View profile" aria-label="View {{ $student->full_name }}">
+                                <i class="far fa-eye" aria-hidden="true"></i>
                             </a>
-                            <a href="{{ route('students.edit', [$student->student_id]) }}" class='btn btn-light btn-sm border' title="Edit">
-                                <i class="far fa-edit text-secondary"></i>
+                            <a href="{{ route('students.edit', [$student->student_id]) }}" class="icon-btn" title="Edit" aria-label="Edit {{ $student->full_name }}">
+                                <i class="far fa-edit" aria-hidden="true"></i>
                             </a>
-                            <a href="{{ route('students.id-card', [$student->student_id]) }}" target="_blank" class='btn btn-light btn-sm border' title="Generate ID Card">
-                                <i class="fas fa-id-card text-warning"></i>
+                            <a href="{{ route('students.id-card', [$student->student_id]) }}" target="_blank" rel="noopener" class="icon-btn" title="ID card" aria-label="ID card for {{ $student->full_name }}">
+                                <i class="far fa-id-card" aria-hidden="true"></i>
                             </a>
-                            <button type="button" class="btn btn-light btn-sm border text-danger" onclick="confirmDelete('{{ $student->student_id }}')" title="Delete">
-                                <i class="far fa-trash-alt"></i>
+                            <button type="button" class="icon-btn is-danger" onclick="confirmDelete('{{ $student->student_id }}')" title="Delete" aria-label="Delete {{ $student->full_name }}">
+                                <i class="far fa-trash-alt" aria-hidden="true"></i>
                             </button>
                         </div>
                         <form id="delete-form-{{ $student->student_id }}" action="{{ route('students.destroy', [$student->student_id]) }}" method="POST" style="display: none;">

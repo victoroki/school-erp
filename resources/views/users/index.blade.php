@@ -74,7 +74,7 @@
 /* ── Emil Kowalski Utility Suite ── */
 :root {
     --blue: #3b82f6;
-    --indigo: #4f46e5;
+    --indigo: #1d3f7a;
     --emerald: #10b981;
     --slate: #64748b;
     --text: #0f172a;
@@ -95,7 +95,7 @@
     transition: all 150ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; cursor: pointer;
 }
 .btn-primary-dash { background: var(--indigo); color: #fff; border-color: var(--indigo); }
-.btn-primary-dash:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+.btn-primary-dash:hover { background: #17325f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(29, 63, 122, 0.2); }
 .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
 .btn-ghost:hover { background: #f8fafc; color: var(--text); border-color: #cbd5e1; }
 
@@ -125,13 +125,13 @@
 /* Reset Password Modal */
 .reset-card { border: none; border-radius: 14px; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12); overflow: hidden; }
 .reset-card-header { background: #fff; border-bottom: 1px solid #f8fafc; padding: 1.25rem 1.5rem; align-items: center; }
-.reset-icon { width: 40px; height: 40px; border-radius: 10px; background: #eef2ff; color: var(--indigo); display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+.reset-icon { width: 40px; height: 40px; border-radius: 10px; background: #eef3fa; color: var(--indigo); display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
 .reset-title { font-size: 1rem; font-weight: 800; color: var(--text); letter-spacing: -0.01em; }
 .reset-sub { font-size: .75rem; color: var(--muted); font-weight: 500; }
 .reset-card-body { padding: 1.5rem; }
 .reset-label { font-size: .75rem; font-weight: 700; color: var(--text); margin-bottom: .375rem; display: block; }
 .reset-input { border: 1px solid var(--border); border-radius: 8px; padding: .5rem .75rem; font-size: .875rem; }
-.reset-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12); }
+.reset-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(29, 63, 122, 0.12); }
 .reset-hint { font-size: .75rem; color: var(--muted); }
 .reset-alert { font-size: .813rem; border-radius: 8px; border: 0; background: #fef2f2; color: #b91c1c; }
 .reset-card-footer { background: #f8fafc; border-top: 1px solid var(--border); padding: .875rem 1.5rem; }

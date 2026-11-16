@@ -599,6 +599,10 @@ Route::resource('fee-structures', App\Http\Controllers\FeeStructureController::c
 
     // ─── PARENT/STUDENT PORTAL ────────────────────────────────────
     Route::prefix('portal')->name('portal.')->middleware(['auth'])->group(function () {
+        // LoginController sends Parent and Student accounts to /portal, which
+        // had no route: every portal sign-in landed on a 404.
+        Route::get('/', fn () => redirect()->route('portal.fees'))->name('home');
+
         // Profile
         Route::get('/profile', [App\Http\Controllers\Portal\PortalProfileController::class, 'index'])->name('profile');
         Route::put('/profile', [App\Http\Controllers\Portal\PortalProfileController::class, 'update'])->name('profile.update');

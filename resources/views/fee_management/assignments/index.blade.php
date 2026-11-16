@@ -4,8 +4,8 @@
 <style>
     .fa-assign {
         /* Design tokens — match sidebar-fixed-final.css / DESIGN.md */
-        --fa-indigo-600: oklch(0.511 0.230 272);
-        --fa-indigo-500: oklch(0.555 0.210 272);
+        --fa-indigo-600: oklch(0.320 0.095 258);
+        --fa-indigo-500: oklch(0.370 0.095 258);
         --fa-indigo-100: oklch(0.930 0.034 272);
         --fa-indigo-50:  oklch(0.962 0.018 272);
         --fa-slate-900:  oklch(0.206 0.010 264);
@@ -101,8 +101,8 @@
     .fa-metric--emerald .fa-metric-value     { color: var(--fa-emerald-600); }
     .fa-metric--amber .fa-metric-icon        { background: oklch(0.950 0.045 95); color: var(--fa-amber-600); }
     .fa-metric--amber .fa-metric-value       { color: var(--fa-amber-600); }
-    .fa-metric--violet .fa-metric-icon       { background: oklch(0.960 0.022 302); color: oklch(0.606 0.180 278); }
-    .fa-metric--violet .fa-metric-value      { color: oklch(0.606 0.180 278); }
+    .fa-metric--violet .fa-metric-icon       { background: oklch(0.960 0.022 302); color: oklch(0.470 0.095 258); }
+    .fa-metric--violet .fa-metric-value      { color: oklch(0.470 0.095 258); }
     .fa-metric--rose .fa-metric-icon         { background: var(--fa-rose-50); color: var(--fa-rose-600); }
     .fa-metric--rose .fa-metric-value        { color: var(--fa-rose-600); }
     .fa-metric:active { transform: scale(0.99); transition: transform 0.12s var(--fa-ease-out); }

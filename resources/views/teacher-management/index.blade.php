@@ -57,7 +57,7 @@
             @foreach($teachers as $teacher)
                 @php
                     $initials = strtoupper(mb_substr($teacher->first_name ?? '?', 0, 1)) . strtoupper(mb_substr($teacher->last_name ?? '', 0, 1));
-                    $avatarColors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#f6a821', '#e9506d'];
+                    $avatarColors = ['#2f5596', '#1d3f7a', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#f6a821', '#e9506d'];
                     $avatarColor = $avatarColors[$teacher->staff_id % count($avatarColors)];
                 @endphp
                 <div class="col-xl-4 col-md-6 mb-4">
@@ -150,9 +150,9 @@
 
 <style>
     :root {
-        --indigo: #4f46e5;
-        --indigo-dark: #4338ca;
-        --indigo-light: #eef2ff;
+        --indigo: #1d3f7a;
+        --indigo-dark: #17325f;
+        --indigo-light: #eef3fa;
         --rose: #f43f5e; --rose-light: #fff1f2;
         --slate: #64748b; --slate-light: #f1f5f9;
         --text: #0f172a;
@@ -190,11 +190,11 @@
         background-position: right 14px center;
     }
     input.filter-input { background-image: none; padding-right: 1rem; }
-    .filter-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); outline: none; }
+    .filter-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); outline: none; }
 
     /* Teacher cards */
     .staff-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; transition: transform 250ms var(--ease-out), box-shadow 250ms var(--ease-out), border-color 250ms var(--ease-out); height: 100%; display: flex; flex-direction: column; }
-    .staff-card:hover { transform: translateY(-3px); border-color: #c7d2fe; box-shadow: 0 10px 24px rgba(79, 70, 229, 0.1) !important; }
+    .staff-card:hover { transform: translateY(-3px); border-color: #c4d3ea; box-shadow: 0 10px 24px rgba(29, 63, 122, 0.1) !important; }
 
     .sc-body { padding: 1.25rem 1.25rem 0.9rem; flex-grow: 1; }
     .sc-head { margin-bottom: 0.9rem; }
@@ -229,7 +229,7 @@
     /* Buttons */
     .btn-dash { display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 0.875rem; font-weight: 700; transition: all 200ms var(--ease-out); text-decoration: none !important; padding: 0.65rem 1.25rem; }
     .btn-primary-dash { background: var(--indigo); color: #fff !important; border: 1px solid var(--indigo); }
-    .btn-primary-dash:hover { background: var(--indigo-dark); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.28); }
+    .btn-primary-dash:hover { background: var(--indigo-dark); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(29, 63, 122, 0.28); }
     .btn-ghost { background: #fff; border: 1px solid var(--border); color: var(--text) !important; }
     .btn-ghost:hover { background: #f8fafc; border-color: #cbd5e1; }
 
@@ -246,7 +246,7 @@
     .pagination { margin: 0; }
     .pagination .page-link { border-radius: 10px !important; margin: 0 3px; border: 1px solid var(--border); color: var(--slate); font-weight: 700; font-size: 0.85rem; min-width: 34px; text-align: center; padding: 0.35rem 0.6rem; }
     .pagination .page-item.active .page-link { background: var(--indigo); border-color: var(--indigo); color: #fff; }
-    .pagination .page-link:focus { box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); }
+    .pagination .page-link:focus { box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); }
     .pagination .disabled .page-link { opacity: 0.45; }
 
     @media (max-width: 768px) {

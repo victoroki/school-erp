@@ -4,7 +4,7 @@
 
     The package version loads @vite('resources/js/app.js'), an entry that no
     longer exists: jQuery, Bootstrap and AdminLTE are served as classic
-    scripts from build/vendor so inline page scripts can use them (see
+    scripts from build/libs so inline page scripts can use them (see
     vite.config.js and layouts/app.blade.php). This keeps those pages on the
     same assets and theme as the staff app.
 --}}
@@ -26,13 +26,13 @@
     @stack('third_party_stylesheets')
     @stack('page_css')
 
-    <script src="{{ asset('build/vendor/jquery.min.js') }}?v=3.7.1"></script>
+    <script src="{{ asset('build/libs/jquery.min.js') }}?v=3.7.1"></script>
 </head>
 
 {{ $slot }}
 
-<script src="{{ asset('build/vendor/bootstrap.bundle.min.js') }}?v=4.6.2"></script>
-<script src="{{ asset('build/vendor/adminlte.min.js') }}?v=3.1.0"></script>
+<script src="{{ asset('build/libs/bootstrap.bundle.min.js') }}?v=4.6.2"></script>
+<script src="{{ asset('build/libs/adminlte.min.js') }}?v=3.1.0"></script>
 @stack('third_party_scripts')
 @stack('page_scripts')
 

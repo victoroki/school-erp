@@ -219,8 +219,8 @@
 
 <style>
 :root {
-    --indigo: #4f46e5;
-    --indigo-light: #eef2ff;
+    --indigo: #1d3f7a;
+    --indigo-light: #eef3fa;
     --amber: #f59e0b;
     --amber-light: #fffbeb;
     --emerald: #10b981;
@@ -261,7 +261,7 @@
     font-size: 0.75rem; font-weight: 800; border: none; text-decoration: none !important; cursor: pointer;
     background: var(--indigo); color: #fff; transition: all 160ms var(--ease-out);
 }
-.btn-primary-custom:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+.btn-primary-custom:hover { background: #17325f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(29, 63, 122, 0.3); }
 .btn-primary-custom:active { transform: scale(0.97); }
 
 .btn-ghost-custom {
@@ -304,7 +304,7 @@
     font-size: 0.8rem; font-weight: 600; color: var(--slate-700); background: #fff;
 }
 .search-input::placeholder { color: var(--slate-300); }
-.search-input:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+.search-input:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(29, 63, 122, 0.1); }
 .filter-actions { display: flex; gap: 0.5rem; }
 
 /* Table Section */

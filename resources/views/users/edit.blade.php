@@ -33,7 +33,7 @@
 
 <style>
 :root {
-    --indigo: #4f46e5;
+    --indigo: #1d3f7a;
     --text: #0f172a;
     --muted: #64748b;
     --border: #e2e8f0;
@@ -47,13 +47,13 @@
 .dash-form-footer { padding: 1rem 1.5rem; background: #f8fafc; border-top: 1px solid var(--border); }
 .btn-dash { display: inline-flex; align-items: center; justify-content: center; padding: .4rem .875rem; border-radius: 8px; font-size: .813rem; font-weight: 600; transition: all 150ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; cursor: pointer; }
 .btn-primary-dash { background: var(--indigo); color: #fff; border-color: var(--indigo); }
-.btn-primary-dash:hover { background: #4338ca; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+.btn-primary-dash:hover { background: #17325f; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(29, 63, 122, 0.2); }
 .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
 .btn-ghost:hover { background: #f8fafc; color: var(--text); border-color: #cbd5e1; }
 
 .form-group label { font-size: .75rem; font-weight: 700; color: var(--text); margin-bottom: .375rem; }
 .form-control, .custom-control-label { font-size: .875rem; border: 1px solid var(--border); border-radius: 8px; padding: .5rem .75rem; }
-.form-control:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12); }
+.form-control:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(29, 63, 122, 0.12); }
 .form-group h3 { font-size: .875rem; font-weight: 800; color: var(--text); margin-bottom: .75rem; }
 .checkbox label { font-size: .838rem; color: var(--text); font-weight: 600; }
 </style>

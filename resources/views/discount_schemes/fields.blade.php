@@ -112,7 +112,7 @@
         background: none;
         font-size: 0.7rem;
         font-weight: 700;
-        color: #4f46e5;
+        color: #1d3f7a;
         text-decoration: underline;
         cursor: pointer;
     }
@@ -138,15 +138,15 @@
     }
 
     .ds-cat-card:hover {
-        border-color: #c7d2fe;
+        border-color: #c4d3ea;
         background: #f8fafc;
     }
 
     /* Set by the script below rather than :has(), so a browser without it
        still shows which categories are ticked. */
     .ds-cat-card.is-checked {
-        border-color: #4f46e5;
-        background: #eef2ff;
+        border-color: #1d3f7a;
+        background: #eef3fa;
     }
 
     .ds-cat-card .form-check-input {

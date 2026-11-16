@@ -1,36 +1,34 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1 class="m-0 text-dark">
-                    <i class="fas fa-user-graduate text-warning mr-2"></i>Student Explorer
-                </h1>
-            </div>
-            <div class="col-sm-6 text-right">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-outline-warning shadow-sm dropdown-toggle mr-2" data-toggle="dropdown">
-                        <i class="fas fa-cog mr-1"></i> Bulk Actions
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-right">
-                        <a class="dropdown-item" href="#" onclick="submitBulkAction('id-cards')">
-                            <i class="fas fa-id-card mr-2 text-warning"></i> Generate ID Cards
-                        </a>
-                        <a class="dropdown-item" href="#" onclick="submitBulkAction('promote')">
-                            <i class="fas fa-level-up-alt mr-2 text-warning"></i> Batch Promotion
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item text-danger" href="#">
-                            <i class="fas fa-trash-alt mr-2"></i> Bulk Delete
-                        </a>
-                    </div>
-                    <a class="btn btn-warning shadow-sm" href="{{ route('students.create') }}">
-                        <i class="fas fa-plus mr-1"></i> New Student
+<div class="page pb-0">
+    <div class="page-head mb-0">
+        <div>
+            <h1>Students</h1>
+            <p>Search, filter and manage every learner on the roll.</p>
+        </div>
+        <div class="page-actions">
+            <div class="dropdown">
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Bulk actions
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    {{-- Acts on the students ticked in the table below. --}}
+                    <a class="dropdown-item" href="#" onclick="submitBulkAction('id-cards'); return false;">
+                        <i class="fas fa-id-card mr-2" aria-hidden="true"></i> Print ID cards for selected
+                    </a>
+                    {{-- Promotion runs per class on its own screen; the old menu
+                         item only showed an alert and promoted nobody. --}}
+                    <a class="dropdown-item" href="{{ route('student-promotion.index') }}">
+                        <i class="fas fa-level-up-alt mr-2" aria-hidden="true"></i> Promote a class
                     </a>
                 </div>
             </div>
+            @can('students.manage')
+                <a class="btn btn-primary" href="{{ route('students.create') }}">
+                    <i class="fas fa-plus mr-1" aria-hidden="true"></i> New student
+                </a>
+            @endcan
         </div>
     </div>
 </div>
@@ -105,7 +103,7 @@
                     </div>
                     <div class="col-md-1">
                         <div class="btn-group w-100">
-                            <button type="submit" class="btn btn-warning shadow-sm" title="Apply Filter">
+                            <button type="submit" class="btn btn-primary" title="Apply filter">
                                 <i class="fas fa-filter"></i>
                             </button>
                             <a href="{{ route('students.index') }}" class="btn btn-light border shadow-sm" title="Clear All">
@@ -140,9 +138,6 @@
         if (action === 'id-cards') {
             form.attr('action', "{{ route('students.bulk-id-cards') }}");
             form.submit();
-        } else if (action === 'promote') {
-            alert('Batch promotion for ' + selected + ' students initiated.');
-            // Implement promotion redirect if needed
         }
     }
 </script>

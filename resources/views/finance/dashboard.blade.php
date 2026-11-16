@@ -290,7 +290,7 @@
 /* ── Emil Kowalski Utility Suite ── */
 :root {
     --blue: #3b82f6; --blue-light: #eff6ff;
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --amber: #f59e0b; --amber-light: #fffbeb;
     --amber-dark: #b45309;
@@ -350,8 +350,8 @@
 .btn-ghost { background: transparent; color: var(--muted); border-color: transparent; border: 1px solid var(--border); }
 .btn-ghost:hover { background: #f1f5f9; color: var(--text); border-color: #cbd5e1; }
 
-.btn-emerald-dash { background: var(--emerald); color: #fff; }
-.btn-emerald-dash:hover { background: #059669; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
+.btn-emerald-dash { background: #1d3f7a; color: #fff; }
+.btn-emerald-dash:hover { background: #17325f; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
 
 .btn-rose-dash { background: var(--rose); color: #fff; }
 .btn-rose-dash:hover { background: #e11d48; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2); }

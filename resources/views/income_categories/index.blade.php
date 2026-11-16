@@ -35,7 +35,7 @@
 /* ── Emil Kowalski Utility Suite ── */
 :root {
     --blue: #3b82f6; --blue-light: #eff6ff;
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --amber: #f59e0b; --amber-light: #fffbeb;
     --rose: #f43f5e; --rose-light: #fff1f2;
@@ -60,8 +60,8 @@
 
 /* Buttons */
 .btn-dash { display: inline-flex; align-items: center; justify-content: center; padding: .5rem 1rem; border-radius: 8px; font-size: .813rem; font-weight: 600; transition: all 150ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; cursor: pointer; }
-.btn-primary-dash { background: var(--emerald); color: #fff; border-color: var(--emerald); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-.btn-primary-dash:hover { background: #059669; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); color: #fff; }
+.btn-primary-dash { background: #1d3f7a; color: #fff; border-color: #1d3f7a; box-shadow: none; }
+.btn-primary-dash:hover { background: #17325f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); color: #fff; }
 
 /* Table Styling */
 .table { margin-bottom: 0; }

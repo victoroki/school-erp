@@ -145,7 +145,7 @@
                 datasets: [{
                     label: 'Students',
                     data: data,
-                    backgroundColor: ['#f43f5e', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#6b7280'],
+                    backgroundColor: ['#f43f5e', '#f59e0b', '#3b82f6', '#10b981', '#2f5596', '#ec4899', '#6b7280'],
                     borderRadius: 8,
                     barThickness: 35
                 }]

@@ -107,7 +107,7 @@
 
 <style>
 :root {
-    --indigo: #4f46e5;
+    --indigo: #1d3f7a;
     --amber: #f59e0b;
     --amber-light: #fffbeb;
     --emerald: #10b981;

@@ -41,7 +41,7 @@
         </div>
         <div class="detail-row">
             <span class="detail-row-label">Current Balance</span>
-            <span class="detail-row-value" style="color: #4338ca; font-size: 1.05rem; font-weight: 800;">
+            <span class="detail-row-value" style="color: #17325f; font-size: 1.05rem; font-weight: 800;">
                 {{ \App\Support\Money::format($bankAccount->current_balance ?? 0) }}
             </span>
         </div>
@@ -49,7 +49,7 @@
             <span class="detail-row-label">Account Type</span>
             <span class="detail-row-value">
                 <span class="badge px-3 py-2 rounded-pill font-weight-bold"
-                      style="background: #eef2ff; color: #4338ca;">
+                      style="background: #eef3fa; color: #17325f;">
                     {{ ucwords(str_replace('_', ' ', $bankAccount->account_type ?? 'Account')) }}
                 </span>
             </span>

@@ -16,10 +16,13 @@ class PortalProfileController extends Controller
     {
         $user = Auth::user();
 
-        $profile = match ($user->user_type) {
-            'parent'  => $user->parent,
-            'student' => $user->student,
-            default   => null,
+        // By role, not users.user_type: that legacy column is never set, so
+        // every parent and student saw an empty profile.
+        $user->loadMissing('roles');
+        $profile = match (true) {
+            $user->hasRole('Parent') => $user->parent,
+            $user->hasRole('Student') => \App\Services\PortalScopeService::selfStudent($user),
+            default => null,
         };
 
         return view('portal.profile', compact('user', 'profile'));

@@ -6,8 +6,8 @@
         'create'  => ['bg' => '#ecfdf5', 'text' => '#047857', 'dot' => '#10b981'],
         'update'  => ['bg' => '#fffbeb', 'text' => '#b45309', 'dot' => '#f59e0b'],
         'delete'  => ['bg' => '#fff1f2', 'text' => '#be123c', 'dot' => '#f43f5e'],
-        'login'   => ['bg' => '#eef2ff', 'text' => '#4338ca', 'dot' => '#4f46e5'],
-        'logout'  => ['bg' => '#eef2ff', 'text' => '#4338ca', 'dot' => '#4f46e5'],
+        'login'   => ['bg' => '#eef3fa', 'text' => '#17325f', 'dot' => '#1d3f7a'],
+        'logout'  => ['bg' => '#eef3fa', 'text' => '#17325f', 'dot' => '#1d3f7a'],
         'default' => ['bg' => '#f4f4f5', 'text' => '#52525b', 'dot' => '#a1a1aa'],
     ];
 
@@ -279,7 +279,7 @@
                             </td>
                             <td class="py-3">
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="at-avatar-sm" style="background: #eef2ff; color: #4f46e5;">
+                                    <div class="at-avatar-sm" style="background: #eef3fa; color: #1d3f7a;">
                                         {{ strtoupper(substr($log->user->name ?? 'S', 0, 1)) }}
                                     </div>
                                     <span class="fw-600 text-slate">{{ $log->user->name ?? 'System' }}</span>
@@ -361,7 +361,7 @@
 
 <style>
 :root {
-    --at-indigo: #4f46e5; --at-indigo-deep: #4338ca;
+    --at-indigo: #1d3f7a; --at-indigo-deep: #17325f;
     --at-emerald: #10b981; --at-amber: #f59e0b; --at-rose: #f43f5e;
     --at-slate: #18181b; --at-muted: #71717a; --at-border: #e4e4e7;
     --at-bg: #f7f7f8; --at-surface: #ffffff;
@@ -373,7 +373,7 @@
 .at-wrap { padding: 1.75rem 1.5rem 2.5rem; background: var(--at-bg); min-height: 100vh; }
 .at-title { font-size: 1.625rem; font-weight: 800; color: var(--at-slate); letter-spacing: -0.03em; }
 .at-sub { color: var(--at-muted); font-size: 0.875rem; font-weight: 500; }
-.at-hero-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: var(--at-indigo); background: #eef2ff; box-shadow: var(--at-shadow-sm); }
+.at-hero-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: var(--at-indigo); background: #eef3fa; box-shadow: var(--at-shadow-sm); }
 .fw-600 { font-weight: 600; }
 
 /* ── Cards & panels ─────────────────────────────────────────── */
@@ -394,7 +394,7 @@
 @keyframes atRise { to { opacity: 1; transform: translateY(0); } }
 .at-stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: .625rem; }
 .at-stat-icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: .875rem; }
-.at-si-indigo { background: #eef2ff; color: var(--at-indigo); }
+.at-si-indigo { background: #eef3fa; color: var(--at-indigo); }
 .at-si-emerald { background: #ecfdf5; color: var(--at-emerald); }
 .at-si-amber { background: #fffbeb; color: var(--at-amber); }
 .at-si-rose { background: #fff1f2; color: var(--at-rose); }
@@ -406,9 +406,9 @@
 /* ── Module bars ────────────────────────────────────────────── */
 .at-mod-row { display: grid; grid-template-columns: 1fr minmax(0, 2fr) auto; align-items: center; gap: .75rem; padding: .5rem 0; }
 .at-mod-label { display: flex; align-items: center; gap: .625rem; min-width: 0; }
-.at-mod-icon { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .6875rem; color: var(--at-indigo); background: #eef2ff; flex-shrink: 0; }
+.at-mod-icon { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .6875rem; color: var(--at-indigo); background: #eef3fa; flex-shrink: 0; }
 .at-mod-track { height: 6px; border-radius: 999px; background: #f0f0f1; overflow: hidden; }
-.at-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--at-indigo), #818cf8); transform: scaleX(0); transform-origin: left; animation: atGrow 600ms var(--at-ease) forwards; }
+.at-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--at-indigo), #6f8fc4); transform: scaleX(0); transform-origin: left; animation: atGrow 600ms var(--at-ease) forwards; }
 @keyframes atGrow { to { transform: scaleX(1); } }
 .at-mod-count { font-size: .75rem; font-weight: 750; color: var(--at-muted); font-variant-numeric: tabular-nums; }
 
@@ -426,7 +426,7 @@
 
 .at-chip { font-size: .625rem; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; padding: .3rem .625rem; border-radius: 999px; white-space: nowrap; }
 .at-chip-muted { background: #f4f4f5; color: var(--at-muted); }
-.at-chip-indigo { background: #eef2ff; color: var(--at-indigo); }
+.at-chip-indigo { background: #eef3fa; color: var(--at-indigo); }
 
 /* ── Fields & buttons ───────────────────────────────────────── */
 .at-field-label { display: block; font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--at-muted); margin-bottom: .375rem; }

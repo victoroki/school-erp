@@ -98,10 +98,22 @@ class DashboardController extends Controller
         $keyMetrics = $this->getKeyMetrics($user, $roleName);
         $chartSeries = $this->getChartSeries($user);
 
+        // The bursar's first question on opening the app: what came in last.
+        // Same gate as the revenue chart; reversed receipts are not money in.
+        $recentPayments = collect();
+        if ($this->moduleIsActive('fees') && MenuService::canSee($user, ['fees.view', 'fees.collect', 'finance.view'])) {
+            $recentPayments = FeePayment::notReversed()
+                ->with('studentFeeAssignment.student:student_id,first_name,middle_name,last_name,admission_no')
+                ->latest('payment_date')
+                ->latest('payment_id')
+                ->limit(6)
+                ->get(['payment_id', 'student_fee_assignment_id', 'amount', 'payment_date', 'payment_method', 'receipt_number']);
+        }
+
         return view('dashboard', compact(
             'user', 'roleName',
             'keyMetrics', 'chartSeries',
-            'recentActivity',
+            'recentActivity', 'recentPayments',
             'visibleModules', 'visibleAlerts', 'moduleManager'
         ));
     }
@@ -266,7 +278,7 @@ class DashboardController extends Controller
                     'badgeIcon' => 'fa-check', 'badgeClass' => 'sb-up',
                     'title' => 'Total Students',
                     'value' => fn() => number_format(Student::count()),
-                    'foot'  => 'Enrolled students',
+                    'foot'  => fn() => number_format(Student::where('is_active', true)->count()) . ' active',
                 ],
                 [
                     'module' => 'hr',
@@ -294,17 +306,15 @@ class DashboardController extends Controller
                     'col' => 'col-xl-3 col-sm-6', 'route' => 'fee-management.index',
                     'icon' => 'fa-coins', 'color' => 'ic-yellow',
                     'badge' => now()->format('M'), 'badgeClass' => 'sb-none',
-                    'title' => 'Monthly Rev',
-                    // Abbreviated to thousands for this compact tile, but the
-                    // figure must still be non-reversed and dated by payment_date.
-                    'value' => fn() => 'KES ' . number_format(
+                    'title' => 'Monthly Revenue',
+                    // Non-reversed and dated by payment_date, like every report.
+                    'value' => fn() => \App\Support\Money::format(
                         FeePayment::whereMonth('payment_date', now()->month)
                             ->whereYear('payment_date', now()->year)
                             ->notReversed()
-                            ->sum('amount') / 1000,
-                        1
-                    ) . 'k',
-                    'foot'  => fn() => 'Pending: ' . number_format($this->outstandingFees()['amount'] / 1000, 1) . 'k',
+                            ->sum('amount')
+                    ),
+                    'foot'  => fn() => \App\Support\Money::format($this->outstandingFees()['amount']) . ' still owed',
                 ],
             ];
         }

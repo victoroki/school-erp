@@ -27,7 +27,7 @@ name: Build & Deploy
 
 on:
   push:
-    branches: [feat/rbac-consolidated-permissions]   # change to main when you go live
+    branches: [master]   # production: every push to master deploys (after tests pass)
   workflow_dispatch:
 
 # Same trigger as test.yml: a push runs both workflows in parallel. The deploy

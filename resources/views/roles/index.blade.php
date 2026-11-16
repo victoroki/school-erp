@@ -31,7 +31,7 @@
 /* ── Emil Kowalski Utility Suite ── */
 :root {
     --blue: #3b82f6;
-    --indigo: #4f46e5;
+    --indigo: #1d3f7a;
     --emerald: #10b981;
     --slate: #64748b;
     --text: #0f172a;
@@ -52,7 +52,7 @@
     transition: all 150ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; cursor: pointer;
 }
 .btn-primary-dash { background: var(--indigo); color: #fff; border-color: var(--indigo); }
-.btn-primary-dash:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+.btn-primary-dash:hover { background: #17325f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(29, 63, 122, 0.2); }
 .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
 .btn-ghost:hover { background: #f8fafc; color: var(--text); border-color: #cbd5e1; }
 

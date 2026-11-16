@@ -259,7 +259,7 @@
 
 <style>
 :root {
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --amber: #f59e0b; --amber-600: #d97706; --amber-light: #fffbeb;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --rose: #f43f5e; --rose-light: #fff1f2;
@@ -303,8 +303,8 @@
 .bg-rose { background: var(--rose); }
 
 /* Buttons */
-.btn-primary-custom { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1.25rem; border-radius: 8px; font-size: 0.75rem; font-weight: 800; border: none; text-decoration: none !important; cursor: pointer; background: var(--emerald); color: #fff; white-space: nowrap; transition: background 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
-.btn-primary-custom:hover { background: #059669; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+.btn-primary-custom { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1.25rem; border-radius: 8px; font-size: 0.75rem; font-weight: 800; border: none; text-decoration: none !important; cursor: pointer; background: #1d3f7a; color: #fff; white-space: nowrap; transition: background 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
+.btn-primary-custom:hover { background: #17325f; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
 .btn-ghost-custom { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1.25rem; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-decoration: none !important; cursor: pointer; background: #fff; border: 1px solid var(--border); color: var(--slate-700); white-space: nowrap; transition: background 160ms var(--ease-out), border-color 160ms var(--ease-out), color 160ms var(--ease-out); }
 .btn-ghost-custom:hover { background: var(--slate-100); color: var(--slate-900); }
 .btn-ghost-custom.is-active { border-color: var(--indigo); color: var(--indigo); }
@@ -320,7 +320,7 @@
 .filter-search { flex: 1.8 1 210px; }
 .filter-select, .search-input { width: 100%; min-width: 0; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; font-size: 0.8rem; color: var(--slate-700); background: #fff; }
 .filter-select::placeholder, .search-input::placeholder { color: var(--slate-300); }
-.filter-select:focus, .search-input:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12); }
+.filter-select:focus, .search-input:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(29, 63, 122, 0.12); }
 .search-input-wrap { position: relative; }
 .search-input-wrap i { position: absolute; left: 0.7rem; top: 50%; transform: translateY(-50%); color: var(--slate-400); font-size: 0.75rem; pointer-events: none; }
 .search-input { padding-left: 2.1rem; }

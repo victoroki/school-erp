@@ -22,8 +22,8 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>User Type</label>
-                                    <input type="text" class="form-control" value="{{ ucfirst($user->user_type) }}" disabled>
+                                    <label>Account type</label>
+                                    <input type="text" class="form-control" value="{{ $user->roles->first()?->role_name ?? 'Account' }}" disabled>
                                 </div>
                             </div>
                         </div>
@@ -45,7 +45,7 @@
 
                         @if($profile)
                         <hr>
-                        <h5>{{ $user->user_type === 'parent' ? 'Parent Details' : 'Student Details' }}</h5>
+                        <h5>{{ $user->hasRole('Parent') ? 'Parent details' : 'Student details' }}</h5>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -53,7 +53,7 @@
                                     <input type="text" class="form-control" value="{{ $profile->full_name ?? $profile->first_name . ' ' . $profile->last_name }}" disabled>
                                 </div>
                             </div>
-                            @if($user->user_type === 'student')
+                            @if($user->hasRole('Student'))
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Admission No</label>
@@ -67,7 +67,7 @@
                                 </div>
                             </div>
                             @endif
-                            @if($user->user_type === 'parent')
+                            @if($user->hasRole('Parent'))
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>Relationship</label>

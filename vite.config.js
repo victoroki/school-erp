@@ -21,7 +21,7 @@ const VENDOR_SCRIPTS = {
 
 function copyVendorScripts() {
     const copy = () => {
-        const dir = resolve('public/build/vendor');
+        const dir = resolve('public/build/libs');
         mkdirSync(dir, { recursive: true });
         for (const [name, from] of Object.entries(VENDOR_SCRIPTS)) {
             copyFileSync(resolve(from), resolve(dir, name));

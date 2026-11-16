@@ -3,7 +3,7 @@
 @section('content')
 <style>
 :root {
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --rose: #f43f5e; --rose-dark: #9f1239; --rose-line: #fecdd3;
     --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
     --slate-light: #f1f5f9;
@@ -27,11 +27,11 @@
 
 .btn-dash { display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 0.813rem; font-weight: 750; transition: all 200ms var(--ease-out); text-decoration: none !important; }
 .btn-primary-dash { background: var(--indigo); color: #fff; padding: 0.625rem 1.25rem; border: 1px solid var(--indigo); }
-.btn-primary-dash:hover { background: #4338ca; border-color: #4338ca; color: #fff; }
-.btn-primary-dash:focus { box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.16); outline: none; }
+.btn-primary-dash:hover { background: #17325f; border-color: #17325f; color: #fff; }
+.btn-primary-dash:focus { box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.16); outline: none; }
 .btn-ghost { background: #fff; border: 1px solid var(--border); color: var(--text); padding: 0.5rem 1rem; }
 .btn-ghost:hover { background: var(--slate-light); border-color: #cbd5e1; color: var(--text); }
-.btn-ghost:focus { box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); outline: none; }
+.btn-ghost:focus { box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); outline: none; }
 
 .error-panel { background: var(--rose-dark); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
 .error-panel .ep-title { display: flex; align-items: center; gap: 0.5rem; font-size: 0.813rem; font-weight: 750; color: #fff; margin-bottom: 0.625rem; }
@@ -45,7 +45,7 @@
     font-size: 0.875rem; font-weight: 600; color: var(--text); transition: all 200ms var(--ease-out);
 }
 .form-control:focus, select.form-control:focus {
-    border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); outline: none;
+    border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); outline: none;
 }
 .form-control::placeholder { color: #94a3b8; font-weight: 500; }
 .form-control.is-invalid { border-color: var(--rose); background-image: none; padding-right: 0.75rem; }

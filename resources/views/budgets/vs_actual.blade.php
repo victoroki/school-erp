@@ -181,7 +181,7 @@
                             <tbody>
                             @forelse($incomeRows as $row)
                                 @php
-                                    $color = $row->percentage >= 100 ? '#059669' : '#4338ca';
+                                    $color = $row->percentage >= 100 ? '#059669' : '#17325f';
                                 @endphp
                                 <tr>
                                     <td class="pl-4 py-3 align-middle font-weight-bold">{{ $row->category }}</td>
@@ -235,7 +235,7 @@
         .detail-heading { display: flex; align-items: center; gap: 14px; }
         .detail-heading-icon {
             width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
-            background: #eef2ff; color: #4338ca;
+            background: #eef3fa; color: #17325f;
             display: flex; align-items: center; justify-content: center; font-size: 1.15rem;
         }
         .detail-heading-title { font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.2; }
@@ -249,8 +249,8 @@
             transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
         }
         .btn-detail:active { transform: scale(0.97); }
-        .btn-detail--primary { background: #4338ca; border: 1px solid #4338ca; color: #fff; }
-        .btn-detail--primary:hover { background: #3730a3; border-color: #3730a3; color: #fff; }
+        .btn-detail--primary { background: #17325f; border: 1px solid #17325f; color: #fff; }
+        .btn-detail--primary:hover { background: #12294f; border-color: #12294f; color: #fff; }
         .btn-detail--ghost { background: #fff; border: 1px solid #e2e8f0; color: #334155; }
         .btn-detail--ghost:hover { background: #f8fafc; color: #0f172a; }
         @media (max-width: 575px) { .btn-detail { width: 100%; text-align: center; margin-bottom: 0.4rem; } }
@@ -286,7 +286,7 @@
         .emerald { color: #059669 !important; }
         .amber { color: #d97706 !important; }
         .rose { color: #e11d48 !important; }
-        .indigo { color: #4338ca !important; }
+        .indigo { color: #17325f !important; }
         .slate { color: #0f172a !important; }
 
         .badge-rose-light { background-color: #fee2e2; }

@@ -222,7 +222,7 @@
 
 <style>
 :root {
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --amber: #f59e0b; --amber-light: #fffbeb;
     --rose: #f43f5e; --rose-light: #fff1f2;
@@ -253,7 +253,7 @@
 
 .btn-dash { display: inline-flex; align-items: center; justify-content: center; padding: 0.75rem 1.5rem; border-radius: 12px; font-size: 0.875rem; font-weight: 750; transition: all 200ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; }
 .btn-indigo { background: var(--indigo); color: #fff; }
-.btn-indigo:hover { background: #4338ca; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.2); }
+.btn-indigo:hover { background: #17325f; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(29, 63, 122, 0.2); }
 .btn-ghost { background: #fff; border: 1px solid var(--border); color: var(--text); }
 .btn-ghost:hover { background: var(--slate-light); }
 

@@ -39,7 +39,7 @@
 <style>
 /* ── Emil Kowalski Utility Suite ── */
 :root {
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --amber: #f59e0b; --amber-light: #fffbeb;
     --rose: #f43f5e; --rose-light: #fff1f2;
@@ -59,12 +59,12 @@
 /* Form Controls */
 .dash-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate); margin-bottom: 0.5rem; display: block; }
 .dash-control { border: 1px solid var(--border); border-radius: 8px; padding: 0.625rem 0.875rem; font-size: 0.875rem; transition: all 150ms var(--ease-out); color: var(--text); background-color: #fff; }
-.dash-control:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); outline: none; }
+.dash-control:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.1); outline: none; }
 
 /* Buttons */
 .btn-dash { display: inline-flex; align-items: center; justify-content: center; padding: .625rem 1.25rem; border-radius: 8px; font-size: .813rem; font-weight: 600; transition: all 150ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; cursor: pointer; }
 .btn-indigo-dash { background: var(--indigo); color: #fff; }
-.btn-indigo-dash:hover { background: #4338ca; transform: translateY(-1px); }
+.btn-indigo-dash:hover { background: #17325f; transform: translateY(-1px); }
 .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
 .btn-ghost:hover { background: var(--slate-light); color: var(--text); }
 

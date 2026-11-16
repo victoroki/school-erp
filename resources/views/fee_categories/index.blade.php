@@ -90,8 +90,8 @@
 
 <style>
 :root {
-    --indigo: #4f46e5;
-    --indigo-light: #eef2ff;
+    --indigo: #1d3f7a;
+    --indigo-light: #eef3fa;
     --emerald: #10b981;
     --rose: #f43f5e;
     --slate: #475569;
@@ -118,7 +118,7 @@
 .category-card:hover {
     border-color: var(--indigo-light);
     transform: translateY(-3px);
-    box-shadow: 0 12px 24px -8px rgba(79, 70, 229, 0.12);
+    box-shadow: 0 12px 24px -8px rgba(29, 63, 122, 0.12);
 }
 .category-card:active { transform: translateY(-1px) scale(0.99); }
 
@@ -172,7 +172,7 @@
     font-size: 0.75rem; font-weight: 800; border: none; text-decoration: none !important;
     background: var(--indigo); color: #fff; transition: all 160ms var(--ease-out);
 }
-.btn-primary-custom:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
+.btn-primary-custom:hover { background: #17325f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(29, 63, 122, 0.3); }
 .btn-primary-custom:active { transform: scale(0.97); }
 
 .empty-state { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }

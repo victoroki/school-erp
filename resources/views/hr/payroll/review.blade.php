@@ -13,7 +13,7 @@
             --pr-line:       oklch(0.928 0.008 264);
             --pr-surface:    oklch(1 0 0);
             --pr-canvas:     oklch(0.977 0.003 264);
-            --pr-accent:     oklch(0.511 0.230 272);
+            --pr-accent:     oklch(0.320 0.095 258);
             --pr-good:       oklch(0.596 0.145 163);
             --pr-good-soft:  oklch(0.955 0.038 163);
             --pr-warn:       oklch(0.666 0.161 58);

@@ -110,7 +110,7 @@
 <style>
 /* ── Modules screen — matches the dash style used across settings screens ── */
 :root {
-    --blue: #3b82f6; --indigo: #4f46e5; --emerald: #10b981;
+    --blue: #3b82f6; --indigo: #1d3f7a; --emerald: #10b981;
     --slate: #64748b; --text: #0f172a; --muted: #64748b; --border: #e2e8f0;
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -118,12 +118,12 @@
 .dash-heading { font-size: 1.375rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; margin-bottom: 0.125rem; }
 .dash-sub { font-size: 0.813rem; color: var(--muted); font-weight: 500; margin-bottom: 0; }
 .text-slate { color: var(--text); }
-.mod-hero-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: var(--indigo); background: #eef2ff; }
+.mod-hero-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: var(--indigo); background: #eef3fa; }
 .dash-panel { background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
 .dash-panel-body { padding: 1rem; }
 
 .mod-chip { display: inline-flex; align-items: center; font-size: .6875rem; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; padding: .3rem .625rem; border-radius: 999px; }
-.mod-chip-indigo { background: #eef2ff; color: var(--indigo); }
+.mod-chip-indigo { background: #eef3fa; color: var(--indigo); }
 .mod-chip-muted { background: #f4f4f5; color: var(--muted); }
 
 .mod-note { display: flex; gap: .875rem; padding: 1rem 1.125rem; border-radius: 12px; background: #eff6ff; border: 1px solid #dbeafe; align-items: flex-start; }
@@ -137,7 +137,7 @@
 .mod-table .mod-row:last-child td { border-bottom: none; }
 @media (hover: hover) and (pointer: fine) { .mod-table .mod-row:hover td { background: #fafbfc; } }
 
-.mod-mod-icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: .875rem; color: var(--indigo); background: #eef2ff; flex-shrink: 0; }
+.mod-mod-icon { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: .875rem; color: var(--indigo); background: #eef3fa; flex-shrink: 0; }
 
 .mod-badge { display: inline-flex; align-items: center; font-size: .6875rem; font-weight: 700; padding: .3rem .625rem; border-radius: 8px; white-space: nowrap; }
 .mod-badge-on { background: #ecfdf5; color: #047857; }
@@ -152,7 +152,7 @@
     border: 1px solid transparent; text-decoration: none !important; cursor: pointer;
 }
 .btn-primary-dash { background: var(--indigo); color: #fff; border-color: var(--indigo); }
-.btn-primary-dash:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+.btn-primary-dash:hover { background: #17325f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(29, 63, 122, 0.2); }
 .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
 .btn-ghost:hover { background: #f8fafc; color: var(--text); border-color: #cbd5e1; }
 .btn-danger-ghost:hover { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }

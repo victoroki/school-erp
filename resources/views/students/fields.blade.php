@@ -1,9 +1,9 @@
 <style>
     .form-section-title {
-        border-bottom: 2px solid #667eea;
+        border-bottom: 2px solid #2f5596;
         padding-bottom: 5px;
         margin-bottom: 20px;
-        color: #667eea;
+        color: #2f5596;
         font-weight: bold;
         text-transform: uppercase;
         font-size: 0.9rem;

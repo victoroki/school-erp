@@ -228,8 +228,8 @@
 <style>
 .form-static-note {
     display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.625rem 0.75rem;
-    background: #eef2ff; border: 1px solid #e0e7ff; border-radius: 10px;
-    font-size: 0.75rem; font-weight: 600; color: #3730a3; line-height: 1.5;
+    background: #eef3fa; border: 1px solid #dde7f4; border-radius: 10px;
+    font-size: 0.75rem; font-weight: 600; color: #12294f; line-height: 1.5;
 }
 .form-static-note i { margin-top: 0.125rem; }
 [hidden] { display: none !important; }
@@ -239,7 +239,7 @@
     color: #0f172a; margin: 0.5rem 0 0.25rem; padding-bottom: 0.5rem;
     border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 0.5rem;
 }
-.form-section-title i { color: #4f46e5; opacity: 0.75; }
+.form-section-title i { color: #1d3f7a; opacity: 0.75; }
 .form-label-soft {
     font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
     color: #64748b; margin-bottom: 0.375rem; display: block;

@@ -108,9 +108,9 @@
 </div>
 
 <style>
-    .text-indigo { color: #4f46e5; }
+    .text-indigo { color: #1d3f7a; }
     .text-pink { color: #ec4899; }
-    .card-indigo { border-top: 3px solid #4f46e5; }
+    .card-indigo { border-top: 3px solid #1d3f7a; }
     @media print {
         .btn, .main-header, .main-sidebar { display: none !important; }
         .content-wrapper { margin-left: 0 !important; }
@@ -131,7 +131,7 @@
             data: {
                 labels: labels,
                 datasets: [
-                    { label: 'Total', data: totals, borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,0.1)', fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#4f46e5' },
+                    { label: 'Total', data: totals, borderColor: '#1d3f7a', backgroundColor: 'rgba(29, 63, 122,0.1)', fill: true, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#1d3f7a' },
                     { label: 'Male', data: males, borderColor: '#3b82f6', borderDash: [5, 5], tension: 0.4, pointRadius: 4, pointBackgroundColor: '#3b82f6' },
                     { label: 'Female', data: females, borderColor: '#ec4899', borderDash: [5, 5], tension: 0.4, pointRadius: 4, pointBackgroundColor: '#ec4899' }
                 ]

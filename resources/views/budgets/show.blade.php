@@ -70,7 +70,7 @@
         .detail-heading { display: flex; align-items: center; gap: 14px; }
         .detail-heading-icon {
             width: 44px; height: 44px; border-radius: 10px;
-            background: #eef2ff; color: #4338ca;
+            background: #eef3fa; color: #17325f;
             display: flex; align-items: center; justify-content: center;
             font-size: 1.15rem; flex-shrink: 0;
         }
@@ -85,8 +85,8 @@
             transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), box-shadow 200ms;
         }
         .btn-detail:active { transform: scale(0.97); }
-        .btn-detail--primary { background: #4338ca; border: 1px solid #4338ca; color: #fff; }
-        .btn-detail--primary:hover { background: #3730a3; border-color: #3730a3; color: #fff; }
+        .btn-detail--primary { background: #17325f; border: 1px solid #17325f; color: #fff; }
+        .btn-detail--primary:hover { background: #12294f; border-color: #12294f; color: #fff; }
         .btn-detail--ghost { background: #fff; border: 1px solid #e2e8f0; color: #334155; }
         .btn-detail--ghost:hover { background: #f8fafc; color: #0f172a; }
         @media (max-width: 575px) { .btn-detail { width: 100%; text-align: center; margin-bottom: 0.4rem; } }
@@ -102,7 +102,7 @@
         .detail-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; font-weight: 700; }
         .detail-amount {
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-            font-size: 1.75rem; font-weight: 900; color: #4338ca; margin-top: 4px;
+            font-size: 1.75rem; font-weight: 900; color: #17325f; margin-top: 4px;
         }
         .detail-summary-foot {
             display: flex; align-items: center; justify-content: space-between;
@@ -116,7 +116,7 @@
             font-size: 1.5rem; font-weight: 900; color: #0f172a;
         }
         .detail-threshold-track { height: 8px; background: #f1f5f9; border-radius: 999px; overflow: hidden; margin: 0.75rem 0; }
-        .detail-threshold-fill { height: 100%; background: #4338ca; border-radius: 999px; transition: width 320ms cubic-bezier(0.23, 1, 0.32, 1); }
+        .detail-threshold-fill { height: 100%; background: #17325f; border-radius: 999px; transition: width 320ms cubic-bezier(0.23, 1, 0.32, 1); }
 
         .detail-row {
             display: flex; align-items: center; justify-content: space-between; gap: 1rem;

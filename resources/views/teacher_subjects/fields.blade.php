@@ -10,7 +10,7 @@
         }
         .select2-container--bootstrap4.select2-container--focus .select2-selection {
             border-color: var(--indigo) !important;
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1) !important;
+            box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.1) !important;
         }
         .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
             line-height: 28px !important;

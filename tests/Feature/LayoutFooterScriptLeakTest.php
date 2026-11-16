@@ -76,7 +76,7 @@ class LayoutFooterScriptLeakTest extends TestCase
 
         $this->assertLessThan(
             strpos($html, '/js/app-shell.js'),
-            strpos($html, '/build/vendor/jquery.min.js'),
+            strpos($html, '/build/libs/jquery.min.js'),
             'jQuery must load before the shell script.'
         );
 

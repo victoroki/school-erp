@@ -171,9 +171,9 @@
 
 <style>
     :root {
-        --indigo: #4f46e5;
-        --indigo-dark: #4338ca;
-        --indigo-light: #eef2ff;
+        --indigo: #1d3f7a;
+        --indigo-dark: #17325f;
+        --indigo-light: #eef3fa;
         --amber-bg: #fef3c7;
         --slate: #64748b;
         --text: #0f172a;
@@ -197,7 +197,7 @@
         cursor: pointer;
     }
     .filter-field:hover { border-color: #cbd5e1; }
-    .filter-field:focus-within { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); }
+    .filter-field:focus-within { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); }
     .filter-field > i { color: var(--muted); font-size: 0.85rem; margin-right: 11px; min-width: 15px; text-align: center; }
     .filter-field > select {
         -webkit-appearance: none; -moz-appearance: none;
@@ -218,7 +218,7 @@
     .btn-dash { display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 0.875rem; font-weight: 700; transition: all 200ms var(--ease-out); text-decoration: none !important; padding: 0.65rem 1.25rem; border: 0; cursor: pointer; }
     .btn-dash i { margin-right: 7px; }
     .btn-primary-dash { background: var(--indigo); color: #fff !important; border: 1px solid var(--indigo); }
-    .btn-primary-dash:hover { background: var(--indigo-dark); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.28); }
+    .btn-primary-dash:hover { background: var(--indigo-dark); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(29, 63, 122, 0.28); }
     .btn-ghost { background: #fff; border: 1px solid var(--border); color: var(--text) !important; }
     .btn-ghost:hover { background: #f8fafc; border-color: #cbd5e1; }
 

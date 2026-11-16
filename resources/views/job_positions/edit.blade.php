@@ -52,7 +52,7 @@
 
 <style>
 :root {
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --amber: #f59e0b; --amber-light: #fffbeb;
     --slate: #64748b; --slate-light: #f1f5f9;
     --text: #0f172a; --muted: #64748b;

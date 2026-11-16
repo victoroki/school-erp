@@ -1,21 +1,14 @@
 /**
  * App shell behaviour shared by every staff page.
  *
- * Plain script, loaded with `defer` after the Vite bundle (an ES module, so
- * also deferred): by the time this runs, jQuery, Bootstrap and AdminLTE are
- * on window and the DOM is parsed. No polling needed.
+ * Plain script, loaded with `defer` after jQuery, Bootstrap and AdminLTE
+ * (classic scripts): by the time this runs they are on window and the DOM
+ * is parsed. The sidebar is driven here, not by AdminLTE's treeview.
  */
 (function () {
     'use strict';
 
     var $ = window.jQuery;
-
-    /* ── AdminLTE widgets ─────────────────────────────────────────── */
-
-    if ($ && $.fn.PushMenu) {
-        $('[data-widget="pushmenu"]').PushMenu();
-        $('[data-widget="treeview"]').Treeview();
-    }
 
     /* ── Searchable selects ───────────────────────────────────────── */
 
@@ -49,15 +42,67 @@
         $('[data-toggle="tooltip"]').tooltip({ container: 'body' });
     }
 
+    /* ── Sidebar: show / hide ─────────────────────────────────────── */
+
+    var body = document.body;
+    var sidebar = document.getElementById('app-sidebar');
+    var desktop = window.matchMedia('(min-width: 992px)');
+
+    function setHidden(hidden) {
+        body.classList.toggle('sidebar-hidden', hidden);
+        try { localStorage.setItem('sidebar-hidden', hidden ? '1' : '0'); } catch (e) {}
+    }
+
+    function setOpen(open) {
+        body.classList.toggle('sidebar-open', open);
+    }
+
+    document.querySelectorAll('[data-sidebar-toggle]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            if (desktop.matches) {
+                setHidden(!body.classList.contains('sidebar-hidden'));
+            } else {
+                setOpen(!body.classList.contains('sidebar-open'));
+            }
+        });
+    });
+
+    document.querySelectorAll('[data-sidebar-close]').forEach(function (el) {
+        el.addEventListener('click', function () { setOpen(false); });
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && body.classList.contains('sidebar-open')) {
+            setOpen(false);
+        }
+    });
+
+    /* ── Sidebar: menu groups expand and collapse ─────────────────── */
+
+    // One click handler for every group: no AdminLTE treeview, nothing else
+    // can swallow the click. No height animation: this is used all day.
+    if (sidebar) {
+        sidebar.addEventListener('click', function (e) {
+            var toggle = e.target.closest('.app-nav-toggle');
+            if (!toggle) {
+                return;
+            }
+            var group = toggle.parentElement;
+            var open = !group.classList.contains('is-open');
+            group.classList.toggle('is-open', open);
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+    }
+
     /* ── Sidebar quick find ───────────────────────────────────────── */
 
-    var sidebar = document.querySelector('.main-sidebar');
-    var input = sidebar && sidebar.querySelector('.search-input');
-    var nav = sidebar && sidebar.querySelector('.nav-sidebar');
+    var input = sidebar && sidebar.querySelector('.app-search-input');
+    var nav = sidebar && sidebar.querySelector('.app-nav');
+    var scroller = sidebar && sidebar.querySelector('.app-nav-scroll');
 
     if (input && nav) {
         var empty = document.createElement('li');
-        empty.className = 'sidebar-search-empty';
+        empty.className = 'app-nav-empty';
         empty.setAttribute('role', 'status');
         empty.hidden = true;
         empty.textContent = 'No matching pages';
@@ -65,17 +110,18 @@
 
         var openedBySearch = [];
 
-        function text(el) {
-            var p = el.querySelector(':scope > .nav-link p');
-            return p ? p.textContent.replace(/\s+/g, ' ').trim().toLowerCase() : '';
+        function labelOf(el) {
+            var label = el.querySelector(':scope > .app-nav-link .app-nav-label');
+            return label ? label.textContent.replace(/\s+/g, ' ').trim().toLowerCase() : '';
         }
 
         function reset() {
-            nav.querySelectorAll('.is-search-hidden, .search-hit').forEach(function (el) {
-                el.classList.remove('is-search-hidden', 'search-hit');
+            nav.querySelectorAll('.is-search-hidden').forEach(function (el) {
+                el.classList.remove('is-search-hidden');
             });
-            openedBySearch.forEach(function (li) {
-                li.classList.remove('menu-open');
+            openedBySearch.forEach(function (group) {
+                group.classList.remove('is-open');
+                group.querySelector(':scope > .app-nav-toggle').setAttribute('aria-expanded', 'false');
             });
             openedBySearch = [];
             empty.hidden = true;
@@ -88,54 +134,49 @@
             }
 
             var any = false;
-            var topLevel = nav.querySelectorAll(':scope > li');
 
-            topLevel.forEach(function (li) {
-                if (li.classList.contains('nav-header')) {
-                    li.classList.add('is-search-hidden');
-                    return;
-                }
+            Array.prototype.forEach.call(nav.children, function (li) {
                 if (li === empty) {
                     return;
                 }
+                if (li.classList.contains('app-nav-header')) {
+                    li.classList.add('is-search-hidden');
+                    return;
+                }
 
-                var parentMatch = text(li).indexOf(term) !== -1;
-                var children = li.querySelectorAll('.nav-treeview > li');
-                var childMatch = false;
+                var parentHit = labelOf(li).indexOf(term) !== -1;
+                var children = li.querySelectorAll('.app-nav-sub > li');
+                var childHit = false;
 
                 children.forEach(function (child) {
-                    if (child.classList.contains('nav-header')) {
+                    if (child.classList.contains('app-nav-subheader')) {
                         child.classList.add('is-search-hidden');
                         return;
                     }
-                    var hit = parentMatch || text(child).indexOf(term) !== -1;
+                    var hit = parentHit || labelOf(child).indexOf(term) !== -1;
                     child.classList.toggle('is-search-hidden', !hit);
-                    child.classList.toggle('search-hit', hit && !parentMatch);
-                    childMatch = childMatch || hit;
+                    childHit = childHit || hit;
                 });
 
-                var visible = parentMatch || childMatch;
+                var visible = parentHit || childHit;
                 li.classList.toggle('is-search-hidden', !visible);
 
-                if (visible && children.length && !li.classList.contains('menu-open')) {
-                    li.classList.add('menu-open');
+                if (visible && children.length && !li.classList.contains('is-open')) {
+                    li.classList.add('is-open');
+                    li.querySelector(':scope > .app-nav-toggle').setAttribute('aria-expanded', 'true');
                     openedBySearch.push(li);
                 }
                 any = any || visible;
             });
 
             empty.hidden = any;
-
-            // The menu may be scrolled down to the current page; results start
-            // at the top, so bring them into view.
-            var list = sidebar.querySelector('.sidebar');
-            if (list) {
-                list.scrollTop = 0;
+            if (scroller) {
+                scroller.scrollTop = 0;
             }
         }
 
         function firstMatch() {
-            var links = nav.querySelectorAll('li:not(.is-search-hidden) > .nav-link[href]:not([href="#"])');
+            var links = nav.querySelectorAll('a.app-nav-link[href]');
             for (var i = 0; i < links.length; i++) {
                 if (!links[i].closest('.is-search-hidden')) {
                     return links[i];
@@ -153,25 +194,27 @@
                 input.value = '';
                 reset();
                 input.blur();
-            } else if (e.key === 'Enter') {
+            } else if (e.key === 'Enter' && input.value.trim()) {
                 var link = firstMatch();
-                if (link && input.value.trim()) {
+                if (link) {
                     e.preventDefault();
                     window.location.href = link.href;
                 }
             }
         });
 
-        // "/" or Ctrl/Cmd+K focuses the finder from anywhere that isn't a field.
+        // "/" or Ctrl/Cmd+K focuses the finder from anywhere that is not a field.
         document.addEventListener('keydown', function (e) {
-            var target = e.target;
-            var typing = target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
+            var t = e.target;
+            var typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
             var combo = (e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K');
 
             if (combo || (e.key === '/' && !typing)) {
                 e.preventDefault();
-                if (document.body.classList.contains('sidebar-collapse') && $ && $.fn.PushMenu) {
-                    $('[data-widget="pushmenu"]').PushMenu('expand');
+                if (desktop.matches) {
+                    if (body.classList.contains('sidebar-hidden')) setHidden(false);
+                } else {
+                    setOpen(true);
                 }
                 input.focus();
                 input.select();
@@ -233,10 +276,8 @@
 
     /* ── Keep the current page visible in a long menu ─────────────── */
 
-    var scroller = sidebar && sidebar.querySelector('.sidebar');
-    var active = scroller && (scroller.querySelector('.nav-treeview .nav-link.active') || scroller.querySelector('.nav-link.active'));
-
-    if (active && scroller) {
+    var active = scroller && scroller.querySelector('.app-nav-link.is-active');
+    if (active) {
         var top = active.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
         if (top > scroller.clientHeight - 48 || top < 0) {
             scroller.scrollTop += top - scroller.clientHeight / 3;

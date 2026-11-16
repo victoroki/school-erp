@@ -60,14 +60,14 @@ class PortalAttendanceController extends Controller
      */
     protected function resolveStudent($user): ?Student
     {
-        if ($user->user_type === 'student' && $user->student) {
-            return $user->student;
+        // Same resolution as the fee and report-card portals; the legacy
+        // users.user_type column is never set by the role system.
+        if ($student = \App\Services\PortalScopeService::selfStudent($user)) {
+            return $student;
         }
 
-        if ($user->user_type === 'parent' && $user->parent) {
-            return $user->parent->students->first();
-        }
+        $children = app(\App\Services\PortalScopeService::class)->childrenFor($user);
 
-        return null;
+        return $children->isEmpty() ? null : Student::find($children->first()['student_id']);
     }
 }

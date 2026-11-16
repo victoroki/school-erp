@@ -5,7 +5,7 @@
         $statusStyles = [
             'draft' => ['label' => 'Draft', 'bg' => '#f1f5f9', 'fg' => '#475569'],
             'pending' => ['label' => 'Pending Approval', 'bg' => '#fffbeb', 'fg' => '#d97706'],
-            'approved' => ['label' => 'Approved', 'bg' => '#eef2ff', 'fg' => '#4338ca'],
+            'approved' => ['label' => 'Approved', 'bg' => '#eef3fa', 'fg' => '#17325f'],
             'paid' => ['label' => 'Paid', 'bg' => '#ecfdf5', 'fg' => '#059669'],
             'rejected' => ['label' => 'Rejected', 'bg' => '#fff1f2', 'fg' => '#e11d48'],
         ];
@@ -156,9 +156,9 @@
         .detail-description { color: #334155; font-size: 0.9rem; line-height: 1.6; margin: 0; }
         .detail-attachment {
             display: inline-flex; align-items: center; margin-top: 1rem;
-            font-size: 0.85rem; font-weight: 600; color: #4338ca; text-decoration: none;
+            font-size: 0.85rem; font-weight: 600; color: #17325f; text-decoration: none;
         }
-        .detail-attachment:hover { color: #4338ca; text-decoration: underline; }
+        .detail-attachment:hover { color: #17325f; text-decoration: underline; }
 
         .pay-attention {
             display: flex; align-items: flex-start; gap: 14px;

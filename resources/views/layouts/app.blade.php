@@ -32,7 +32,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="theme-color" content="#1b1d2b">
+    <meta name="theme-color" content="#ffffff">
     <title>{{ $pageTitle ? $pageTitle.' | ' : '' }}{{ config('app.name') }}</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
 
@@ -56,59 +56,58 @@
          `$(...)` from inside their content, before the end of <body>. Their
          `$(fn)` / `.ready()` callbacks queue until DOMContentLoaded, by which
          time Bootstrap and AdminLTE below have loaded. See vite.config.js. --}}
-    <script src="{{ asset('build/vendor/jquery.min.js') }}?v=3.7.1"></script>
+    <script src="{{ asset('build/libs/jquery.min.js') }}?v=3.7.1"></script>
 </head>
 
-<body class="hold-transition sidebar-mini">
-    <a class="sr-only sr-only-focusable" href="#main-content">Skip to content</a>
-    <div class="wrapper">
-        <nav class="main-header navbar navbar-expand navbar-white navbar-light" aria-label="Top bar">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" data-widget="pushmenu" data-enable-remember="true" href="#" role="button" aria-label="Toggle navigation">
-                        <i class="fas fa-bars" aria-hidden="true"></i>
-                    </a>
-                </li>
-            </ul>
+<body class="app-body">
+    {{-- Restore the collapsed sidebar before first paint, so it never flashes open. --}}
+    <script>try { if (localStorage.getItem('sidebar-hidden') === '1') document.body.classList.add('sidebar-hidden'); } catch (e) {}</script>
+    <a class="app-skip" href="#main-content">Skip to content</a>
 
-            @auth
-            <ul class="navbar-nav ml-auto">
-                <li class="nav-item dropdown user-menu">
-                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="Account menu">
-                        <span class="header-avatar" aria-hidden="true">{{ $initials }}</span>
-                        <span class="header-user-name d-none d-md-inline">{{ $authUser->name }}</span>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-right header-user-menu">
-                        <div class="menu-identity">
+    <div class="app-shell">
+        @include('layouts.sidebar')
+        <div class="app-backdrop" data-sidebar-close aria-hidden="true"></div>
+
+        <div class="app-main">
+            <header class="app-topbar">
+                <button type="button" class="app-icon-btn" data-sidebar-toggle aria-controls="app-sidebar" aria-label="Show or hide navigation">
+                    <i class="fas fa-bars" aria-hidden="true"></i>
+                </button>
+                <span class="app-topbar-title">{{ $pageTitle ?: config('app.name') }}</span>
+
+                @auth
+                <div class="dropdown app-account">
+                    <button type="button" class="app-account-btn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="Account menu for {{ $authUser->name }}">
+                        <span class="app-avatar" aria-hidden="true">{{ $initials }}</span>
+                        <span class="app-account-text d-none d-md-flex">
+                            <span class="app-account-name">{{ $authUser->name }}</span>
+                            @if($authRole)<span class="app-account-role">{{ $authRole }}</span>@endif
+                        </span>
+                        <i class="fas fa-chevron-down app-account-caret d-none d-md-inline" aria-hidden="true"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-right app-account-menu">
+                        <div class="app-account-identity">
                             <strong>{{ $authUser->name }}</strong>
                             <span>{{ $authUser->email }}</span>
-                            @if($authRole)
-                                <span class="badge badge-primary role-chip">{{ $authRole }}</span>
-                            @endif
                         </div>
                         <div class="dropdown-divider"></div>
-                        <form action="{{ route('logout') }}" method="POST" class="m-0">
-                            @csrf
-                            <button type="submit" class="dropdown-item">
-                                <i class="fas fa-sign-out-alt" aria-hidden="true"></i>Sign out
-                            </button>
-                        </form>
+                        <button type="submit" form="logout-form" class="dropdown-item">
+                            <i class="fas fa-sign-out-alt" aria-hidden="true"></i>Sign out
+                        </button>
                     </div>
-                </li>
-            </ul>
-            @endauth
-        </nav>
+                </div>
+                @endauth
+            </header>
 
-        @include('layouts.sidebar')
+            <main class="content-wrapper" id="main-content" tabindex="-1">
+                @yield('content')
+            </main>
 
-        <main class="content-wrapper" id="main-content" tabindex="-1">
-            @yield('content')
-        </main>
-
-        <footer class="main-footer">
-            <span class="footer-copy">&copy; {{ now()->year }} {{ config('app.name') }}. All rights reserved.</span>
-            <span class="footer-version"><b>Version</b> 1.0.0</span>
-        </footer>
+            <footer class="main-footer app-footer">
+                <span>&copy; {{ now()->year }} {{ config('app.name') }}. All rights reserved.</span>
+                <span>Version 1.0.0</span>
+            </footer>
+        </div>
     </div>
 
     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
@@ -117,8 +116,8 @@
 
     {{-- Classic (blocking) scripts on purpose: they must exist before the
          inline page scripts below run. See vite.config.js. --}}
-    <script src="{{ asset('build/vendor/bootstrap.bundle.min.js') }}?v=4.6.2"></script>
-    <script src="{{ asset('build/vendor/adminlte.min.js') }}?v=3.1.0"></script>
+    <script src="{{ asset('build/libs/bootstrap.bundle.min.js') }}?v=4.6.2"></script>
+    <script src="{{ asset('build/libs/adminlte.min.js') }}?v=3.1.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="{{ asset('js/app-shell.js') }}?v={{ filemtime(public_path('js/app-shell.js')) }}" defer></script>
     @stack('third_party_scripts')

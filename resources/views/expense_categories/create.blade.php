@@ -53,7 +53,7 @@
 <style>
 /* ── Emil Kowalski Utility Suite ── */
 :root {
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --text: #0f172a;
     --muted: #64748b;
     --border: #e2e8f0;
@@ -77,7 +77,7 @@
 /* Buttons */
 .btn-dash { display: inline-flex; align-items: center; justify-content: center; padding: .5rem 1rem; border-radius: 8px; font-size: .813rem; font-weight: 600; transition: all 150ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; cursor: pointer; }
 .btn-indigo-dash { background: var(--indigo); color: #fff; }
-.btn-indigo-dash:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); color: #fff; }
+.btn-indigo-dash:hover { background: #17325f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(29, 63, 122, 0.2); color: #fff; }
 .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
 .btn-ghost:hover { background: #f1f5f9; color: var(--text); border-color: #cbd5e1; }
 </style>

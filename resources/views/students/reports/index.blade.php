@@ -188,10 +188,10 @@
     .report-link {
         font-size: 0.78rem;
         font-weight: 600;
-        color: #4f46e5;
+        color: #1d3f7a;
     }
     .report-card:hover .report-link {
-        color: #4338ca;
+        color: #17325f;
     }
 
     /* Color variants */
@@ -200,11 +200,11 @@
     .bg-success-light { background: #ecfdf5; }
     .bg-danger-light { background: #fef2f2; }
     .bg-primary-light { background: #eff6ff; }
-    .bg-indigo-light { background: #eef2ff; }
+    .bg-indigo-light { background: #eef3fa; }
     .bg-pink-light { background: #fdf2f8; }
     .bg-secondary-light { background: #f8fafc; }
 
-    .text-indigo { color: #4f46e5; }
+    .text-indigo { color: #1d3f7a; }
     .text-pink { color: #ec4899; }
 
     .text-decoration-none { text-decoration: none !important; }

@@ -93,7 +93,7 @@
                 @php
                     $teacher = $assignments->first()->staff;
                     $initials = strtoupper(mb_substr($teacher->first_name ?? '?', 0, 1)) . strtoupper(mb_substr($teacher->last_name ?? '', 0, 1));
-                    $avatarColors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#f6a821', '#e9506d'];
+                    $avatarColors = ['#2f5596', '#1d3f7a', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#f6a821', '#e9506d'];
                     $avatarColor = $avatarColors[$staffId % count($avatarColors)];
                     $sorted = $assignments->sortBy(fn($a) => [$a->classSection?->class?->name, $a->subject?->name]);
                 @endphp
@@ -180,9 +180,9 @@
 
 <style>
     :root {
-        --indigo: #4f46e5;
-        --indigo-dark: #4338ca;
-        --indigo-light: #eef2ff;
+        --indigo: #1d3f7a;
+        --indigo-dark: #17325f;
+        --indigo-light: #eef3fa;
         --emerald: #10b981;
         --slate: #64748b;
         --text: #0f172a;
@@ -212,7 +212,7 @@
         background-repeat: no-repeat;
         background-position: right 14px center;
     }
-    .filter-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); outline: none; }
+    .filter-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); outline: none; }
 
     /* Icon + select combined field - icon is a flex sibling, immune to
        Chromium ignoring horizontal padding on native <select>. */
@@ -223,7 +223,7 @@
         cursor: pointer;
     }
     .filter-field:hover { border-color: #cbd5e1; }
-    .filter-field:focus-within { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); }
+    .filter-field:focus-within { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); }
     .filter-field > i { color: var(--muted); font-size: 0.85rem; margin-right: 11px; min-width: 15px; text-align: center; }
     .filter-field > select {
         -webkit-appearance: none !important; -moz-appearance: none !important; appearance: none !important;
@@ -241,7 +241,7 @@
         display: flex; align-items: center; transition: border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
     }
     .filter-input-wrap .select2-container--bootstrap4.select2-container--focus .select2-selection--single {
-        border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
+        border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08);
     }
     .filter-input-wrap .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
         padding-left: 2.4rem; color: var(--text); font-weight: 600; font-size: 0.875rem; line-height: 42px;
@@ -265,8 +265,8 @@
 
     /* Faculty cards */
     .faculty-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04); transition: border-color 250ms var(--ease-out), box-shadow 250ms var(--ease-out); overflow: hidden; height: 100%; }
-    .faculty-card:hover { border-color: #c7d2fe; box-shadow: 0 6px 20px rgba(79, 70, 229, 0.08); }
-    .faculty-card:not(.collapsed) { border-color: var(--indigo); box-shadow: 0 12px 30px rgba(79, 70, 229, 0.12); }
+    .faculty-card:hover { border-color: #c4d3ea; box-shadow: 0 6px 20px rgba(29, 63, 122, 0.08); }
+    .faculty-card:not(.collapsed) { border-color: var(--indigo); box-shadow: 0 12px 30px rgba(29, 63, 122, 0.12); }
 
     .fc-header { padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
     .fc-avatar {
@@ -304,7 +304,7 @@
     /* Buttons */
     .btn-dash { display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 0.875rem; font-weight: 700; transition: all 200ms var(--ease-out); text-decoration: none !important; padding: 0.65rem 1.25rem; }
     .btn-primary-dash { background: var(--indigo); color: #fff !important; border: 1px solid var(--indigo); }
-    .btn-primary-dash:hover { background: var(--indigo-dark); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.28); }
+    .btn-primary-dash:hover { background: var(--indigo-dark); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(29, 63, 122, 0.28); }
     .btn-ghost { background: #fff; border: 1px solid var(--border); color: var(--text) !important; }
     .btn-ghost:hover { background: #f8fafc; border-color: #cbd5e1; }
 
@@ -321,7 +321,7 @@
     .pagination { margin: 0; }
     .pagination .page-link { border-radius: 10px !important; margin: 0 3px; border: 1px solid var(--border); color: var(--slate); font-weight: 700; font-size: 0.85rem; min-width: 34px; text-align: center; padding: 0.35rem 0.6rem; }
     .pagination .page-item.active .page-link { background: var(--indigo); border-color: var(--indigo); color: #fff; }
-    .pagination .page-link:focus { box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); }
+    .pagination .page-link:focus { box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); }
     .pagination .disabled .page-link { opacity: 0.45; }
 
     /* - Icon spacing guarantees -

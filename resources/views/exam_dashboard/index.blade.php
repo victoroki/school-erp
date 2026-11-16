@@ -120,7 +120,7 @@
                     
                     <div class="grade-list mt-auto">
                         @php
-                            $colors = ['#4f46e5', '#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#8b5cf6'];
+                            $colors = ['#1d3f7a', '#10b981', '#f59e0b', '#f43f5e', '#2f5596', '#2f5596'];
                             $totalGrades = $gradeDistribution->sum('count');
                         @endphp
                         @foreach($gradeDistribution->take(5) as $index => $grade)
@@ -238,7 +238,7 @@
 <style>
 /* ── Emil Kowalski Utility Suite ── */
 :root {
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --amber: #f59e0b; --amber-light: #fffbeb;
     --rose: #f43f5e; --rose-light: #fff1f2;
@@ -276,10 +276,10 @@
 
 /* Buttons */
 .btn-dash { display: inline-flex; align-items: center; justify-content: center; padding: .625rem 1.25rem; border-radius: 8px; font-size: .813rem; font-weight: 600; transition: all 150ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; }
-.btn-indigo-dash { background: var(--indigo); color: #fff; box-shadow: 0 1px 2px rgba(79, 70, 229, 0.2); }
-.btn-indigo-dash:hover { background: #4338ca; transform: translateY(-1px); color: #fff; }
-.btn-emerald-dash { background: var(--emerald); color: #fff; box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2); }
-.btn-emerald-dash:hover { background: #059669; transform: translateY(-1px); color: #fff; }
+.btn-indigo-dash { background: var(--indigo); color: #fff; box-shadow: 0 1px 2px rgba(29, 63, 122, 0.2); }
+.btn-indigo-dash:hover { background: #17325f; transform: translateY(-1px); color: #fff; }
+.btn-emerald-dash { background: #1d3f7a; color: #fff; box-shadow: 0 1px 2px rgba(16, 185, 129, 0.2); }
+.btn-emerald-dash:hover { background: #17325f; transform: translateY(-1px); color: #fff; }
 .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
 .btn-ghost:hover { background: var(--slate-light); color: var(--text); }
 
@@ -305,7 +305,7 @@
         // Line Chart Performance
         const perfCtx = document.getElementById('performanceChart').getContext('2d');
         const grad = perfCtx.createLinearGradient(0, 0, 0, 400);
-        grad.addColorStop(0, 'rgba(79, 70, 229, 0.1)');
+        grad.addColorStop(0, 'rgba(29, 63, 122, 0.1)');
         grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
         new Chart(perfCtx, {
@@ -315,7 +315,7 @@
                 datasets: [{
                     label: 'Average Score',
                     data: {!! json_encode($performanceTrends->pluck('exam_results_avg_marks_obtained')) !!},
-                    borderColor: '#4f46e5',
+                    borderColor: '#1d3f7a',
                     backgroundColor: grad,
                     borderWidth: 3,
                     tension: 0.4,
@@ -323,7 +323,7 @@
                     pointRadius: 0,
                     pointHoverRadius: 6,
                     pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: '#4f46e5',
+                    pointHoverBorderColor: '#1d3f7a',
                     pointHoverBorderWidth: 3,
                 }]
             },
@@ -351,7 +351,7 @@
                 labels: {!! json_encode($gradeDistribution->pluck('name')) !!},
                 datasets: [{
                     data: {!! json_encode($gradeDistribution->pluck('count')) !!},
-                    backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#f43f5e', '#6366f1', '#8b5cf6'],
+                    backgroundColor: ['#1d3f7a', '#10b981', '#f59e0b', '#f43f5e', '#2f5596', '#2f5596'],
                     borderWidth: 0,
                     cutout: '80%'
                 }]

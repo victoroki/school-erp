@@ -85,8 +85,8 @@
 .table tbody td { font-size: 0.875rem; vertical-align: middle; }
 .btn-icon-dash { width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent; color: var(--slate); display: inline-flex; align-items: center; justify-content: center; transition: all 200ms var(--ease-out); }
 .btn-icon-dash:hover { background: var(--slate-light); color: var(--text); }
-.bg-indigo-light { background-color: #eef2ff; color: #4f46e5; }
-.text-indigo { color: #4f46e5; }
+.bg-indigo-light { background-color: #eef3fa; color: #1d3f7a; }
+.text-indigo { color: #1d3f7a; }
 .bg-emerald-light { background-color: #ecfdf5; color: #10b981; }
 .text-emerald { color: #10b981; }
 .bg-slate-light { background-color: #f1f5f9; color: #64748b; }

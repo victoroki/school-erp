@@ -54,7 +54,7 @@
                 @php
                     $typeKey = strtolower(trim($account->account_type ?? ''));
                     $typeMeta = [
-                        'current' => ['icon' => 'fa-university', 'bg' => '#eef2ff', 'fg' => '#4338ca'],
+                        'current' => ['icon' => 'fa-university', 'bg' => '#eef3fa', 'fg' => '#17325f'],
                         'savings' => ['icon' => 'fa-piggy-bank', 'bg' => '#ecfdf5', 'fg' => '#059669'],
                         'fixed' => ['icon' => 'fa-coins', 'bg' => '#fffbeb', 'fg' => '#d97706'],
                     ];
@@ -187,7 +187,7 @@
         .account-balance-block { margin-top: 1.25rem; }
         .account-balance {
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-            font-size: 1.45rem; font-weight: 900; color: #4338ca; margin-top: 4px;
+            font-size: 1.45rem; font-weight: 900; color: #17325f; margin-top: 4px;
         }
         .account-health { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f8fafc; }
         .account-health-label { font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.03em; }
@@ -195,9 +195,9 @@
         .account-card-foot { margin-top: auto; padding-top: 1.1rem; }
         .account-link {
             font-size: 0.78rem; font-weight: 800; letter-spacing: 0.04em;
-            color: #4338ca; text-decoration: none; text-transform: uppercase;
+            color: #17325f; text-decoration: none; text-transform: uppercase;
         }
-        .account-link:hover { text-decoration: none; color: #3730a3; }
+        .account-link:hover { text-decoration: none; color: #12294f; }
 
         .util-track { position: relative; height: 8px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
         .util-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 999px; }

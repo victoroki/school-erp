@@ -76,8 +76,8 @@
 
 /* Buttons */
 .btn-dash { display: inline-flex; align-items: center; justify-content: center; padding: .5rem 1rem; border-radius: 8px; font-size: .813rem; font-weight: 600; transition: all 150ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; cursor: pointer; }
-.btn-emerald-dash { background: var(--emerald); color: #fff; }
-.btn-emerald-dash:hover { background: #059669; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); color: #fff; }
+.btn-emerald-dash { background: #1d3f7a; color: #fff; }
+.btn-emerald-dash:hover { background: #17325f; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); color: #fff; }
 .btn-ghost { background: transparent; color: var(--muted); border-color: var(--border); }
 .btn-ghost:hover { background: #f1f5f9; color: var(--text); border-color: #cbd5e1; }
 </style>

@@ -178,8 +178,8 @@
 
 <style>
 :root {
-    --indigo: #4f46e5;
-    --indigo-light: #eef2ff;
+    --indigo: #1d3f7a;
+    --indigo-light: #eef3fa;
     --amber: #f59e0b;
     --amber-600: #d97706;
     --amber-light: #fffbeb;
@@ -271,7 +271,7 @@
 .progress-label { font-size: 0.7rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.04em; }
 .progress-percent { font-size: 0.75rem; font-weight: 800; color: var(--indigo); }
 .progress-bar { height: 8px; background: var(--slate-100); border-radius: 4px; overflow: hidden; }
-.progress-fill { height: 100%; background: linear-gradient(90deg, var(--indigo), #6366f1); border-radius: 4px; transition: width 400ms var(--ease-out); }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--indigo), #2f5596); border-radius: 4px; transition: width 400ms var(--ease-out); }
 
 /* Payment Card */
 .payment-card {
@@ -298,14 +298,14 @@
     background-repeat: no-repeat; background-position: right 0.75rem center;
     transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
 }
-.form-select-custom:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+.form-select-custom:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(29, 63, 122, 0.1); }
 
 .form-input-custom {
     width: 100%; height: 40px; padding: 0 0.75rem; border-radius: 8px; border: 1px solid var(--border);
     font-size: 0.82rem; font-weight: 600; color: var(--slate-700); background: #fff;
     transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
 }
-.form-input-custom:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+.form-input-custom:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(29, 63, 122, 0.1); }
 .form-input-custom::placeholder { color: var(--slate-300); }
 .form-textarea { height: auto; padding: 0.625rem 0.75rem; resize: vertical; }
 
@@ -336,9 +336,9 @@
 .btn-submit {
     display: inline-flex; align-items: center; padding: 0.75rem 2rem; border-radius: 8px;
     font-size: 0.85rem; font-weight: 800; border: none; cursor: pointer;
-    background: var(--emerald); color: #fff; transition: all 160ms var(--ease-out);
+    background: #1d3f7a; color: #fff; transition: all 160ms var(--ease-out);
 }
-.btn-submit:hover { background: #059669; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+.btn-submit:hover { background: #17325f; transform: translateY(-1px); box-shadow: none; }
 .btn-submit:active { transform: scale(0.97); }
 .btn-cancel {
     font-size: 0.78rem; font-weight: 600; color: var(--slate-400); text-decoration: none;

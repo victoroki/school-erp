@@ -147,7 +147,7 @@
 <style>
 /* ── Staff Directory Custom Styling ── */
 :root {
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --rose: #f43f5e; --rose-light: #fff1f2;
     --slate: #64748b; --slate-light: #f1f5f9;
@@ -164,7 +164,7 @@
 .filter-input-wrap { position: relative; }
 .filter-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.9rem; pointer-events: none; }
 .filter-input { width: 100%; border-radius: 10px; border: 1px solid var(--border); background: #fff; padding: 0.625rem 1rem; font-size: 0.875rem; font-weight: 600; color: var(--text); transition: all 200ms var(--ease-out); appearance: none; }
-.filter-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); outline: none; }
+.filter-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); outline: none; }
 
 /* Staff Cards */
 .staff-card { background: #fff; border-radius: 14px; overflow: hidden; transition: all 300ms var(--ease-out); height: 100%; display: flex; flex-direction: column; }

@@ -32,7 +32,7 @@
 <style>
 /* ── Emil Kowalski Utility Suite ── */
 :root {
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --amber: #f59e0b; --amber-light: #fffbeb;
     --rose: #f43f5e; --rose-light: #fff1f2;
@@ -51,12 +51,12 @@
 .search-box { position: relative; width: 260px; }
 .search-box i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--slate); font-size: 0.813rem; }
 .search-box input { width: 100%; padding: 0.625rem 1rem 0.625rem 2.5rem; border-radius: 12px; border: 1px solid var(--border); font-size: 0.813rem; transition: all 200ms var(--ease-out); background: #fff; }
-.search-box input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); outline: none; }
+.search-box input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); outline: none; }
 
 /* Buttons */
 .btn-dash { display: inline-flex; align-items: center; justify-content: center; padding: .75rem 1.5rem; border-radius: 12px; font-size: .813rem; font-weight: 700; transition: all 150ms var(--ease-out); border: 1px solid transparent; text-decoration: none !important; cursor: pointer; }
-.btn-primary-dash { background: var(--indigo); color: #fff; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
-.btn-primary-dash:hover { background: #4338ca; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3); color: #fff; }
+.btn-primary-dash { background: var(--indigo); color: #fff; box-shadow: 0 4px 12px rgba(29, 63, 122, 0.2); }
+.btn-primary-dash:hover { background: #17325f; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(29, 63, 122, 0.3); color: #fff; }
 
 .gap-3 { gap: 1rem; }
 </style>

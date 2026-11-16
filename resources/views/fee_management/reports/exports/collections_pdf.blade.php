@@ -21,7 +21,7 @@
         .totals-value.red { color: #f43f5e; }
         .totals-value.amber { color: #d97706; }
 
-        .section-title { font-size: 8pt; font-weight: 800; color: #4f46e5; text-transform: uppercase; letter-spacing: 0.06em; margin: 12px 0 6px; }
+        .section-title { font-size: 8pt; font-weight: 800; color: #1d3f7a; text-transform: uppercase; letter-spacing: 0.06em; margin: 12px 0 6px; }
 
         table { width: 100%; border-collapse: collapse; }
         thead { background: #f8fafc; }

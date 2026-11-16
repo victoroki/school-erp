@@ -93,17 +93,22 @@ class PortalFeeController extends Controller
      * Returns Student model for both parent and student user types.
      * Returns null if the user has no linked student.
      */
+    /**
+     * The learner whose fees this account may see: the student themself, or
+     * a parent's first linked child.
+     *
+     * This used to read users.user_type, a legacy column the role system
+     * never sets, so every parent and student was turned away from their own
+     * fees. It now resolves the same way as the report-card portal.
+     */
     protected function resolveStudent($user): ?Student
     {
-        if ($user->user_type === 'student' && $user->student) {
-            return $user->student;
+        if ($student = \App\Services\PortalScopeService::selfStudent($user)) {
+            return $student;
         }
 
-        if ($user->user_type === 'parent' && $user->parent) {
-            // Return the first linked child
-            return $user->parent->students->first();
-        }
+        $children = app(\App\Services\PortalScopeService::class)->childrenFor($user);
 
-        return null;
+        return $children->isEmpty() ? null : Student::find($children->first()['student_id']);
     }
 }

@@ -133,7 +133,7 @@
                             if ($status == 'Underloaded') $theme = 'blue';
                             $t = $data['teacher'];
                             $initials = strtoupper(mb_substr($t->first_name ?? '?', 0, 1)) . strtoupper(mb_substr($t->last_name ?? '', 0, 1));
-                            $avatarColors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#f6a821', '#e9506d'];
+                            $avatarColors = ['#2f5596', '#1d3f7a', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#f6a821', '#e9506d'];
                             $avatarColor = $avatarColors[$t->staff_id % count($avatarColors)];
                         @endphp
                         <tr>
@@ -194,9 +194,9 @@
 
 <style>
     :root {
-        --indigo: #4f46e5;
-        --indigo-dark: #4338ca;
-        --indigo-light: #eef2ff;
+        --indigo: #1d3f7a;
+        --indigo-dark: #17325f;
+        --indigo-light: #eef3fa;
         --emerald: #10b981; --emerald-light: #ecfdf5;
         --amber: #f59e0b; --amber-light: #fffbeb;
         --rose: #f43f5e; --rose-light: #fff1f2;
@@ -235,7 +235,7 @@
         background-repeat: no-repeat;
         background-position: right 14px center;
     }
-    .filter-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); outline: none; }
+    .filter-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); outline: none; }
 
     /* Icon + select combined field - icon is a flex sibling, immune to
        Chromium ignoring horizontal padding on native <select>. */
@@ -246,7 +246,7 @@
         cursor: pointer;
     }
     .filter-field:hover { border-color: #cbd5e1; }
-    .filter-field:focus-within { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); }
+    .filter-field:focus-within { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); }
     .filter-field > i { color: var(--muted); font-size: 0.85rem; margin-right: 11px; min-width: 15px; text-align: center; }
     .filter-field > select {
         -webkit-appearance: none !important; -moz-appearance: none !important; appearance: none !important;
@@ -290,7 +290,7 @@
     /* Buttons */
     .btn-dash { display: inline-flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 0.875rem; font-weight: 700; transition: all 200ms var(--ease-out); text-decoration: none !important; padding: 0.65rem 1.25rem; }
     .btn-primary-dash { background: var(--indigo); color: #fff !important; border: 1px solid var(--indigo); }
-    .btn-primary-dash:hover { background: var(--indigo-dark); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.28); }
+    .btn-primary-dash:hover { background: var(--indigo-dark); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(29, 63, 122, 0.28); }
     .btn-ghost { background: #fff; border: 1px solid var(--border); color: var(--text) !important; }
     .btn-ghost:hover { background: #f8fafc; border-color: #cbd5e1; }
 
@@ -301,7 +301,7 @@
     .pagination { margin: 0; }
     .pagination .page-link { border-radius: 10px !important; margin: 0 3px; border: 1px solid var(--border); color: var(--slate); font-weight: 700; font-size: 0.85rem; min-width: 34px; text-align: center; padding: 0.35rem 0.6rem; }
     .pagination .page-item.active .page-link { background: var(--indigo); border-color: var(--indigo); color: #fff; }
-    .pagination .page-link:focus { box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); }
+    .pagination .page-link:focus { box-shadow: 0 0 0 4px rgba(29, 63, 122, 0.08); }
     .pagination .disabled .page-link { opacity: 0.45; }
 
     /* Empty state */

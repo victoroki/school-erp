@@ -170,7 +170,7 @@
 <style>
 /* ── Staff Details Profile System ── */
 :root {
-    --indigo: #4f46e5; --indigo-light: #eef2ff;
+    --indigo: #1d3f7a; --indigo-light: #eef3fa;
     --emerald: #10b981; --emerald-light: #ecfdf5;
     --rose: #f43f5e; --rose-light: #fff1f2;
     --slate: #64748b; --slate-light: #f1f5f9;
