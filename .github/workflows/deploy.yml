@@ -29,6 +29,11 @@ on:
   push:
     branches: [master]   # production: every push to master deploys (after tests pass)
   workflow_dispatch:
+    inputs:
+      full_upload:
+        description: 'Upload vendor/ too (needed on a new or rebuilt host)'
+        type: boolean
+        default: false
 
 # Same trigger as test.yml: a push runs both workflows in parallel. The deploy
 # still gates on the test job below, so the FTP upload only starts once the
@@ -137,7 +142,10 @@ jobs:
         run: |
           LAST_TAG=$(git describe --tags --match='deploy-*' --abbrev=0 2>/dev/null || true)
 
-          if [ -z "${LAST_TAG}" ]; then
+          if [ "${{ inputs.full_upload }}" = "true" ]; then
+            echo "vendor_changed=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Full upload requested — vendor will be uploaded."
+          elif [ -z "${LAST_TAG}" ]; then
             echo "vendor_changed=true" >> "$GITHUB_OUTPUT"
             echo "::notice::No previous deploy tag — vendor will be uploaded."
           else
