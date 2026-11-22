@@ -5,42 +5,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Sign in | {{ config('app.name') }}</title>
     <meta name="description" content="Sign in to {{ config('app.name') }} for staff, parents and students.">
-    <meta name="theme-color" content="#17325f">
+    <meta name="theme-color" content="#F7F6F3">
     <link rel="icon" href="{{ asset('favicon.ico') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css"
-          integrity="sha512-1PKOgIY59xJ8Co8+NE6FZ+LOAZKjy+KY8iq0G4B3CyeY6wYHN3yt9PW0XpSriVlkMXe40PTKnXrLnZ9+fkDaog=="
-          crossorigin="anonymous">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400&family=Newsreader:opsz,wght@6..72,400&display=swap">
 
     <style>
         :root {
-            --navy-900: #0e2140;
-            --navy-800: #12294f;
-            --navy-700: #17325f;
-            --navy-600: #1d3f7a;
-            --navy-50:  #eef3fa;
-            --ink:      #142033;
-            --ink-2:    #3b4658;
-            --muted:    #6b7587;
-            --faint:    #98a1b0;
-            --line:     #d9dfe8;
-            --canvas:   #f5f7fa;
-            --white:    #ffffff;
-            --rose:     #b42335;
-            --rose-bg:  #fdf1f2;
-            --green:    #0f6b4b;
-            --green-bg: #eefaf4;
-            --ring:     0 0 0 3px rgba(29, 63, 122, 0.22);
+            /* Warm neutrals, never pure black or white. */
+            --canvas:    #F7F6F3;
+            --surface:   #FEFEFD;
+            --field:     #FBFBFA;
+            --line:      #EAEAE7;
+            --ink:       #151514;
+            --ink-2:     #2F3437;
+            --muted:     #787774;
+            --faint:     #A5A49F;
+            --btn-hover: #333331;
+
+            --red-bg:   #FDEBEC; --red:   #9F2F2D;
+            --green-bg: #EDF3EC; --green: #346538;
+
+            --sans:  "Geist", "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+            --serif: "Newsreader", "Lyon Text", Georgia, serif;
+            --mono:  "Geist Mono", "SF Mono", ui-monospace, monospace;
             --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
         }
 
         * { box-sizing: border-box; }
-
         html, body { height: 100%; }
 
         body {
             margin: 0;
-            font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            color: var(--ink);
+            font-family: var(--sans);
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--ink-2);
             background: var(--canvas);
             -webkit-font-smoothing: antialiased;
         }
@@ -48,19 +49,19 @@
         .page {
             min-height: 100%;
             display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
         }
 
-        /* ── Brand panel ─────────────────────────────────────────── */
+        /* ── School panel ────────────────────────────────────────── */
 
         .brand {
-            background: var(--navy-700);
-            color: #e6ecf6;
-            padding: 48px 56px;
+            background: var(--canvas);
+            border-right: 1px solid var(--line);
+            padding: 40px 56px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            gap: 40px;
+            gap: 56px;
         }
 
         .brand-top {
@@ -70,77 +71,65 @@
         }
 
         .brand-mark {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: #fff;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--surface);
+            border: 1px solid var(--line);
             padding: 4px;
         }
 
         .brand-name {
-            font-size: 16px;
-            font-weight: 700;
-            color: #fff;
+            font-size: 14.5px;
+            font-weight: 600;
+            color: var(--ink);
             letter-spacing: -0.01em;
         }
 
         .brand-body h2 {
-            margin: 0 0 14px;
-            font-size: clamp(26px, 2.6vw, 34px);
-            line-height: 1.15;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            color: #fff;
-            max-width: 15ch;
+            margin: 0 0 48px;
+            font-family: var(--serif);
+            font-weight: 400;
+            font-size: clamp(32px, 3.4vw, 46px);
+            line-height: 1.1;
+            letter-spacing: -0.025em;
+            color: var(--ink);
+            max-width: 16ch;
         }
 
-        .brand-body p {
-            margin: 0 0 28px;
-            font-size: 15px;
-            line-height: 1.6;
-            color: #c3d0e5;
-            max-width: 40ch;
-        }
-
-        .brand-list {
-            list-style: none;
+        /* Plain definition list, divided by hairlines. No cards. */
+        .facts {
             margin: 0;
-            padding: 0;
+            max-width: 480px;
+            border-top: 1px solid var(--line);
+        }
+
+        .facts > div {
             display: grid;
-            gap: 14px;
+            grid-template-columns: 112px 1fr;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--line);
         }
 
-        .brand-list li {
-            display: flex;
-            gap: 12px;
-            align-items: flex-start;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #dfe6f2;
+        .facts dt {
+            font-size: 13.5px;
+            font-weight: 500;
+            color: var(--ink);
         }
 
-        .brand-list i {
-            width: 30px;
-            height: 30px;
-            flex-shrink: 0;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-        }
-
-        .brand-list strong {
-            display: block;
-            color: #fff;
-            font-weight: 600;
+        .facts dd {
+            margin: 0;
+            font-size: 13.5px;
+            line-height: 1.55;
+            color: var(--muted);
         }
 
         .brand-foot {
-            font-size: 12.5px;
-            color: #9fb2d1;
+            margin: 0;
+            font-family: var(--mono);
+            font-size: 11.5px;
+            color: var(--faint);
         }
 
         /* ── Form panel ──────────────────────────────────────────── */
@@ -150,127 +139,135 @@
             align-items: center;
             justify-content: center;
             padding: 48px 24px;
-            background: var(--white);
+            background: var(--surface);
         }
 
         .form-box {
             width: 100%;
-            max-width: 380px;
+            max-width: 360px;
         }
 
         .form-box h1 {
-            margin: 0 0 6px;
-            font-size: 26px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
+            margin: 0 0 8px;
+            font-family: var(--serif);
+            font-weight: 400;
+            font-size: 36px;
+            line-height: 1.1;
+            letter-spacing: -0.025em;
+            color: var(--ink);
         }
 
         .form-intro {
-            margin: 0 0 28px;
+            margin: 0 0 32px;
             font-size: 14.5px;
             color: var(--muted);
-            line-height: 1.5;
         }
 
         .notice {
             display: flex;
             gap: 10px;
             align-items: flex-start;
-            padding: 11px 14px;
-            border-radius: 10px;
+            padding: 12px 14px;
+            border-radius: 8px;
             font-size: 13.5px;
             line-height: 1.45;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
-        .notice-error { background: var(--rose-bg); color: var(--rose); border: 1px solid #f6d3d8; }
-        .notice-ok    { background: var(--green-bg); color: var(--green); border: 1px solid #cdeedd; }
+        .notice-error { background: var(--red-bg);   color: var(--red); }
+        .notice-ok    { background: var(--green-bg); color: var(--green); }
 
-        .field { margin-bottom: 18px; }
+        .field { margin-bottom: 20px; }
 
         .field-head {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            margin-bottom: 7px;
+            margin-bottom: 8px;
         }
 
         label.field-label {
-            font-size: 13.5px;
-            font-weight: 600;
-            color: var(--ink-2);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--ink);
         }
 
-        .input {
-            position: relative;
-        }
+        .input { position: relative; }
 
         .input input {
             width: 100%;
-            height: 46px;
+            height: 44px;
             padding: 0 14px;
             font: inherit;
             font-size: 15px;
             color: var(--ink);
-            background: var(--white);
+            background: var(--field);
             border: 1px solid var(--line);
-            border-radius: 10px;
+            border-radius: 6px;
             outline: none;
-            transition: border-color 150ms ease, box-shadow 150ms ease;
+            transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
         }
 
         .input input::placeholder { color: var(--faint); }
 
+        @media (hover: hover) and (pointer: fine) {
+            .input input:hover { border-color: #DADAD6; }
+        }
+
         .input input:focus {
-            border-color: var(--navy-600);
-            box-shadow: var(--ring);
+            background: var(--surface);
+            border-color: var(--ink);
+            box-shadow: 0 0 0 3px rgba(21, 21, 20, 0.06);
         }
 
-        .input input[aria-invalid="true"] {
-            border-color: var(--rose);
-        }
-
-        .input.has-toggle input { padding-right: 48px; }
+        .input input[aria-invalid="true"] { border-color: var(--red); }
+        .input.has-toggle input { padding-right: 46px; }
 
         .pw-toggle {
             position: absolute;
             right: 4px;
             top: 4px;
-            width: 38px;
-            height: 38px;
+            width: 36px;
+            height: 36px;
             border: 0;
-            border-radius: 8px;
+            border-radius: 4px;
             background: transparent;
             color: var(--muted);
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             transition: background-color 120ms ease, color 120ms ease;
         }
 
+        .pw-toggle svg { width: 17px; height: 17px; }
         .pw-toggle:hover { background: var(--canvas); color: var(--ink); }
-        .pw-toggle:focus-visible { outline: 2px solid var(--navy-600); outline-offset: 0; }
+        .pw-toggle:focus-visible { outline: 2px solid var(--ink); outline-offset: 0; }
 
         .field-error {
             display: block;
             margin-top: 6px;
             font-size: 13px;
-            color: var(--rose);
+            color: var(--red);
         }
 
         .link {
-            font-size: 13.5px;
-            font-weight: 600;
-            color: var(--navy-600);
-            text-decoration: none;
+            font-size: 13px;
+            color: var(--muted);
+            text-decoration: underline;
+            text-decoration-color: var(--line);
+            text-underline-offset: 3px;
+            transition: color 120ms ease, text-decoration-color 120ms ease;
         }
 
-        .link:hover { text-decoration: underline; }
-        .link:focus-visible { outline: 2px solid var(--navy-600); outline-offset: 2px; border-radius: 4px; }
+        .link:hover { color: var(--ink); text-decoration-color: var(--ink); }
+        .link:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
 
         .remember {
             display: flex;
             align-items: center;
-            gap: 9px;
-            margin: 4px 0 24px;
+            gap: 10px;
+            margin: 4px 0 28px;
             font-size: 14px;
             color: var(--ink-2);
             cursor: pointer;
@@ -278,51 +275,58 @@
         }
 
         .remember input {
-            width: 17px;
-            height: 17px;
-            accent-color: var(--navy-600);
+            width: 16px;
+            height: 16px;
+            accent-color: var(--ink);
             margin: 0;
         }
 
         .submit {
             width: 100%;
-            height: 48px;
+            height: 44px;
             border: 0;
-            border-radius: 10px;
-            background: var(--navy-600);
-            color: #fff;
+            border-radius: 6px;
+            background: var(--ink);
+            color: var(--surface);
             font: inherit;
-            font-size: 15px;
-            font-weight: 600;
+            font-size: 14.5px;
+            font-weight: 500;
             cursor: pointer;
             transition: background-color 150ms ease, transform 160ms var(--ease-out);
         }
 
-        .submit:hover { background: var(--navy-700); }
-        .submit:active { transform: scale(0.98); }
-        .submit:focus-visible { outline: none; box-shadow: var(--ring); }
-        .submit[disabled] { opacity: 0.75; cursor: progress; }
+        .submit:hover { background: var(--btn-hover); }
+        .submit:active { transform: scale(0.97); }
+        .submit:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+        .submit[disabled] { opacity: 0.7; cursor: progress; }
 
         .form-foot {
-            margin-top: 28px;
+            margin: 32px 0 0;
             padding-top: 20px;
-            border-top: 1px solid #edf0f4;
+            border-top: 1px solid var(--line);
             font-size: 13px;
             color: var(--muted);
-            line-height: 1.5;
+            line-height: 1.55;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .submit, .input input { transition: none; }
+            .submit:active { transform: none; }
         }
 
         /* ── Small screens ───────────────────────────────────────── */
 
-        @media (max-width: 900px) {
+        @media (max-width: 960px) {
             .page {
                 grid-template-columns: 1fr;
                 grid-template-rows: auto 1fr;
             }
 
             .brand {
-                padding: 20px 24px;
+                padding: 18px 20px;
                 gap: 0;
+                border-right: 0;
+                border-bottom: 1px solid var(--line);
             }
 
             .brand-body,
@@ -330,13 +334,10 @@
 
             .form-side {
                 align-items: flex-start;
-                padding: 32px 20px 40px;
+                padding: 40px 20px 48px;
             }
-        }
 
-        @media (prefers-reduced-motion: reduce) {
-            .submit, .input input { transition: none; }
-            .submit:active { transform: none; }
+            .form-box h1 { font-size: 32px; }
         }
     </style>
 </head>
@@ -350,13 +351,22 @@
         </div>
 
         <div class="brand-body">
-            <h2>Everything your school runs, in one place.</h2>
-            <p>Fees, academics, attendance and communication for staff, with a portal for parents and students.</p>
-            <ul class="brand-list">
-                <li><i class="fas fa-receipt" aria-hidden="true"></i><span><strong>Fees and receipts</strong>Collect by cash, bank or M-Pesa and issue receipts on the spot.</span></li>
-                <li><i class="fas fa-book-open" aria-hidden="true"></i><span><strong>Academics</strong>Classes, CBC assessments, exams and report cards.</span></li>
-                <li><i class="fas fa-users" aria-hidden="true"></i><span><strong>Parents and students</strong>Balances, attendance and results, on the web or the app.</span></li>
-            </ul>
+            <h2>Fees, classes and results for the whole school.</h2>
+
+            <dl class="facts">
+                <div>
+                    <dt>Fees</dt>
+                    <dd>Cash, bank or M-Pesa, with a receipt printed on the spot.</dd>
+                </div>
+                <div>
+                    <dt>Academics</dt>
+                    <dd>CBC assessments, exams and report cards.</dd>
+                </div>
+                <div>
+                    <dt>Families</dt>
+                    <dd>Parents and students see balances, attendance and results.</dd>
+                </div>
+            </dl>
         </div>
 
         <p class="brand-foot">&copy; {{ date('Y') }} {{ config('app.name') }}</p>
@@ -368,15 +378,11 @@
             <p class="form-intro">Use the email and password your school gave you.</p>
 
             @if (session('status'))
-                <div class="notice notice-ok" role="status">
-                    <i class="fas fa-check-circle" aria-hidden="true"></i><span>{{ session('status') }}</span>
-                </div>
+                <div class="notice notice-ok" role="status">{{ session('status') }}</div>
             @endif
 
             @if ($errors->any() && ! $errors->has('email') && ! $errors->has('password'))
-                <div class="notice notice-error" role="alert">
-                    <i class="fas fa-exclamation-circle" aria-hidden="true"></i><span>{{ $errors->first() }}</span>
-                </div>
+                <div class="notice notice-error" role="alert">{{ $errors->first() }}</div>
             @endif
 
             <form method="POST" action="{{ route('login') }}" id="loginForm" novalidate>
@@ -409,7 +415,8 @@
                                autocomplete="current-password" required
                                @error('password') aria-invalid="true" aria-describedby="password-error" @enderror>
                         <button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password" aria-pressed="false">
-                            <i class="far fa-eye" id="pwIcon" aria-hidden="true"></i>
+                            <svg id="pwShow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <svg id="pwHide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M3 3l18 18"/><path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2M6.6 6.6C3.9 8.4 2 12 2 12s3.5 7 10 7c1.9 0 3.5-.5 4.9-1.3"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
                         </button>
                     </div>
                     @error('password')
@@ -425,7 +432,7 @@
                 <button type="submit" class="submit" id="loginBtn">Sign in</button>
             </form>
 
-            <p class="form-foot">Staff, parents and students all sign in here. Can't get in? Ask the school office to reset your account.</p>
+            <p class="form-foot">Can't get in? Ask the school office to reset your account.</p>
         </div>
     </main>
 
@@ -435,12 +442,14 @@
     (function () {
         var toggle = document.getElementById('pwToggle');
         var input = document.getElementById('login-password');
-        var icon = document.getElementById('pwIcon');
+        var showIcon = document.getElementById('pwShow');
+        var hideIcon = document.getElementById('pwHide');
 
         toggle.addEventListener('click', function () {
             var show = input.type === 'password';
             input.type = show ? 'text' : 'password';
-            icon.className = show ? 'far fa-eye-slash' : 'far fa-eye';
+            showIcon.hidden = show;
+            hideIcon.hidden = !show;
             toggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
             toggle.setAttribute('aria-pressed', show ? 'true' : 'false');
         });

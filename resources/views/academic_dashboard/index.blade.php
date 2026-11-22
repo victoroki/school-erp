@@ -1,293 +1,221 @@
 @extends('layouts.app')
 
+@include('partials.minimal-ui')
+
 @section('content')
-<div class="dash-wrap">
-    {{-- ① HEADER --}}
-    <div class="row align-items-center mb-4">
-        <div class="col-md-7">
-            <h1 class="dash-heading">Academic Management</h1>
-            <p class="dash-sub">
+@php
+    $lessons = $todayLessons->sortBy(fn ($l) => $l->period->start_time ?? '99:99');
+    $dayName = now()->format('l');
+@endphp
+
+<div class="ba ad">
+
+    <header class="ba-head">
+        <div>
+            <h1 class="ba-title">Academics</h1>
+            <p class="ba-sub">
                 @if($isManager)
-                    Overview of classes, subjects, schedules, and operations
+                    Classes, subjects and today's timetable across the school.
                 @else
-                    Your classes, schedule, and classroom tools
+                    Your lessons today and the tools you use in class.
                 @endif
             </p>
         </div>
-        <div class="col-md-5 text-md-end mt-2 mt-md-0">
-            <ol class="breadcrumb float-sm-right m-0 bg-transparent p-0" style="font-size: .813rem; font-weight: 600;">
-                <li class="breadcrumb-item"><a href="{{ route('home') }}" class="text-muted text-decoration-none">Home</a></li>
-                <li class="breadcrumb-item active text-dark">Academic Dashboard</li>
-            </ol>
-        </div>
-    </div>
+        @if($currentYear)
+            <span class="ba-tag">{{ $currentYear->year_name ?? $currentYear->name ?? 'Current year' }}</span>
+        @endif
+    </header>
 
-    {{-- ② QUICK STATS --}}
     @if($isManager)
-    <div class="row mb-4">
-        <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
-            <div class="stat-card">
-                <div class="stat-icon bg-blue-light text-blue"><i class="fas fa-chalkboard"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">Total Classes</span>
-                    <span class="stat-value">{{ $stats['total_classes'] }}</span>
-                </div>
+        <dl class="ba-summary ad-summary">
+            <div class="ba-stat">
+                <dt>Classes</dt>
+                <dd class="ba-num">{{ number_format($stats['total_classes']) }}</dd>
             </div>
-        </div>
-        <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
-            <div class="stat-card">
-                <div class="stat-icon bg-emerald-light text-emerald"><i class="fas fa-book-open"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">Subjects</span>
-                    <span class="stat-value">{{ $stats['total_subjects'] }}</span>
-                </div>
+            <div class="ba-stat">
+                <dt>Subjects</dt>
+                <dd class="ba-num">{{ number_format($stats['total_subjects']) }}</dd>
             </div>
-        </div>
-        <div class="col-12 col-sm-6 col-md-3 mb-3 mb-md-0">
-            <div class="stat-card">
-                <div class="stat-icon bg-amber-light text-amber"><i class="fas fa-user-tie"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">Teachers</span>
-                    <span class="stat-value">{{ $stats['total_teachers'] }}</span>
-                </div>
+            <div class="ba-stat">
+                <dt>Teachers</dt>
+                <dd class="ba-num">{{ number_format($stats['total_teachers']) }}</dd>
             </div>
-        </div>
-        <div class="col-12 col-sm-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon bg-rose-light text-rose"><i class="fas fa-user-graduate"></i></div>
-                <div class="stat-info">
-                    <span class="stat-label">Students</span>
-                    <span class="stat-value">{{ $stats['total_students'] }}</span>
-                </div>
+            <div class="ba-stat">
+                <dt>Active students</dt>
+                <dd class="ba-num">{{ number_format($stats['total_students']) }}</dd>
             </div>
-        </div>
-    </div>
+        </dl>
     @endif
 
-    <div class="row">
-        <!-- Today's Lessons -->
-        <div class="col-lg-8 mb-4 mb-lg-0">
-            <div class="dash-panel h-100">
-                <div class="dash-panel-header">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="fas fa-calendar-day text-indigo"></i>
-                        <h3 class="dash-panel-title">Today's Live Schedule ({{ ucfirst(now()->format('l')) }})</h3>
-                    </div>
-                    <span class="badge-count">{{ $todayLessons->count() }} Lessons</span>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>Subject</th>
-                                <th>Class</th>
-                                <th>Teacher</th>
-                                <th class="text-right">Room</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($todayLessons->sortBy('period.start_time') as $lesson)
-                                <tr>
-                                    <td class="font-weight-bold text-indigo" style="font-size: .813rem;">{{ \Carbon\Carbon::parse($lesson->period->start_time)->format('H:i') }}</td>
-                                    <td><span class="font-weight-bold text-dark" style="font-size: .875rem;">{{ $lesson->subject->name }}</span></td>
-                                    <td><span class="badge-soft">{{ $lesson->classSection->class->name ?? '' }} {{ $lesson->classSection->section->name ?? '' }}</span></td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <img src="{{ $lesson->teacher->photo_url ?? asset('garikon-black.png') }}" alt="Teacher" class="avatar-sm">
-                                            <span style="font-size: .813rem; font-weight: 600;">{{ $lesson->teacher->full_name ?? 'N/A' }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-right"><span class="text-muted" style="font-size: .813rem;"><i class="fas fa-door-open mr-1"></i> {{ $lesson->classroom->room_number }}</span></td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted">
-                                        <i class="fas fa-mug-hot fa-2x mb-2" style="color: #cbd5e1;"></i>
-                                        <p class="mb-0" style="font-size: .875rem;">No lessons scheduled for today.</p>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                <div class="dash-panel-footer text-center">
-                    <a href="{{ route('timetables.index') }}" class="text-indigo text-decoration-none" style="font-size: .813rem; font-weight: 600;">View Full Timetable <i class="fas fa-arrow-right ml-1"></i></a>
-                </div>
-            </div>
-        </div>
+    <div class="ad-grid">
 
-        <!-- Side Widgets -->
-        <div class="col-lg-4">
-            @if($isManager)
-            <!-- Classroom Utilization -->
-            <div class="dash-panel mb-4">
-                <div class="dash-panel-header">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="fas fa-th text-emerald"></i>
-                        <h3 class="dash-panel-title">Venue Utilization</h3>
-                    </div>
+        {{-- Today's timetable --}}
+        <section class="ad-main" aria-labelledby="ad-today">
+            <div class="ad-section-head">
+                <h2 id="ad-today" class="ad-h2">Today, {{ $dayName }}</h2>
+                <span class="ad-count">{{ $lessons->count() }} {{ \Illuminate\Support\Str::plural('lesson', $lessons->count()) }}</span>
+            </div>
+
+            <div class="ba-list" role="table" aria-label="Today's lessons">
+                <div class="ba-row ad-row ba-row-head" role="row">
+                    <span role="columnheader">Time</span>
+                    <span role="columnheader">Subject</span>
+                    <span role="columnheader">Class</span>
+                    <span role="columnheader">Teacher</span>
+                    <span role="columnheader" class="ba-right">Room</span>
                 </div>
-                <div class="dash-panel-body">
+
+                @forelse($lessons as $lesson)
+                    <div class="ba-row ad-row" role="row">
+                        <span class="ba-date" role="cell">
+                            {{ $lesson->period?->start_time ? \Carbon\Carbon::parse($lesson->period->start_time)->format('H:i') : '--:--' }}
+                        </span>
+                        <span class="ba-strong" role="cell">{{ $lesson->subject->name ?? 'Unassigned subject' }}</span>
+                        <span role="cell">
+                            <span class="ba-tag">{{ trim(($lesson->classSection?->class?->name ?? '').' '.($lesson->classSection?->section?->name ?? '')) ?: 'No class' }}</span>
+                        </span>
+                        <span class="ba-small ad-teacher" role="cell">{{ $lesson->teacher->full_name ?? 'No teacher' }}</span>
+                        <span class="ba-right ba-date" role="cell">{{ $lesson->classroom->room_number ?? '—' }}</span>
+                    </div>
+                @empty
+                    <div class="ba-empty-row">
+                        {{ $isManager ? 'No lessons are scheduled for today.' : 'You have no lessons scheduled today.' }}
+                    </div>
+                @endforelse
+            </div>
+
+            <a href="{{ route('timetables.index') }}" class="ba-link ad-more">Full timetable</a>
+        </section>
+
+        {{-- Side column --}}
+        <aside class="ad-side">
+            @if($isManager)
+                <section aria-labelledby="ad-rooms">
+                    <div class="ad-section-head">
+                        <h2 id="ad-rooms" class="ad-h2">Room use today</h2>
+                    </div>
                     @forelse($utilization as $item)
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: .75rem; font-weight: 600;">
-                                <span>Room {{ $item['room'] }}</span>
-                                <span class="text-dark">{{ $item['rate'] }}%</span>
+                        <div class="ad-meter">
+                            <div class="ba-min-line">
+                                <span class="ba-small" style="color: var(--ba-ink-2)">Room {{ $item['room'] }}</span>
+                                <span class="ba-date">{{ $item['rate'] }}%</span>
                             </div>
-                            <div class="progress" style="height: 6px; border-radius: 3px; background-color: #f1f5f9;">
-                                <div class="progress-bar bg-emerald" style="width: {{ $item['rate'] }}%; border-radius: 3px;"></div>
-                            </div>
+                            <div class="ba-track" aria-hidden="true"><span class="ba-fill ad-fill" style="width: {{ min(100, $item['rate']) }}%"></span></div>
                         </div>
                     @empty
-                        <p class="text-center text-muted mb-0 py-3" style="font-size: .813rem;">No room data for today.</p>
+                        <p class="ad-note">No rooms are booked today.</p>
                     @endforelse
-                </div>
-            </div>
+                </section>
 
-            <!-- Recent Changes -->
-            <div class="dash-panel mb-4">
-                <div class="dash-panel-header">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="fas fa-history text-amber"></i>
-                        <h3 class="dash-panel-title">Recent Changes</h3>
+                <section aria-labelledby="ad-changes">
+                    <div class="ad-section-head">
+                        <h2 id="ad-changes" class="ad-h2">Recent timetable changes</h2>
                     </div>
-                </div>
-                <div class="dash-panel-body p-0">
-                    <ul class="list-group list-group-flush">
+                    <ul class="ad-list">
                         @forelse($recentChanges as $change)
-                            <li class="list-group-item d-flex justify-content-between align-items-start border-light py-3">
-                                <div>
-                                    <div class="font-weight-bold text-dark" style="font-size: .813rem;">{{ $change->subject->name }}</div>
-                                    <div class="text-muted mt-1" style="font-size: .75rem;">Schedule updated for {{ $change->classSection->class->name ?? 'Unknown' }}</div>
+                            <li>
+                                <div class="ba-cell">
+                                    <span class="ba-strong">{{ $change->subject->name ?? 'Unassigned subject' }}</span>
+                                    <span class="ba-small">{{ $change->classSection?->class?->name ?? 'Unknown class' }}</span>
                                 </div>
-                                <span class="text-muted" style="font-size: .688rem; font-weight: 600;">{{ $change->updated_at->diffForHumans(null, true, true) }}</span>
+                                <time class="ba-small" datetime="{{ $change->updated_at?->toIso8601String() }}">{{ $change->updated_at?->diffForHumans(null, true, true) }}</time>
                             </li>
                         @empty
-                            <li class="list-group-item text-center py-4 text-muted border-0" style="font-size: .813rem;">No recent changes.</li>
+                            <li class="ad-note">No recent changes.</li>
                         @endforelse
                     </ul>
-                </div>
-            </div>
+                </section>
             @endif
 
-            <!-- Quick Actions -->
-            <div class="dash-panel">
-                <div class="dash-panel-header">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="fas fa-bolt text-blue"></i>
-                        <h3 class="dash-panel-title">Quick Actions</h3>
-                    </div>
+            <section aria-labelledby="ad-actions">
+                <div class="ad-section-head">
+                    <h2 id="ad-actions" class="ad-h2">Shortcuts</h2>
                 </div>
-                <div class="dash-panel-body p-2">
+                <ul class="ad-list ad-links">
                     @if($isManager)
-                    <div class="row m-0">
-                        <div class="col-6 p-1">
-                            <a href="{{ route('timetables.create') }}" class="qa-btn">
-                                <i class="fas fa-plus mb-1"></i> Add Lesson
-                            </a>
-                        </div>
-                        <div class="col-6 p-1">
-                            <a href="{{ route('subjects.create') }}" class="qa-btn">
-                                <i class="fas fa-book mb-1"></i> New Subject
-                            </a>
-                        </div>
-                        <div class="col-6 p-1">
-                            <a href="{{ route('school-classes.index') }}" class="qa-btn">
-                                <i class="fas fa-chalkboard mb-1"></i> Manage Classes
-                            </a>
-                        </div>
-                        <div class="col-6 p-1">
-                            <a href="{{ route('academic-calendar.index') }}" class="qa-btn">
-                                <i class="fas fa-calendar-plus mb-1"></i> Add Event
-                            </a>
-                        </div>
-                    </div>
+                        <li><a href="{{ route('timetables.create') }}">Add a lesson</a></li>
+                        <li><a href="{{ route('subjects.create') }}">New subject</a></li>
+                        <li><a href="{{ route('school-classes.index') }}">Manage classes</a></li>
+                        <li><a href="{{ route('academic-calendar.index') }}">Academic calendar</a></li>
                     @else
-                    <div class="row m-0">
-                        <div class="col-6 p-1">
-                            <a href="{{ route('timetables.teacher') }}" class="qa-btn">
-                                <i class="fas fa-calendar-alt mb-1"></i> My Timetable
-                            </a>
-                        </div>
-                        <div class="col-6 p-1">
-                            <a href="{{ route('exam-results.bulk') }}" class="qa-btn">
-                                <i class="fas fa-edit mb-1"></i> Enter Marks
-                            </a>
-                        </div>
-                        <div class="col-6 p-1">
-                            <a href="{{ route('student-attendance.index') }}" class="qa-btn">
-                                <i class="fas fa-calendar-check mb-1"></i> Take Attendance
-                            </a>
-                        </div>
-                        <div class="col-6 p-1">
-                            <a href="{{ route('grade-book.index') }}" class="qa-btn">
-                                <i class="fas fa-book mb-1"></i> Grade Book
-                            </a>
-                        </div>
-                    </div>
+                        <li><a href="{{ route('timetables.teacher') }}">My timetable</a></li>
+                        <li><a href="{{ route('exam-results.bulk') }}">Enter marks</a></li>
+                        <li><a href="{{ route('student-attendance.index') }}">Take attendance</a></li>
+                        <li><a href="{{ route('grade-book.index') }}">Grade book</a></li>
                     @endif
-                </div>
-            </div>
-        </div>
+                </ul>
+            </section>
+        </aside>
     </div>
 </div>
 
 <style>
-/* ── Emil Kowalski Utility Suite ── */
-:root {
-    --blue: #3b82f6; --blue-light: #eff6ff;
-    --indigo: #1d3f7a; --indigo-light: #eef3fa;
-    --emerald: #10b981; --emerald-light: #ecfdf5;
-    --amber: #f59e0b; --amber-light: #fffbeb;
-    --rose: #f43f5e; --rose-light: #fff1f2;
-    --slate: #64748b;
-    --text: #0f172a;
-    --muted: #64748b;
-    --border: #e2e8f0;
-    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-}
+    .ad-summary { grid-template-columns: repeat(4, 1fr); }
+    .ad-summary .ba-stat dd { font-size: 22px; }
 
-.bg-blue-light { background: var(--blue-light); } .text-blue { color: var(--blue); }
-.bg-indigo-light { background: var(--indigo-light); } .text-indigo { color: var(--indigo); }
-.bg-emerald-light { background: var(--emerald-light); } .text-emerald { color: var(--emerald); }
-.bg-amber-light { background: var(--amber-light); } .text-amber { color: var(--amber); }
-.bg-rose-light { background: var(--rose-light); } .text-rose { color: var(--rose); }
+    .ad-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+        gap: 48px;
+        align-items: start;
+    }
+    .ad-side { display: flex; flex-direction: column; gap: 36px; }
 
-.dash-wrap { padding: 1rem; }
-.dash-heading { font-size: 1.375rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; margin-bottom: 0.125rem; }
-.dash-sub { font-size: 0.813rem; color: var(--muted); font-weight: 500; margin-bottom: 0; }
+    .ad-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .ad-h2 { margin: 0; font-size: 15px; font-weight: 500; color: var(--ba-ink); letter-spacing: -0.005em; }
+    .ad-count { font-size: 13px; color: var(--ba-muted); }
 
-.dash-panel { background: #fff; border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden; display: flex; flex-direction: column; }
-.dash-panel-header { padding: 1rem 1.25rem; background: #fff; border-bottom: 1px solid #f8fafc; display: flex; align-items: center; justify-content: space-between; }
-.dash-panel-title { font-size: .875rem; font-weight: 800; color: var(--text); margin: 0; }
-.dash-panel-body { padding: 1.25rem; flex: 1; }
-.dash-panel-footer { padding: 1rem; background: #f8fafc; border-top: 1px solid var(--border); }
+    .ad-row { grid-template-columns: 64px minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.3fr) 64px; padding-top: 13px; padding-bottom: 13px; }
+    .ad-row.ba-row-head { padding-top: 8px; padding-bottom: 8px; }
+    .ad-teacher { color: var(--ba-ink-2); }
+    .ad-more { display: inline-block; margin-top: 12px; padding-left: 0; }
 
-/* Quick Stats */
-.stat-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: all 200ms var(--ease-out); }
-.stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.05); border-color: #cbd5e1; }
-.stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
-.stat-info { display: flex; flex-direction: column; }
-.stat-label { font-size: .75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-.stat-value { font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1.1; margin-top: .25rem; }
+    .ad-meter { padding: 10px 0; border-bottom: 1px solid var(--ba-line); }
+    .ad-meter:first-of-type { border-top: 1px solid var(--ba-line); }
+    .ad-fill { background: var(--ba-ink-2); }
+    .ad-note { margin: 0; padding: 12px 0; font-size: 13px; color: var(--ba-muted); border-top: 1px solid var(--ba-line); border-bottom: 1px solid var(--ba-line); }
 
-/* Table Styling */
-.table { margin-bottom: 0; }
-.table thead th { background: #f8fafc; border-bottom: 1px solid var(--border); font-size: .688rem; font-weight: 800; text-transform: uppercase; color: var(--slate); letter-spacing: 0.05em; padding: .625rem 1.25rem; }
-.table tbody td { padding: .75rem 1.25rem; vertical-align: middle; border-bottom: 1px solid #f8fafc; border-top: 0; }
-.table tbody tr:last-child td { border-bottom: 0; }
-.table-hover tbody tr:hover { background-color: #f8fafc; }
+    .ad-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ba-line); }
+    .ad-list > li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--ba-line); }
+    .ad-list > li.ad-note { border-top: 0; }
+    .ad-list time { flex-shrink: 0; }
 
-.badge-count { background: var(--indigo-light); color: var(--indigo); font-size: .688rem; font-weight: 800; padding: .25rem .5rem; border-radius: 6px; }
-.badge-soft { background: #f1f5f9; color: #475569; font-size: .688rem; font-weight: 700; padding: .2rem .5rem; border-radius: 6px; }
+    .ad-links > li { padding: 0; }
+    .ad-links a {
+        display: flex; justify-content: space-between; align-items: center;
+        width: 100%; padding: 11px 0;
+        color: var(--ba-ink); text-decoration: none; font-size: 14px;
+        transition: color 120ms ease;
+    }
+    .ad-links a::after { content: "\2192"; color: var(--ba-faint); transition: color 120ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1); }
+    @media (hover: hover) and (pointer: fine) {
+        .ad-links a:hover { color: var(--ba-ink); }
+        .ad-links a:hover::after { color: var(--ba-ink); transform: translateX(2px); }
+    }
+    .ad-links a:focus-visible { outline: 2px solid var(--ba-ink); outline-offset: 2px; }
 
-.avatar-sm { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
+    @media (prefers-reduced-motion: reduce) {
+        .ad-links a::after { transition: none; }
+    }
 
-/* Quick Actions */
-.qa-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem .5rem; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 10px; color: var(--slate); text-decoration: none !important; transition: all 150ms var(--ease-out); font-size: .75rem; font-weight: 600; text-align: center; }
-.qa-btn i { font-size: 1.125rem; color: var(--text); transition: all 150ms ease; }
-.qa-btn:hover { background: #fff; border-color: var(--blue); color: var(--blue); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1); }
-.qa-btn:hover i { color: var(--blue); transform: translateY(-2px); }
+    @media (max-width: 1100px) {
+        .ad-grid { grid-template-columns: 1fr; gap: 40px; }
+    }
+
+    @media (max-width: 860px) {
+        .ad-summary { grid-template-columns: 1fr 1fr; }
+        .ad-summary .ba-stat:nth-child(3) { border-left: 0; }
+        .ad-summary .ba-stat:nth-child(n+3) { border-top: 1px solid var(--ba-line); grid-column: auto; }
+        .ad-row {
+            grid-template-columns: 56px minmax(0, 1fr) auto;
+            grid-template-areas: "time subj room" "time cls teacher";
+            gap: 4px 12px;
+        }
+        .ad-row > :nth-child(1) { grid-area: time; }
+        .ad-row > :nth-child(2) { grid-area: subj; }
+        .ad-row > :nth-child(3) { grid-area: cls; }
+        .ad-row > :nth-child(4) { grid-area: teacher; justify-self: end; }
+        .ad-row > :nth-child(5) { grid-area: room; }
+    }
 </style>
 @endsection

@@ -10,6 +10,9 @@ use Flash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
@@ -66,7 +69,55 @@ class StudentImportController extends Controller
         return view('students.import');
     }
 
+    /**
+     * PHP extensions the XLSX writer needs at runtime. Composer's platform
+     * check only verifies the PHP version, so on shared hosting a missing
+     * extension otherwise surfaces as a bare 500 on this download.
+     */
+    protected array $writerExtensions = ['xmlwriter', 'zlib', 'mbstring', 'zip'];
+
     public function template()
+    {
+        $missing = array_values(array_filter($this->writerExtensions, fn ($ext) => ! extension_loaded($ext)));
+
+        if ($missing) {
+            Log::error('Student import template: missing PHP extensions', ['missing' => $missing]);
+            Flash::error('The template could not be created because the server is missing the PHP extension(s): '
+                .implode(', ', $missing).'. Enable them in cPanel under "Select PHP Version" > Extensions, then try again.');
+
+            return redirect()->route('students.import');
+        }
+
+        try {
+            // Write to a real file under storage/ and send it as a normal download.
+            // Streaming straight to php://output breaks behind LiteSpeed output
+            // buffering/compression, and the system temp dir is often outside
+            // open_basedir on cPanel, so neither is used.
+            $dir = storage_path('app/tmp');
+            File::ensureDirectoryExists($dir);
+            $path = $dir.DIRECTORY_SEPARATOR.'student_import_template_'.Str::random(12).'.xlsx';
+
+            $writer = new Xlsx($this->buildTemplate());
+            $writer->save($path);
+        } catch (\Throwable $e) {
+            report($e);
+            Flash::error('The template could not be created. The error has been logged; please try again or contact support.');
+
+            return redirect()->route('students.import');
+        }
+
+        $response = response()->download($path, 'student_import_template.xlsx', [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'no-store',
+        ])->deleteFileAfterSend(true);
+
+        // Keep the quoted filename format the download has always used.
+        $response->headers->set('Content-Disposition', 'attachment; filename="student_import_template.xlsx"');
+
+        return $response;
+    }
+
+    protected function buildTemplate(): Spreadsheet
     {
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -154,16 +205,9 @@ class StudentImportController extends Controller
         $instructions->getColumnDimension('C')->setWidth(75);
         $instructions->getColumnDimension('D')->setWidth(20);
 
-        $filename = 'student_import_template.xlsx';
-        $writer = new Xlsx($spreadsheet);
+        $spreadsheet->setActiveSheetIndex(0);
 
-        return response()->stream(function () use ($writer) {
-            $writer->save('php://output');
-        }, 200, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-            'Cache-Control' => 'no-store',
-        ]);
+        return $spreadsheet;
     }
 
     public function store(Request $request)
