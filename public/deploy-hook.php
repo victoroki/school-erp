@@ -95,12 +95,43 @@ if ($allowedIps !== [] && !in_array($_SERVER['REMOTE_ADDR'] ?? '', $allowedIps, 
 
 $start = microtime(true);
 
-// ── 2. Bootstrap Laravel's console kernel (no HTTP handling needed) ─────
-require __DIR__ . '/../vendor/autoload.php';
+// ── 2. Make sure Laravel's writable folders exist ───────────────────────
+// The FTP sync skips these (they only hold .gitignore files), so on a new or
+// rebuilt host they are missing and Laravel fails before it can log anything.
+foreach ([
+    'bootstrap/cache',
+    'storage/app/public',
+    'storage/framework/cache/data',
+    'storage/framework/sessions',
+    'storage/framework/views',
+    'storage/logs',
+] as $dir) {
+    $path = __DIR__ . '/../' . $dir;
+    if (!is_dir($path)) {
+        @mkdir($path, 0755, true);
+    }
+}
 
-$app = require __DIR__ . '/../bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
+// ── 3. Bootstrap Laravel's console kernel (no HTTP handling needed) ─────
+// Errors here are reported to the (already authenticated) pipeline so a
+// failed deploy says why instead of a bare "Server Error".
+try {
+    require __DIR__ . '/../vendor/autoload.php';
+
+    $app = require __DIR__ . '/../bootstrap/app.php';
+    $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+    $kernel->bootstrap();
+} catch (\Throwable $e) {
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'error',
+        'stage' => 'bootstrap',
+        'message' => $e->getMessage(),
+        'file' => basename($e->getFile()) . ':' . $e->getLine(),
+    ], JSON_PRETTY_PRINT);
+    exit;
+}
 
 $results = [];
 $warnings = [];
