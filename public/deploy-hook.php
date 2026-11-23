@@ -187,6 +187,8 @@ if (empty($app['config']->get('app.key'))) {
 
 // ── 4. The actual post-deploy tasks ─────────────────────────────────────
 run_command('migrate', ['--force' => true]);
+// System data + platform owner (SAAS_OWNER_* secrets). Idempotent; no demo data.
+run_command('db:seed', ['--class' => 'Database\Seeders\SystemSeeder', '--force' => true]);
 run_command('storage:link', ['--force' => true]);
 
 // Probe whether public/storage actually serves files. cPanel hosts often

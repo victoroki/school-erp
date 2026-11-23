@@ -374,7 +374,7 @@ jobs:
             echo "# Platform Owner account (SaaS provider) — seeded by db:seed"
             echo "SAAS_OWNER_EMAIL='${SAAS_OWNER_EMAIL}'"
             echo "SAAS_OWNER_PASSWORD='${SAAS_OWNER_PASSWORD}'"
-            echo "SAAS_OWNER_NAME='Platform Owner'"
+            echo "SAAS_OWNER_NAME='${SAAS_OWNER_NAME:-Platform Owner}'"
             echo ""
             echo "LOG_CHANNEL=stack"
             echo "LOG_LEVEL=error"
